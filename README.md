@@ -52,8 +52,8 @@ mentioned [above](#non-goals).
 - And [`particles`](https://github.com/nchopin/particles)?
     - [`particles`](https://github.com/nchopin/particles) and the accompanying book
     [Sequential Monte Carlo Methods in Practice](https://link.springer.com/book/10.1007/978-3-030-47845-2)
-    are wonderful learning materials from state-space models and SMC.
-    `cuthbert` is more focused on perfomance and composability with the JAX ecosystem.
+    are wonderful learning materials for state-space models and SMC.
+    `cuthbert` is more focused on performance and composability with the JAX ecosystem.
 - Much of the code in `cuthbert` is built on work from
 [`mocat`](https://github.com/SamDuffield/mocat), [`abile`](https://github.com/SamDuffield/abile)
 and [`bayesfilter`](https://github.com/hugohadfield/bayesfilter).
