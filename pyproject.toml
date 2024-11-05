@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuthbert"
+version = "0.0.1"
+description = "State-space model inference with JAX"
+readme = "README.md"
+requires-python =">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Cuthbert chefs", email = "s@mduffield.com"},
+]
+
+dependencies = [
+    "jax>=0.4.26",
+]
+
+[tool.ruff]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F821", "E402"]
