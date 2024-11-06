@@ -18,6 +18,9 @@ dependencies = [
     "jax>=0.4.26",
 ]
 
+[project.optional-dependencies]
+test = ["pre-commit", "ruff", "pyright", "pytest"]
+
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F821", "E402"]
