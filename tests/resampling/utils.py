@@ -41,5 +41,5 @@ def _check_bincounts(indices, log_weights, m, k):
     counts = jax.vmap(lambda z: jnp.bincount(z, length=n))(indices)
     probs = jnp.mean(counts, axis=0) / m
     expected_probs = jnp.exp(log_weights - logsumexp(log_weights))
-    tol = 2 * m / np.sqrt(k)
+    tol = 1 / np.sqrt(k)
     chex.assert_trees_all_close(probs, expected_probs, rtol=tol, atol=tol)
