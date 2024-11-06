@@ -28,7 +28,7 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> ArrayLike:
 
 @jax.jit
 def inverse_cdf_default(
-        sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
+    sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
 ) -> jnp.ndarray:
     M = weights.shape[0]
     cs = jnp.cumsum(weights)

@@ -11,9 +11,7 @@ def resampling_tester(rng_key, log_weights, resampling, m, k):
     _check_bincounts(indices, log_weights, m, k)
 
 
-def conditional_resampling_tester(
-    rng_key, log_weights, conditional_resampling, m, k
-):
+def conditional_resampling_tester(rng_key, log_weights, conditional_resampling, m, k):
     def do_one(key):
         # check that Bayes rule is satisfied:
         # we sample the index of the pivot particle unconditionally,
