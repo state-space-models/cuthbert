@@ -25,7 +25,7 @@ class ConditionalResampling(Protocol):
     ) -> Array: ...
 
 
-def resampling_decorator(func: Resampling, name, desc="") -> Resampling:
+def resampling_decorator(func: Resampling, name: str, desc: str = "") -> Resampling:
     """Decorate Resampling function with unified docstring."""
 
     doc = f"""
@@ -45,7 +45,7 @@ def resampling_decorator(func: Resampling, name, desc="") -> Resampling:
 
 
 def conditional_resampling_decorator(
-    func: ConditionalResampling, name, desc=""
+    func: ConditionalResampling, name: str, desc: str = ""
 ) -> ConditionalResampling:
     """Decorate ConditionalResampling function with unified docstring."""
 
