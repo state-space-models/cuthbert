@@ -68,9 +68,7 @@ class TestResamplings(chex.TestCase):
         self.K = 10_000
 
     @chex.all_variants(with_pmap=False, without_jit=False)
-    @parameterized.parameters(
-        itertools.product([0, 1, 2], resampling_test_cases)
-    )
+    @parameterized.parameters(itertools.product([0, 1, 2], resampling_test_cases))
     def test_resampling(self, seed, test_case):
         key = jax.random.key(seed)
         key_weights, key_test = jax.random.split(key, 2)
@@ -100,7 +98,12 @@ class TestResamplings(chex.TestCase):
         for M in Ms:
             resampling = self.variant(lambda k_, lw_: method(k_, lw_, M))
             conditional_resampling = self.variant(
-                lambda k_, lw_, pivot_in, pivot_out: conditional_method(k_, lw_, M, pivot_in, pivot_out))
+                lambda k_, lw_, pivot_in, pivot_out: conditional_method(
+                    k_, lw_, M, pivot_in, pivot_out
+                )
+            )
 
             log_weights = jax.random.uniform(key_weights, (M,))
-            conditional_resampling_tester(key_test, log_weights, resampling, conditional_resampling, M, self.K)
+            conditional_resampling_tester(
+                key_test, log_weights, resampling, conditional_resampling, M, self.K
+            )

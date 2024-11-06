@@ -7,19 +7,24 @@ name = "cuthbert"
 version = "0.0.1"
 description = "State-space model inference with JAX"
 readme = "README.md"
-requires-python =">=3.9"
-license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
 authors = [
-    {name = "Sam Duffield", email = "s@mduffield.com"},
-    {name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com"},
+    { name = "Sam Duffield", email = "s@mduffield.com" },
+    { name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com" },
 ]
 
 dependencies = [
-    "jax>=0.4.26",
+    "jax>=0.4.35",
+    "numba>=0.60.0",
 ]
 
 [project.optional-dependencies]
-test = ["pre-commit", "ruff", "pyright", "pytest"]
+test = [
+    "chex",  # test additional dependencies
+    "pre-commit", "ruff", "pyright",  # linting etc
+    "pytest", "pytest-xdist",  # testing
+]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]

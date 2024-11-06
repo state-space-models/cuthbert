@@ -9,7 +9,7 @@ repos:
     rev: v1.1.387
     hooks:
     - id: pyright
-      additional_dependencies: [jax>=0.4.35]
+      additional_dependencies: [jax>=0.4.35, numba>=0.60.0, chex]
       exclude: ^tests/
       # Change this to automatically get from pyproject.toml or a requirements.txt?
       # Seemingly there are good reasons why pre-commit cannot do this https://github.com/pre-commit/pre-commit/issues/730

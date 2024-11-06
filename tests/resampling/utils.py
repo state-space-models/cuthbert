@@ -11,8 +11,9 @@ def resampling_tester(rng_key, log_weights, resampling, m, k):
     _check_bincounts(indices, log_weights, m, k)
 
 
-def conditional_resampling_tester(rng_key, log_weights, resampling, conditional_resampling, m, k):
-
+def conditional_resampling_tester(
+    rng_key, log_weights, resampling, conditional_resampling, m, k
+):
     def do_one(key):
         # check that Bayes rule is satisfied:
         # we sample the index of the pivot particle unconditionally,
@@ -25,7 +26,9 @@ def conditional_resampling_tester(rng_key, log_weights, resampling, conditional_
         unconditional_indices = resampling(key_resampling, log_weights)
         pivot_out = unconditional_indices[pivot_in]
 
-        conditional_indices = conditional_resampling(key_conditional, log_weights, pivot_in, pivot_out)
+        conditional_indices = conditional_resampling(
+            key_conditional, log_weights, pivot_in, pivot_out
+        )
         return conditional_indices, pivot_out, conditional_indices[pivot_in]
 
     keys = jax.random.split(rng_key, k)

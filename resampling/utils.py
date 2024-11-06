@@ -1,8 +1,6 @@
-from functools import partial
-
 import jax.lax
 import numpy as np
-from jax import Array, numpy as jnp
+from jax import numpy as jnp
 from jax.typing import ArrayLike
 from jax.scipy.special import logsumexp
 
@@ -23,11 +21,15 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> ArrayLike:
         Indices of the particles to be resampled.
     """
     weights = jnp.exp(logits - logsumexp(logits))
-    return platform_dependent(sorted_uniforms, weights, cpu=inverse_cdf_cpu, default=inverse_cdf_default)
+    return platform_dependent(
+        sorted_uniforms, weights, cpu=inverse_cdf_cpu, default=inverse_cdf_default
+    )
 
 
 @jax.jit
-def inverse_cdf_default(sorted_uniforms: jnp.ndarray, weights: jnp.ndarray) -> jnp.ndarray:
+def inverse_cdf_default(
+    sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
+) -> jnp.ndarray:
     M = weights.shape[0]
     cs = jnp.cumsum(weights)
     idx = jnp.searchsorted(cs, sorted_uniforms, method="sort")
@@ -48,7 +50,9 @@ def inverse_cdf_cpu(sorted_uniforms: jnp.ndarray, weights: jnp.ndarray):
         inverse_cdf_numba(idx_, su, w)
         return idx_
 
-    idx = jax.pure_callback(callback, idx, (idx, sorted_uniforms, weights), vmap_method="sequential")
+    idx = jax.pure_callback(
+        callback, idx, (idx, sorted_uniforms, weights), vmap_method="sequential"
+    )
     return jnp.clip(idx, 0, M - 1)
 
 

@@ -17,15 +17,13 @@ class TestInverseCdf(chex.TestCase):
         self.Ns = [1, 10, 100]
 
     @chex.all_variants(with_pmap=False)
-    @parameterized.parameters(
-        [0, 1, 2]
-    )
+    @parameterized.parameters([0, 1, 2])
     def test_inverse_cdf(self, seed):
         key = jax.random.key(seed)
         for M, N in itertools.product(self.Ms, self.Ns):
             sorted_uniforms = jax.random.uniform(key, (N,))
             sorted_uniforms = jnp.sort(sorted_uniforms)
-            log_weights = jnp.linspace(-3.0, 0., M)
+            log_weights = jnp.linspace(-3.0, 0.0, M)
 
             indices = self.variant(inverse_cdf)(sorted_uniforms, log_weights)
 
@@ -43,17 +41,17 @@ class TestInverseCdf(chex.TestCase):
             npt.assert_allclose(indices, expected)
 
     @chex.all_variants(with_pmap=False)
-    @parameterized.parameters(
-        [0, 1, 2, 3, 4]
-    )
+    @parameterized.parameters([0, 1, 2, 3, 4])
     def test_cpu_default_match(self, seed):
         key = jax.random.key(seed)
         for M, N in itertools.product(self.Ms, self.Ns):
             sorted_uniforms = jax.random.uniform(key, (N,))
             sorted_uniforms = jnp.sort(sorted_uniforms)
-            log_weights = jnp.linspace(-3.0, 0., M)
+            log_weights = jnp.linspace(-3.0, 0.0, M)
 
             indices = self.variant(inverse_cdf_cpu)(sorted_uniforms, log_weights)
-            indices_default = self.variant(inverse_cdf_default)(sorted_uniforms, log_weights)
+            indices_default = self.variant(inverse_cdf_default)(
+                sorted_uniforms, log_weights
+            )
 
             npt.assert_allclose(indices, indices_default)
