@@ -27,7 +27,7 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 def conditional_resampling(
     key: Array, logits: ArrayLike, n: int, pivot_in: int, pivot_out: int
 ) -> Array:
-    logits = jnp.array(logits)
+    logits = jnp.asarray(logits)
     # FIXME: no need for normalizing in theory
     N = logits.shape[0]
     logits -= logsumexp(logits)
@@ -48,7 +48,7 @@ def conditional_resampling_0_to_0(
     logits: ArrayLike,
     n: int,
 ) -> Array:
-    logits = jnp.array(logits)
+    logits = jnp.asarray(logits)
 
     N = logits.shape[0]
     weights = jnp.exp(logits - logsumexp(logits))

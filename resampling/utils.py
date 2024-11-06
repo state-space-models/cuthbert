@@ -1,6 +1,6 @@
 import jax.lax
 import numpy as np
-from jax import numpy as jnp
+from jax import Array, numpy as jnp
 from jax.typing import ArrayLike
 from jax.scipy.special import logsumexp
 
@@ -9,7 +9,7 @@ from jax.lax import platform_dependent
 
 
 @jax.jit
-def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> ArrayLike:
+def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
     """
     Inverse CDF sampling for resampling algorithms.
 
@@ -27,9 +27,8 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> ArrayLike:
 
 
 @jax.jit
-def inverse_cdf_default(
-    sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
-) -> jnp.ndarray:
+def inverse_cdf_default(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
+    weights = jnp.asarray(weights)
     M = weights.shape[0]
     cs = jnp.cumsum(weights)
     idx = jnp.searchsorted(cs, sorted_uniforms, method="sort")
@@ -37,7 +36,9 @@ def inverse_cdf_default(
 
 
 @jax.jit
-def inverse_cdf_cpu(sorted_uniforms: jnp.ndarray, weights: jnp.ndarray):
+def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
+    sorted_uniforms = jnp.asarray(sorted_uniforms)
+    weights = jnp.asarray(weights)
     M = weights.shape[0]
     N = sorted_uniforms.shape[0]
     idx = jnp.zeros(N, dtype=int)

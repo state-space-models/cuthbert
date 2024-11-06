@@ -26,7 +26,7 @@ number of particles `logits.shape[0]`.
 
 @partial(resampling_decorator, name="Killing", desc=_DESCRIPTION)
 def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
-    logits = jnp.array(logits)
+    logits = jnp.asarray(logits)
     key_1, key_2 = random.split(key)
     N = logits.shape[0]
     if n != N:
