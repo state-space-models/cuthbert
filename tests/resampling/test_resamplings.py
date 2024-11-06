@@ -93,10 +93,8 @@ class TestResamplings(chex.TestCase):
         key = jax.random.key(seed)
         key_weights, key_test = jax.random.split(key, 2)
 
-        method = get_resampling(test_case["method"])
         conditional_method = get_conditional_resampling(test_case["method"])
         for M in Ms:
-            resampling = self.variant(lambda k_, lw_: method(k_, lw_, M))
             conditional_resampling = self.variant(
                 lambda k_, lw_, pivot_in, pivot_out: conditional_method(
                     k_, lw_, M, pivot_in, pivot_out
@@ -105,5 +103,5 @@ class TestResamplings(chex.TestCase):
 
             log_weights = jax.random.uniform(key_weights, (M,))
             conditional_resampling_tester(
-                key_test, log_weights, resampling, conditional_resampling, M, self.K
+                key_test, log_weights, conditional_resampling, M, self.K
             )

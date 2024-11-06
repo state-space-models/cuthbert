@@ -12,7 +12,7 @@ def resampling_tester(rng_key, log_weights, resampling, m, k):
 
 
 def conditional_resampling_tester(
-    rng_key, log_weights, resampling, conditional_resampling, m, k
+    rng_key, log_weights, conditional_resampling, m, k
 ):
     def do_one(key):
         # check that Bayes rule is satisfied:
@@ -23,8 +23,8 @@ def conditional_resampling_tester(
         key_i, key_resampling, key_conditional = jax.random.split(key, 3)
         pivot_in = jax.random.randint(key_i, (), 0, m)
 
-        unconditional_indices = resampling(key_resampling, log_weights)
-        pivot_out = unconditional_indices[pivot_in]
+        p = jnp.exp(log_weights - logsumexp(log_weights))
+        pivot_out = jax.random.choice(key_resampling, m, shape=(), p=p)
 
         conditional_indices = conditional_resampling(
             key_conditional, log_weights, pivot_in, pivot_out
