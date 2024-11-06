@@ -1,5 +1,6 @@
 from functools import partial
 
+import jax
 from jax import Array, random, numpy as jnp
 from jax.typing import ArrayLike
 
@@ -40,6 +41,7 @@ def conditional_resampling(
     return idx
 
 
+@partial(jax.jit, static_argnames=("n",))
 def _sorted_uniforms(key: Array, n: int) -> Array:
     # This is a small modification of the code from N. Chopin to output sorted
     # log-uniforms *directly*. N. Chopin's code outputs sorted uniforms.

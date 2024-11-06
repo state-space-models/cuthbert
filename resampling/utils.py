@@ -28,7 +28,7 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> ArrayLike:
 
 @jax.jit
 def inverse_cdf_default(
-    sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
+        sorted_uniforms: jnp.ndarray, weights: jnp.ndarray
 ) -> jnp.ndarray:
     M = weights.shape[0]
     cs = jnp.cumsum(weights)
@@ -43,21 +43,21 @@ def inverse_cdf_cpu(sorted_uniforms: jnp.ndarray, weights: jnp.ndarray):
     idx = jnp.zeros(N, dtype=int)
 
     def callback(args):
-        idx_, su, w = args
-        idx_ = np.copy(idx_)
+        su, w, idx_ = args
+        idx_ = np.array(idx_)
         su = np.asarray(su)
         w = np.asarray(w)
-        inverse_cdf_numba(idx_, su, w)
+        inverse_cdf_numba(su, w, idx_)
         return idx_
 
     idx = jax.pure_callback(
-        callback, idx, (idx, sorted_uniforms, weights), vmap_method="sequential"
+        callback, idx, (sorted_uniforms, weights, idx), vmap_method="sequential"
     )
     return jnp.clip(idx, 0, M - 1)
 
 
-@nb.njit(boundscheck=False, nogil=True)
-def inverse_cdf_numba(idx, su, ws):
+@nb.njit
+def inverse_cdf_numba(su, ws, idx):
     j = 0
     s = ws[0]
     M = su.shape[0]

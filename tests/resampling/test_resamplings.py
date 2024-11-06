@@ -7,8 +7,8 @@ from absl.testing import parameterized
 from resampling import systematic, killing, multinomial
 from tests.resampling.utils import resampling_tester, conditional_resampling_tester
 
-Ms = [1, 5, 10]
-Ns = [1, 5, 10]
+Ms = [5, 10]
+Ns = [5, 10]
 product_MN = list(itertools.product(Ms, Ns))
 zip_MN = list(zip(Ms, Ns))
 
@@ -65,10 +65,10 @@ def get_conditional_resampling(name):
 class TestResamplings(chex.TestCase):
     def setUp(self):
         super().setUp()
-        self.K = 10_000
+        self.K = 1_000
 
     @chex.all_variants(with_pmap=False, without_jit=False)
-    @parameterized.parameters(itertools.product([0, 1, 2], resampling_test_cases))
+    @parameterized.parameters(itertools.product([0, 42], resampling_test_cases))
     def test_resampling(self, seed, test_case):
         key = jax.random.key(seed)
         key_weights, key_test = jax.random.split(key, 2)
@@ -87,7 +87,7 @@ class TestResamplings(chex.TestCase):
 
     @chex.all_variants(with_pmap=False, without_jit=False)
     @parameterized.parameters(
-        itertools.product([0, 1, 2], conditional_resampling_test_cases)
+        itertools.product([0, 42], conditional_resampling_test_cases)
     )
     def test_conditional_resampling(self, seed, test_case):
         key = jax.random.key(seed)

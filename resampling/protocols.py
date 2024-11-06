@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
 
+import jax
 from jax import Array
 from jax.typing import ArrayLike
 
@@ -41,7 +42,7 @@ def resampling_decorator(func: Resampling, name: str, desc: str = "") -> Resampl
     """
 
     func.__doc__ = doc
-    return func
+    return jax.jit(func, static_argnames=("n",))
 
 
 def conditional_resampling_decorator(
@@ -64,4 +65,4 @@ def conditional_resampling_decorator(
     """
 
     func.__doc__ = doc
-    return func
+    return jax.jit(func, static_argnames=("n",))

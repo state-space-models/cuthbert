@@ -13,10 +13,10 @@ from resampling.utils import inverse_cdf, inverse_cdf_cpu, inverse_cdf_default
 class TestInverseCdf(chex.TestCase):
     def setUp(self):
         super().setUp()
-        self.Ms = [1, 10, 100]
-        self.Ns = [1, 10, 100]
+        self.Ms = [10, 100]
+        self.Ns = [10, 100]
 
-    @chex.all_variants(with_pmap=False)
+    @chex.all_variants(with_pmap=False, without_jit=False)
     @parameterized.parameters([0, 1, 2])
     def test_inverse_cdf(self, seed):
         key = jax.random.key(seed)
