@@ -12,7 +12,7 @@ or for which the conditional mean and covariance
 are known or can be approximated otherwise.
 This approximation is done under minimizing (approximately for the latter, exactly for the former) the expected [Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)
 ```math
-A, b, Q = \textrm{arg min } \mathbb{E}_{X \sim \mathcal{N}(m, P)}\left[\textrm{KL}(p(y \mid X) || \mathcal{N}(y; AX + b, Q)\right].
+A, b, Q = \textrm{arg min } \mathbb{E}_{\mathcal{N}(X \mid m, P)}\left[\textrm{KL}(p(y \mid X) || \mathcal{N}(y; AX + b, Q)\right].
 ```
 This can be done either directly in the covariance form (where $\Sigma$ is provided and $Q$ is obtained as covariance matrices) or in the square-root form, more stable but computationally more expensive (where $\Sigma$ is provided as a Cholesky decomposition and $L$ obtained such that $Q = L L^{T}$ is the covariance matrix of interest).
 
