@@ -4,17 +4,17 @@ This sub-repository is concerned with the problem of forming linear $Y \approx A
 ```math
 p(y \mid x) = \mathcal{N}(y; f(x), \Sigma)
 ```
-where $f$ is a deterministic function and $Q$ a given covariance matrix,
+where $f$ is a deterministic function and $\Sigma$ a given covariance matrix,
 or for which the conditional mean and covariance
 ```math
 \mathbb{E}[Y \mid X=x] = m(x), \quad \mathbb{V}[Y \mid X=x] = c(x)
 ```
 are known or can be approximated otherwise.
-This approximation is done under minimizing (approximately for the latter, exactly for the former) the expected [Kullback--Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)
+This approximation is done under minimizing (approximately for the latter, exactly for the former) the expected [Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)
 ```math
-A, b, Q = \textrm{arg min} \mathbb{E}_{X \sim \mathcal{N}(m, P)}\left[\textrm{KL}(p(y \mid X) || \mathcal{N}(y; AX + b, Q)\right].
+A, b, Q = \textrm{arg min } \mathbb{E}_{X \sim \mathcal{N}(m, P)}\left[\textrm{KL}(p(y \mid X) || \mathcal{N}(y; AX + b, Q)\right].
 ```
-This can be done either directly in the covariance form (where $\Sigma$ is provided and $Q$ is obtained as covariance matrices) or in the square-root form, more stable but computationally more expensive (where $\Sigma$ is provided as a Cholesky decomposition and $Q$ obtained such that $Q Q^{T}$ is the covariance matrix of interest).
+This can be done either directly in the covariance form (where $\Sigma$ is provided and $Q$ is obtained as covariance matrices) or in the square-root form, more stable but computationally more expensive (where $\Sigma$ is provided as a Cholesky decomposition and $L$ obtained such that $Q = L L^{T}$ is the covariance matrix of interest).
 
 A typical call to the library would then be:
 ```python
