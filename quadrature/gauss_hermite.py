@@ -1,7 +1,9 @@
 import math
 from typing import List, NamedTuple
+from itertools import product
 
 import numpy as np
+from numpy.polynomial.hermite_e import hermegauss
 from jax.typing import ArrayLike
 
 import quadrature.cubature as cubature
@@ -17,6 +19,17 @@ class GaussHermiteQuadrature(NamedTuple):
 
     def get_sigma_points(self, m, chol) -> SigmaPoints:
         return cubature.get_sigma_points(m, chol, self.xi, self.wm, self.wc)
+
+
+def weights_np(n_dim: int, order: int = 3) -> Quadrature:
+    n = n_dim
+    p = order
+
+    x, w = hermegauss(p)
+    xn = np.array(list(product(*(x,) * n)))
+    wn = np.prod(np.array(list(product(*(w,) * n))), 1)
+    wn /= np.sqrt(2 * np.pi) ** n
+    return GaussHermiteQuadrature(wm=wn, wc=wn, xi=xn)
 
 
 def weights(n_dim: int, order: int = 3) -> Quadrature:
