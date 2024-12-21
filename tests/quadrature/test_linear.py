@@ -1,4 +1,5 @@
 import itertools
+from functools import partial
 
 import chex
 import jax
@@ -77,7 +78,7 @@ class TestLinearize(chex.TestCase):
             Q = jnp.linalg.cholesky(Q)
             P = jnp.linalg.cholesky(P)
 
-        linear_function_ = lambda x: linear_function(x, A, b)
+        linear_function_ = partial(linear_function, a=A, b=b)
         F, c, R = functional(linear_function_, Q, m, P, weights, mode)
 
         npt.assert_allclose(F, A, atol=1e-4)
@@ -115,11 +116,11 @@ class TestLinearize(chex.TestCase):
             Q = jnp.linalg.cholesky(Q)
             P = jnp.linalg.cholesky(P)
 
-        conditional_mean = lambda x: linear_conditional_mean(x, A, b)
+        conditional_mean = partial(linear_conditional_mean, a=A, b=b)
         if mode == "covariance":
-            conditional_cov = lambda x: linear_conditional_cov(x, Q)
+            conditional_cov = partial(linear_conditional_cov, cov_q=Q)
         else:
-            conditional_cov = lambda x: linear_conditional_chol(x, Q)
+            conditional_cov = partial(linear_conditional_chol, chol_q=Q)
         with jax.debug_nans():
             F, c, R = conditional_moments(
                 conditional_mean, conditional_cov, m, P, weights, mode
