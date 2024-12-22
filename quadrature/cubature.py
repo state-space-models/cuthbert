@@ -14,29 +14,34 @@ class CubatureQuadrature(NamedTuple):
     wc: ArrayLike
     xi: ArrayLike
 
-    def get_sigma_points(self, m, chol) -> SigmaPoints:
+    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints:
         return get_sigma_points(m, chol, self.xi, self.wm, self.wc)
 
 
-def get_sigma_points(m, chol, xi, wm, wc):
+def get_sigma_points(
+    m: ArrayLike, chol: ArrayLike, xi: ArrayLike, wm: ArrayLike, wc: ArrayLike
+) -> SigmaPoints:
+    # TODO: Add docstring here
+    m = jnp.asarray(m)
+    chol = jnp.asarray(chol)
+    xi = jnp.asarray(xi)
+    wm = jnp.asarray(wm)
+    wc = jnp.asarray(wc)
     sigma_points = m[None, :] + jnp.dot(chol, xi.T).T
 
     return SigmaPoints(sigma_points, wm, wc)
 
 
 def weights(n_dim: int) -> Quadrature:
-    """Computes the weights associated with the spherical cubature method.
-    The number of sigma-points is 2 * n_dim
+    """
+    Computes the weights associated with the spherical cubature method.
+    The number of sigma-points is 2 * n_dim.
 
-    Parameters
-    ----------
-    n_dim: int
-        Dimensionality of the problem
+    Args:
+        n_dim: Dimensionality of the problem.
 
-    Returns
-    -------
-    Quadrature
-        The quadrature object with the weights and sigma-points
+    Returns:
+        The quadrature object with the weights and sigma-points.
     """
     wm = np.ones(shape=(2 * n_dim,)) / (2 * n_dim)
     wc = wm

@@ -1,35 +1,48 @@
 import jax
+from jax import Array
+from jax.typing import ArrayLike
 import jax.numpy as jnp
 import jax.scipy.linalg as jlinalg
 
 
-def cholesky_update_many(chol_init, update_vectors, multiplier):
+__all__ = ["cholesky_update_many", "tria"]
+
+# TODO: Add docstrings, at least to cholesky_update_many and tria
+
+
+def cholesky_update_many(
+    chol_init: ArrayLike, update_vectors: ArrayLike, multiplier: float
+) -> Array:
     def body(chol, update_vector):
         res = _cholesky_update(chol, update_vector, multiplier=multiplier)
         return res, None
 
-    final_chol, _ = jax.lax.scan(body, chol_init, update_vectors)
+    final_chol, _ = jax.lax.scan(body, jnp.asarray(chol_init), update_vectors)
     return final_chol
 
 
-def tria(A):
+def tria(A: ArrayLike) -> Array:
+    A = jnp.asarray(A)
     _, R = jlinalg.qr(A.T, mode="economic")
     return R.T
 
 
-def _set_diagonal(x, y):
+def _set_diagonal(x: Array, y: Array) -> Array:
     N, _ = x.shape
     i, j = jnp.diag_indices(N)
     return x.at[i, j].set(y)
 
 
-def _set_triu(x, val):
+def _set_triu(x: Array, val: ArrayLike) -> Array:
     N, _ = x.shape
     i = jnp.triu_indices(N, 1)
     return x.at[i].set(val)
 
 
-def _cholesky_update(chol, update_vector, multiplier=1.0):
+def _cholesky_update(
+    chol: ArrayLike, update_vector: ArrayLike, multiplier: float = 1.0
+) -> Array:
+    chol = jnp.asarray(chol)
     chol_diag = jnp.diag(chol)
 
     # The algorithm in [1] is implemented as a double for loop. We can treat

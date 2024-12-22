@@ -21,30 +21,23 @@ class GaussHermiteQuadrature(NamedTuple):
 
 
 def weights(n_dim: int, order: int = 3) -> Quadrature:
-    """Computes the weights associated with the Gauss--Hermite quadrature method.
-    The Hermite polynomial is in the physician version
-    Parameters
-    ----------
-    n_dim: int
-        Dimensionality of the problem
-    order: int, optional, default is 3
-        The order of Hermite polynomial
-    Returns
-    -------
-    Quadrature
-        The quadrature object with the weights and sigma-points
-
-    References
-    ----------
-    .. [1] Simo Särkkä.
-       *Bayesian Filtering and Smoothing.*
-       In: Cambridge University Press 2013.
     """
-    n = n_dim
-    p = order
+    Computes the weights associated with the Gauss-Hermite quadrature method.
+    The Hermite polynomial is in the probabilist's version.
 
-    x, w = hermegauss(p)
-    xn = np.array(list(product(*(x,) * n)))
-    wn = np.prod(np.array(list(product(*(w,) * n))), 1)
-    wn /= np.sqrt(2 * np.pi) ** n
+    Args:
+        n_dim: Dimensionality of the problem.
+        order: The order of Hermite polynomial. Defaults to 3.
+
+    Returns:
+        The quadrature object with the weights and sigma-points.
+
+    References:
+        Simo Särkkä. *Bayesian Filtering and Smoothing.*
+            In: Cambridge University Press 2013.
+    """
+    x, w = hermegauss(order)
+    xn = np.array(list(product(*(x,) * n_dim)))
+    wn = np.prod(np.array(list(product(*(w,) * n_dim))), 1)
+    wn /= np.sqrt(2 * np.pi) ** n_dim
     return GaussHermiteQuadrature(wm=wn, wc=wn, xi=xn)

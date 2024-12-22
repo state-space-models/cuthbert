@@ -1,16 +1,16 @@
-from typing import Optional, NamedTuple
+from typing import NamedTuple
 
 import jax.numpy as jnp
-from jax.typing import ArrayLike
+from jax import Array
 
 from quadrature.common import SigmaPoints
 
-__all__ = ["weights", "UncentedQuadrature"]
+__all__ = ["weights", "UnscentedQuadrature"]
 
 
-class UncentedQuadrature(NamedTuple):
-    wm: ArrayLike
-    wc: ArrayLike
+class UnscentedQuadrature(NamedTuple):
+    wm: Array
+    wc: Array
     lamda: float
 
     def get_sigma_points(self, m, chol) -> SigmaPoints:
@@ -24,23 +24,24 @@ class UncentedQuadrature(NamedTuple):
         return SigmaPoints(sigma_points, self.wm, self.wc)
 
 
+# TODO: More descriptive docstring for alpha, beta, kappa.
+# TODO: Defaults alpha=0.5, beta = 2.0 ?
 def weights(
-    n_dim: int, alpha: float, beta: float, kappa: Optional[float] = None
-) -> UncentedQuadrature:
-    """Computes the weights associated with the spherical cubature method.
-    The number of sigma-points is 2 * n_dim
+    n_dim: int, alpha: float, beta: float, kappa: float | None = None
+) -> UnscentedQuadrature:
+    """
+    Computes the weights associated with the spherical cubature method.
+    The number of sigma-points is 2 * n_dim.
 
-    Parameters
-    ----------
-    n_dim: int
-        Dimension of the space
-    alpha, beta, kappa: float, optional
-        Parameters of the unscented transform. Default is `alpha=0.5`, `beta=2.` and `kappa=3-n`
+    Args:
+        n_dim: Dimension of the space.
+        alpha: Parameter of the unscented transform.
+        beta: Parameter of the unscented transform.
+        kappa: Parameter of the unscented transform.
+            Default is 3 + n_dim.
 
-    Returns
-    -------
-    UncentedQuadrature
-        The quadrature object with the weights and sigma-points
+    Returns:
+        UnscentedQuadrature: The quadrature object with the weights and sigma-points.
     """
     if kappa is None:
         kappa = 3.0 + n_dim
@@ -50,4 +51,4 @@ def weights(
 
     wm = wm.at[0].set(lamda / (n_dim + lamda))
     wc = wm.at[0].set(lamda / (n_dim + lamda) + (1 - alpha**2 + beta))
-    return UncentedQuadrature(wm=wm, wc=wc, lamda=lamda)
+    return UnscentedQuadrature(wm=wm, wc=wc, lamda=lamda)

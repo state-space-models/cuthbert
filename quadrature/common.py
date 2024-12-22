@@ -1,33 +1,41 @@
-from typing import NamedTuple, Protocol, runtime_checkable
+from typing import NamedTuple, Protocol, runtime_checkable, Self
 
+from jax import Array
 import jax.numpy as jnp
 from jax.typing import ArrayLike
 
 from quadrature.utils import tria
 
+__all__ = ["SigmaPoints", "Quadrature"]
+
 
 class SigmaPoints(NamedTuple):
-    points: ArrayLike
-    wm: ArrayLike
-    wc: ArrayLike
+    # TODO: Add docstring here
+    points: Array
+    wm: Array
+    wc: Array
 
     @property
-    def mean(self):
+    def mean(self) -> Array:
+        """
+        Computes the mean of the sigma points.
+
+        Returns:
+            The mean of the sigma points.
+        """
         return jnp.dot(self.wm, self.points)
 
-    def covariance(self, other=None):
+    # Should this be property too?
+    def covariance(self, other: Self | None = None) -> Array:
         """
         Computes the covariance between the sigma points and the other sigma points
         Cov[self, other].
 
-        Parameters
-        ----------
-        other: SigmaPoints, optional
-            The other sigma points
+        Args:
+            other: The optional other sigma points.
 
-        Returns
-        -------
-
+        Returns:
+            The covariance matrix.
         """
         mean = self.mean
         if other is None:
@@ -37,14 +45,12 @@ class SigmaPoints(NamedTuple):
         return _cov(self.wc, self.points, mean, other.points, other_mean)
 
     @property
-    def sqrt(self):
+    def sqrt(self) -> Array:
         """
-        Computes the square root of the covariance matrix of the sigma points
+        Computes the square root of the covariance matrix of the sigma points.
 
-        Returns
-        -------
-        ArrayLike
-            The square root of the covariance matrix
+        Returns:
+            The square root of the covariance matrix.
         """
         sqrt = jnp.sqrt(self.wc[:, None]) * (self.points - self.mean[None, :])
         sqrt = tria(sqrt.T)
@@ -53,10 +59,16 @@ class SigmaPoints(NamedTuple):
 
 @runtime_checkable
 class Quadrature(Protocol):
-    def get_sigma_points(self, m, chol) -> SigmaPoints: ...
+    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints: ...
 
 
-def _cov(wc, x_pts, x_mean, y_points, y_mean):
+def _cov(
+    wc: Array,
+    x_pts: Array,
+    x_mean: Array,
+    y_points: Array,
+    y_mean: Array,
+) -> Array:
     one = (x_pts - x_mean[None, :]).T * wc[None, :]
     two = y_points - y_mean[None, :]
     return jnp.dot(one, two)
