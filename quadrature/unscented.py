@@ -1,16 +1,16 @@
-from typing import Optional, NamedTuple
+from typing import NamedTuple
 
 import jax.numpy as jnp
-from jax.typing import ArrayLike
+from jax import Array
 
 from quadrature.common import SigmaPoints
 
-__all__ = ["weights", "UncentedQuadrature"]
+__all__ = ["weights", "UnscentedQuadrature"]
 
 
-class UncentedQuadrature(NamedTuple):
-    wm: ArrayLike
-    wc: ArrayLike
+class UnscentedQuadrature(NamedTuple):
+    wm: Array
+    wc: Array
     lamda: float
 
     def get_sigma_points(self, m, chol) -> SigmaPoints:
@@ -25,22 +25,26 @@ class UncentedQuadrature(NamedTuple):
 
 
 def weights(
-    n_dim: int, alpha: float, beta: float, kappa: Optional[float] = None
-) -> UncentedQuadrature:
-    """Computes the weights associated with the spherical cubature method.
-    The number of sigma-points is 2 * n_dim
+    n_dim: int, alpha: float = 0.5, beta: float = 2.0, kappa: float | None = None
+) -> UnscentedQuadrature:
+    """
+    Computes the weights associated with the unscented cubature method.
+    The number of sigma-points is 2 * n_dim.
+    This method is also known as the Unscented Transform, and generalizes the
+    `cubature.py` weights: the cubature method is a special case of the unscented
+    for the parameters alpha=1.0, beta=0.0, kappa=0.0.
 
-    Parameters
-    ----------
-    n_dim: int
-        Dimension of the space
-    alpha, beta, kappa: float, optional
-        Parameters of the unscented transform. Default is `alpha=0.5`, `beta=2.` and `kappa=3-n`
+    Args:
+        n_dim: Dimension of the space.
+        alpha: Parameter of the unscented transform, default is 0.5.
+        beta: Parameter of the unscented transform, default is 2.0.
+        kappa: Parameter of the unscented transform, default is 3 + n_dim.
 
-    Returns
-    -------
-    UncentedQuadrature
-        The quadrature object with the weights and sigma-points
+    Returns:
+        UnscentedQuadrature: The quadrature object with the weights and sigma-points.
+
+    References:
+        - https://groups.seas.harvard.edu/courses/cs281/papers/unscented.pdf
     """
     if kappa is None:
         kappa = 3.0 + n_dim
@@ -50,4 +54,4 @@ def weights(
 
     wm = wm.at[0].set(lamda / (n_dim + lamda))
     wc = wm.at[0].set(lamda / (n_dim + lamda) + (1 - alpha**2 + beta))
-    return UncentedQuadrature(wm=wm, wc=wc, lamda=lamda)
+    return UnscentedQuadrature(wm=wm, wc=wc, lamda=lamda)
