@@ -24,24 +24,27 @@ class UnscentedQuadrature(NamedTuple):
         return SigmaPoints(sigma_points, self.wm, self.wc)
 
 
-# TODO: More descriptive docstring for alpha, beta, kappa.
-# TODO: Defaults alpha=0.5, beta = 2.0 ?
 def weights(
-    n_dim: int, alpha: float, beta: float, kappa: float | None = None
+    n_dim: int, alpha: float = 0.5, beta: float = 2.0, kappa: float | None = None
 ) -> UnscentedQuadrature:
     """
-    Computes the weights associated with the spherical cubature method.
+    Computes the weights associated with the unscented cubature method.
     The number of sigma-points is 2 * n_dim.
+    This method is also known as the Unscented Transform, and generalizes the
+    `cubature.py` weights: the cubature method is a special case of the unscented
+    for the parameters alpha=1.0, beta=0.0, kappa=0.0.
 
     Args:
         n_dim: Dimension of the space.
-        alpha: Parameter of the unscented transform.
-        beta: Parameter of the unscented transform.
-        kappa: Parameter of the unscented transform.
-            Default is 3 + n_dim.
+        alpha: Parameter of the unscented transform, default is 0.5.
+        beta: Parameter of the unscented transform, default is 2.0.
+        kappa: Parameter of the unscented transform, default is 3 + n_dim.
 
     Returns:
         UnscentedQuadrature: The quadrature object with the weights and sigma-points.
+
+    References:
+        - https://groups.seas.harvard.edu/courses/cs281/papers/unscented.pdf
     """
     if kappa is None:
         kappa = 3.0 + n_dim

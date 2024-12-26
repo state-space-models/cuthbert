@@ -42,6 +42,10 @@ def weights(n_dim: int) -> Quadrature:
 
     Returns:
         The quadrature object with the weights and sigma-points.
+
+    References:
+        Simo Särkkä, Lennard Svensson. *Bayesian Filtering and Smoothing.*
+            In: Cambridge University Press 2023.
     """
     wm = np.ones(shape=(2 * n_dim,)) / (2 * n_dim)
     wc = wm
