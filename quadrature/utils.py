@@ -47,6 +47,7 @@ def tria(A: ArrayLike) -> Array:
 
     Args:
         A: A square matrix
+
     Returns:
         The lower triangular matrix R such that R @ R.T = A @ A.T
 
