@@ -23,6 +23,10 @@ class SigmaPoints(NamedTuple):
         mean: Computes the mean of the sigma points.
         covariance: Computes the covariance between the sigma points and the other sigma points (or itself).
         sqrt: Computes a square root of the covariance matrix of the sigma points.
+
+    References:
+        Simo Särkkä, Lennard Svensson. *Bayesian Filtering and Smoothing.*
+            In: Cambridge University Press 2023.
     """
     points: Array
     wm: Array
