@@ -13,7 +13,7 @@ resampled_indices = resampling.multinomial.resampling(resampling_key, logits, 10
 resampled_particles = particles[resampled_indices]
 ```
 
-Or for conditional resampling
+Or for conditional resampling:
 ```python
 # Here we resample but keep particle at index 0 fixed
 conditional_resampled_indices = resampling.multinomial.conditional_resampling(resampling_key, logits, 100, pivot_in=0, pivot_out=0)
