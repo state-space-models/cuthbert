@@ -10,7 +10,20 @@ __all__ = ["SigmaPoints", "Quadrature"]
 
 
 class SigmaPoints(NamedTuple):
-    # TODO: Add docstring here
+    """
+    Represents integration (quadrature) sigma points as a collection of points in the space, weights corresponding to
+    mean and covariance calculations.
+
+    Attributes:
+        points: The sigma points.
+        wm: The mean weights.
+        wc: The covariance weights.
+
+    Methods:
+        mean: Computes the mean of the sigma points.
+        covariance: Computes the covariance between the sigma points and the other sigma points (or itself).
+        sqrt: Computes a square root of the covariance matrix of the sigma points.
+    """
     points: Array
     wm: Array
     wc: Array
