@@ -7,12 +7,29 @@ import jax.scipy.linalg as jlinalg
 
 __all__ = ["cholesky_update_many", "tria"]
 
-# TODO: Add docstrings, at least to cholesky_update_many and tria
-
 
 def cholesky_update_many(
     chol_init: ArrayLike, update_vectors: ArrayLike, multiplier: float
 ) -> Array:
+    """
+    Update the Cholesky decomposition of a matrix with multiple update vectors.
+    In mathematical terms, we compute :math:`A + \sum_{i=1}^{n} \alpha v_i v_i^T`
+    where :math:`A` is the original matrix, :math:`v_i` are the update vectors and
+    :math:`\alpha` is the multiplier.
+
+    Args:
+        chol_init: Initial Cholesky decomposition of the matrix, :math:`A`.
+        update_vectors: Update vectors, :math:`v_i`.
+        multiplier: The multiplier, :math:`\alpha`.
+
+    Returns:
+        The updated Cholesky decomposition of the matrix.
+
+    Notes:
+        If the updated matrix does not correspond to a positive definite matrix, the
+        function has undefined behaviour. It is the responsibility of the caller to
+        ensure that the updated matrix is positive definite as we cannot check this at runtime.
+    """
     def body(chol, update_vector):
         res = _cholesky_update(chol, update_vector, multiplier=multiplier)
         return res, None
@@ -22,6 +39,20 @@ def cholesky_update_many(
 
 
 def tria(A: ArrayLike) -> Array:
+    """
+    Triangularization of a matrix. Typically used to get a square root of a covariance matrix without resorting to forming the full covariance matrix
+    and the computing the Cholesky decomposition.
+    This is largely more stable.
+
+    Args:
+        A: A square matrix
+    Returns:
+        The lower triangular matrix R such that R @ R.T = A @ A.T
+
+    References:
+        - https://ieeexplore.ieee.org/document/4524036
+
+    """
     A = jnp.asarray(A)
     _, R = jlinalg.qr(A.T, mode="economic")
     return R.T
