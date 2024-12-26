@@ -5,9 +5,11 @@ This sub-repository provides a unified interface for a variety of resampling met
 
 A typical call to the library would be:
 ```python
-particles = jax.random.normal(key, (100, 2))
-weights = jax.vmap(lambda x: jnp.all(x > 0))(particles)
+sampling_key, resampling_key = jax.random.split(jax.random.PRNGKey(0))
+particles = jax.random.normal(sampling_key, (100, 2))
+logits = jax.vmap(lambda x: jnp.where(jnp.all(x > 0), 0, -jnp.inf))(particles)
 
-resampled_indices = resampling.stratified_resample(particles, weights, 100)
+resampled_indices = resampling.multinomial.resampling(resampling_key, logits, 100)
 resampled_particles = particles[resampled_indices]
 ```
+
