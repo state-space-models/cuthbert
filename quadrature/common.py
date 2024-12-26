@@ -28,6 +28,7 @@ class SigmaPoints(NamedTuple):
         Simo Särkkä, Lennard Svensson. *Bayesian Filtering and Smoothing.*
             In: Cambridge University Press 2023.
     """
+
     points: Array
     wm: Array
     wc: Array

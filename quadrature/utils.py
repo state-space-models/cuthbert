@@ -11,7 +11,7 @@ __all__ = ["cholesky_update_many", "tria"]
 def cholesky_update_many(
     chol_init: ArrayLike, update_vectors: ArrayLike, multiplier: float
 ) -> Array:
-    """
+    r"""
     Update the Cholesky decomposition of a matrix with multiple update vectors.
     In mathematical terms, we compute :math:`A + \sum_{i=1}^{n} \alpha v_i v_i^T`
     where :math:`A` is the original matrix, :math:`v_i` are the update vectors and
@@ -30,6 +30,7 @@ def cholesky_update_many(
         function has undefined behaviour. It is the responsibility of the caller to
         ensure that the updated matrix is positive definite as we cannot check this at runtime.
     """
+
     def body(chol, update_vector):
         res = _cholesky_update(chol, update_vector, multiplier=multiplier)
         return res, None
