@@ -28,6 +28,7 @@ class DynamicsLogDensity(Protocol):
         self,
         x_prev: ArrayTreeLike,
         u: ArrayTreeLike,
+        x: ArrayTreeLike,
     ) -> ScalarArray: ...
 
 
