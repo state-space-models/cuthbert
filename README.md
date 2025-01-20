@@ -8,8 +8,8 @@ A JAX library for state-space model inference
 > Disclaimer: The name `cuthbert` was chosen as a playful nod to the well-known
 > caterpillar cake rivalry between Aldi and M&S in the UK, as the classic state-space
 > model diagram looks vaguely like a caterpillar. However, this software project
-> has no formal connection to Aldi, M&S, or any food products. `cuthbert` is simply a
-> fun name for this state-space model library and should not be interpreted as an
+> has no formal connection to Aldi, M&S, or any food products (notwithstanding the coffee drunk during its writeup).
+> `cuthbert` is simply a fun name for this state-space model library and should not be interpreted as an
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
 
 ### Goals

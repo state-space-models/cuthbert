@@ -19,6 +19,9 @@ dependencies = [
     "numba>=0.60.0",
 ]
 
+[tool.setuptools]
+packages = ["quadrature", "resampling"]
+
 [project.optional-dependencies]
 test = [
     "chex",  # test additional dependencies
