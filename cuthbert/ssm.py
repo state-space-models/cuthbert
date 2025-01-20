@@ -1,9 +1,8 @@
-from typing import Any, NamedTuple, Protocol
+from typing import NamedTuple, Protocol
 from cuthbert.types import (
     ArrayTree,
     ArrayTreeLike,
     ScalarArray,
-    ScalarArrayLike,
     KeyArray,
 )
 
@@ -11,21 +10,15 @@ from cuthbert.types import (
 class InitLogDensity(Protocol):
     def __call__(
         self,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
         x: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: ArrayTreeLike,
     ) -> ScalarArray: ...
 
 
 class InitSample(Protocol):
     def __call__(
         self,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: Any,
         key: KeyArray,
     ) -> ArrayTree: ...
 
@@ -33,25 +26,16 @@ class InitSample(Protocol):
 class DynamicsLogDensity(Protocol):
     def __call__(
         self,
-        t_prev: ScalarArrayLike,
         x_prev: ArrayTreeLike,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
-        x: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: Any,
     ) -> ScalarArray: ...
 
 
 class DynamicsSample(Protocol):
     def __call__(
         self,
-        t_prev: ScalarArrayLike,
         x_prev: ArrayTreeLike,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: Any,
         key: KeyArray,
     ) -> ArrayTree: ...
 
@@ -59,23 +43,17 @@ class DynamicsSample(Protocol):
 class ObservationLogDensity(Protocol):
     def __call__(
         self,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
         x: ArrayTreeLike,
         y: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: Any,
     ) -> ScalarArray: ...
 
 
 class ObservationSample(Protocol):
     def __call__(
         self,
-        t: ScalarArrayLike,
         u: ArrayTreeLike,
         x: ArrayTreeLike,
-        static_params: ArrayTreeLike,
-        extra: Any,
         key: KeyArray,
     ) -> ArrayTree: ...
 
