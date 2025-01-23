@@ -10,8 +10,8 @@ from cuthbert.types import (
 class InitLogDensity(Protocol):
     def __call__(
         self,
-        x: ArrayTreeLike,
-        u: ArrayTreeLike,
+        state: ArrayTreeLike,
+        inputs: ArrayTreeLike,
     ) -> ScalarArray: ...
 
 
@@ -19,16 +19,16 @@ class InitSample(Protocol):
     def __call__(
         self,
         key: KeyArray,
-        u: ArrayTreeLike,
+        inputs: ArrayTreeLike,
     ) -> ArrayTree: ...
 
 
 class DynamicsLogDensity(Protocol):
     def __call__(
         self,
-        x: ArrayTreeLike,
-        x_traj: ArrayTreeLike,
-        u: ArrayTreeLike,
+        state: ArrayTreeLike,
+        trajectory: ArrayTreeLike,
+        inputs: ArrayTreeLike,
     ) -> ScalarArray: ...
 
 
@@ -36,16 +36,16 @@ class DynamicsSample(Protocol):
     def __call__(
         self,
         key: KeyArray,
-        x_traj: ArrayTreeLike,
-        u: ArrayTreeLike,
+        trajectory: ArrayTreeLike,
+        inputs: ArrayTreeLike,
     ) -> ArrayTree: ...
 
 
 class LogLikelihood(Protocol):
     def __call__(
         self,
-        x_traj: ArrayTreeLike,
-        u: ArrayTreeLike,
+        trajectory: ArrayTreeLike,
+        inputs: ArrayTreeLike,
     ) -> ScalarArray: ...
 
 
