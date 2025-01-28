@@ -68,38 +68,34 @@ def predict(
     return KalmanState(new_mean, new_cov)
 
 
-def online_filter(
+def update(
     state: KalmanState,
     inputs: ArrayTreeLike,
     observation: ArrayLike,
-    dynamics_params: LinearGaussianDynamics,
     observation_params: LinearGaussianObservation,
 ) -> KalmanState:
-    """Online filter step for a linear Gaussian state-space model.
+    """Update step for a linear Gaussian state-space model.
 
     Args:
         state: The previous Gaussian state.
         inputs: The input PyTree (with ArrayLike leaves) to the observation
                 distribution.
         observation: The ArrayLike observation at the current state.
-        dynamics_params: The callable to generate the dynamics parameters.
         observation_params: The callable to generate the observation parameters.
 
     Returns:
         The filtered Gaussian state at time t.
     """
-    predict_state = predict(state, inputs, dynamics_params)
-
     obs_shift, obs_mat_x, obs_cov = observation_params(inputs)
 
-    obs_mean = obs_shift + obs_mat_x @ predict_state.mean
+    obs_mean = obs_shift + obs_mat_x @ state.mean
     v = observation - obs_mean
-    S = obs_mat_x @ predict_state.cov @ obs_mat_x.T + obs_cov
+    S = obs_mat_x @ state.cov @ obs_mat_x.T + obs_cov
     S_inv = jnp.linalg.inv(S)
-    K = predict_state.cov @ obs_mat_x.T @ S_inv
+    K = state.cov @ obs_mat_x.T @ S_inv
 
-    new_mean = predict_state.mean + K @ v
-    new_cov = predict_state.cov - K @ S @ K.T
+    new_mean = state.mean + K @ v
+    new_cov = state.cov - K @ S @ K.T
     return KalmanState(new_mean, new_cov)
 
 

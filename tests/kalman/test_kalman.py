@@ -61,11 +61,10 @@ def test_kalman():
     update_mean = predict_state.mean + kal_gain @ (ys[0] - H @ predict_state.mean - d)
     update_cov = predict_state.cov - kal_gain @ H @ predict_state.cov
 
-    update_state = kalman.online_filter(
-        init_state,
+    update_state = kalman.update(
+        predict_state,
         us[1],
         ys[0],
-        dynamics_params,
         observation_params,
     )
     assert jnp.allclose(update_state.mean, update_mean)
@@ -73,11 +72,11 @@ def test_kalman():
 
     # Check offline filter
     def filter_scan_body(state, k):
-        new_state = kalman.online_filter(
-            state,
+        predict_state = kalman.predict(state, us[k], dynamics_params)
+        new_state = kalman.update(
+            predict_state,
             us[k],
             ys[k - 1],
-            dynamics_params,
             observation_params,
         )
         return new_state, new_state
