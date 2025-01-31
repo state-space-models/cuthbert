@@ -7,9 +7,11 @@ import pytest
 from kalman.filter import KalmanState, offline_filter
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def config():
     jax.config.update("jax_enable_x64", True)
+    yield
+    jax.config.update("jax_enable_x64", False)
 
 
 def generate_cholesky_factor(rng, dim):
