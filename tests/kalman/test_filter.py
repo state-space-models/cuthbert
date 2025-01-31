@@ -71,7 +71,7 @@ def batch_arrays(t, *args):
 @pytest.mark.parametrize("seed", [0, 42, 99, 123])
 @pytest.mark.parametrize("x_dim", [3])
 @pytest.mark.parametrize("y_dim", [1, 2])
-def test_predict(seed, x_dim, y_dim):
+def test_offline_filter(seed, x_dim, y_dim):
     # Generate a random state-space model.
     T = 10
     rng = np.random.default_rng(seed)
