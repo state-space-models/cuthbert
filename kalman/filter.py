@@ -59,8 +59,8 @@ def offline_filter(
     Returns:
         KalmanState: Filtered states at every time step.
 
-    Reference: Yaghoobi, Corenflos, Hassan and Särkkä (2022).
-        Paper: https://arxiv.org/pdf/2207.00426
+    References:
+        Paper: Yaghoobi, Corenflos, Hassan and Särkkä (2022) - https://arxiv.org/pdf/2207.00426
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/parallel
     """
     associative_params = sqrt_associative_params(x0, F, c, chol_Q, H, d, chol_R, y)
