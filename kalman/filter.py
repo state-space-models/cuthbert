@@ -30,7 +30,7 @@ class FilterScanElement(NamedTuple):
 
 
 def offline_filter(
-    x0: KalmanState,
+    initial_state: KalmanState,
     F: ArrayLike,
     c: ArrayLike,
     chol_Q: ArrayLike,
@@ -46,7 +46,7 @@ def offline_filter(
     every time step, along with the observations, must be batched along the first axis.
 
     Args:
-        x0: Initial Gaussian state.
+        initial_state: Initial Gaussian state.
         F: State transition matrices.
         c: State transition shift vectors.
         chol_Q: Generalized Cholesky factors of the transition noise covariance.
@@ -70,7 +70,9 @@ def offline_filter(
         jnp.asarray(chol_R),
         jnp.asarray(y),
     )
-    associative_params = sqrt_associative_params(x0, F, c, chol_Q, H, d, chol_R, y)
+    associative_params = sqrt_associative_params(
+        initial_state, F, c, chol_Q, H, d, chol_R, y
+    )
 
     if parallel:
         all_prefix_sums = jax.lax.associative_scan(
@@ -90,13 +92,13 @@ def offline_filter(
         )
 
     _, filt_means, filt_chol_covs, _, _ = all_prefix_sums
-    filt_means = jnp.vstack([x0.mean[None, ...], filt_means])
-    filt_chol_covs = jnp.vstack([x0.chol_cov[None, ...], filt_chol_covs])
+    filt_means = jnp.vstack([initial_state.mean[None, ...], filt_means])
+    filt_chol_covs = jnp.vstack([initial_state.chol_cov[None, ...], filt_chol_covs])
     return KalmanState(filt_means, filt_chol_covs)
 
 
 def sqrt_associative_params(
-    x0: KalmanState,
+    initial_state: KalmanState,
     F: Array,
     c: Array,
     chol_Q: Array,
@@ -107,7 +109,7 @@ def sqrt_associative_params(
 ) -> FilterScanElement:
     """Compute the filter scan elements for the square root parallel Kalman filter."""
     T = y.shape[0]
-    m0, chol_P0 = x0
+    m0, chol_P0 = initial_state
     ms = jnp.concatenate([m0[None, ...], jnp.zeros_like(m0, shape=(T - 1,) + m0.shape)])
     chol_Ps = jnp.concatenate(
         [chol_P0[None, ...], jnp.zeros_like(chol_P0, shape=(T - 1,) + chol_P0.shape)]
