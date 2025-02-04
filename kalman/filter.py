@@ -6,7 +6,7 @@ from jax import Array
 from jax.scipy.linalg import solve_triangular
 from jax.typing import ArrayLike
 
-from kalman.utils import arraylike_to_array, tria
+from kalman.utils import tria
 
 
 class KalmanState(NamedTuple):
@@ -63,6 +63,13 @@ def offline_filter(
         Paper: Yaghoobi, Corenflos, Hassan and Särkkä (2022) - https://arxiv.org/pdf/2207.00426
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/parallel
     """
+    F, c, chol_Q = jnp.asarray(F), jnp.asarray(c), jnp.asarray(chol_Q)
+    H, d, chol_R, y = (
+        jnp.asarray(H),
+        jnp.asarray(d),
+        jnp.asarray(chol_R),
+        jnp.asarray(y),
+    )
     associative_params = sqrt_associative_params(x0, F, c, chol_Q, H, d, chol_R, y)
 
     if parallel:
@@ -90,19 +97,15 @@ def offline_filter(
 
 def sqrt_associative_params(
     x0: KalmanState,
-    F: ArrayLike,
-    c: ArrayLike,
-    chol_Q: ArrayLike,
-    H: ArrayLike,
-    d: ArrayLike,
-    chol_R: ArrayLike,
-    y: ArrayLike,
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan elements for the square root parallel Kalman filter."""
-    if not isinstance(y, ArrayLike):
-        raise TypeError("y must be an ArrayLike.")
-    y = jnp.asarray(y)
-
     T = y.shape[0]
     m0, chol_P0 = x0
     ms = jnp.concatenate([m0[None, ...], jnp.zeros_like(m0, shape=(T - 1,) + m0.shape)])
@@ -116,21 +119,18 @@ def sqrt_associative_params(
 
 
 def _sqrt_associative_params_single(
-    m0: ArrayLike,
-    chol_P0: ArrayLike,
-    F: ArrayLike,
-    c: ArrayLike,
-    chol_Q: ArrayLike,
-    H: ArrayLike,
-    d: ArrayLike,
-    chol_R: ArrayLike,
-    y: ArrayLike,
+    m0: Array,
+    chol_P0: Array,
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step."""
-    m0, chol_P0, F, c, chol_Q, H, d, chol_R, y = arraylike_to_array(
-        "_sqrt_associative_params_single", m0, chol_P0, F, c, chol_Q, H, d, chol_R, y
-    )
     m1 = F @ m0 + c
     N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
 
