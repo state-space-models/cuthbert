@@ -189,25 +189,12 @@ def sqrt_filtering_operator(
     Xi21 = tria_xi[nx : nx + nx, :nx]
     Xi22 = tria_xi[nx : nx + nx, nx:]
 
-    A = A2 @ A1 - solve_triangular(Xi11, U1.T @ A2.T, lower=True).T @ Xi21.T @ A1
-    b = (
-        A2
-        @ (jnp.eye(nx) - solve_triangular(Xi11, U1.T, lower=True).T @ Xi21.T)
-        @ (b1 + U1 @ U1.T @ eta2)
-        + b2
-    )
-    U = tria(
-        jnp.concatenate([solve_triangular(Xi11, U1.T @ A2.T, lower=True).T, U2], axis=1)
-    )
-    eta = (
-        A1.T
-        @ (
-            jnp.eye(nx)
-            - solve_triangular(Xi11, Xi21.T, lower=True, trans=True).T @ U1.T
-        )
-        @ (eta2 - Z2 @ Z2.T @ b1)
-        + eta1
-    )
+    tmp = solve_triangular(Xi11, U1.T, lower=True).T
+    D_inv = jnp.eye(nx) - tmp @ Xi21.T
+    A = A2 @ D_inv @ A1
+    b = A2 @ D_inv @ (b1 + U1 @ U1.T @ eta2) + b2
+    U = tria(jnp.concatenate([A2 @ tmp, U2], axis=1))
+    eta = A1.T @ D_inv.T @ (eta2 - Z2 @ Z2.T @ b1) + eta1
     Z = tria(jnp.concatenate([A1.T @ Xi22, Z1], axis=1))
 
     return FilterScanElement(A, b, U, eta, Z)
