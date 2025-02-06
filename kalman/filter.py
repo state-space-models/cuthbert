@@ -203,7 +203,7 @@ def sqrt_filtering_operator(
     # t1 = (b1 @ mu - (eta2 + mu) @ jnp.linalg.solve(I_C1J2, C1 @ eta2 + b1))
     # logZ = (logZ1 + logZ2 + 0.5 * jnp.linalg.slogdet(I_C1J2)[1] + 0.5 * t1)
 
-    mu = solve_triangular(U1, solve_triangular(U1, b1, lower=True), trans="T")
+    mu = solve_triangular(U1.T, solve_triangular(U1, b1, lower=True))
     t1 = b1 @ mu - (eta2 + mu) @ D_inv @ (b1 + U1 @ U1.T @ eta2)
     ell = ell1 + ell2 + 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
 
