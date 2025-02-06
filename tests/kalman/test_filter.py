@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from kalman.filter import KalmanState, offline_filter
+from kalman.utils import mvn_logpdf
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -44,23 +45,27 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
         return m, P
 
     def std_update(m, P, H, d, R, y):
+        residual = y - H @ m - d
         S = H @ P @ H.T + R
         K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
-        m = m + K @ (y - H @ m - d)
+        m = m + K @ residual
         P = P - K @ S @ K.T
-        return m, P
+        ell = mvn_logpdf(residual, jnp.linalg.cholesky(S))
+        return m, P, ell
 
     def body(carry, inp):
-        m, P = carry
+        m, P, ell = carry
         F, c, Q, H, d, R, y = inp
         pred_m, pred_P = std_predict(m, P, F, c, Q)
-        m, P = std_update(pred_m, pred_P, H, d, R, y)
-        return (m, P), (m, P)
+        m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
+        return (m, P, ell + ell_incr), (m, P)
 
-    _, (m, P) = jax.lax.scan(body, (m0, P0), (Fs, cs, Qs, Hs, ds, Rs, ys))
+    (_, _, ell), (m, P) = jax.lax.scan(
+        body, (m0, P0, 0.0), (Fs, cs, Qs, Hs, ds, Rs, ys)
+    )
     m = jnp.vstack([m0[None, ...], m])
     P = jnp.vstack([P0[None, ...], P])
-    return m, P
+    return m, P, ell
 
 
 def batch_arrays(t, *args):
@@ -89,10 +94,10 @@ def test_offline_filter(seed, x_dim, y_dim):
 
     # Run both sequential and parallel versions of the square root filter.
     init_state = KalmanState(m, chol_P)
-    seq_means, seq_chol_covs = offline_filter(
+    (seq_means, seq_chol_covs), seq_ell = offline_filter(
         init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
     )
-    par_means, par_chol_covs = offline_filter(
+    (par_means, par_chol_covs), par_ell = offline_filter(
         init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
 
@@ -100,13 +105,13 @@ def test_offline_filter(seed, x_dim, y_dim):
     P = chol_P @ chol_P.T
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
     Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
-    des_means, des_covs = std_kalman_filter(m, P, Fs, cs, Qs, Hs, ds, Rs, ys)
+    des_means, des_covs, des_ell = std_kalman_filter(m, P, Fs, cs, Qs, Hs, ds, Rs, ys)
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs),
-        (par_means, par_covs),
-        (des_means, des_covs),
+        (seq_means, seq_covs, seq_ell),
+        (par_means, par_covs, par_ell),
+        (des_means, des_covs, des_ell),
         rtol=1e-10,
     )
