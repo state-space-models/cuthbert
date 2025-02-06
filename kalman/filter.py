@@ -6,7 +6,7 @@ from jax import Array
 from jax.scipy.linalg import solve_triangular
 from jax.typing import ArrayLike
 
-from kalman.utils import tria
+from kalman.utils import mvn_logpdf, tria
 
 
 class KalmanState(NamedTuple):
@@ -39,7 +39,7 @@ def offline_filter(
     chol_R: ArrayLike,
     y: ArrayLike,
     parallel: bool = True,
-):
+) -> tuple[KalmanState, Array]:
     """The square root Kalman filter.
 
     Matrices and vectors that define the transition and observation models for
@@ -57,7 +57,7 @@ def offline_filter(
         parallel: Whether to use temporal parallelization.
 
     Returns:
-        KalmanState: Filtered states at every time step.
+        A tuple of the filtered states at every time step and the log marginal likelihood.
 
     References:
         Paper: Yaghoobi, Corenflos, Hassan and Särkkä (2022) - https://arxiv.org/pdf/2207.00426
@@ -94,7 +94,10 @@ def offline_filter(
     _, filt_means, filt_chol_covs, _, _ = all_prefix_sums
     filt_means = jnp.vstack([initial_state.mean[None, ...], filt_means])
     filt_chol_covs = jnp.vstack([initial_state.chol_cov[None, ...], filt_chol_covs])
-    return KalmanState(filt_means, filt_chol_covs)
+    log_lik_incrs = jax.vmap(sqrt_loglikelihood_increment)(
+        F, c, chol_Q, H, d, chol_R, y, filt_means[:-1], filt_chol_covs[:-1]
+    )
+    return KalmanState(filt_means, filt_chol_covs), jnp.sum(log_lik_incrs)
 
 
 def sqrt_associative_params(
@@ -198,3 +201,22 @@ def sqrt_filtering_operator(
     Z = tria(jnp.concatenate([A1.T @ Xi22, Z1], axis=1))
 
     return FilterScanElement(A, b, U, eta, Z)
+
+
+def sqrt_loglikelihood_increment(
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
+    m_t_1: Array,
+    chol_P_t_1: Array,
+) -> Array:
+    r"""Compute the log marginal likelihood increment :math:`\log p(y_{t} \mid y_{1:t-1})`."""
+    predicted_mean = F @ m_t_1 + c
+    predicted_chol = tria(jnp.concatenate([F @ chol_P_t_1, chol_Q], axis=1))
+    obs_mean = H @ predicted_mean + d
+    obs_chol = tria(jnp.concatenate([H @ predicted_chol, chol_R], axis=1))
+    return mvn_logpdf(y - obs_mean, obs_chol)
