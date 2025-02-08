@@ -93,7 +93,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run both sequential and parallel versions of the square root filter.
-    init_state = KalmanState(m, chol_P)
+    init_state = KalmanState(jnp.asarray(m), jnp.asarray(chol_P))
     (seq_means, seq_chol_covs), seq_ell = offline_filter(
         init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
     )

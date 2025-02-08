@@ -18,29 +18,29 @@ class KalmanState(NamedTuple):
         chol_cov: Generalized Cholesky factor of the covariance of the Gaussian state.
     """
 
-    mean: ArrayLike
-    chol_cov: ArrayLike
+    mean: Array
+    chol_cov: Array
 
 
 class FilterScanElement(NamedTuple):
-    A: ArrayLike
-    b: ArrayLike
-    U: ArrayLike
-    eta: ArrayLike
-    Z: ArrayLike
-    ell: ArrayLike
+    A: Array
+    b: Array
+    U: Array
+    eta: Array
+    Z: Array
+    ell: Array
 
 
 def offline_filter(
-        initial_state: KalmanState,
-        F: ArrayLike,
-        c: ArrayLike,
-        chol_Q: ArrayLike,
-        H: ArrayLike,
-        d: ArrayLike,
-        chol_R: ArrayLike,
-        y: ArrayLike,
-        parallel: bool = True,
+    initial_state: KalmanState,
+    F: ArrayLike,
+    c: ArrayLike,
+    chol_Q: ArrayLike,
+    H: ArrayLike,
+    d: ArrayLike,
+    chol_R: ArrayLike,
+    y: ArrayLike,
+    parallel: bool = True,
 ) -> tuple[KalmanState, Array]:
     """The square root Kalman filter.
 
@@ -100,14 +100,14 @@ def offline_filter(
 
 
 def sqrt_associative_params(
-        initial_state: KalmanState,
-        F: Array,
-        c: Array,
-        chol_Q: Array,
-        H: Array,
-        d: Array,
-        chol_R: Array,
-        y: Array,
+    initial_state: KalmanState,
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan elements for the square root parallel Kalman filter."""
     T = y.shape[0]
@@ -123,15 +123,15 @@ def sqrt_associative_params(
 
 
 def _sqrt_associative_params_single(
-        m0: Array,
-        chol_P0: Array,
-        F: Array,
-        c: Array,
-        chol_Q: Array,
-        H: Array,
-        d: Array,
-        chol_R: Array,
-        y: Array,
+    m0: Array,
+    chol_P0: Array,
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step."""
@@ -143,14 +143,12 @@ def _sqrt_associative_params_single(
     N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
 
     # joint over the predictive and the observation
-    Psi_ = jnp.block(
-        [[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]]
-    )
+    Psi_ = jnp.block([[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
     Tria_Psi_ = tria(Psi_)
 
     Psi11 = Tria_Psi_[:ny, :ny]
-    Psi21 = Tria_Psi_[ny: ny + nx, :ny]
-    U = Tria_Psi_[ny: ny + nx, ny:]
+    Psi21 = Tria_Psi_[ny : ny + nx, :ny]
+    U = Tria_Psi_[ny : ny + nx, ny:]
 
     # pre-compute inverse of Psi11: we apply it to matrices and vectors alike.
     Psi11_inv = solve_triangular(Psi11, jnp.eye(ny), lower=True)
@@ -171,7 +169,7 @@ def _sqrt_associative_params_single(
     else:
         Z = tria(Z)
 
-    # local log likelihood
+    # local log marginal likelihood
     residual = y - H @ m1 - d
     ell = -mvn_logpdf(residual, Psi11)
 
@@ -179,7 +177,7 @@ def _sqrt_associative_params_single(
 
 
 def sqrt_filtering_operator(
-        elem_i: FilterScanElement, elem_j: FilterScanElement
+    elem_i: FilterScanElement, elem_j: FilterScanElement
 ) -> FilterScanElement:
     """Binary associative operator for the square root Kalman filter.
 
@@ -197,8 +195,8 @@ def sqrt_filtering_operator(
     Xi = jnp.block([[U1.T @ Z2, jnp.eye(nx)], [Z2, jnp.zeros_like(A1)]])
     tria_xi = tria(Xi)
     Xi11 = tria_xi[:nx, :nx]
-    Xi21 = tria_xi[nx: nx + nx, :nx]
-    Xi22 = tria_xi[nx: nx + nx, nx:]
+    Xi21 = tria_xi[nx : nx + nx, :nx]
+    Xi22 = tria_xi[nx : nx + nx, nx:]
 
     tmp_1 = solve_triangular(Xi11, U1.T, lower=True).T
     D_inv = jnp.eye(nx) - tmp_1 @ Xi21.T

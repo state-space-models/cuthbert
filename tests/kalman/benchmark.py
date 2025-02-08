@@ -9,6 +9,7 @@ from kalman.filter import KalmanState, offline_filter
 PLATFORM_NAME = "cuda"
 jax.config.update("jax_platform_name", PLATFORM_NAME)
 
+
 def generate_cholesky_factor(rng, dim):
     chol_A = rng.random((dim, dim))
     chol_A[np.triu_indices(dim, 1)] = 0.0
@@ -55,7 +56,7 @@ def batch_arrays(t, *args):
 Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = batch_arrays(
     num_time_steps, F, c, chol_Q, H, d, chol_R, y
 )
-init_state = KalmanState(m, chol_P)
+init_state = KalmanState(jnp.asarray(m), jnp.asarray(chol_P))
 
 num_runs = 10
 runtimes = []
