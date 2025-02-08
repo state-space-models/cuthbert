@@ -95,7 +95,7 @@ def offline_filter(
     _, filt_means, filt_chol_covs, _, _, ells = all_prefix_sums
     filt_means = jnp.vstack([initial_state.mean[None, ...], filt_means])
     filt_chol_covs = jnp.vstack([initial_state.chol_cov[None, ...], filt_chol_covs])
-    return KalmanState(filt_means, filt_chol_covs), ells[-1]
+    return KalmanState(filt_means, filt_chol_covs), -ells[-1]
 
 
 def sqrt_associative_params(
@@ -162,7 +162,7 @@ def _sqrt_associative_params_single(
         Z = tria(Z)
 
     residual = y - H @ m1 - d
-    ell = mvn_logpdf(residual, Psi11)
+    ell = -mvn_logpdf(residual, Psi11)
 
     return FilterScanElement(A, b, U, eta, Z, ell)
 
