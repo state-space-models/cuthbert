@@ -75,12 +75,12 @@ def batch_arrays(t, *args):
     return out
 
 
-@pytest.mark.parametrize("seed", [0, 42, 99, 123])
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
 @pytest.mark.parametrize("y_dim", [1, 2])
-def test_offline_filter(seed, x_dim, y_dim):
+@pytest.mark.parametrize("num_time_steps", [1, 25])
+def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     # Generate a random state-space model.
-    T = 10
     rng = np.random.default_rng(seed)
     m = rng.normal(size=x_dim)
     chol_P = generate_cholesky_factor(rng, x_dim)
@@ -89,7 +89,7 @@ def test_offline_filter(seed, x_dim, y_dim):
 
     # Make copies for T time steps.
     Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = batch_arrays(
-        T, F, c, chol_Q, H, d, chol_R, y
+        num_time_steps, F, c, chol_Q, H, d, chol_R, y
     )
 
     # Run both sequential and parallel versions of the square root filter.
