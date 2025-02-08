@@ -18,17 +18,17 @@ class KalmanState(NamedTuple):
         chol_cov: Generalized Cholesky factor of the covariance of the Gaussian state.
     """
 
-    mean: Array
-    chol_cov: Array
+    mean: ArrayLike
+    chol_cov: ArrayLike
 
 
 class FilterScanElement(NamedTuple):
-    A: Array
-    b: Array
-    U: Array
-    eta: Array
-    Z: Array
-    ell: Array
+    A: ArrayLike
+    b: ArrayLike
+    U: ArrayLike
+    eta: ArrayLike
+    Z: ArrayLike
+    ell: ArrayLike
 
 
 def offline_filter(
@@ -135,28 +135,34 @@ def _sqrt_associative_params_single(
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step."""
+
+    ny, nx = H.shape
+
+    # one step prediction
     m1 = F @ m0 + c
     N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
 
+    # joint over the predictive and the observation
     Psi_ = jnp.block(
-        [[H @ N1, chol_R], [N1, jnp.zeros((N1.shape[0], chol_R.shape[1]))]]
+        [[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]]
     )
     Tria_Psi_ = tria(Psi_)
 
-    nx = chol_Q.shape[0]
-    ny = chol_R.shape[0]
     Psi11 = Tria_Psi_[:ny, :ny]
     Psi21 = Tria_Psi_[ny: ny + nx, :ny]
     U = Tria_Psi_[ny: ny + nx, ny:]
 
+    # pre-compute inverse of Psi11: we apply it to matrices and vectors alike.
     Psi11_inv = solve_triangular(Psi11, jnp.eye(ny), lower=True)
 
-    K = Psi21 @ Psi11_inv
+    # predictive model given one observation
+    K = Psi21 @ Psi11_inv  # local Kalman gain
+    HF = H @ F  # temporary variable
+    A = F - K @ HF  # corrected transition matrix
+    b = m1 + K @ (y - H @ m1 - d)  # corrected transition offset
 
-    A = F - K @ H @ F
-    b = m1 + K @ (y - H @ m1 - d)
-
-    Z = F.T @ H.T @ Psi11_inv.T
+    # information filter
+    Z = HF.T @ Psi11_inv.T
     eta = Psi11_inv @ (y - H @ c - d)
     eta = Z @ eta
 
@@ -165,6 +171,7 @@ def _sqrt_associative_params_single(
     else:
         Z = tria(Z)
 
+    # local log likelihood
     residual = y - H @ m1 - d
     ell = -mvn_logpdf(residual, Psi11)
 
