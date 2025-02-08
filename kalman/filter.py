@@ -189,22 +189,18 @@ def sqrt_filtering_operator(
     Xi21 = tria_xi[nx : nx + nx, :nx]
     Xi22 = tria_xi[nx : nx + nx, nx:]
 
-    tmp = solve_triangular(Xi11, U1.T, lower=True).T
-    D_inv = jnp.eye(nx) - tmp @ Xi21.T  # D = I + C1 @ J2
+    tmp_1 = solve_triangular(Xi11, U1.T, lower=True).T
+    D_inv = jnp.eye(nx) - tmp_1 @ Xi21.T
+    tmp_2 = D_inv @ (b1 + U1 @ U1.T @ eta2)
+
     A = A2 @ D_inv @ A1
-    b = A2 @ D_inv @ (b1 + U1 @ U1.T @ eta2) + b2
-    U = tria(jnp.concatenate([A2 @ tmp, U2], axis=1))
+    b = A2 @ tmp_2 + b2
+    U = tria(jnp.concatenate([A2 @ tmp_1, U2], axis=1))
     eta = A1.T @ D_inv.T @ (eta2 - Z2 @ Z2.T @ b1) + eta1
     Z = tria(jnp.concatenate([A1.T @ Xi22, Z1], axis=1))
 
-    # Marginal likelihood computation.
-    # Code from dynamax for reference.
-    # mu = jnp.linalg.solve(C1, b1)
-    # t1 = (b1 @ mu - (eta2 + mu) @ jnp.linalg.solve(I_C1J2, C1 @ eta2 + b1))
-    # logZ = (logZ1 + logZ2 + 0.5 * jnp.linalg.slogdet(I_C1J2)[1] + 0.5 * t1)
-
     mu = solve_triangular(U1.T, solve_triangular(U1, b1, lower=True))
-    t1 = b1 @ mu - (eta2 + mu) @ D_inv @ (b1 + U1 @ U1.T @ eta2)
-    ell = ell1 + ell2 + 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
+    t1 = b1 @ mu - (eta2 + mu) @ tmp_2
+    ell = ell1 + ell2 + 0.5 * t1 - 0.5 * jnp.linalg.slogdet(D_inv)[1]
 
     return FilterScanElement(A, b, U, eta, Z, ell)
