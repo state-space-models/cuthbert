@@ -3,6 +3,7 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 from jax import Array
+from jax.scipy.linalg import cho_solve
 from jax.scipy.linalg import solve_triangular
 from jax.typing import ArrayLike
 
@@ -31,15 +32,15 @@ class FilterScanElement(NamedTuple):
 
 
 def offline_filter(
-    initial_state: KalmanState,
-    F: ArrayLike,
-    c: ArrayLike,
-    chol_Q: ArrayLike,
-    H: ArrayLike,
-    d: ArrayLike,
-    chol_R: ArrayLike,
-    y: ArrayLike,
-    parallel: bool = True,
+        initial_state: KalmanState,
+        F: ArrayLike,
+        c: ArrayLike,
+        chol_Q: ArrayLike,
+        H: ArrayLike,
+        d: ArrayLike,
+        chol_R: ArrayLike,
+        y: ArrayLike,
+        parallel: bool = True,
 ) -> tuple[KalmanState, Array]:
     """The square root Kalman filter.
 
@@ -99,14 +100,14 @@ def offline_filter(
 
 
 def sqrt_associative_params(
-    initial_state: KalmanState,
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-    H: Array,
-    d: Array,
-    chol_R: Array,
-    y: Array,
+        initial_state: KalmanState,
+        F: Array,
+        c: Array,
+        chol_Q: Array,
+        H: Array,
+        d: Array,
+        chol_R: Array,
+        y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan elements for the square root parallel Kalman filter."""
     T = y.shape[0]
@@ -122,15 +123,15 @@ def sqrt_associative_params(
 
 
 def _sqrt_associative_params_single(
-    m0: Array,
-    chol_P0: Array,
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-    H: Array,
-    d: Array,
-    chol_R: Array,
-    y: Array,
+        m0: Array,
+        chol_P0: Array,
+        F: Array,
+        c: Array,
+        chol_Q: Array,
+        H: Array,
+        d: Array,
+        chol_R: Array,
+        y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step."""
@@ -145,16 +146,19 @@ def _sqrt_associative_params_single(
     nx = chol_Q.shape[0]
     ny = chol_R.shape[0]
     Psi11 = Tria_Psi_[:ny, :ny]
-    Psi21 = Tria_Psi_[ny : ny + nx, :ny]
-    U = Tria_Psi_[ny : ny + nx, ny:]
+    Psi21 = Tria_Psi_[ny: ny + nx, :ny]
+    U = Tria_Psi_[ny: ny + nx, ny:]
 
-    K = solve_triangular(Psi11, Psi21.T, trans="T", lower=True).T
+    Psi11_inv = solve_triangular(Psi11, jnp.eye(ny), lower=True)
+
+    K = Psi21 @ Psi11_inv
 
     A = F - K @ H @ F
     b = m1 + K @ (y - H @ m1 - d)
 
-    Z = solve_triangular(Psi11, H @ F, lower=True).T
-    eta = solve_triangular(Psi11, Z.T, trans="T", lower=True).T @ (y - H @ c - d)
+    Z = F.T @ H.T @ Psi11_inv.T
+    eta = Psi11_inv @ (y - H @ c - d)
+    eta = Z @ eta
 
     if nx > ny:
         Z = jnp.concatenate([Z, jnp.zeros((nx, nx - ny))], axis=1)
@@ -168,7 +172,7 @@ def _sqrt_associative_params_single(
 
 
 def sqrt_filtering_operator(
-    elem_i: FilterScanElement, elem_j: FilterScanElement
+        elem_i: FilterScanElement, elem_j: FilterScanElement
 ) -> FilterScanElement:
     """Binary associative operator for the square root Kalman filter.
 
@@ -186,20 +190,20 @@ def sqrt_filtering_operator(
     Xi = jnp.block([[U1.T @ Z2, jnp.eye(nx)], [Z2, jnp.zeros_like(A1)]])
     tria_xi = tria(Xi)
     Xi11 = tria_xi[:nx, :nx]
-    Xi21 = tria_xi[nx : nx + nx, :nx]
-    Xi22 = tria_xi[nx : nx + nx, nx:]
+    Xi21 = tria_xi[nx: nx + nx, :nx]
+    Xi22 = tria_xi[nx: nx + nx, nx:]
 
     tmp_1 = solve_triangular(Xi11, U1.T, lower=True).T
     D_inv = jnp.eye(nx) - tmp_1 @ Xi21.T
-    tmp_2 = D_inv @ (b1 + U1 @ U1.T @ eta2)
+    tmp_2 = D_inv @ (b1 + U1 @ (U1.T @ eta2))
 
     A = A2 @ D_inv @ A1
     b = A2 @ tmp_2 + b2
     U = tria(jnp.concatenate([A2 @ tmp_1, U2], axis=1))
-    eta = A1.T @ D_inv.T @ (eta2 - Z2 @ Z2.T @ b1) + eta1
+    eta = A1.T @ (D_inv.T @ (eta2 - Z2 @ (Z2.T @ b1))) + eta1
     Z = tria(jnp.concatenate([A1.T @ Xi22, Z1], axis=1))
 
-    mu = solve_triangular(U1.T, solve_triangular(U1, b1, lower=True))
+    mu = cho_solve((U1, True), b1)
     t1 = b1 @ mu - (eta2 + mu) @ tmp_2
     ell = ell1 + ell2 + 0.5 * t1 - 0.5 * jnp.linalg.slogdet(D_inv)[1]
 
