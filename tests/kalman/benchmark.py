@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from kalman.filter import KalmanState, offline_filter
+from kalman.filter import offline_filter
 
 PLATFORM_NAME = "cuda"
 jax.config.update("jax_platform_name", PLATFORM_NAME)

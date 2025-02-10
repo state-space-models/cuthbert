@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from kalman.filter import KalmanState, offline_filter
+from kalman.filter import offline_filter
 from kalman.utils import mvn_logpdf
 
 
