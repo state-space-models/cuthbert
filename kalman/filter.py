@@ -32,7 +32,8 @@ class FilterScanElement(NamedTuple):
 
 
 def offline_filter(
-    initial_state: KalmanState,
+    m0: ArrayLike,
+    chol_P0: ArrayLike,
     F: ArrayLike,
     c: ArrayLike,
     chol_Q: ArrayLike,
@@ -47,8 +48,12 @@ def offline_filter(
     Matrices and vectors that define the transition and observation models for
     every time step, along with the observations, must be batched along the first axis.
 
+    chol_P0, chol_Q and chol_R must be generalized Cholesky factors. A generalized Cholesky factor
+    of a positive semi-definite matrix A is a lower triangular matrix L such that L @ L.T = A.
+
     Args:
-        initial_state: Initial Gaussian state.
+        m0: Mean of the initial state.
+        chol_P0: Generalized Cholesky factor of the covariance of the initial state.
         F: State transition matrices.
         c: State transition shift vectors.
         chol_Q: Generalized Cholesky factors of the transition noise covariance.
@@ -65,6 +70,7 @@ def offline_filter(
         Paper: Yaghoobi, Corenflos, Hassan and Särkkä (2022) - https://arxiv.org/pdf/2207.00426
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/parallel
     """
+    m0, chol_P0 = jnp.asarray(m0), jnp.asarray(chol_P0)
     F, c, chol_Q = jnp.asarray(F), jnp.asarray(c), jnp.asarray(chol_Q)
     H, d, chol_R, y = (
         jnp.asarray(H),
@@ -73,7 +79,7 @@ def offline_filter(
         jnp.asarray(y),
     )
     associative_params = sqrt_associative_params(
-        initial_state, F, c, chol_Q, H, d, chol_R, y
+        m0, chol_P0, F, c, chol_Q, H, d, chol_R, y
     )
 
     if parallel:
@@ -94,13 +100,14 @@ def offline_filter(
         )
 
     _, filt_means, filt_chol_covs, _, _, ells = all_prefix_sums
-    filt_means = jnp.vstack([initial_state.mean[None, ...], filt_means])
-    filt_chol_covs = jnp.vstack([initial_state.chol_cov[None, ...], filt_chol_covs])
+    filt_means = jnp.vstack([m0[None, ...], filt_means])
+    filt_chol_covs = jnp.vstack([chol_P0[None, ...], filt_chol_covs])
     return KalmanState(filt_means, filt_chol_covs), -ells[-1]
 
 
 def sqrt_associative_params(
-    initial_state: KalmanState,
+    m0: Array,
+    chol_P0: Array,
     F: Array,
     c: Array,
     chol_Q: Array,
@@ -111,7 +118,6 @@ def sqrt_associative_params(
 ) -> FilterScanElement:
     """Compute the filter scan elements for the square root parallel Kalman filter."""
     T = y.shape[0]
-    m0, chol_P0 = initial_state
     ms = jnp.concatenate([m0[None, ...], jnp.zeros_like(m0, shape=(T - 1,) + m0.shape)])
     chol_Ps = jnp.concatenate(
         [chol_P0[None, ...], jnp.zeros_like(chol_P0, shape=(T - 1,) + chol_P0.shape)]

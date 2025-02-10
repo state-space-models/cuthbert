@@ -82,8 +82,8 @@ def batch_arrays(t, *args):
 def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     # Generate a random state-space model.
     rng = np.random.default_rng(seed)
-    m = rng.normal(size=x_dim)
-    chol_P = generate_cholesky_factor(rng, x_dim)
+    m0 = rng.normal(size=x_dim)
+    chol_P0 = generate_cholesky_factor(rng, x_dim)
     F, c, chol_Q = generate_trans_model(rng, x_dim)
     H, d, chol_R, y = generate_obs_model(rng, x_dim, y_dim)
 
@@ -93,19 +93,18 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run both sequential and parallel versions of the square root filter.
-    init_state = KalmanState(jnp.asarray(m), jnp.asarray(chol_P))
     (seq_means, seq_chol_covs), seq_ell = offline_filter(
-        init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
     )
     (par_means, par_chol_covs), par_ell = offline_filter(
-        init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
 
     # Run the standard Kalman filter.
-    P = chol_P @ chol_P.T
+    P0 = chol_P0 @ chol_P0.T
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
     Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
-    des_means, des_covs, des_ell = std_kalman_filter(m, P, Fs, cs, Qs, Hs, ds, Rs, ys)
+    des_means, des_covs, des_ell = std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys)
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)

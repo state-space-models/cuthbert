@@ -39,8 +39,8 @@ num_time_steps = 1000
 offline_filter = jax.jit(offline_filter, static_argnames="parallel")
 
 rng = np.random.default_rng(seed)
-m = rng.normal(size=x_dim)
-chol_P = generate_cholesky_factor(rng, x_dim)
+m0 = rng.normal(size=x_dim)
+chol_P0 = generate_cholesky_factor(rng, x_dim)
 F, c, chol_Q = generate_trans_model(rng, x_dim)
 H, d, chol_R, y = generate_obs_model(rng, x_dim, y_dim)
 
@@ -56,14 +56,13 @@ def batch_arrays(t, *args):
 Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = batch_arrays(
     num_time_steps, F, c, chol_Q, H, d, chol_R, y
 )
-init_state = KalmanState(jnp.asarray(m), jnp.asarray(chol_P))
 
 num_runs = 10
 runtimes = []
 for _ in range(num_runs):
     start_time = time.time()
     filt_states, ell = offline_filter(
-        init_state, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
     jax.block_until_ready(filt_states)
     runtimes.append(time.time() - start_time)
