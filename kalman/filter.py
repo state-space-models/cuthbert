@@ -45,6 +45,10 @@ def offline_filter(
 ) -> tuple[KalmanState, Array]:
     """The square root Kalman filter.
 
+    The square root Kalman filter is more numerically stable than the standard implementation that
+    uses full covariance matrices, especially when using single-precision floating point numbers.
+    It also ensures that covariance matrices remain positive semi-definite.
+
     Matrices and vectors that define the transition and observation models for
     every time step, along with the observations, must be batched along the first axis.
 
