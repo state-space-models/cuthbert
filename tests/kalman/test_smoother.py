@@ -25,16 +25,17 @@ def std_kalman_smoother(ms, Ps, Fs, cs, Qs):
         cov_diff = smooth_P - S
 
         gain = P @ jax.scipy.linalg.solve(S, F, assume_a="pos").T
+        cross_cov = gain @ smooth_P
         smooth_m = m + gain @ mean_diff
         smooth_P = P + gain @ cov_diff @ gain.T
-        return (smooth_m, smooth_P), (smooth_m, smooth_P)
+        return (smooth_m, smooth_P), ((smooth_m, smooth_P), cross_cov)
 
-    init_carry = (ms[-1], Ps[-1])
-    _, smoothed_states = jax.lax.scan(
-        body, init_carry, (ms[:-1], Ps[:-1], Fs, cs, Qs), reverse=True
+    final_state = (ms[-1], Ps[-1])
+    _, (smoothed_states, cross_covs) = jax.lax.scan(
+        body, final_state, (ms[:-1], Ps[:-1], Fs, cs, Qs), reverse=True
     )
-    smoothed_states = append_tree(smoothed_states, init_carry)
-    return smoothed_states
+    smoothed_states = append_tree(smoothed_states, final_state)
+    return smoothed_states, cross_covs
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
@@ -53,21 +54,22 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
-    des_means, des_covs = std_kalman_smoother(filt_means, filt_covs, Fs, cs, Qs)
+    (des_means, des_covs), des_cross_covs = std_kalman_smoother(
+        filt_means, filt_covs, Fs, cs, Qs
+    )
 
     # Run the sequential and parallel versions of the square root smoother.
-    seq_means, seq_chol_covs = smoother(
+    (seq_means, seq_chol_covs), _ = smoother(
         filt_means, filt_chol_covs, Fs, cs, chol_Qs, parallel=False
     )
-    par_means, par_chol_covs = smoother(
+    (par_means, par_chol_covs), (smoother_gains,) = smoother(
         filt_means, filt_chol_covs, Fs, cs, chol_Qs, parallel=True
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
+    cross_covs = smoother_gains @ par_covs[1:]
     chex.assert_trees_all_close(
-        (seq_means, seq_covs),
-        (par_means, par_covs),
-        (des_means, des_covs),
-        rtol=1e-10,
+        (seq_means, seq_covs), (par_means, par_covs), (des_means, des_covs), rtol=1e-10
     )
+    chex.assert_trees_all_close(cross_covs, des_cross_covs, rtol=1e-10)
