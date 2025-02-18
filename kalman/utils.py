@@ -1,3 +1,5 @@
+from typing import Any
+
 import jax
 import jax.numpy as jnp
 from jax import Array
@@ -33,3 +35,21 @@ def mvn_logpdf(x: Array, chol_cov: Array) -> Array:
     )
     norm_y = jnp.sum(y**2, -1)
     return -0.5 * norm_y - normalizing_constant
+
+
+def append_tree(batched_tree: Any, tree: Any, prepend: bool = False) -> Any:
+    """Append the leaves of a pytree of arrays to the leaves of a batched pytree.
+
+    Args:
+        batched_tree: The batched pytree.
+        tree: The pytree to append.
+        prepend: Whether to prepend `tree` instead of appending it.
+
+    Returns:
+        The batched pytree with `tree` appended (or prepended) to it.
+    """
+    if prepend:
+        return jax.tree.map(
+            lambda x, y: jnp.concatenate([x[None], y]), tree, batched_tree
+        )
+    return jax.tree.map(lambda x, y: jnp.concatenate([y, x[None]]), tree, batched_tree)
