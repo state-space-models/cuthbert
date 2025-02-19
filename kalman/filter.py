@@ -26,10 +26,10 @@ class KalmanFilterInfo(NamedTuple):
     """Additional output from the Kalman filter.
 
     Attributes:
-        log_likelihoods: Log marginal likelihood (scalar).
+        log_likelihoods: Cumulative log marginal likelihoods.
     """
 
-    log_likelihood: Array
+    log_likelihoods: Array
 
 
 class FilterScanElement(NamedTuple):
@@ -116,7 +116,7 @@ def offline_filter(
     _, filt_means, filt_chol_covs, _, _, ells = all_prefix_sums
     filt_means = jnp.vstack([m0[None, ...], filt_means])
     filt_chol_covs = jnp.vstack([chol_P0[None, ...], filt_chol_covs])
-    return KalmanState(filt_means, filt_chol_covs), KalmanFilterInfo(-ells[-1])
+    return KalmanState(filt_means, filt_chol_covs), KalmanFilterInfo(-ells)
 
 
 def sqrt_associative_params(
