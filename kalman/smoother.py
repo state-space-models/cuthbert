@@ -16,6 +16,12 @@ class SmootherScanElement(NamedTuple):
 
 
 class KalmanSmootherInfo(NamedTuple):
+    """Additional output from the Kalman smoother.
+
+    Attributes:
+        gains: Smoothing Kalman gain matrices.
+    """
+
     gains: Array
 
 

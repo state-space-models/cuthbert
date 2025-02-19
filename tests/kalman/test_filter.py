@@ -37,14 +37,15 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
         F, c, Q, H, d, R, y = inp
         pred_m, pred_P = std_predict(m, P, F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
-        return (m, P, ell + ell_incr), (m, P)
+        ell_cumulative = ell + ell_incr
+        return (m, P, ell_cumulative), (m, P, ell_cumulative)
 
-    (_, _, ell), (m, P) = jax.lax.scan(
+    (_, _, _), (m, P, ell_cumulative) = jax.lax.scan(
         body, (m0, P0, 0.0), (Fs, cs, Qs, Hs, ds, Rs, ys)
     )
     m = jnp.vstack([m0[None, ...], m])
     P = jnp.vstack([P0[None, ...], P])
-    return m, P, ell
+    return m, P, ell_cumulative
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
@@ -58,10 +59,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run both sequential and parallel versions of the square root filter.
-    (seq_means, seq_chol_covs), seq_ell = offline_filter(
+    (seq_means, seq_chol_covs), (seq_ells,) = offline_filter(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
     )
-    (par_means, par_chol_covs), par_ell = offline_filter(
+    (par_means, par_chol_covs), (par_ells,) = offline_filter(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
 
@@ -69,13 +70,15 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     P0 = chol_P0 @ chol_P0.T
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
     Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
-    des_means, des_covs, des_ell = std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys)
+    des_means, des_covs, des_ells = std_kalman_filter(
+        m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
+    )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ell),
-        (par_means, par_covs, par_ell),
-        (des_means, des_covs, des_ell),
+        (seq_means, seq_covs, seq_ells),
+        (par_means, par_covs, par_ells),
+        (des_means, des_covs, des_ells),
         rtol=1e-10,
     )
