@@ -22,6 +22,16 @@ class KalmanState(NamedTuple):
     chol_cov: Array
 
 
+class KalmanFilterInfo(NamedTuple):
+    """Additional output from the Kalman filter.
+
+    Attributes:
+        log_likelihoods: Log marginal likelihood (scalar).
+    """
+
+    log_likelihood: Array
+
+
 class FilterScanElement(NamedTuple):
     A: Array
     b: Array
@@ -42,7 +52,7 @@ def offline_filter(
     chol_R: ArrayLike,
     y: ArrayLike,
     parallel: bool = True,
-) -> tuple[KalmanState, Array]:
+) -> tuple[KalmanState, KalmanFilterInfo]:
     """The square root Kalman filter.
 
     The square root Kalman filter is more numerically stable than the standard implementation that
@@ -106,7 +116,7 @@ def offline_filter(
     _, filt_means, filt_chol_covs, _, _, ells = all_prefix_sums
     filt_means = jnp.vstack([m0[None, ...], filt_means])
     filt_chol_covs = jnp.vstack([chol_P0[None, ...], filt_chol_covs])
-    return KalmanState(filt_means, filt_chol_covs), -ells[-1]
+    return KalmanState(filt_means, filt_chol_covs), KalmanFilterInfo(-ells[-1])
 
 
 def sqrt_associative_params(
