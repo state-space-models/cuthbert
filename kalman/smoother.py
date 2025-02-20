@@ -39,9 +39,9 @@ def update(
 
     Args:
         filter_m: Mean of the filtered state.
-        filter_chol_P: Cholesky factor of the covariance of the filtered state.
+        filter_chol_P: Generalized cholesky factor of the filtering covariance.
         smoother_m: Mean of the smoother state.
-        smoother_chol_P: Cholesky factor of the covariance of the smoother state.
+        smoother_chol_P: Generalized cholesky factor of the smoothing covariance.
         F: State transition matrix.
         c: State transition shift vector.
         chol_Q: Generalized Cholesky factor of the state transition noise covariance.
