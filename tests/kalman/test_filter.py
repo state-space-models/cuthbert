@@ -15,22 +15,24 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
+def std_predict(m, P, F, c, Q):
+    m = F @ m + c
+    P = F @ P @ F.T + Q
+    return m, P
+
+
+def std_update(m, P, H, d, R, y):
+    residual = y - H @ m - d
+    S = H @ P @ H.T + R
+    K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
+    m = m + K @ residual
+    P = P - K @ S @ K.T
+    ell = mvn_logpdf(residual, jnp.linalg.cholesky(S))
+    return m, P, ell
+
+
 def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     """The standard Kalman filter."""
-
-    def std_predict(m, P, F, c, Q):
-        m = F @ m + c
-        P = F @ P @ F.T + Q
-        return m, P
-
-    def std_update(m, P, H, d, R, y):
-        residual = y - H @ m - d
-        S = H @ P @ H.T + R
-        K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
-        m = m + K @ residual
-        P = P - K @ S @ K.T
-        ell = mvn_logpdf(residual, jnp.linalg.cholesky(S))
-        return m, P, ell
 
     def body(carry, inp):
         m, P, ell = carry
