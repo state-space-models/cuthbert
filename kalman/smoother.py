@@ -39,7 +39,7 @@ def smoother_update(
 
     Args:
         filter_m: Mean of the filtered state.
-        filter_chol_P: Generalized cholesky factor of the filtering covariance.
+        filter_chol_P: Generalized Cholesky factor of the filtering covariance.
         smoother_m: Mean of the smoother state.
         smoother_chol_P: Generalized cholesky factor of the smoothing covariance.
         F: State transition matrix.
