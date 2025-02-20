@@ -53,8 +53,7 @@ mentioned [above](#non-goals).
     [Sequential Monte Carlo Methods in Practice](https://link.springer.com/book/10.1007/978-3-030-47845-2)
     are wonderful learning materials for state-space models and SMC.
     `cuthbert` is more focused on performance and composability with the JAX ecosystem.
-- Much of the code in `cuthbert` is built on work from
-[`mocat`](https://github.com/SamDuffield/mocat), [`abile`](https://github.com/SamDuffield/abile)
+- Much of the code in `cuthbert` is built on work from [`sqrt-parallel-smoothers`](https://github.com/EEA-sensors/sqrt-parallel-smoothers), [`mocat`](https://github.com/SamDuffield/mocat), [`abile`](https://github.com/SamDuffield/abile)
 and [`bayesfilter`](https://github.com/hugohadfield/bayesfilter).
 
 
