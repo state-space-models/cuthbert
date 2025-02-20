@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 from jax import Array
 from jax.typing import ArrayLike
+from jax.scipy.linalg import solve_triangular
 
 from kalman.filter import KalmanState
 from kalman.utils import append_tree, tria
@@ -23,6 +24,53 @@ class KalmanSmootherInfo(NamedTuple):
     """
 
     gains: Array
+
+
+def update(
+    filter_m: ArrayLike,
+    filter_chol_P: ArrayLike,
+    smoother_m: ArrayLike,
+    smoother_chol_P: ArrayLike,
+    F: ArrayLike,
+    c: ArrayLike,
+    chol_Q: ArrayLike,
+) -> tuple[KalmanState, KalmanSmootherInfo]:
+    """Single step of the square root Rauch–Tung–Striebel (RTS) smoother.
+
+    Args:
+        filter_m: Mean of the filtered state.
+        filter_chol_P: Cholesky factor of the covariance of the filtered state.
+        smoother_m: Mean of the smoother state.
+        smoother_chol_P: Cholesky factor of the covariance of the smoother state.
+        F: State transition matrix.
+        c: State transition shift vector.
+        chol_Q: Generalized Cholesky factor of the state transition noise covariance.
+
+    Returns:
+        A tuple `(smooth_state, info)`.
+        `smooth_state` contains the smoothed mean and square root covariance.
+        `info` contains the smoothing gain matrix.
+
+    References:
+        Paper: Park and Kailath (1994) - Square-root RTS smoothing algorithms
+        Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/tree/main/parsmooth/sequential
+    """
+    filter_m, filter_chol_P = jnp.asarray(filter_m), jnp.asarray(filter_chol_P)
+    smoother_m, smoother_chol_P = jnp.asarray(smoother_m), jnp.asarray(smoother_chol_P)
+    F, c, chol_Q = jnp.asarray(F), jnp.asarray(c), jnp.asarray(chol_Q)
+
+    nx = F.shape[0]
+    Phi = jnp.block([[F @ filter_chol_P, chol_Q], [filter_chol_P, jnp.zeros_like(F)]])
+    tria_Phi = tria(Phi)
+    Phi11 = tria_Phi[:nx, :nx]
+    Phi21 = tria_Phi[nx:, :nx]
+    Phi22 = tria_Phi[nx:, nx:]
+    gain = solve_triangular(Phi11, Phi21.T, trans=True, lower=True).T
+
+    mean_diff = smoother_m - (c + F @ filter_m)
+    mean = filter_m + gain @ mean_diff
+    chol = tria(jnp.concatenate([Phi22, gain @ smoother_chol_P], axis=1))
+    return KalmanState(mean, chol), KalmanSmootherInfo(gain)
 
 
 def smoother(

@@ -3,7 +3,7 @@ import jax
 import pytest
 
 from kalman.filter import offline_filter
-from kalman.smoother import smoother
+from kalman.smoother import smoother, update
 from kalman.utils import append_tree
 from tests.kalman.utils import generate_lgssm
 
@@ -36,6 +36,32 @@ def std_kalman_smoother(ms, Ps, Fs, cs, Qs):
     )
     smoothed_states = append_tree(smoothed_states, final_state)
     return smoothed_states, cross_covs
+
+
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+def test_update(seed, x_dim):
+    m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
+    m1, chol_P1 = generate_lgssm(seed + 1, x_dim, 0, 0)[:2]
+
+    # Run standard Kalman smoother for one step
+    ms = jax.numpy.vstack([m0, m1])
+    chol_Ps = jax.numpy.vstack([chol_P0[None], chol_P1[None]])
+    Ps = chol_Ps @ chol_Ps.transpose(0, 2, 1)
+    Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
+    (des_smooth_ms, des_smooth_Ps), des_cross_covs = std_kalman_smoother(
+        ms, Ps, Fs, cs, Qs
+    )
+    des_m0, des_P0 = des_smooth_ms[0], des_smooth_Ps[0]
+
+    # Run single square root smoother update
+    (smooth_m0, smooth_chol_P0), (smooth_gain,) = update(
+        m0, chol_P0, m1, chol_P1, Fs[0], cs[0], chol_Qs[0]
+    )
+    smooth_P0 = smooth_chol_P0 @ smooth_chol_P0.T
+    cross_cov = smooth_gain @ Ps[1]
+    chex.assert_trees_all_close((smooth_m0, smooth_P0), (des_m0, des_P0), rtol=1e-10)
+    chex.assert_trees_all_close(cross_cov, des_cross_covs[0], rtol=1e-10)
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
