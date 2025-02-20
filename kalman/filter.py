@@ -53,10 +53,10 @@ def predict(
 
     Args:
         m: Mean of the state.
-        chol_P: Square root of the covariance of the state.
+        chol_P: Generalized Cholesky factor of the covariance of the state.
         F: Transition matrix.
         c: Transition shift.
-        chol_Q: Square root of the transition noise covariance.
+        chol_Q: Generalized Cholesky factor of the transition noise covariance.
 
     Returns:
         Propagated mean and square root covariance.
@@ -86,10 +86,10 @@ def update(
 
     Args:
         m: Mean of the state.
-        chol_P: Square root of the covariance of the state.
+        chol_P: Generalized Cholesky factor of the covariance of the state.
         H: Observation matrix.
         d: Observation shift.
-        chol_R: Square root of the observation noise covariance.
+        chol_R: Generalized Cholesky factor of the observation noise covariance.
         y: Observation.
 
     Returns:
