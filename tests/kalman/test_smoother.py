@@ -3,7 +3,7 @@ import jax
 import pytest
 
 from kalman.filter import offline_filter
-from kalman.smoother import smoother, update
+from kalman.smoother import smoother, smoother_update
 from kalman.utils import append_tree
 from tests.kalman.utils import generate_lgssm
 
@@ -40,7 +40,7 @@ def std_kalman_smoother(ms, Ps, Fs, cs, Qs):
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
-def test_update(seed, x_dim):
+def test_smoother_update(seed, x_dim):
     m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
     m1, chol_P1 = generate_lgssm(seed + 1, x_dim, 0, 0)[:2]
 
@@ -55,7 +55,7 @@ def test_update(seed, x_dim):
     des_m0, des_P0 = des_smooth_ms[0], des_smooth_Ps[0]
 
     # Run single square root smoother update
-    (smooth_m0, smooth_chol_P0), (smooth_gain,) = update(
+    (smooth_m0, smooth_chol_P0), (smooth_gain,) = smoother_update(
         m0, chol_P0, m1, chol_P1, Fs[0], cs[0], chol_Qs[0]
     )
     smooth_P0 = smooth_chol_P0 @ smooth_chol_P0.T

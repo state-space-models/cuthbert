@@ -26,7 +26,7 @@ class KalmanSmootherInfo(NamedTuple):
     gains: Array
 
 
-def update(
+def smoother_update(
     filter_m: ArrayLike,
     filter_chol_P: ArrayLike,
     smoother_m: ArrayLike,
