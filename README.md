@@ -59,11 +59,15 @@ and [`bayesfilter`](https://github.com/hugohadfield/bayesfilter).
 
 ## Contributing
 
-Feel free to [open an issue](https://github.com/state-space-models/cuthbert/issues)
-if you have any questions or suggestions.
+We love to chat about state-space-models! If you do to, you can get involved in the following ways:
 
-Follow these steps to open a pull request (feel free to make it a draft at an 
-early stage for feedback):
+- [Open an issue](https://github.com/state-space-models/cuthbert/issues) if you have a question, suggestion or spotted a bug or specific code that could be improved.
+- [Start or join a discussion](https://github.com/state-space-models/cuthbert/discussions) for more general conversation regarding `cuthbert` code structure and design.
+- [Open a pull request](https://github.com/state-space-models/cuthbert/pulls) to add code yourself (feel free to make it a draft at an early stage for feedback).
+- [Join us on discord](https://discord.gg/EWTjkRjY) for everything else; including memes, research ideas and meetups.
+
+
+A pull request can be opened by following these steps:
 
 1. Fork the repo from GitHub and clone it locally:
 ```
