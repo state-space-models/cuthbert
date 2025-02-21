@@ -73,6 +73,7 @@ def predict(
     return KalmanState(mean=m1, chol_cov=chol_P1)
 
 
+# Note that `update` is aliased as `kalman.filter_update` in `kalman.__init__.py`
 def update(
     m: ArrayLike,
     chol_P: ArrayLike,
@@ -125,7 +126,7 @@ def update(
     return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihoods=ell)
 
 
-def offline_filter(
+def filter(
     m0: ArrayLike,
     chol_P0: ArrayLike,
     F: ArrayLike,

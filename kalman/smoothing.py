@@ -6,7 +6,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from jax.scipy.linalg import solve_triangular
 
-from kalman.filter import KalmanState
+from kalman.filtering import KalmanState
 from kalman.utils import append_tree, tria
 
 
@@ -26,7 +26,8 @@ class KalmanSmootherInfo(NamedTuple):
     gains: Array
 
 
-def smoother_update(
+# Note that `update` is aliased as `kalman.smoother_update` in `kalman.__init__.py`
+def update(
     filter_m: ArrayLike,
     filter_chol_P: ArrayLike,
     smoother_m: ArrayLike,

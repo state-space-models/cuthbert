@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from kalman.filter import predict, update, offline_filter
+from kalman.filtering import predict, update, filter
 from kalman.utils import mvn_logpdf
 from tests.kalman.utils import generate_lgssm
 
@@ -103,10 +103,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run both sequential and parallel versions of the square root filter.
-    (seq_means, seq_chol_covs), (seq_ells,) = offline_filter(
+    (seq_means, seq_chol_covs), (seq_ells,) = filter(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
     )
-    (par_means, par_chol_covs), (par_ells,) = offline_filter(
+    (par_means, par_chol_covs), (par_ells,) = filter(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
 

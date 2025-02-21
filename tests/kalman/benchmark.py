@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from kalman.filter import offline_filter
+from kalman.filtering import filter
 
 PLATFORM_NAME = "cuda"
 jax.config.update("jax_platform_name", PLATFORM_NAME)
@@ -36,7 +36,7 @@ x_dim = 20
 y_dim = 10
 num_time_steps = 1000
 
-offline_filter = jax.jit(offline_filter, static_argnames="parallel")
+offline_filter = jax.jit(filter, static_argnames="parallel")
 
 rng = np.random.default_rng(seed)
 m0 = rng.normal(size=x_dim)
@@ -61,7 +61,7 @@ num_runs = 10
 runtimes = []
 for _ in range(num_runs):
     start_time = time.time()
-    filt_states, ell = offline_filter(
+    filt_states, ell = filter(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
     )
     jax.block_until_ready(filt_states)
