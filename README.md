@@ -59,7 +59,7 @@ and [`bayesfilter`](https://github.com/hugohadfield/bayesfilter).
 
 ## Contributing
 
-We love to chat about state-space-models! If you do to, you can get involved in the following ways:
+We love to chat about state-space-models! If you do too, you can get involved in the following ways:
 
 - [Open an issue](https://github.com/state-space-models/cuthbert/issues) if you have a question, suggestion or spotted a bug or specific code that could be improved.
 - [Start or join a discussion](https://github.com/state-space-models/cuthbert/discussions) for more general conversation regarding `cuthbert` code structure and design.
