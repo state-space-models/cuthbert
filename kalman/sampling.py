@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 
 import jax
 import jax.numpy as jnp
@@ -21,7 +21,7 @@ def sampler(
     Fs: Array,
     cs: Array,
     chol_Qs: Array,
-    num_samples: int = 1,
+    shape: Sequence[int] = (),
     parallel: bool = True,
 ) -> Array:
     """Sample from the smoothing distribution of a linear-Gaussian state-space model (LGSSM).
@@ -33,17 +33,17 @@ def sampler(
         Fs: State transition matrices.
         cs: State transition shift vectors.
         chol_Qs: Generalized Cholesky factors of the state transition noise covariances.
-        num_samples: The number of samples to draw.
+        shape: The shape of the samples to draw. This represents the prefix of the
+            output shape which will have an additional two axes representing the
+            number of time steps and the state dimension.
         parallel: Whether to use temporal parallelization.
 
     Returns:
-        An array of shape `(num_time_steps, num_samples, x_dim)` containing the samples.
+        An array of shape `shape + (num_time_steps, x_dim)` containing the samples.
     """
-    if num_samples < 1:
-        raise ValueError("Number of samples must be at least 1.")
 
     associative_params = sqrt_associative_params(
-        key, ms, chol_Ps, Fs, cs, chol_Qs, num_samples
+        key, ms, chol_Ps, Fs, cs, chol_Qs, shape
     )
     if parallel:
         all_prefix_sums = jax.lax.associative_scan(
@@ -60,7 +60,7 @@ def sampler(
         _, all_prefix_sums = jax.lax.scan(body, final_element, inputs, reverse=True)
         all_prefix_sums = append_tree(all_prefix_sums, final_element)
 
-    return all_prefix_sums.sample
+    return jnp.moveaxis(all_prefix_sums.sample, 0, -2)
 
 
 def sqrt_associative_params(
@@ -70,10 +70,11 @@ def sqrt_associative_params(
     Fs: Array,
     cs: Array,
     chol_Qs: Array,
-    num_samples: int,
+    shape: Sequence[int],
 ) -> SamplerScanElement:
     """Compute the sampler scan elements."""
-    eps = jax.random.normal(key, ms.shape[:1] + (num_samples,) + ms.shape[1:])
+    shape = tuple(shape)
+    eps = jax.random.normal(key, ms.shape[:1] + shape + ms.shape[1:])
     interm_elems = jax.vmap(_sqrt_associative_params_interm)(
         ms[:-1], chol_Ps[:-1], Fs, cs, chol_Qs, eps[:-1]
     )

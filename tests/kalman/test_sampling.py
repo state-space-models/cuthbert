@@ -26,12 +26,24 @@ def test_sampler(seed, x_dim, y_dim, num_time_steps, parallel):
     des_covs = des_chol_covs @ des_chol_covs.transpose(0, 2, 1)
 
     key = jax.random.key(seed)
-    num_samples = 50_000
-    samples = sampler(
-        key, filt_means, filt_chol_covs, Fs, cs, chol_Qs, num_samples, parallel=parallel
+
+    # Check default
+    sample = sampler(
+        key, filt_means, filt_chol_covs, Fs, cs, chol_Qs, parallel=parallel
     )
-    sample_means = jnp.mean(samples, 1)
-    sample_covs = jax.vmap(lambda x: jnp.cov(x, rowvar=False))(samples)
+    assert sample.shape == (num_time_steps + 1, x_dim)
+
+    # Check large number of samples
+    shape = (50, 1000)
+    samples = sampler(
+        key, filt_means, filt_chol_covs, Fs, cs, chol_Qs, shape, parallel=parallel
+    )
+    assert samples.shape == (*shape, num_time_steps + 1, x_dim)
+    samples_flat = samples.reshape(
+        (-1, num_time_steps + 1, x_dim)
+    )  # Flatten axis 0 and 1
+    sample_means = jnp.mean(samples_flat, 0)
+    sample_covs = jax.vmap(lambda x: jnp.cov(x, rowvar=False), in_axes=1)(samples_flat)
     chex.assert_trees_all_close(
         (sample_means, sample_covs), (des_means, des_covs), atol=1e-2, rtol=1e-2
     )
