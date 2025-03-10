@@ -26,3 +26,21 @@ $$
 
 in which case `linearize` recovers `(H, d, L)` for any input points `x` and `y`.
 
+For non-linear Gaussian log_densities, `linearize` provides an approximation
+in the case that the Hessian of the log_density is not positive definite.
+The user can also linearize with their own approximate covariance Cholesky factor
+with `linearize_given_chol_cov`:
+
+```python
+from linearize import linearize_given_chol_cov
+
+def log_density(x, y):
+    ... # some conditional log density function log p(y|x) that returns a scalar
+
+x, y = ... # some input points
+
+chol_cov = ... # some approximate Cholesky factor of the covariance matrix
+
+mat, shift = linearize_given_chol_cov(log_density, x, y, chol_cov)
+```
+
