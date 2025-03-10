@@ -37,7 +37,9 @@ def test_linearize_init(seed, x_dim) -> None:
     )
 
     chex.assert_trees_all_close(
-        (mat, shift, chol_cov), (jnp.zeros((x_dim, x_dim)), mean, chol_P0), rtol=1e-8
+        (mat, shift, chol_cov @ chol_cov.T),
+        (jnp.zeros((x_dim, x_dim)), mean, chol_P0 @ chol_P0.T),
+        rtol=1e-8,
     )
 
 
@@ -61,8 +63,8 @@ def test_linearize_trans_model(seed, x_dim) -> None:
     )
 
     chex.assert_trees_all_close(
-        (dynamics_mat, dynamics_shift, dynamics_chol_cov),
-        (F, c, chol_Q),
+        (dynamics_mat, dynamics_shift, dynamics_chol_cov @ dynamics_chol_cov.T),
+        (F, c, chol_Q @ chol_Q.T),
         rtol=1e-8,
     )
 
@@ -85,5 +87,7 @@ def test_linearize_obs_model(seed, x_dim, y_dim) -> None:
     )
 
     chex.assert_trees_all_close(
-        (obs_mat, obs_shift, obs_chol_cov), (H, d, chol_R), rtol=1e-8
+        (obs_mat, obs_shift, obs_chol_cov @ obs_chol_cov.T),
+        (H, d, chol_R @ chol_R.T),
+        rtol=1e-8,
     )
