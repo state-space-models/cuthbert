@@ -69,8 +69,8 @@ class LikelihoodMoments(Protocol):
         Args:
             mean: Mean of the current state.
             chol_cov: Cholesky factor of the current state covariance.
-            inputs: Inputs to the model.
             observation: Observation at the current time step.
+            inputs: Inputs to the model.
 
         Returns:
             A tuple of the observation matrix, shift vector, and Cholesky factor of
