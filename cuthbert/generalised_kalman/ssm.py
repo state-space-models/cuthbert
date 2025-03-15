@@ -4,7 +4,7 @@ from jax import Array
 from cuthbert.types import ArrayTreeLike
 
 
-class InitMoments(Protocol):
+class InitParams(Protocol):
     def __call__(
         self,
         inputs: ArrayTreeLike,
@@ -21,7 +21,7 @@ class InitMoments(Protocol):
         ...
 
 
-class DynamicsMoments(Protocol):
+class DynamicsParams(Protocol):
     def __call__(
         self,
         mean: Array,
@@ -49,7 +49,7 @@ class DynamicsMoments(Protocol):
         ...
 
 
-class LikelihoodMoments(Protocol):
+class LikelihoodParams(Protocol):
     def __call__(
         self,
         mean: Array,
@@ -79,7 +79,7 @@ class LikelihoodMoments(Protocol):
         ...
 
 
-class ConditionalMomentsSSM(NamedTuple):
-    init_conditional_moments: InitMoments
-    dynamics_conditional_moments: DynamicsMoments
-    likelihood_conditional_moments: LikelihoodMoments
+class LinearGaussianSSM(NamedTuple):
+    init_params: InitParams
+    dynamics_params: DynamicsParams
+    likelihood_params: LikelihoodParams

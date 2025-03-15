@@ -6,7 +6,7 @@ filtering and smoothing distributions.
 This includes exact inference for linear Gaussian state-space-models, and approximate inference
 for general state-space-models using sigma point quadrature or linearisation (i.e. extended Kalman filtering).
 
-All that is required is a `ConditionalMomentsSSM` which defines the conditional moments
+All that is required is a `LinearGaussianSSM` which defines the conditional parameters
 of the state-space-model:
 
 $$
@@ -17,6 +17,6 @@ $$
 \end{align*}
 $$
 
-where the `ConditionalMomentsSSM` generates the Gaussian parameters $m_0, Q_0, F_t, c_t, Q_t, H_t, d_t, R_t$ as specified by the protocols in [`conditional_moments.py`](conditional_moments.py)
+where the `LinearGaussianSSM` generates the Gaussian parameters $m_0, Q_0, F_t, c_t, Q_t, H_t, d_t, R_t$ as specified by the protocols in [`ssm.py`](ssm.py)
 (although we enforce all covariances to be provided as Cholesky factors).
 
