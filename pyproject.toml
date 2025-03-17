@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["kalman", "quadrature", "resampling"]
+packages = ["cuthbert", "kalman", "quadrature", "resampling"]
 
 [project.optional-dependencies]
 test = [
