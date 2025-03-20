@@ -20,6 +20,10 @@ $$
 
 where the `LinearGaussianSSM` generates the Gaussian parameters
 $m_0, Q_0, F_t, c_t, Q_t, H_t, d_t, R_t$ as specified by the protocols in
-[`ssm.py`](ssm.py) (although we enforce all covariances to be provided as Cholesky
+[`linear_gaussian_ssm.py`](linear_gaussian_ssm.py) (although we enforce all covariances to be provided as Cholesky
 factors).
+
+
+This can then be passed to the `build_inference` function to generate an inference object
+which can be used to do filtering (online and offline) and smoothing in a unified interface.
 

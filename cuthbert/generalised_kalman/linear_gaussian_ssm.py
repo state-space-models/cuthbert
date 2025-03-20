@@ -1,19 +1,21 @@
 from typing import Protocol, NamedTuple
 from jax import Array
 
-from cuthbert.types import ArrayTreeLike
+from cuthbert.types import ArrayTreeLike, KeyArray
 
 
 class InitParams(Protocol):
     def __call__(
         self,
         inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
     ) -> tuple[Array, Array]:
         """
         Returns the mean and Cholesky factor of the initial state distribution.
 
         Args:
             inputs: Inputs to the model.
+            key: Random key, only used for methods with random components.
 
         Returns:
             A tuple of the mean and Cholesky factor of the initial state distribution.
@@ -27,6 +29,7 @@ class DynamicsParams(Protocol):
         mean: Array,
         chol_cov: Array,
         inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
     ) -> tuple[Array, Array, Array]:
         """
         Returns the state transition matrix, shift vector, and Cholesky factor of the
@@ -41,6 +44,7 @@ class DynamicsParams(Protocol):
             mean: Mean of the previous state.
             chol_cov: Cholesky factor of the previous state covariance.
             inputs: Inputs to the model.
+            key: Random key, only used for methods with random components.
 
         Returns:
             A tuple of the state transition matrix, shift vector, and Cholesky factor of
@@ -56,6 +60,7 @@ class LikelihoodParams(Protocol):
         chol_cov: Array,
         observation: ArrayTreeLike,
         inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
     ) -> tuple[Array, Array, Array]:
         """
         Returns the observation matrix, shift vector, and Cholesky factor of the
@@ -71,6 +76,7 @@ class LikelihoodParams(Protocol):
             chol_cov: Cholesky factor of the current state covariance.
             observation: Observation at the current time step.
             inputs: Inputs to the model.
+            key: Random key, only used for methods with random components.
 
         Returns:
             A tuple of the observation matrix, shift vector, and Cholesky factor of
@@ -91,9 +97,9 @@ class LinearGaussianSSM(NamedTuple):
     including sigma point and linearization based approximations of non-linear models.
 
     Attributes:
-        init_params: Initial parameters.
-        dynamics_params: Dynamics parameters.
-        likelihood_params: Likelihood parameters.
+        init_params: Initial parameters generator.
+        dynamics_params: Dynamics parameters generator.
+        likelihood_params: Likelihood parameters generator.
     """
 
     init_params: InitParams

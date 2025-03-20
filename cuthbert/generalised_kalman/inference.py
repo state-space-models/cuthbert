@@ -1,12 +1,12 @@
 from functools import partial
-from jax import vmap
+from jax import vmap, random
 from jax.lax import scan
 
 import kalman
 
-from cuthbert.types import ArrayTreeLike
-from cuthbert.inference import Inference
-from cuthbert.generalised_kalman.ssm import (
+from cuthbert.types import ArrayTreeLike, KeyArray
+from cuthbert.inference import SSMInference
+from cuthbert.generalised_kalman.linear_gaussian_ssm import (
     InitParams,
     DynamicsParams,
     LikelihoodParams,
@@ -14,19 +14,16 @@ from cuthbert.generalised_kalman.ssm import (
 )
 
 
-### TODO: How to interface with FeynmanKac? Or maybe not needed?
-### TODO: support parallel for filter?
 ### TODO: work out how to do smoothing between observations?
 ### TODO: support ArrayTree for states? Difficult for covariances, but possible see https://docs.jax.dev/en/latest/_autosummary/jax.hessian.html
-### TODO: Add optional but not used random key to unified inference to support MCKF etc
 
 
 def build_inference(
     linear_gaussian_ssm: LinearGaussianSSM,
     parallel_smoothing: bool = True,
-) -> Inference:
+) -> SSMInference:
     init_params, dynamics_params, likelihood_params = linear_gaussian_ssm
-    return Inference(
+    return SSMInference(
         init=partial(init, init_params=init_params),
         predict=partial(predict, dynamics_params=dynamics_params),
         update=partial(update, likelihood_params=likelihood_params),
@@ -47,47 +44,56 @@ def build_inference(
 def init(
     inputs: ArrayTreeLike,
     init_params: InitParams,
+    key: KeyArray | None = None,
 ) -> kalman.KalmanState:
-    init_mean, init_chol_cov = init_params(inputs)
+    init_mean, init_chol_cov = init_params(inputs, key)
     return kalman.KalmanState(init_mean, init_chol_cov)
 
 
 def predict(
-    state: kalman.KalmanState,
+    state_prev: kalman.KalmanState,
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
+    key: KeyArray | None = None,
 ) -> kalman.KalmanState:
-    F, c, chol_P = dynamics_params(state.mean, state.chol_cov, inputs)
-    return kalman.predict(state.mean, state.chol_cov, F, c, chol_P)
+    F, c, chol_P = dynamics_params(state_prev.mean, state_prev.chol_cov, inputs, key)
+    return kalman.predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
 
 
 def update(
     state: kalman.KalmanState,
-    inputs: ArrayTreeLike,
     observation: ArrayTreeLike,
+    inputs: ArrayTreeLike,
     likelihood_params: LikelihoodParams,
+    key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
-    H, d, chol_R = likelihood_params(state.mean, state.chol_cov, observation, inputs)
+    H, d, chol_R = likelihood_params(
+        state.mean, state.chol_cov, observation, inputs, key
+    )
     return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
 
 
-#### How to support parallel? As the params generator needs to know the previous state
-#### which we don't have access to for all time steps at the start.
 def filter(
-    inputs: ArrayTreeLike,
     observations: ArrayTreeLike,
+    inputs: ArrayTreeLike,
     init_params: InitParams,
     dynamics_params: DynamicsParams,
     likelihood_params: LikelihoodParams,
+    key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
-    def body(state, inputs_and_observations):
-        inputs, observations = inputs_and_observations
-        state = predict(state, inputs, dynamics_params)
-        state, info = update(state, inputs, observations, likelihood_params)
+    if key is not None:
+        keys = random.split(key, len(observations) + 1)
+    else:
+        keys = [None] * (len(observations) + 1)
+
+    def body(state, inputs_and_observations_and_key):
+        inputs, observations, key = inputs_and_observations_and_key
+        state = predict(state, inputs, dynamics_params, key)
+        state, info = update(state, inputs, observations, likelihood_params, key)
         return state, (state, info)
 
-    init_state = init(inputs, init_params)
-    return scan(body, init_state, (inputs, observations))[1]
+    init_state = init(inputs, init_params, keys[0])
+    return scan(body, init_state, (inputs, observations, keys[1:]))[1]
 
 
 def smoother(
@@ -95,8 +101,12 @@ def smoother(
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
     parallel: bool = True,
+    key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanSmootherInfo]:
+    if key is not None:
+        key = random.split(key, len(filter_states.mean))
+
     filter_ms = filter_states.mean
     filter_chol_Ps = filter_states.chol_cov
-    Fs, cs, chol_Qs = vmap(dynamics_params)(filter_ms, filter_chol_Ps, inputs)
+    Fs, cs, chol_Qs = vmap(dynamics_params)(filter_ms, filter_chol_Ps, inputs, key)
     return kalman.smoother(filter_ms, filter_chol_Ps, Fs, cs, chol_Qs, parallel)

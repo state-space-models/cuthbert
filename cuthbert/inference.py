@@ -1,16 +1,59 @@
-from typing import Callable, NamedTuple
+from typing import NamedTuple, Protocol
+from cuthbert.types import (
+    ArrayTree,
+    ArrayTreeLike,
+    KeyArray,
+)
 
 
-# TODO: Add unified protocols for init/predict/update/smoother - this will need
-# discussion on how to unify SMC inspired FeynmanKac with Kalman filtering/smoothing.
-# Concretely these differ in the following ways:
-# Dynamics: FeynmanKac has trajectory, Kalman has just the previous state
-# Likelihood: FeynmancKac has trajectory, Kalman has state and observation
+class Init(Protocol):
+    def __call__(
+        self,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> ArrayTree: ...
 
 
-class Inference(NamedTuple):
-    init: Callable
-    predict: Callable
-    update: Callable
-    filter: Callable
-    smoother: Callable
+class Predict(Protocol):
+    def __call__(
+        self,
+        state_prev: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> ArrayTree: ...
+
+
+class Update(Protocol):
+    def __call__(
+        self,
+        state: ArrayTreeLike,
+        observation: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> tuple[ArrayTree, ArrayTree]: ...
+
+
+class Filter(Protocol):
+    def __call__(
+        self,
+        observations: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> tuple[ArrayTree, ArrayTree]: ...
+
+
+class Smoother(Protocol):
+    def __call__(
+        self,
+        filter_states: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> tuple[ArrayTree, ArrayTree]: ...
+
+
+class SSMInference(NamedTuple):
+    init: Init
+    predict: Predict
+    update: Update
+    filter: Filter
+    smoother: Smoother
