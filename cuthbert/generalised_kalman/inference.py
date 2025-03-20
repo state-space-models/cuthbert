@@ -30,7 +30,12 @@ def build_inference(
         init=partial(init, init_params=init_params),
         predict=partial(predict, dynamics_params=dynamics_params),
         update=partial(update, likelihood_params=likelihood_params),
-        filter=partial(filter, likelihood_params=likelihood_params),
+        filter=partial(
+            filter,
+            init_params=init_params,
+            dynamics_params=dynamics_params,
+            likelihood_params=likelihood_params
+        ),
         smoother=partial(
             smoother,
             dynamics_params=dynamics_params,
