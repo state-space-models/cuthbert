@@ -34,7 +34,7 @@ def build_inference(
             filter,
             init_params=init_params,
             dynamics_params=dynamics_params,
-            likelihood_params=likelihood_params
+            likelihood_params=likelihood_params,
         ),
         smoother=partial(
             smoother,
