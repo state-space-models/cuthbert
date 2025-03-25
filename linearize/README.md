@@ -2,11 +2,12 @@
 
 This sub-repository provides functions for linearizing conditional distributions
 in various forms into a linear Gaussian form. That is form an approximate Gaussian
-defined by the tuple `(H, d, L)` such that
+defined by the tuple $(H, d, L)$ such that
 
 $$
 \log p(y \mid x) \approx -\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + \text{const},
 $$
+
 
 ### Linearization techniques
 
@@ -14,6 +15,8 @@ $$
 - `linearize_moments`: Linearize conditional mean and Cholesky covariance functions
 around a given point.
 
+Linearization with sigma points can also be found in the [`quadrature`](/quadrature)
+sub-repository.
 
 ### Example usage
 
