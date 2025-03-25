@@ -5,7 +5,7 @@ import jax
 from jax import numpy as jnp
 from jax.scipy.stats import multivariate_normal
 
-from linearize import linearize_density, linearize_density_given_chol_cov
+from linearize import linearize_log_density, linearize_log_density_given_chol_cov
 from tests.kalman.utils import (
     generate_init_model,
     generate_trans_model,
@@ -32,7 +32,7 @@ def test_linearize_init(seed, x_dim) -> None:
     def init_log_density(x):
         return jnp.asarray(multivariate_normal.logpdf(x, mean, chol_P0 @ chol_P0.T))
 
-    mat_given_chol_cov, shift_given_chol_cov = linearize_density_given_chol_cov(
+    mat_given_chol_cov, shift_given_chol_cov = linearize_log_density_given_chol_cov(
         lambda _, x: init_log_density(x),
         linearization_point,
         linearization_point,
@@ -45,7 +45,7 @@ def test_linearize_init(seed, x_dim) -> None:
         rtol=1e-8,
     )
 
-    mat, shift, chol_cov = linearize_density(
+    mat, shift, chol_cov = linearize_log_density(
         lambda _, x: init_log_density(x), linearization_point, linearization_point
     )
 
@@ -72,7 +72,7 @@ def test_linearize_trans_model(seed, x_dim) -> None:
         )
 
     dynamics_mat_given_chol_cov, dynamics_shift_given_chol_cov = (
-        linearize_density_given_chol_cov(
+        linearize_log_density_given_chol_cov(
             dynamics_log_density, linearization_point_prev, linearization_point, chol_Q
         )
     )
@@ -83,7 +83,7 @@ def test_linearize_trans_model(seed, x_dim) -> None:
         rtol=1e-8,
     )
 
-    dynamics_mat, dynamics_shift, dynamics_chol_cov = linearize_density(
+    dynamics_mat, dynamics_shift, dynamics_chol_cov = linearize_log_density(
         dynamics_log_density, linearization_point_prev, linearization_point
     )
 
@@ -107,8 +107,10 @@ def test_linearize_obs_model(seed, x_dim, y_dim) -> None:
     def obs_log_density(x, y):
         return jnp.asarray(multivariate_normal.logpdf(y, H @ x + d, chol_R @ chol_R.T))
 
-    obs_mat_given_chol_cov, obs_shift_given_chol_cov = linearize_density_given_chol_cov(
-        obs_log_density, linearization_point, y, chol_R
+    obs_mat_given_chol_cov, obs_shift_given_chol_cov = (
+        linearize_log_density_given_chol_cov(
+            obs_log_density, linearization_point, y, chol_R
+        )
     )
 
     chex.assert_trees_all_close(
@@ -117,7 +119,7 @@ def test_linearize_obs_model(seed, x_dim, y_dim) -> None:
         rtol=1e-8,
     )
 
-    obs_mat, obs_shift, obs_chol_cov = linearize_density(
+    obs_mat, obs_shift, obs_chol_cov = linearize_log_density(
         obs_log_density, linearization_point, y
     )
 
