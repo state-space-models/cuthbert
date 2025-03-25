@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from linearize.utils import symmetric_inv_sqrt
 
 
-def linearize(
+def linearize_density(
     log_density: Callable[[ArrayLike, ArrayLike], Array],
     x: ArrayLike,
     y: ArrayLike,
@@ -32,11 +32,11 @@ def linearize(
     """
     prec = -hessian(log_density, 1)(x, y)
     chol_cov = symmetric_inv_sqrt(prec, rtol=rtol)
-    mat, shift = linearize_given_chol_cov(log_density, x, y, chol_cov)
+    mat, shift = linearize_density_given_chol_cov(log_density, x, y, chol_cov)
     return mat, shift, chol_cov
 
 
-def linearize_given_chol_cov(
+def linearize_density_given_chol_cov(
     log_density: Callable[[ArrayLike, ArrayLike], Array],
     x: ArrayLike,
     y: ArrayLike,
