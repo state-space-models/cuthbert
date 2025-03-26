@@ -5,7 +5,14 @@ in various forms into a linear Gaussian form. That is form an approximate Gaussi
 defined by the tuple $(H, d, L)$ such that
 
 $$
-\log p(y \mid x) \approx -\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + \text{const},
+\log p(y \mid x) \approx -\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + \text{const}.
+$$
+
+Additionally, some linearization techniques may apply to an unconditional potential
+$G(x)$ and return a tuple $(m, L)$ such that
+
+$$
+\log G(x) \approx -\frac{1}{2}(x - m)^T L^T L (x - m) + \text{const}.
 $$
 
 
@@ -14,6 +21,8 @@ $$
 - `linearize_log_density`: Linearize a conditional log density around given points.
 - `linearize_moments`: Linearize conditional mean and Cholesky covariance functions
 around a given point.
+- `linearize_taylor`: Linearize a log potential function around a given point using
+Taylor expansion.
 
 Linearization with sigma points can also be found in the [`quadrature`](/quadrature)
 sub-repository.
