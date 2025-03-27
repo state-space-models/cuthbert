@@ -19,6 +19,15 @@ def linearize_log_density(
     .. math::
         \\log p(y \\mid x) = -\\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + const
 
+    The cholesky factor of the covariance is calculated using the negative hessian
+    of the log_density with respect to y as the precision matrix.
+    `symmetric_inv_sqrt` is used to calculate the inverse square root by
+    ignoring any singular values that are sufficiently close to zero
+    (this is an projection in the case the hessian is not positive definite).
+
+    Alternatively, the cholesky factor can be provided directly
+    in `linearize_log_density_given_chol_cov`.
+
     Args:
         log_density: A conditional log density of y given x. Returns a scalar.
         x: The input points.
@@ -55,7 +64,6 @@ def linearize_log_density_given_chol_cov(
         x: The input points.
         y: The output points.
         chol_cov: The cholesky factor of the covariance matrix of the Gaussian.
-            If not provided, it will use symmetric_inv_sqrt(-hessian(log_density)).
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.

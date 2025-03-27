@@ -1,8 +1,8 @@
 # Linearize
 
 This sub-repository provides functions for linearizing conditional distributions
-in various forms into a linear Gaussian form. That is form an approximate Gaussian
-defined by the tuple $(H, d, L)$ such that
+with automatic differentiation into a linear Gaussian form. That is form an approximate
+Gaussian defined by the tuple $(H, d, L)$ such that
 
 $$
 \log p(y \mid x) \approx -\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + \text{const}.
@@ -14,6 +14,10 @@ $G(x)$ and return a tuple $(m, L)$ such that
 $$
 \log G(x) \approx -\frac{1}{2}(x - m)^T L^T L (x - m) + \text{const}.
 $$
+
+The former approach requires a conditional distribution that is differentiable with
+respect to $x$ and $y$. The latter approach only requires differentiability with
+respect to $x$ and therefore works with e.g. discrete or non-ordinal $y$.
 
 
 ### Linearization techniques
