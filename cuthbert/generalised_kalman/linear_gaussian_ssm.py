@@ -85,6 +85,35 @@ class LikelihoodParams(Protocol):
         ...
 
 
+class PotentialParams(Protocol):
+    def __call__(
+        self,
+        mean: Array,
+        chol_cov: Array,
+        observation: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> tuple[Array, Array]:
+        """
+        Returns the gradient and cholesky factor of the covariance matrix of the
+        potential function.
+
+        Defines an unconditional potential log G(x) = -0.5 (x - m)^T (L L^T)^{-1} (x - m).
+
+        Args:
+            mean: Mean of the state.
+            chol_cov: Cholesky factor of the state covariance.
+            observation: Observation at the current time step.
+            inputs: Inputs to the model.
+            key: Random key, only used for methods with random components.
+
+        Returns:
+            A tuple of the gradient and cholesky factor of the covariance matrix
+                of the potential function.
+        """
+        ...
+
+
 class LinearGaussianSSM(NamedTuple):
     """
     Defines a conditionally linear Gaussian state space model.
@@ -104,4 +133,4 @@ class LinearGaussianSSM(NamedTuple):
 
     init_params: InitParams
     dynamics_params: DynamicsParams
-    likelihood_params: LikelihoodParams
+    likelihood_params: LikelihoodParams | PotentialParams

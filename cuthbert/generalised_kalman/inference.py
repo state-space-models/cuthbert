@@ -1,5 +1,5 @@
 from functools import partial
-from jax import vmap, random
+from jax import vmap, random, numpy as jnp
 from jax.lax import scan
 
 import kalman
@@ -10,6 +10,7 @@ from cuthbert.generalised_kalman.linear_gaussian_ssm import (
     InitParams,
     DynamicsParams,
     LikelihoodParams,
+    PotentialParams,
     LinearGaussianSSM,
 )
 
@@ -64,12 +65,22 @@ def update(
     state: kalman.KalmanState,
     observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
-    likelihood_params: LikelihoodParams,
+    likelihood_params: LikelihoodParams | PotentialParams,
     key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
-    H, d, chol_R = likelihood_params(
+    likelihood_or_potential_params = likelihood_params(
         state.mean, state.chol_cov, observation, inputs, key
     )
+
+    if len(likelihood_or_potential_params) == 3:
+        H, d, chol_R = likelihood_or_potential_params
+    else:
+        d, chol_R = likelihood_or_potential_params
+
+        # dummy mat and observation as potential is unconditional
+        H = jnp.eye(d.shape[0])
+        observation = jnp.zeros_like(d)
+
     return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
 
 
@@ -78,7 +89,7 @@ def filter(
     inputs: ArrayTreeLike,
     init_params: InitParams,
     dynamics_params: DynamicsParams,
-    likelihood_params: LikelihoodParams,
+    likelihood_params: LikelihoodParams | PotentialParams,
     key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
     if key is not None:

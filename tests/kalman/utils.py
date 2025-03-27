@@ -4,11 +4,8 @@ import numpy as np
 def generate_lgssm(seed, x_dim, y_dim, num_time_steps):
     rng = np.random.default_rng(seed)
 
-    # Initial state.
-    m0 = rng.normal(size=x_dim)
-    chol_P0 = generate_cholesky_factor(rng, x_dim)
-
-    # Transition and observation models, and observations.
+    # Init, transition and observation models, and observations.
+    m0, chol_P0 = generate_init_model(rng, x_dim)
     F, c, chol_Q = generate_trans_model(rng, x_dim)
     H, d, chol_R, y = generate_obs_model(rng, x_dim, y_dim)
 
@@ -23,6 +20,12 @@ def generate_cholesky_factor(rng, dim):
     chol_A = rng.random((dim, dim))
     chol_A[np.triu_indices(dim, 1)] = 0.0
     return chol_A
+
+
+def generate_init_model(rng, x_dim):
+    m0 = rng.normal(size=x_dim)
+    chol_P0 = generate_cholesky_factor(rng, x_dim)
+    return m0, chol_P0
 
 
 def generate_trans_model(rng, x_dim):
