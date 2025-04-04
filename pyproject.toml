@@ -19,8 +19,8 @@ dependencies = [
     "numba>=0.60.0",
 ]
 
-[tool.setuptools]
-packages = ["cuthbert", "kalman", "quadrature", "resampling", "linearize"]
+[tool.setuptools.packages.find]
+include = ["cuthbert", "cuthbertlib"]
 
 [project.optional-dependencies]
 test = [
