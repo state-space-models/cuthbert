@@ -2,7 +2,7 @@ from functools import partial
 from jax import vmap, random, numpy as jnp
 from jax.lax import scan
 
-import kalman
+from cuthbertlib import kalman
 
 from cuthbert.types import ArrayTreeLike, KeyArray
 from cuthbert.inference import SSMInference

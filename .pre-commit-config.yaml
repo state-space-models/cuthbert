@@ -6,7 +6,7 @@ repos:
       args: ["--fix"]
     - id: ruff-format
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.387
+    rev: v1.1.398
     hooks:
     - id: pyright
       additional_dependencies: [jax>=0.4.35, numba>=0.60.0, chex]
