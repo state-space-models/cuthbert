@@ -1,4 +1,4 @@
-# cuthbertlib
+# cuthbertlib: atomic modules for cuthbert
 
 A collection of atomic, smaller-scoped tools useful for state-space model inference.
 This package contains the building blocks that power the main `cuthbert` package.
