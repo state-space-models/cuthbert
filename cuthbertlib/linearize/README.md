@@ -12,7 +12,7 @@ Additionally, some linearization techniques may apply to an unconditional potent
 $G(x)$ and return a tuple $(m, L)$ such that
 
 $$
-\log G(x) \approx -\frac{1}{2}(x - m)^T L^T L (x - m) + \text{const}.
+\log G(x) \approx -\frac{1}{2}(x - m)^T (L L^T)^{-1} (x - m) + \text{const}.
 $$
 
 The former approach requires a conditional distribution that is differentiable with
