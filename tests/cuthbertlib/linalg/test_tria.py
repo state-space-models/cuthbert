@@ -17,4 +17,4 @@ def test_tria(seed, shape):
     assert jnp.allclose(R, jnp.tril(R))
 
     # Check that R @ R.T = A @ A.T
-    assert jnp.allclose(R @ R.T, A @ A.T)
+    assert jnp.allclose(R @ R.T, A @ A.T, atol=1e-8)
