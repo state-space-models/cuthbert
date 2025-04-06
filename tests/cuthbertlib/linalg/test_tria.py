@@ -1,8 +1,16 @@
+import jax
 import jax.numpy as jnp
 import pytest
 from jax import random
 
 from cuthbertlib.linalg.tria import tria
+
+
+@pytest.fixture(scope="module", autouse=True)
+def config():
+    jax.config.update("jax_enable_x64", True)
+    yield
+    jax.config.update("jax_enable_x64", False)
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99])
@@ -17,4 +25,4 @@ def test_tria(seed, shape):
     assert jnp.allclose(R, jnp.tril(R))
 
     # Check that R @ R.T = A @ A.T
-    assert jnp.allclose(R @ R.T, A @ A.T, atol=1e-8)
+    assert jnp.allclose(R @ R.T, A @ A.T)
