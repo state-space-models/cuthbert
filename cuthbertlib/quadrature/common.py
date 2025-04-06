@@ -4,7 +4,7 @@ from jax import Array
 import jax.numpy as jnp
 from jax.typing import ArrayLike
 
-from cuthbertlib.quadrature.utils import tria
+from cuthbertlib.linalg import tria
 
 __all__ = ["SigmaPoints", "Quadrature"]
 
