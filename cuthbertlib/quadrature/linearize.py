@@ -5,8 +5,9 @@ from jax import Array, vmap
 from jax.scipy.linalg import cho_solve
 from jax.typing import ArrayLike
 
+from cuthbertlib.common import tria
 from cuthbertlib.quadrature.common import SigmaPoints, Quadrature
-from cuthbertlib.quadrature.utils import tria, cholesky_update_many
+from cuthbertlib.quadrature.utils import cholesky_update_many
 
 
 __all__ = ["conditional_moments", "functional"]

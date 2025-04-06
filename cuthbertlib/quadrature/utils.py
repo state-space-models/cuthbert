@@ -2,10 +2,9 @@ import jax
 from jax import Array
 from jax.typing import ArrayLike
 import jax.numpy as jnp
-import jax.scipy.linalg as jlinalg
 
 
-__all__ = ["cholesky_update_many", "tria"]
+__all__ = ["cholesky_update_many"]
 
 
 def cholesky_update_many(
@@ -37,27 +36,6 @@ def cholesky_update_many(
 
     final_chol, _ = jax.lax.scan(body, jnp.asarray(chol_init), update_vectors)
     return final_chol
-
-
-def tria(A: ArrayLike) -> Array:
-    """
-    Triangularization of a matrix. Typically used to get a square root of a covariance matrix without resorting to forming the full covariance matrix
-    and the computing the Cholesky decomposition.
-    This is largely more stable.
-
-    Args:
-        A: A square matrix
-
-    Returns:
-        The lower triangular matrix R such that R @ R.T = A @ A.T
-
-    References:
-        - https://ieeexplore.ieee.org/document/4524036
-
-    """
-    A = jnp.asarray(A)
-    _, R = jlinalg.qr(A.T, mode="economic")
-    return R.T
 
 
 def _set_diagonal(x: Array, y: Array) -> Array:

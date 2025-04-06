@@ -7,7 +7,8 @@ from jax.scipy.linalg import cho_solve
 from jax.scipy.linalg import solve_triangular
 from jax.typing import ArrayLike
 
-from cuthbertlib.kalman.utils import mvn_logpdf, tria
+from cuthbertlib.common import tria
+from cuthbertlib.kalman.utils import mvn_logpdf
 
 
 class KalmanState(NamedTuple):
