@@ -6,7 +6,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from jax.scipy.linalg import solve_triangular
 
-from cuthbertlib.common import tria
+from cuthbertlib.linalg import tria
 from cuthbertlib.kalman.filtering import KalmanState
 from cuthbertlib.kalman.utils import append_tree
 

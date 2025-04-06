@@ -2,7 +2,7 @@ import jax.numpy as jnp
 import pytest
 from jax import random
 
-from cuthbertlib.common.linalg import tria
+from cuthbertlib.linalg.tria import tria
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99])
