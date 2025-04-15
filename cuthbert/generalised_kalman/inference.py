@@ -78,7 +78,9 @@ def update(
         d, chol_R = likelihood_or_potential_params
 
         # dummy mat and observation as potential is unconditional
-        H = jnp.eye(d.shape[0])
+        # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
+        # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
+        H = -jnp.eye(d.shape[0])
         observation = jnp.zeros_like(d)
 
     return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
