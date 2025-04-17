@@ -1,44 +1,40 @@
 from functools import partial
-from jax import vmap, random, numpy as jnp
-from jax.lax import scan
+from jax import random, numpy as jnp
+from jax.lax import cond
 
 from cuthbertlib import kalman
 
 from cuthbert.types import ArrayTreeLike, KeyArray
-from cuthbert.inference import SSMInference
+from cuthbert.inference import Inference
 from cuthbert.generalised_kalman.linear_gaussian_ssm import (
     InitParams,
     DynamicsParams,
     LikelihoodParams,
-    PotentialParams,
     LinearGaussianSSM,
 )
 
 
-### TODO: work out how to do smoothing between observations?
-### TODO: support ArrayTree for states? Difficult for covariances, but possible see https://docs.jax.dev/en/latest/_autosummary/jax.hessian.html
-
-
 def build_inference(
     linear_gaussian_ssm: LinearGaussianSSM,
-    parallel_smoothing: bool = True,
-) -> SSMInference:
-    init_params, dynamics_params, likelihood_params = linear_gaussian_ssm
-    return SSMInference(
+) -> Inference:
+    _, _, init_params, dynamics_params, likelihood_params = linear_gaussian_ssm
+    return Inference(
         init=partial(init, init_params=init_params),
         predict=partial(predict, dynamics_params=dynamics_params),
-        update=partial(update, likelihood_params=likelihood_params),
-        filter=partial(
-            filter,
-            init_params=init_params,
+        filter_update=partial(
+            filter_update,
             dynamics_params=dynamics_params,
             likelihood_params=likelihood_params,
         ),
-        smoother=partial(
-            smoother,
-            dynamics_params=dynamics_params,
-            parallel=parallel_smoothing,
+        smoother_combine=partial(smoother_combine, dynamics_params=dynamics_params),
+        associative_filter_init=partial(
+            associative_filter_init, lgssm=linear_gaussian_ssm
         ),
+        associative_filter_combine=associative_filter_combine,
+        associative_smoother_init=partial(
+            associative_smoother_init, lgssm=linear_gaussian_ssm
+        ),
+        associative_smoother_combine=associative_smoother_combine,
     )
 
 
@@ -61,65 +57,128 @@ def predict(
     return kalman.predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
 
 
-def update(
+def _update(
     state: kalman.KalmanState,
     observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
-    likelihood_params: LikelihoodParams | PotentialParams,
+    likelihood_params: LikelihoodParams,
     key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
     likelihood_or_potential_params = likelihood_params(
         state.mean, state.chol_cov, observation, inputs, key
     )
-
-    if len(likelihood_or_potential_params) == 3:
-        H, d, chol_R = likelihood_or_potential_params
-    else:
-        d, chol_R = likelihood_or_potential_params
-
-        # dummy mat and observation as potential is unconditional
-        # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
-        # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
-        H = -jnp.eye(d.shape[0])
-        observation = jnp.zeros_like(d)
-
+    H, d, chol_R = likelihood_or_potential_params
     return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
 
 
-def filter(
-    observations: ArrayTreeLike,
+def filter_update(
+    state: kalman.KalmanState,
+    observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
-    init_params: InitParams,
     dynamics_params: DynamicsParams,
-    likelihood_params: LikelihoodParams | PotentialParams,
+    likelihood_params: LikelihoodParams,
     key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
-    if key is not None:
-        keys = random.split(key, len(observations) + 1)
-    else:
-        keys = [None] * (len(observations) + 1)
-
-    def body(state, inputs_and_observations_and_key):
-        inputs, observations, key = inputs_and_observations_and_key
-        state = predict(state, inputs, dynamics_params, key)
-        state, info = update(state, inputs, observations, likelihood_params, key)
-        return state, (state, info)
-
-    init_state = init(inputs, init_params, keys[0])
-    return scan(body, init_state, (inputs, observations, keys[1:]))[1]
+    pred_state = predict(state, inputs, dynamics_params, key)
+    return cond(
+        observation is None or jnp.isnan(observation).any(),
+        lambda: (pred_state, kalman.KalmanFilterInfo(jnp.array(0.0))),
+        lambda: _update(pred_state, observation, inputs, likelihood_params, key),
+    )
 
 
-def smoother(
-    filter_states: kalman.KalmanState,
+def smoother_combine(
+    state_1: kalman.KalmanState,
+    state_2: kalman.KalmanState,
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
-    parallel: bool = True,
     key: KeyArray | None = None,
 ) -> tuple[kalman.KalmanState, kalman.KalmanSmootherInfo]:
-    if key is not None:
-        key = random.split(key, len(filter_states.mean))
+    F, c, chol_Q = dynamics_params(state_1.mean, state_1.chol_cov, inputs, key)
+    return kalman.smoother_update(
+        state_1.mean,
+        state_1.chol_cov,
+        state_2.mean,
+        state_2.chol_cov,
+        F,
+        c,
+        chol_Q,
+    )
 
-    filter_ms = filter_states.mean
-    filter_chol_Ps = filter_states.chol_cov
-    Fs, cs, chol_Qs = vmap(dynamics_params)(filter_ms, filter_chol_Ps, inputs, key)
-    return kalman.smoother(filter_ms, filter_chol_Ps, Fs, cs, chol_Qs, parallel)
+
+def associative_filter_init(
+    observation: ArrayTreeLike,
+    inputs: ArrayTreeLike,
+    lgssm: LinearGaussianSSM,
+    key: KeyArray | None = None,
+) -> kalman.filtering.FilterScanElement:
+    if key:
+        init_key, dynamics_key, likelihood_key = random.split(key, 3)
+    else:
+        init_key, dynamics_key, likelihood_key = None, None, None
+
+    if (
+        observation is None or jnp.isnan(observation).any()
+    ):  # User has to provide observation=None or jnp.nan for first time step
+        m0, chol_P0 = lgssm.init_params(inputs, init_key)
+    else:
+        m0 = jnp.zeros(lgssm.dim_state)
+        chol_P0 = jnp.zeros((lgssm.dim_state, lgssm.dim_state))
+
+    # This is stupid, but we only really support associative filter in the
+    # linear Gaussian case i.e. without linearization
+    # and in this case the linearization mean and chol_cov are ignored anyway
+    linearization_mean = m0
+    linearization_chol_cov = chol_P0
+
+    m0, chol_P0 = lgssm.init_params(inputs, init_key)
+    F, c, chol_Q = lgssm.dynamics_params(
+        linearization_mean, linearization_chol_cov, inputs, dynamics_key
+    )
+    H, d, chol_R = lgssm.likelihood_params(
+        linearization_mean,
+        linearization_chol_cov,
+        observation,
+        inputs,
+        likelihood_key,
+    )
+
+    return kalman.filtering._sqrt_associative_params_single(
+        m0, chol_P0, F, c, chol_Q, H, d, chol_R, observation
+    )
+
+
+def associative_filter_combine(
+    state_1: kalman.filtering.FilterScanElement,
+    state_2: kalman.filtering.FilterScanElement,
+    key: KeyArray | None = None,
+) -> tuple[kalman.filtering.FilterScanElement, kalman.KalmanFilterInfo]:
+    state = kalman.filtering.sqrt_filtering_operator(state_1, state_2)
+    return state, kalman.KalmanFilterInfo(-state.ell)
+
+
+def associative_smoother_init(
+    filter_state: ArrayTreeLike,
+    inputs: ArrayTreeLike,
+    lgssm: LinearGaussianSSM,
+    key: KeyArray | None = None,
+) -> kalman.smoothing.SmootherScanElement:
+    F, c, chol_Q = lgssm.dynamics_params(
+        filter_state.mean, filter_state.chol_cov, inputs, key
+    )
+    return kalman.smoothing._sqrt_associative_params_single(
+        filter_state.mean,
+        filter_state.chol_cov,
+        F,
+        c,
+        chol_Q,
+    )
+
+
+def associative_smoother_combine(
+    state_1: kalman.smoothing.SmootherScanElement,
+    state_2: kalman.smoothing.SmootherScanElement,
+    key: KeyArray | None = None,
+) -> tuple[kalman.smoothing.SmootherScanElement, kalman.smoothing.KalmanSmootherInfo]:
+    state = kalman.smoothing.sqrt_smoothing_operator(state_1, state_2)
+    return state, kalman.smoothing.KalmanSmootherInfo(state_1.E)

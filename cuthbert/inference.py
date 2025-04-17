@@ -1,4 +1,4 @@
-from typing import NamedTuple, Protocol
+from typing import NamedTuple, Never, Protocol, Callable
 from cuthbert.types import (
     ArrayTree,
     ArrayTreeLike,
@@ -23,7 +23,7 @@ class Predict(Protocol):
     ) -> ArrayTree: ...
 
 
-class Update(Protocol):
+class FilterUpdate(Protocol):
     def __call__(
         self,
         state: ArrayTreeLike,
@@ -33,27 +33,74 @@ class Update(Protocol):
     ) -> tuple[ArrayTree, ArrayTree]: ...
 
 
-class Filter(Protocol):
+class SmootherCombine(Protocol):
     def __call__(
         self,
-        observations: ArrayTreeLike,
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
         inputs: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> tuple[ArrayTree, ArrayTree]: ...
 
 
-class Smoother(Protocol):
+class AssociativeFilterInit(Protocol):
     def __call__(
         self,
-        filter_states: ArrayTreeLike,
+        observation: ArrayTreeLike,
         inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> ArrayTree: ...
+
+
+class AssociativeFilterCombine(Protocol):
+    def __call__(
+        self,
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> tuple[ArrayTree, ArrayTree]: ...
 
 
-class SSMInference(NamedTuple):
+class AssociativeSmootherInit(Protocol):
+    def __call__(
+        self,
+        filter_state: ArrayTreeLike,
+        inputs: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> ArrayTree: ...
+
+
+class AssociativeSmootherCombine(Protocol):
+    def __call__(
+        self,
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
+        key: KeyArray | None = None,
+    ) -> tuple[ArrayTree, ArrayTree]: ...
+
+
+def not_implemented(protocol) -> Callable:
+    def f(*args, **kwargs) -> Never:
+        raise NotImplementedError(f"{protocol.__name__} not implemented")
+
+    return f
+
+
+class Inference(NamedTuple):
     init: Init
     predict: Predict
-    update: Update
-    filter: Filter
-    smoother: Smoother
+    filter_update: FilterUpdate
+    smoother_combine: SmootherCombine
+
+    associative_filter_init: AssociativeFilterInit = not_implemented(
+        AssociativeFilterInit
+    )
+    associative_filter_combine: AssociativeFilterCombine = not_implemented(
+        AssociativeFilterCombine
+    )
+    associative_smoother_init: AssociativeSmootherInit = not_implemented(
+        AssociativeSmootherInit
+    )
+    associative_smoother_combine: AssociativeSmootherCombine = not_implemented(
+        AssociativeSmootherCombine
+    )

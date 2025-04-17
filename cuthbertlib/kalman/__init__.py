@@ -7,3 +7,6 @@ from cuthbertlib.kalman.sampling import sampler
 from cuthbertlib.kalman.smoothing import KalmanSmootherInfo
 from cuthbertlib.kalman.smoothing import smoother
 from cuthbertlib.kalman.smoothing import update as smoother_update
+
+from cuthbertlib.kalman import filtering
+from cuthbertlib.kalman import smoothing

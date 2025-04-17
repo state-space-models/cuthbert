@@ -9,7 +9,10 @@ from cuthbert.generalised_kalman.inference import (
     build_inference,
     init,
     predict,
-    update,
-    filter,
-    smoother,
+    filter_update,
+    smoother_combine,
+    associative_filter_init,
+    associative_filter_combine,
+    associative_smoother_init,
+    associative_smoother_combine,
 )

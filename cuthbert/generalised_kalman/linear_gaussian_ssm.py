@@ -126,11 +126,16 @@ class LinearGaussianSSM(NamedTuple):
     including sigma point and linearization based approximations of non-linear models.
 
     Attributes:
+        dim_state: Dimension of the state.
+        dim_observation: Dimension of the observation.
         init_params: Initial parameters generator.
         dynamics_params: Dynamics parameters generator.
         likelihood_params: Likelihood parameters generator.
     """
 
+    dim_state: int
+    dim_observation: int
+
     init_params: InitParams
     dynamics_params: DynamicsParams
-    likelihood_params: LikelihoodParams | PotentialParams
+    likelihood_params: LikelihoodParams
