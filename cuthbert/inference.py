@@ -1,9 +1,10 @@
-from typing import NamedTuple, Never, Protocol, Callable
+from typing import NamedTuple, Protocol
 from cuthbert.types import (
     ArrayTree,
     ArrayTreeLike,
     KeyArray,
 )
+from cuthbert.utils import not_implemented
 
 
 class Init(Protocol):
@@ -77,13 +78,6 @@ class AssociativeSmootherCombine(Protocol):
         state_2: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> tuple[ArrayTree, ArrayTree]: ...
-
-
-def not_implemented(protocol) -> Callable:
-    def f(*args, **kwargs) -> Never:
-        raise NotImplementedError(f"{protocol.__name__} not implemented")
-
-    return f
 
 
 class Inference(NamedTuple):
