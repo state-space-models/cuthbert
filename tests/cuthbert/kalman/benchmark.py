@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from cuthbertlib.kalman.filtering import filter
+from cuthbert.generalised_kalman.kalman import filter
 
 PLATFORM_NAME = "cuda"
 jax.config.update("jax_platform_name", PLATFORM_NAME)
