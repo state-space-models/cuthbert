@@ -27,3 +27,6 @@ factors).
 This can then be passed to the `build_inference` function to generate an inference object
 which can be used to do filtering (online and offline) and smoothing in a unified interface.
 
+
+`kalman.py` provides offline `filter`, `sampling` and `smoother` functions that all support temporal
+parallelization via the `parallel` argument which defaults to `True`.
