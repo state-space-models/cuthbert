@@ -149,7 +149,6 @@ def smoother(
     ), smoothing.KalmanSmootherInfo(associative_params.E[:-1])
 
 
-
 def sampler(
     key: ArrayLike,
     ms: Array,

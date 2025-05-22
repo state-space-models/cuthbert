@@ -2,7 +2,14 @@ from functools import partial
 from jax import vmap, random, numpy as jnp
 from jax.lax import scan
 
-from cuthbertlib import kalman
+from cuthbertlib.kalman import (
+    KalmanState,
+    KalmanFilterInfo,
+    KalmanSmootherInfo,
+    filter_update,
+)
+from cuthbertlib.kalman import predict as filter_predict
+from cuthbert.generalised_kalman import kalman
 
 from cuthbert.types import ArrayTreeLike, KeyArray
 from cuthbert.inference import SSMInference
@@ -46,28 +53,28 @@ def init(
     inputs: ArrayTreeLike,
     init_params: InitParams,
     key: KeyArray | None = None,
-) -> kalman.KalmanState:
+) -> KalmanState:
     init_mean, init_chol_cov = init_params(inputs, key)
-    return kalman.KalmanState(init_mean, init_chol_cov)
+    return KalmanState(init_mean, init_chol_cov)
 
 
 def predict(
-    state_prev: kalman.KalmanState,
+    state_prev: KalmanState,
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
     key: KeyArray | None = None,
-) -> kalman.KalmanState:
+) -> KalmanState:
     F, c, chol_P = dynamics_params(state_prev.mean, state_prev.chol_cov, inputs, key)
-    return kalman.predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
+    return filter_predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
 
 
 def update(
-    state: kalman.KalmanState,
+    state: KalmanState,
     observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
     likelihood_params: LikelihoodParams | PotentialParams,
     key: KeyArray | None = None,
-) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
+) -> tuple[KalmanState, KalmanFilterInfo]:
     likelihood_or_potential_params = likelihood_params(
         state.mean, state.chol_cov, observation, inputs, key
     )
@@ -83,7 +90,7 @@ def update(
         H = -jnp.eye(d.shape[0])
         observation = jnp.zeros_like(d)
 
-    return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
+    return filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
 
 
 def filter(
@@ -93,7 +100,7 @@ def filter(
     dynamics_params: DynamicsParams,
     likelihood_params: LikelihoodParams | PotentialParams,
     key: KeyArray | None = None,
-) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
+) -> tuple[KalmanState, KalmanFilterInfo]:
     if key is not None:
         keys = random.split(key, len(observations) + 1)
     else:
@@ -110,12 +117,12 @@ def filter(
 
 
 def smoother(
-    filter_states: kalman.KalmanState,
+    filter_states: KalmanState,
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
     parallel: bool = True,
     key: KeyArray | None = None,
-) -> tuple[kalman.KalmanState, kalman.KalmanSmootherInfo]:
+) -> tuple[KalmanState, KalmanSmootherInfo]:
     if key is not None:
         key = random.split(key, len(filter_states.mean))
 
