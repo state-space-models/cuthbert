@@ -3,12 +3,12 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 from jax import Array
-from jax.typing import ArrayLike
 from jax.scipy.linalg import solve_triangular
+from jax.typing import ArrayLike
 
-from cuthbertlib.linalg import tria
 from cuthbertlib.kalman.filtering import KalmanState
 from cuthbertlib.kalman.utils import append_tree
+from cuthbertlib.linalg import tria
 
 
 class SmootherScanElement(NamedTuple):
@@ -73,65 +73,6 @@ def update(
     mean = filter_m + gain @ mean_diff
     chol = tria(jnp.concatenate([Phi22, gain @ smoother_chol_P], axis=1))
     return KalmanState(mean, chol), KalmanSmootherInfo(gain)
-
-
-def smoother(
-    filter_ms: ArrayLike,
-    filter_chol_Ps: ArrayLike,
-    Fs: ArrayLike,
-    cs: ArrayLike,
-    chol_Qs: ArrayLike,
-    parallel: bool = True,
-) -> tuple[KalmanState, KalmanSmootherInfo]:
-    r"""The square root Rauch–Tung–Striebel (RTS) smoother, also known
-    colloquially as the Kalman smoother.
-
-    All ArrayLike inputs must be batched over time along the first axis.
-
-    Args:
-        filter_ms: The means of the filtered states.
-        filter_chol_Ps: The generalized Cholesky factors of the covariances of the filtered states.
-        Fs: State transition matrices.
-        cs: State transition shift vectors.
-        chol_Qs: Generalized Cholesky factors of the state transition noise covariances.
-        parallel: Whether to use temporal parallelization.
-
-    Returns:
-        A tuple `(smooth_states, info)`.
-        `smooth_states` contains the smoothed states for :math:`t \in \{0, \dots, T\}`
-        `info` contains the smoothing gain matrices for :math:`t \in \{0, \dots, T-1\}`.
-
-        The cross-covariance matrices :math:`Cov[x_{t}, x_{t + 1} \mid y_{1:T}]` for
-        :math:`t \in \{0, \dots, T-1\}` can be computed as
-        ``gains @ chol_covs[1:] @ chol_covs[1:].transpose(0, 2, 1)``.
-
-    References:
-            Paper: Yaghoobi, Corenflos, Hassan and Särkkä (2022) - https://arxiv.org/pdf/2207.00426
-            Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/parallel
-    """
-    ms, Ps = jnp.asarray(filter_ms), jnp.asarray(filter_chol_Ps)
-    Fs, cs, chol_Qs = jnp.asarray(Fs), jnp.asarray(cs), jnp.asarray(chol_Qs)
-    associative_params = sqrt_associative_params(ms, Ps, Fs, cs, chol_Qs)
-
-    if parallel:
-        all_prefix_sums = jax.lax.associative_scan(
-            jax.vmap(sqrt_smoothing_operator), associative_params, reverse=True
-        )
-    else:
-        final_element = jax.tree.map(lambda x: x[-1], associative_params)
-        inputs = jax.tree.map(lambda x: x[:-1], associative_params)
-
-        def body(carry, inp):
-            next_elem = sqrt_smoothing_operator(carry, inp)
-            return next_elem, next_elem
-
-        _, all_prefix_sums = jax.lax.scan(body, final_element, inputs, reverse=True)
-        all_prefix_sums = append_tree(all_prefix_sums, final_element)
-
-    smoothed_means, _, smoothed_chol_covs = all_prefix_sums
-    return KalmanState(smoothed_means, smoothed_chol_covs), KalmanSmootherInfo(
-        associative_params.E[:-1]
-    )
 
 
 def sqrt_associative_params(
