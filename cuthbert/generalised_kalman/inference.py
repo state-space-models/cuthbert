@@ -5,11 +5,8 @@ from jax.lax import cond
 from cuthbertlib.kalman import (
     KalmanState,
     KalmanFilterInfo,
-    KalmanSmootherInfo,
-    filter_update,
 )
-from cuthbertlib.kalman import predict as filter_predict
-from cuthbert.generalised_kalman import kalman
+from cuthbertlib import kalman
 
 from cuthbert.types import ArrayTreeLike, KeyArray
 from cuthbert.inference import Inference
@@ -61,36 +58,25 @@ def predict(
     key: KeyArray | None = None,
 ) -> KalmanState:
     F, c, chol_P = dynamics_params(state_prev.mean, state_prev.chol_cov, inputs, key)
-    return filter_predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
+    return kalman.predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
 
 
-def update(
+def _update(
     state: KalmanState,
     observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
     likelihood_params: LikelihoodParams,
     key: KeyArray | None = None,
-) -> tuple[KalmanState, KalmanFilterInfo]:
+) -> tuple[kalman.KalmanState, kalman.KalmanFilterInfo]:
     likelihood_or_potential_params = likelihood_params(
         state.mean, state.chol_cov, observation, inputs, key
     )
-
-    if len(likelihood_or_potential_params) == 3:
-        H, d, chol_R = likelihood_or_potential_params
-    else:
-        d, chol_R = likelihood_or_potential_params
-
-        # dummy mat and observation as potential is unconditional
-        # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
-        # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
-        H = -jnp.eye(d.shape[0])
-        observation = jnp.zeros_like(d)
-
-    return filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
+    H, d, chol_R = likelihood_or_potential_params
+    return kalman.filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
 
 
 def filter_update(
-    state: kalman.KalmanState,
+    state: KalmanState,
     observation: ArrayTreeLike,
     inputs: ArrayTreeLike,
     dynamics_params: DynamicsParams,
