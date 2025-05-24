@@ -7,6 +7,8 @@ from cuthbert.types import (
 )
 from cuthbert.utils import not_implemented
 
+Info = Any
+
 
 class Predict(Protocol):
     def __call__(
@@ -31,7 +33,7 @@ class Update(Protocol):
             state: ArrayTreeLike,
             inputs: ArrayTreeLike,
             key: KeyArray | None = None,
-    ) -> ArrayTree: ...
+    ) -> tuple[ArrayTree, Info]: ...
 
 
 class FilterCombine(Protocol):
@@ -41,7 +43,7 @@ class FilterCombine(Protocol):
             observation: ArrayTreeLike,
             inputs: ArrayTreeLike,
             key: KeyArray | None = None,
-    ) -> tuple[ArrayTree, ArrayTree]: ...
+    ) -> tuple[ArrayTree, Info]: ...
 
 
 class SmootherInit(Protocol):
@@ -60,7 +62,7 @@ class SmootherCombine(Protocol):
             state_2: ArrayTreeLike,
             inputs: ArrayTreeLike,
             key: KeyArray | None = None,
-    ) -> tuple[ArrayTree, ArrayTree]: ...
+    ) -> tuple[ArrayTree, Info]: ...
 
 
 class Inference(NamedTuple):
@@ -88,4 +90,3 @@ class Inference(NamedTuple):
     smoother_combine: SmootherCombine
 
     associative: bool = False
-
