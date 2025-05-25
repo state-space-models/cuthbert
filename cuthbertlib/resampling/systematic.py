@@ -1,7 +1,7 @@
 from functools import partial
 
-from jax import Array, random, numpy as jnp
-from jax.typing import ArrayLike
+from jax import random, numpy as jnp
+from cuthbertlib.types import Array, ArrayLike
 from jax.scipy.special import logsumexp
 from jax.lax import cond, select
 

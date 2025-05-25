@@ -1,10 +1,9 @@
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, vmap
+from jax import vmap
 from jax.scipy.linalg import cho_solve
-from jax.typing import ArrayLike
-
+from cuthbertlib.types import Array, ArrayLike
 from cuthbertlib.linalg import tria
 from cuthbertlib.quadrature.common import SigmaPoints, Quadrature
 from cuthbertlib.quadrature.utils import cholesky_update_many

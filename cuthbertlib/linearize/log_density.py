@@ -1,8 +1,9 @@
 from typing import Callable
 from jax.typing import ArrayLike
-from jax import Array, hessian, jacobian, grad
+from jax import hessian, jacobian, grad
 import jax.numpy as jnp
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
+from cuthbertlib.types import Array
 
 
 def linearize_log_density(

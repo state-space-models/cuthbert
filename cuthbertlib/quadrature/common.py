@@ -1,8 +1,7 @@
 from typing import NamedTuple, Protocol, runtime_checkable, Self
 
-from jax import Array
+from cuthbertlib.types import Array, ArrayLike
 import jax.numpy as jnp
-from jax.typing import ArrayLike
 
 from cuthbertlib.linalg import tria
 

@@ -1,8 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 import jax
-from jax import Array
-from jax.typing import ArrayLike
+from cuthbertlib.types import Array, ArrayLike
 
 
 @runtime_checkable

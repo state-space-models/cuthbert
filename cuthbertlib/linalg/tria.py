@@ -1,5 +1,5 @@
 import jax
-from jax import Array
+from cuthbertlib.types import Array
 
 
 def tria(A: Array) -> Array:
