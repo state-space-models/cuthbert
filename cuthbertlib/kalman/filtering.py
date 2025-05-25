@@ -122,7 +122,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
     ell = mvn_logpdf(y_diff, Imat)
-    return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihoods=ell)
+    return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihood=ell)
 
 
 def sqrt_associative_params(

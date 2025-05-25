@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
-from cuthbertlib.types import Array, ArrayLike, ArrayTreeLike, ArrayTree
+from cuthbertlib.types import Array, ArrayTreeLike, ArrayTree
 
 
-def mvn_logpdf(x: ArrayLike, chol_cov: ArrayLike) -> Array:
+def mvn_logpdf(x: Array, chol_cov: Array) -> Array:
     """Log pdf of a zero-mean multivariate normal.
 
     Args:
