@@ -11,7 +11,7 @@ from cuthbertlib.kalman import (
 from cuthbertlib.kalman import predict as filter_predict
 from cuthbert.generalised_kalman import kalman
 
-from cuthbert.types import ArrayTreeLike, KeyArray
+from cuthbertlib.types import ArrayTreeLike, KeyArray
 from cuthbert.inference import SSMInference
 from cuthbert.generalised_kalman.linear_gaussian_ssm import (
     InitParams,

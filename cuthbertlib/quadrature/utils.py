@@ -1,6 +1,5 @@
 import jax
-from jax import Array
-from jax.typing import ArrayLike
+from cuthbertlib.types import Array, ArrayLike
 import jax.numpy as jnp
 
 

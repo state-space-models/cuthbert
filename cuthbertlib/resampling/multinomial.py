@@ -1,9 +1,8 @@
 from functools import partial
 
 import jax
-from jax import Array, random, numpy as jnp
-from jax.typing import ArrayLike
-
+from jax import random, numpy as jnp
+from cuthbertlib.types import Array, ArrayLike
 from cuthbertlib.resampling.utils import inverse_cdf
 from cuthbertlib.resampling.protocols import (
     resampling_decorator,

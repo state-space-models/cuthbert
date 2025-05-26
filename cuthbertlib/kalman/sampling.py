@@ -2,9 +2,7 @@ from typing import NamedTuple, Sequence
 
 import jax
 import jax.numpy as jnp
-from jax import Array
-from jax.typing import ArrayLike
-
+from cuthbertlib.types import ArrayLike, Array
 from cuthbertlib.kalman.smoothing import _sqrt_associative_params_single
 from cuthbertlib.kalman.utils import append_tree
 

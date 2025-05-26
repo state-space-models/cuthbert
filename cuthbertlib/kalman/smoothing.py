@@ -2,9 +2,8 @@ from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
-from jax import Array
+from cuthbertlib.types import Array, ArrayLike
 from jax.scipy.linalg import solve_triangular
-from jax.typing import ArrayLike
 
 from cuthbertlib.kalman.filtering import KalmanState
 from cuthbertlib.kalman.utils import append_tree

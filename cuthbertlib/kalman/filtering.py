@@ -2,9 +2,8 @@ from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
-from jax import Array
+from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
-from jax.typing import ArrayLike
 
 from cuthbertlib.kalman.utils import mvn_logpdf
 from cuthbertlib.linalg import tria
@@ -26,10 +25,10 @@ class KalmanFilterInfo(NamedTuple):
     """Additional output from the Kalman filter.
 
     Attributes:
-        log_likelihoods: Cumulative log marginal likelihoods.
+        log_likelihood: Log marginal likelihoods.
     """
 
-    log_likelihoods: Array
+    log_likelihood: ScalarArray
 
 
 class FilterScanElement(NamedTuple):
@@ -38,7 +37,7 @@ class FilterScanElement(NamedTuple):
     U: Array
     eta: Array
     Z: Array
-    ell: Array
+    ell: ScalarArray
 
 
 def predict(
@@ -123,7 +122,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
     ell = mvn_logpdf(y_diff, Imat)
-    return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihoods=ell)
+    return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihood=ell)
 
 
 def sqrt_associative_params(

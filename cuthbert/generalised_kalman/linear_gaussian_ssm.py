@@ -1,7 +1,6 @@
 from typing import Protocol, NamedTuple
-from jax import Array
 
-from cuthbert.types import ArrayTreeLike, KeyArray
+from cuthbertlib.types import ArrayTreeLike, KeyArray, Array
 
 
 class InitParams(Protocol):

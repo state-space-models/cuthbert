@@ -1,8 +1,6 @@
-from typing import Any
-
 import jax
 import jax.numpy as jnp
-from jax import Array
+from cuthbertlib.types import Array, ArrayTreeLike, ArrayTree
 
 
 def mvn_logpdf(x: Array, chol_cov: Array) -> Array:
@@ -24,7 +22,9 @@ def mvn_logpdf(x: Array, chol_cov: Array) -> Array:
     return -0.5 * norm_y - normalizing_constant
 
 
-def append_tree(batched_tree: Any, tree: Any, prepend: bool = False) -> Any:
+def append_tree(
+    batched_tree: ArrayTreeLike, tree: ArrayTreeLike, prepend: bool = False
+) -> ArrayTree:
     """Append the leaves of a pytree of arrays to the leaves of a batched pytree.
 
     Args:

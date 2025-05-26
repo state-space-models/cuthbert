@@ -1,5 +1,5 @@
 from typing import NamedTuple, Protocol
-from cuthbert.types import (
+from cuthbertlib.types import (
     ArrayTree,
     ArrayTreeLike,
     KeyArray,

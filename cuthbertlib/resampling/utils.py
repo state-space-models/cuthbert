@@ -1,9 +1,8 @@
 import jax
 import numpy as np
-from jax import Array, numpy as jnp
-from jax.typing import ArrayLike
+import jax.numpy as jnp
 from jax.scipy.special import logsumexp
-
+from cuthbertlib.types import Array, ArrayLike
 import numba as nb
 from jax.lax import platform_dependent
 

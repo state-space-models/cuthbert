@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
 import jax.numpy as jnp
-from jax import Array
+from cuthbertlib.types import Array
 
 from cuthbertlib.quadrature.common import SigmaPoints
 

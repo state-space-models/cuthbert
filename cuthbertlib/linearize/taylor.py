@@ -1,6 +1,6 @@
 from typing import Callable
 import jax
-from jax import Array
+from cuthbertlib.types import Array
 from jax.typing import ArrayLike
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
 

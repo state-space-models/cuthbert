@@ -1,6 +1,6 @@
-from jax.typing import ArrayLike
-from jax import Array, numpy as jnp
+import jax.numpy as jnp
 from cuthbertlib.linalg import tria
+from cuthbertlib.types import Array, ArrayLike
 
 
 def symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> Array:
