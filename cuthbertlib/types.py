@@ -9,4 +9,4 @@ ArrayTreeLike: TypeAlias = Any  # Tree with all leaves castable to jax.Array htt
 ScalarArray: TypeAlias = (
     Array  # jax.Array with just a single float element, i.e. shape ()
 )
-ScalarArrayLike: TypeAlias = ArrayLike  # Object that will be cast to a FloatArray
+ScalarArrayLike: TypeAlias = ArrayLike  # Object that will be cast to a ScalarArray
