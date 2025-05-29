@@ -9,28 +9,6 @@ from cuthbertlib.kalman.utils import mvn_logpdf
 from cuthbertlib.linalg import tria
 
 
-class KalmanState(NamedTuple):
-    """Gaussian state with mean and square root of covariance.
-
-    Attributes:
-        mean: Mean of the Gaussian state.
-        chol_cov: Generalized Cholesky factor of the covariance of the Gaussian state.
-    """
-
-    mean: Array
-    chol_cov: Array
-
-
-class KalmanFilterInfo(NamedTuple):
-    """Additional output from the Kalman filter.
-
-    Attributes:
-        log_likelihood: Log marginal likelihoods.
-    """
-
-    log_likelihood: ScalarArray
-
-
 class FilterScanElement(NamedTuple):
     A: Array
     b: Array
@@ -46,7 +24,7 @@ def predict(
     F: ArrayLike,
     c: ArrayLike,
     chol_Q: ArrayLike,
-) -> KalmanState:
+) -> tuple[Array, Array]:
     """
     Propagate the mean and square root covariance through linear Gaussian dynamics.
 
@@ -69,7 +47,7 @@ def predict(
     m1 = F @ m + c
     A = jnp.concatenate([F @ chol_P, chol_Q], axis=1)
     chol_P1 = tria(A)
-    return KalmanState(mean=m1, chol_cov=chol_P1)
+    return m1, chol_P1
 
 
 # Note that `update` is aliased as `kalman.filter_update` in `kalman.__init__.py`
@@ -80,7 +58,7 @@ def update(
     d: ArrayLike,
     chol_R: ArrayLike,
     y: ArrayLike,
-) -> tuple[KalmanState, KalmanFilterInfo]:
+) -> tuple[tuple[Array, Array], Array]:
     """
     Update the mean and square root covariance with a linear Gaussian observation.
 
@@ -122,7 +100,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
     ell = mvn_logpdf(y_diff, Imat)
-    return KalmanState(mean=my, chol_cov=chol_Py), KalmanFilterInfo(log_likelihood=ell)
+    return (my, chol_Py), ell
 
 
 def sqrt_associative_params(

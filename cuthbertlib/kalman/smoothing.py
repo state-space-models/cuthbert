@@ -5,7 +5,6 @@ import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike
 from jax.scipy.linalg import solve_triangular
 
-from cuthbertlib.kalman.filtering import KalmanState
 from cuthbertlib.kalman.utils import append_tree
 from cuthbertlib.linalg import tria
 
@@ -14,16 +13,6 @@ class SmootherScanElement(NamedTuple):
     g: Array
     E: Array
     D: Array
-
-
-class KalmanSmootherInfo(NamedTuple):
-    """Additional output from the Kalman smoother.
-
-    Attributes:
-        gains: Smoothing Kalman gain matrices.
-    """
-
-    gains: Array
 
 
 # Note that `update` is aliased as `kalman.smoother_update` in `kalman.__init__.py`
@@ -35,7 +24,7 @@ def update(
     F: ArrayLike,
     c: ArrayLike,
     chol_Q: ArrayLike,
-) -> tuple[KalmanState, KalmanSmootherInfo]:
+) -> tuple[tuple[Array, Array], Array]:
     """Single step of the square root Rauch–Tung–Striebel (RTS) smoother.
 
     Args:
@@ -71,7 +60,7 @@ def update(
     mean_diff = smoother_m - (c + F @ filter_m)
     mean = filter_m + gain @ mean_diff
     chol = tria(jnp.concatenate([Phi22, gain @ smoother_chol_P], axis=1))
-    return KalmanState(mean, chol), KalmanSmootherInfo(gain)
+    return (mean, chol), gain
 
 
 def sqrt_associative_params(

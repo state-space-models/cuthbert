@@ -64,7 +64,7 @@ def test_update(seed, x_dim, y_dim):
     P0 = chol_P0 @ chol_P0.T
     R = chol_R @ chol_R.T
 
-    (m, chol_P), (ell,) = update(m0, chol_P0, H, d, chol_R, y)
+    (m, chol_P), ell = update(m0, chol_P0, H, d, chol_R, y)
     P = chol_P @ chol_P.T
 
     des_m, des_P, des_ell = std_update(m0, P0, H, d, R, y)

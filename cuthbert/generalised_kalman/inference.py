@@ -2,14 +2,14 @@ from functools import partial
 from jax import vmap, random, numpy as jnp
 from jax.lax import scan
 
-from cuthbertlib.kalman import (
+from cuthbertlib.kalman import filter_update
+from cuthbertlib.kalman import predict as filter_predict
+from cuthbert.generalised_kalman.kalman import (
     KalmanState,
     KalmanFilterInfo,
     KalmanSmootherInfo,
-    filter_update,
+    smoother as kalman_smoother,
 )
-from cuthbertlib.kalman import predict as filter_predict
-from cuthbert.generalised_kalman import kalman
 
 from cuthbertlib.types import ArrayTreeLike, KeyArray
 from cuthbert.inference import SSMInference
@@ -65,7 +65,8 @@ def predict(
     key: KeyArray | None = None,
 ) -> KalmanState:
     F, c, chol_P = dynamics_params(state_prev.mean, state_prev.chol_cov, inputs, key)
-    return filter_predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
+    mean, chol_Q = filter_predict(state_prev.mean, state_prev.chol_cov, F, c, chol_P)
+    return KalmanState(mean, chol_Q)
 
 
 def update(
@@ -90,7 +91,10 @@ def update(
         H = -jnp.eye(d.shape[0])
         observation = jnp.zeros_like(d)
 
-    return filter_update(state.mean, state.chol_cov, H, d, chol_R, observation)
+    (mean, chol_Q), ell = filter_update(
+        state.mean, state.chol_cov, H, d, chol_R, observation
+    )
+    return KalmanState(mean, chol_Q), KalmanFilterInfo(ell)
 
 
 def filter(
@@ -129,4 +133,4 @@ def smoother(
     filter_ms = filter_states.mean
     filter_chol_Ps = filter_states.chol_cov
     Fs, cs, chol_Qs = vmap(dynamics_params)(filter_ms, filter_chol_Ps, inputs, key)
-    return kalman.smoother(filter_ms, filter_chol_Ps, Fs, cs, chol_Qs, parallel)
+    return kalman_smoother(filter_ms, filter_chol_Ps, Fs, cs, chol_Qs, parallel)

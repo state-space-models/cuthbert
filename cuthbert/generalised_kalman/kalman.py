@@ -2,10 +2,43 @@ import jax
 import jax.numpy as jnp
 from jax.typing import ArrayLike
 from jax import Array
-from typing import Sequence
+from typing import Sequence, NamedTuple
 
 from cuthbertlib.kalman import filtering, smoothing, sampling
 from cuthbertlib.kalman.utils import append_tree
+from cuthbertlib.types import ScalarArray
+
+
+class KalmanState(NamedTuple):
+    """Gaussian state with mean and square root of covariance.
+
+    Attributes:
+        mean: Mean of the Gaussian state.
+        chol_cov: Generalized Cholesky factor of the covariance of the Gaussian state.
+    """
+
+    mean: Array
+    chol_cov: Array
+
+
+class KalmanFilterInfo(NamedTuple):
+    """Additional output from the Kalman filter.
+
+    Attributes:
+        log_likelihood: Log marginal likelihoods.
+    """
+
+    log_likelihood: ScalarArray
+
+
+class KalmanSmootherInfo(NamedTuple):
+    """Additional output from the Kalman smoother.
+
+    Attributes:
+        gains: Smoothing Kalman gain matrices.
+    """
+
+    gains: Array
 
 
 def filter(
@@ -19,7 +52,7 @@ def filter(
     chol_R: ArrayLike,
     y: ArrayLike,
     parallel: bool = True,
-) -> tuple[filtering.KalmanState, filtering.KalmanFilterInfo]:
+) -> tuple[KalmanState, KalmanFilterInfo]:
     """The square root Kalman filter.
 
     The square root Kalman filter is more numerically stable than the standard implementation that
@@ -83,9 +116,7 @@ def filter(
     _, filt_means, filt_chol_covs, _, _, ells = all_prefix_sums
     filt_means = jnp.vstack([m0[None, ...], filt_means])
     filt_chol_covs = jnp.vstack([chol_P0[None, ...], filt_chol_covs])
-    return filtering.KalmanState(
-        filt_means, filt_chol_covs
-    ), filtering.KalmanFilterInfo(-ells)
+    return KalmanState(filt_means, filt_chol_covs), KalmanFilterInfo(-ells)
 
 
 def smoother(
@@ -95,7 +126,7 @@ def smoother(
     cs: ArrayLike,
     chol_Qs: ArrayLike,
     parallel: bool = True,
-) -> tuple[filtering.KalmanState, smoothing.KalmanSmootherInfo]:
+) -> tuple[KalmanState, KalmanSmootherInfo]:
     r"""The square root Rauch–Tung–Striebel (RTS) smoother, also known
     colloquially as the Kalman smoother.
 
@@ -144,9 +175,9 @@ def smoother(
         all_prefix_sums = append_tree(all_prefix_sums, final_element)
 
     smoothed_means, _, smoothed_chol_covs = all_prefix_sums
-    return filtering.KalmanState(
-        smoothed_means, smoothed_chol_covs
-    ), smoothing.KalmanSmootherInfo(associative_params.E[:-1])
+    return KalmanState(smoothed_means, smoothed_chol_covs), KalmanSmootherInfo(
+        associative_params.E[:-1]
+    )
 
 
 def sampler(

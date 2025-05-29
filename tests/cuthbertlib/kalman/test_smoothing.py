@@ -54,7 +54,7 @@ def test_smoother_update(seed, x_dim):
     des_m0, des_P0 = des_smooth_ms[0], des_smooth_Ps[0]
 
     # Run single square root smoother update
-    (smooth_m0, smooth_chol_P0), (smooth_gain,) = update(
+    (smooth_m0, smooth_chol_P0), smooth_gain = update(
         m0, chol_P0, m1, chol_P1, Fs[0], cs[0], chol_Qs[0]
     )
     smooth_P0 = smooth_chol_P0 @ smooth_chol_P0.T
