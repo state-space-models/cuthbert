@@ -17,6 +17,18 @@ class FilterScanElement(NamedTuple):
     Z: Array
     ell: ScalarArray
 
+    @property
+    def mean(self) -> Array:
+        return self.b
+
+    @property
+    def chol_cov(self) -> Array:
+        return self.U
+
+    @property
+    def log_likelihood(self) -> ScalarArray:
+        return -self.ell
+
 
 def predict(
     m: ArrayLike,

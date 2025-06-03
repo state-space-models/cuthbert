@@ -6,54 +6,43 @@ from cuthbertlib.types import (
 )
 
 
-class Init(Protocol):
+class FilterPrepare(Protocol):
     def __call__(
         self,
-        inputs: ArrayTreeLike,
+        model_inputs: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> ArrayTree: ...
 
 
-class Predict(Protocol):
+class FilterCombine(Protocol):
     def __call__(
         self,
-        state_prev: ArrayTreeLike,
-        inputs: ArrayTreeLike,
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
+    ) -> ArrayTree: ...
+
+
+class SmootherPrepare(Protocol):
+    def __call__(
+        self,
+        filter_state: ArrayTreeLike,
+        model_inputs: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> ArrayTree: ...
 
 
-class Update(Protocol):
+class SmootherCombine(Protocol):
     def __call__(
         self,
-        state: ArrayTreeLike,
-        observation: ArrayTreeLike,
-        inputs: ArrayTreeLike,
-        key: KeyArray | None = None,
-    ) -> tuple[ArrayTree, ArrayTree]: ...
-
-
-class Filter(Protocol):
-    def __call__(
-        self,
-        observations: ArrayTreeLike,
-        inputs: ArrayTreeLike,
-        key: KeyArray | None = None,
-    ) -> tuple[ArrayTree, ArrayTree]: ...
-
-
-class Smoother(Protocol):
-    def __call__(
-        self,
-        filter_states: ArrayTreeLike,
-        inputs: ArrayTreeLike,
-        key: KeyArray | None = None,
-    ) -> tuple[ArrayTree, ArrayTree]: ...
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
+    ) -> ArrayTree: ...
 
 
 class SSMInference(NamedTuple):
-    init: Init
-    predict: Predict
-    update: Update
-    filter: Filter
-    smoother: Smoother
+    FilterPrepare: FilterPrepare
+    FilterCombine: FilterCombine
+    SmootherPrepare: SmootherPrepare
+    SmootherCombine: SmootherCombine
+    associative_filter: bool = False
+    associative_smoother: bool = False
