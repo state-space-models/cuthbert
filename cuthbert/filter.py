@@ -1,5 +1,6 @@
 from jax import vmap, tree, random, numpy as jnp
 from jax.lax import scan, associative_scan
+<<<<<<< HEAD
 import warnings
 
 from cuthbert.inference import SSMInference
@@ -7,6 +8,20 @@ from cuthbertlib.types import ArrayTreeLike, KeyArray, ArrayTree
 from cuthbertlib.kalman.utils import (
     append_tree,
 )  # Should move this to cuthbertlib.linalg? Or maybe not needed at all
+=======
+
+from cuthbert.inference import SSMInference
+from cuthbertlib.types import ArrayTreeLike, KeyArray, ArrayTree
+
+
+def filter_update(
+    inference: SSMInference,
+    state: ArrayTreeLike,
+    model_inputs: ArrayTreeLike,
+    key: KeyArray | None = None,
+) -> ArrayTree:
+    return inference.FilterCombine(state, inference.FilterPrepare(model_inputs, key))
+>>>>>>> cc84c25 (Start refactor)
 
 
 def filter(
@@ -15,6 +30,7 @@ def filter(
     parallel: bool = False,
     key: KeyArray | None = None,
 ) -> ArrayTree:
+<<<<<<< HEAD
     """
     Applies offlines filtering given a inference object and model inputs
     (with leading temporal dimension of len T + 1, where T is the number of time steps
@@ -41,21 +57,38 @@ def filter(
 
     if key is None:
         # This will throw error if used as a key, which is desired behavior
+=======
+    if parallel and not inference.associative_filter:
+        raise ValueError(
+            f"Parallel filtering attempted but inference.associative_filter is False for {inference}"
+        )
+
+    T = tree.leaves(model_inputs)[0].shape[0]
+
+    if key is None:
+        # This will throw error if used as a key, which is desired
+>>>>>>> cc84c25 (Start refactor)
         # (albeit not a useful error, we could improve this)
         prepare_keys = jnp.empty(T)
     else:
         prepare_keys = random.split(key, T)
 
+<<<<<<< HEAD
     init_model_input = tree.map(lambda x: x[0], model_inputs)
     init_state = inference.init_prepare(init_model_input)
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
     prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
         prep_model_inputs, prepare_keys
+=======
+    prep_states = vmap(lambda inp, k: inference.FilterPrepare(inp, key=key))(
+        model_inputs, prepare_keys
+>>>>>>> cc84c25 (Start refactor)
     )
 
     if parallel:
         states = associative_scan(
+<<<<<<< HEAD
             vmap(inference.filter_combine),
             prep_states,
         )
@@ -65,14 +98,38 @@ def filter(
 
         def body(prev_state, prep_state):
             state = inference.filter_combine(prev_state, prep_state)
+=======
+            vmap(inference.FilterCombine, in_axes=(0, 0)),
+            prep_states,
+        )
+    else:
+        init_state = tree.map(lambda x: x[0], prep_states)
+        other_states = tree.map(lambda x: x[1:], prep_states)
+
+        def body(prev_state, prep_state):
+            state = inference.FilterCombine(prev_state, prep_state)
+>>>>>>> cc84c25 (Start refactor)
             return state, state
 
         _, states = scan(
             body,
+<<<<<<< HEAD
             init_prep_state,
             other_prep_states,
         )
         states = append_tree(states, init_prep_state, prepend=True)
 
     states = append_tree(states, init_state, prepend=True)
+=======
+            init_state,
+            other_states,
+        )
+
+        states = tree.map(
+            lambda i, ss: jnp.concatenate([i[None, ...], ss], axis=0),
+            init_state,
+            states,
+        )
+
+>>>>>>> cc84c25 (Start refactor)
     return states

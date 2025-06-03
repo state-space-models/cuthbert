@@ -23,6 +23,18 @@ class SmootherScanElement(NamedTuple):
     def chol_cov(self) -> Array:
         return self.D
 
+    @property
+    def mean(self) -> Array:
+        return self.g
+
+    @property
+    def chol_cov(self) -> Array:
+        return self.D
+
+    @property
+    def gain(self) -> Array:
+        return self.E
+
 
 # Note that `update` is aliased as `kalman.smoother_update` in `kalman.__init__.py`
 def update(

@@ -6,7 +6,11 @@ from cuthbertlib.types import (
 )
 
 
+<<<<<<< HEAD
 class InitPrepare(Protocol):
+=======
+class FilterPrepare(Protocol):
+>>>>>>> cc84c25 (Start refactor)
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
@@ -27,9 +31,24 @@ class InitPrepare(Protocol):
         ...
 
 
+<<<<<<< HEAD
 class FilterPrepare(Protocol):
     def __call__(
         self,
+=======
+class FilterCombine(Protocol):
+    def __call__(
+        self,
+        state_1: ArrayTreeLike,
+        state_2: ArrayTreeLike,
+    ) -> ArrayTree: ...
+
+
+class SmootherPrepare(Protocol):
+    def __call__(
+        self,
+        filter_state: ArrayTreeLike,
+>>>>>>> cc84c25 (Start refactor)
         model_inputs: ArrayTreeLike,
         key: KeyArray | None = None,
     ) -> ArrayTree:
@@ -53,11 +72,16 @@ class FilterPrepare(Protocol):
         ...
 
 
+<<<<<<< HEAD
 class FilterCombine(Protocol):
+=======
+class SmootherCombine(Protocol):
+>>>>>>> cc84c25 (Start refactor)
     def __call__(
         self,
         state_1: ArrayTreeLike,
         state_2: ArrayTreeLike,
+<<<<<<< HEAD
     ) -> ArrayTree:
         """Combine state from previous time point with state from FilterPrepare.
 
@@ -156,5 +180,15 @@ class SSMInference(NamedTuple):
     smoother_prepare: SmootherPrepare
     smoother_combine: SmootherCombine
     convert_filter_to_smoother_state: ConvertFilterToSmootherState
+=======
+    ) -> ArrayTree: ...
+
+
+class SSMInference(NamedTuple):
+    FilterPrepare: FilterPrepare
+    FilterCombine: FilterCombine
+    SmootherPrepare: SmootherPrepare
+    SmootherCombine: SmootherCombine
+>>>>>>> cc84c25 (Start refactor)
     associative_filter: bool = False
     associative_smoother: bool = False
