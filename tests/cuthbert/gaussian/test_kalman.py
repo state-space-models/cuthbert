@@ -85,14 +85,6 @@ num_time_steps = [1, 25]
 common_params = list(itertools.product(seeds, x_dims, y_dims, num_time_steps))
 
 
-######
-seed = 0
-x_dim = 3
-y_dim = 2
-num_time_steps = 11
-######
-
-
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
