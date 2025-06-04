@@ -1,5 +1,6 @@
 from typing import Callable
 from functools import partial
+from jax import numpy as jnp
 
 from cuthbertlib.types import (
     Array,
@@ -10,13 +11,13 @@ from cuthbertlib.kalman import filtering, smoothing
 from cuthbert.inference import SSMInference
 
 
-# model_inputs -> m0, chol_P0
+# model_inputs -> (m0, chol_P0) for T = 0
 GetInitParams = Callable[[ArrayTreeLike], tuple[Array, Array]]
 
-# model_inputs -> F, c, chol_Q
+# model_inputs -> (F, c, chol_Q) for T = 1, ..., T
 GetDynamicsParams = Callable[[ArrayTreeLike], tuple[Array, Array, Array]]
 
-# model_inputs -> H, d, chol_R, y
+# model_inputs -> (H, d, chol_R, y) for T = 1, ..., T
 GetObservationParams = Callable[[ArrayTreeLike], tuple[Array, Array, Array, Array]]
 
 
@@ -26,34 +27,66 @@ def build(
     get_observation_params: GetObservationParams,
 ) -> SSMInference:
     """
-    Build an exact Kalman filter and smoother.
+    Build exact Kalman inference object for linear Gaussian SSMs.
 
     Args:
-        get_init_params: Function to get m0, chol_P0 to initialize filter state.
-            Typically this is non-zero for the first time step and otherwise zero.
+        get_init_params: Function to get m0, chol_P0 to initialize filter state,
+            given model inputs sufficient to define p(x_0) = N(m0, chol_P0 @ chol_P0^T).
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q
-            given model inputs.
+            given model inputs sufficient to define
+            p(x_t | x_{t-1}) = N(F @ x_{t-1} + c, chol_Q @ chol_Q^T).
         get_observation_params: Function to get observation parameters, H, d, chol_R, y
-            given model inputs.
+            given model inputs sufficient to define
+            p(y_t | x_t) = N(H @ x_t + d, chol_R @ chol_R^T).
 
     Returns:
         SSMInference: Inference object for exact Kalman filter and smoother.
             Suitable for associative scan.
     """
     return SSMInference(
-        FilterPrepare=partial(
+        init_prepare=partial(init_prepare, get_init_params=get_init_params),
+        filter_prepare=partial(
             filter_prepare,
             get_init_params=get_init_params,
             get_dynamics_params=get_dynamics_params,
             get_observation_params=get_observation_params,
         ),
-        FilterCombine=filter_combine,
-        SmootherPrepare=partial(
+        filter_combine=filter_combine,
+        smoother_prepare=partial(
             smoother_prepare, get_dynamics_params=get_dynamics_params
         ),
-        SmootherCombine=smoother_combine,
+        smoother_combine=smoother_combine,
+        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
         associative_filter=True,
         associative_smoother=True,
+    )
+
+
+def init_prepare(
+    model_inputs: ArrayTreeLike,
+    get_init_params: GetInitParams,
+    key: KeyArray | None = None,
+) -> filtering.FilterScanElement:
+    """
+    Prepare the initial state for the Kalman filter.
+
+    Args:
+        model_inputs: Model inputs.
+        get_init_params: Function to get m0, chol_P0 to initialize filter state.
+        key: JAX random key - not used.
+
+    Returns:
+        State for the Kalman filter.
+            Contains mean and chol_cov (generalised Cholesky factor of covariance).
+    """
+    m0, chol_P0 = get_init_params(model_inputs)
+    return filtering.FilterScanElement(
+        A=jnp.zeros_like(chol_P0),
+        b=m0,
+        U=chol_P0,
+        eta=jnp.zeros_like(m0),
+        Z=jnp.zeros_like(chol_P0),
+        ell=jnp.array(0.0),
     )
 
 
@@ -76,8 +109,7 @@ def filter_prepare(
         key: JAX random key - not used.
 
     Returns:
-        KalmanState: State for the Kalman filter.
-            Contains mean and chol_cov (generalised Cholesky factor of covariance).
+        Prepared state for Kalman filter.
     """
     m0, chol_P0 = get_init_params(model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
@@ -98,13 +130,13 @@ def filter_prepare(
 def filter_combine(
     state_1: filtering.FilterScanElement,
     state_2: filtering.FilterScanElement,
-    key: KeyArray | None = None,
 ) -> filtering.FilterScanElement:
     """
-    Combine two Kalman filter states.
+    Combine filter state from previous time point with state prepared
+    with latest model inputs.
 
     Applies exact Kalman predict + filter update in covariance square root form.
-    Suitable for associative scan.
+    Suitable for associative scan (as well as sequential scan).
 
     Args:
         state_1: State from previous time step.
@@ -112,7 +144,9 @@ def filter_combine(
         key: JAX random key - not used.
 
     Returns:
-        FilterScanElement: Combined Kalman filter state.
+        Combined Kalman filter state.
+            Contains mean, chol_cov (generalised Cholesky factor of covariance)
+            and log_likelihood.
     """
     return filtering.sqrt_filtering_operator(
         state_1,
@@ -130,48 +164,66 @@ def smoother_prepare(
     Prepare a state for an exact Kalman smoother step.
 
     Args:
-        filter_state: Kalman filter state.
+        filter_state: State generated by the Kalman filter at the previous time point.
         model_inputs: Model inputs.
-        get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q.
+        get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q,
+            from model inputs.
         key: JAX random key - not used.
 
     Returns:
-        SmootherScanElement: State for the Kalman smoother.
-            Contains mean and chol_cov (generalised Cholesky factor of covariance),
-            as well as other quantities needed for the smoother update.
+        Prepared state for the Kalman smoother.
     """
     F, c, chol_Q = get_dynamics_params(model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
-    return smoothing._sqrt_associative_params_single(
+    state = smoothing._sqrt_associative_params_single(
         filter_mean,
         filter_chol_cov,
         F,
         c,
         chol_Q,
     )
+    return state._replace(gain=state.E)
 
 
 def smoother_combine(
     state_1: smoothing.SmootherScanElement,
     state_2: smoothing.SmootherScanElement,
-    key: KeyArray | None = None,
 ) -> smoothing.SmootherScanElement:
     """
-    Combine two Kalman smoother states.
+    Combine smoother state from next time point with state prepared
+    with latest model inputs.
+
+    Remember smoothing iterates backwards in time.
 
     Applies exact Kalman smoother update in covariance square root form.
-    Suitable for associative scan.
+    Suitable for associative scan (as well as sequential scan).
 
     Args:
-        state_1: State prepared from current time step.
-        state_2: State prepared at next time step.
+        state_1: State prepared with model inputs at time t.
+        state_2: Smoother state at time t + 1.
         key: JAX random key - not used.
 
     Returns:
-        SmootherScanElement: Combined Kalman smoother state.
+        Combined Kalman filter state.
+            Contains mean, chol_cov (generalised Cholesky factor of covariance)
+            and gain (which can be used to compute temporal cross-covariance).
     """
     return smoothing.sqrt_smoothing_operator(
-        state_1,
         state_2,
+        state_1,
+    )
+
+
+def convert_filter_to_smoother_state(
+    filter_state: filtering.FilterScanElement,
+) -> smoothing.SmootherScanElement:
+    """
+    Convert the filter state to a smoother state.
+    """
+    return smoothing.SmootherScanElement(
+        g=filter_state.mean,
+        D=filter_state.chol_cov,
+        E=jnp.zeros_like(filter_state.chol_cov),
+        gain=jnp.zeros_like(filter_state.chol_cov),
     )

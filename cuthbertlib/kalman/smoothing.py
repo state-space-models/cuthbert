@@ -13,6 +13,7 @@ class SmootherScanElement(NamedTuple):
     g: Array
     E: Array
     D: Array
+    gain: Array | None = None
 
     @property
     def mean(self) -> Array:
@@ -21,10 +22,6 @@ class SmootherScanElement(NamedTuple):
     @property
     def chol_cov(self) -> Array:
         return self.D
-
-    @property
-    def gain(self) -> Array:
-        return self.E
 
 
 # Note that `update` is aliased as `kalman.smoother_update` in `kalman.__init__.py`
@@ -119,11 +116,11 @@ def sqrt_smoothing_operator(
     Returns:
         SmootherScanElement: The output of the associative operator applied to the input elements.
     """
-    g_i, E_i, D_i = elem_i
-    g_j, E_j, D_j = elem_j
+    g_i, E_i, D_i, _ = elem_i
+    g_j, E_j, D_j, _ = elem_j
 
     g = E_j @ g_i + g_j
     E = E_j @ E_i
     D = tria(jnp.concatenate([E_j @ D_i, D_j], axis=1))
 
-    return SmootherScanElement(g, E, D)
+    return SmootherScanElement(g, E, D, gain=E_j)

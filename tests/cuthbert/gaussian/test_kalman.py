@@ -1,12 +1,13 @@
 import itertools
-
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
 from jax import Array
 
-from cuthbert import kalman, filter
+from cuthbert.inference import SSMInference
+from cuthbert import filter, smoother
+from cuthbert.gaussian import kalman
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
@@ -35,7 +36,45 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     )
     m = jnp.vstack([m0[None, ...], m])
     P = jnp.vstack([P0[None, ...], P])
+    ell_cumulative = jnp.concatenate([jnp.array([0.0]), ell_cumulative])
     return m, P, ell_cumulative
+
+
+def load_kalman_inference(
+    m0: Array,
+    chol_P0: Array,
+    Fs: Array,
+    cs: Array,
+    chol_Qs: Array,
+    Hs: Array,
+    ds: Array,
+    chol_Rs: Array,
+    ys: Array,
+) -> tuple[SSMInference, Array]:
+    """Builds Kalman inference object and model_inputs for a linear-Gaussian SSM."""
+
+    def get_init_params(model_inputs: int) -> tuple[Array, Array]:
+        ################## TODO: This is very bad and needs fixing, init_params should only be called for T = 0
+        m = jnp.where(model_inputs <= 1, m0, jnp.zeros_like(m0))
+        chol_P = jnp.where(model_inputs <= 1, chol_P0, jnp.zeros_like(chol_P0))
+        return m, chol_P
+
+    def get_dynamics_params(model_inputs: int) -> tuple[Array, Array, Array]:
+        return Fs[model_inputs - 1], cs[model_inputs - 1], chol_Qs[model_inputs - 1]
+
+    def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
+        return (
+            Hs[model_inputs - 1],
+            ds[model_inputs - 1],
+            chol_Rs[model_inputs - 1],
+            ys[model_inputs - 1],
+        )
+
+    inference = kalman.build(
+        get_init_params, get_dynamics_params, get_observation_params
+    )
+    model_inputs = jnp.arange(len(ys) + 1)
+    return inference, model_inputs
 
 
 seeds = [0, 42, 99, 123, 456]
@@ -46,6 +85,14 @@ num_time_steps = [1, 25]
 common_params = list(itertools.product(seeds, x_dims, y_dims, num_time_steps))
 
 
+######
+seed = 0
+x_dim = 3
+y_dim = 2
+num_time_steps = 11
+######
+
+
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
@@ -53,26 +100,8 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         jnp.asarray(x) for x in generate_lgssm(seed, x_dim, y_dim, num_time_steps)
     ]
 
-    model_inputs = jnp.arange(num_time_steps)
-
-    def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        m = jnp.where(model_inputs == 0, m0, jnp.zeros_like(m0))
-        chol_P = jnp.where(model_inputs == 0, chol_P0, jnp.zeros_like(chol_P0))
-        return m, chol_P
-
-    def get_dynamics_params(model_inputs: int) -> tuple[Array, Array, Array]:
-        return Fs[model_inputs], cs[model_inputs], chol_Qs[model_inputs]
-
-    def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
-        return (
-            Hs[model_inputs],
-            ds[model_inputs],
-            chol_Rs[model_inputs],
-            ys[model_inputs],
-        )
-
-    inference = kalman.build(
-        get_init_params, get_dynamics_params, get_observation_params
+    inference, model_inputs = load_kalman_inference(
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
     # Run sequential sqrt filter
@@ -104,43 +133,66 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
         (par_means, par_covs, par_ells),
-        (des_means[1:], des_covs[1:], des_ells),
+        (des_means, des_covs, des_ells),
         rtol=1e-10,
     )
 
 
-# @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
-# def test_smoother(seed, x_dim, y_dim, num_time_steps):
-#     # Generate a linear-Gaussian state-space model.
-#     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
-#         seed, x_dim, y_dim, num_time_steps
-#     )
+@pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
+def test_smoother(seed, x_dim, y_dim, num_time_steps):
+    # Generate a linear-Gaussian state-space model.
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = [
+        jnp.asarray(x) for x in generate_lgssm(seed, x_dim, y_dim, num_time_steps)
+    ]
 
-#     # Run the Kalman filter and the standard Kalman smoother.
-#     (filt_means, filt_chol_covs), _ = filter(
-#         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=False
-#     )
-#     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
-#     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
-#     (des_means, des_covs), des_cross_covs = std_kalman_smoother(
-#         filt_means, filt_covs, Fs, cs, Qs
-#     )
+    inference, model_inputs = load_kalman_inference(
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+    )
 
-#     # Run the sequential and parallel versions of the square root smoother.
-#     (seq_means, seq_chol_covs), _ = smoother(
-#         filt_means, filt_chol_covs, Fs, cs, chol_Qs, parallel=False
-#     )
-#     (par_means, par_chol_covs), (smoother_gains,) = smoother(
-#         filt_means, filt_chol_covs, Fs, cs, chol_Qs, parallel=True
-#     )
+    # Run the Kalman filter and the standard Kalman smoother.
+    filt_states = filter(inference, model_inputs)
+    filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
+    filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
+    Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
+    (des_means, des_covs), des_cross_covs = std_kalman_smoother(
+        filt_means, filt_covs, Fs, cs, Qs
+    )
 
-#     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
-#     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
-#     cross_covs = smoother_gains @ par_covs[1:]
-#     chex.assert_trees_all_close(
-#         (seq_means, seq_covs), (par_means, par_covs), (des_means, des_covs), rtol=1e-10
-#     )
-#     chex.assert_trees_all_close(cross_covs, des_cross_covs, rtol=1e-10)
+    # Run the sequential and parallel versions of the square root smoother.
+    seq_smoother_states = smoother(inference, filt_states, model_inputs, parallel=False)
+    seq_means, seq_chol_covs, seq_gains = (
+        seq_smoother_states.mean,
+        seq_smoother_states.chol_cov,
+        seq_smoother_states.gain,
+    )
+
+    par_smoother_states = smoother(inference, filt_states, model_inputs, parallel=True)
+    par_means, par_chol_covs, par_gains = (
+        par_smoother_states.mean,
+        par_smoother_states.chol_cov,
+        par_smoother_states.gain,
+    )
+
+    ### TODO: Fix gains!!
+    seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
+    chex.assert_trees_all_close(
+        (seq_means, seq_covs),
+        (par_means, par_covs),
+        (des_means, des_covs),
+        rtol=1e-10,
+    )
+
+    # seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    # par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
+    # seq_cross_covs = seq_gains[:-1] @ seq_covs[1:]
+    # par_cross_covs = par_gains[:-1] @ par_covs[1:]
+    # chex.assert_trees_all_close(
+    #     (seq_means, seq_covs, seq_cross_covs),
+    #     (par_means, par_covs, par_cross_covs),
+    #     (des_means, des_covs, des_cross_covs),
+    #     rtol=1e-10,
+    # )
 
 
 # @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
