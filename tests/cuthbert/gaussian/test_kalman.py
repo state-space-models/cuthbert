@@ -165,26 +165,16 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         par_smoother_states.gain,
     )
 
-    ### TODO: Fix gains!!
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
+    seq_cross_covs = seq_gains[:-1] @ seq_covs[1:]
+    par_cross_covs = par_gains[:-1] @ par_covs[1:]
     chex.assert_trees_all_close(
-        (seq_means, seq_covs),
-        (par_means, par_covs),
-        (des_means, des_covs),
+        (seq_means, seq_covs, seq_cross_covs),
+        (par_means, par_covs, par_cross_covs),
+        (des_means, des_covs, des_cross_covs),
         rtol=1e-10,
     )
-
-    # seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
-    # par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
-    # seq_cross_covs = seq_gains[:-1] @ seq_covs[1:]
-    # par_cross_covs = par_gains[:-1] @ par_covs[1:]
-    # chex.assert_trees_all_close(
-    #     (seq_means, seq_covs, seq_cross_covs),
-    #     (par_means, par_covs, par_cross_covs),
-    #     (des_means, des_covs, des_cross_covs),
-    #     rtol=1e-10,
-    # )
 
 
 # @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)

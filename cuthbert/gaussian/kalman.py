@@ -209,10 +209,11 @@ def smoother_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and gain (which can be used to compute temporal cross-covariance).
     """
-    return smoothing.sqrt_smoothing_operator(
+    state = smoothing.sqrt_smoothing_operator(
         state_2,
         state_1,
     )
+    return state._replace(gain=state_1.gain)
 
 
 def convert_filter_to_smoother_state(
@@ -220,6 +221,14 @@ def convert_filter_to_smoother_state(
 ) -> smoothing.SmootherScanElement:
     """
     Convert the filter state to a smoother state.
+
+    Useful for the final filter state which is equivalent to the final smoother state.
+
+    Args:
+        filter_state: Filter state.
+
+    Returns:
+        Smoother state, same data as filter state just different structure.
     """
     return smoothing.SmootherScanElement(
         g=filter_state.mean,
