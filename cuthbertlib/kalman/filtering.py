@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
 
-from cuthbertlib.kalman.utils import mvn_logpdf
+from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.linalg import tria
 
 
@@ -99,8 +99,9 @@ def update(
     Imat = chol_S[:n_y, :n_y]
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
-    ell = mvn_logpdf(y_diff, Imat)
-    return (my, chol_Py), ell
+
+    ell = multivariate_normal.logpdf(y, y_hat, Imat)
+    return (my, chol_Py), jnp.asarray(ell)
 
 
 def sqrt_associative_params(
@@ -174,8 +175,7 @@ def _sqrt_associative_params_single(
         Z = tria(Z)
 
     # local log marginal likelihood
-    residual = y - H @ m1 - d
-    ell = -mvn_logpdf(residual, Psi11)
+    ell = -jnp.asarray(multivariate_normal.logpdf(y, H @ m1 + d, Psi11))
 
     return FilterScanElement(A, b, U, eta, Z, ell)
 
