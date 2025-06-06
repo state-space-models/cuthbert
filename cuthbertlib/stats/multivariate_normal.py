@@ -8,10 +8,8 @@ from jax._src.numpy.util import promote_dtypes_inexact
 from jax._src.typing import Array, ArrayLike
 
 
-def logpdf(
-    x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, allow_singular: None = None
-) -> ArrayLike:
-    r"""Multivariate normal log probability distribution function
+def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike) -> ArrayLike:
+    """Multivariate normal log probability distribution function
     with (generalized) Cholesky factor of covariance input.
 
     Modified version of `jax.scipy.stats.multivariate_normal.logpdf` which takes
@@ -21,15 +19,10 @@ def logpdf(
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
       cov: arraylike, covariance matrix of distribution
-      allow_singular: not supported
 
     Returns:
       array of logpdf values.
     """
-    if allow_singular is not None:
-        raise NotImplementedError(
-            "allow_singular argument of multivariate_normal.logpdf"
-        )
     x, mean, chol_cov = promote_dtypes_inexact(x, mean, chol_cov)
     if not mean.shape:
         return -1 / 2 * jnp.square(x - mean) / chol_cov**2 - 1 / 2 * (
@@ -56,10 +49,8 @@ def logpdf(
             )
 
 
-def pdf(
-    x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, allow_singular: None = None
-) -> Array:
-    r"""Multivariate normal probability distribution function
+def pdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike) -> Array:
+    """Multivariate normal probability distribution function
     with (generalized) Cholesky factor of covariance input.
 
     Modified version of `jax.scipy.stats.multivariate_normal.pdf` which takes
@@ -69,9 +60,8 @@ def pdf(
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
       cov: arraylike, covariance matrix of distribution
-      allow_singular: not supported
 
     Returns:
       array of pdf values.
     """
-    return lax.exp(logpdf(x, mean, chol_cov, allow_singular))
+    return lax.exp(logpdf(x, mean, chol_cov))
