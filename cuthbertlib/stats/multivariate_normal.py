@@ -45,7 +45,7 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike) -> ArrayLike:
             return (
                 -1 / 2 * jnp.einsum("...i,...i->...", y, y)
                 - n / 2 * jnp.log(2 * np.pi)
-                - 1 / 2 * jnp.log(chol_cov.diagonal(axis1=-1, axis2=-2) ** 2).sum(-1)
+                - jnp.log(jnp.abs(chol_cov.diagonal(axis1=-1, axis2=-2))).sum(-1)
             )
 
 
