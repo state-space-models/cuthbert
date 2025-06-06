@@ -7,13 +7,6 @@ from jax.scipy.stats import multivariate_normal as jax_mvn
 from cuthbertlib.stats import multivariate_normal
 
 
-@pytest.fixture(scope="module", autouse=True)
-def config():
-    jax.config.update("jax_enable_x64", True)
-    yield
-    jax.config.update("jax_enable_x64", False)
-
-
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 def test_multivariate_normal_logpdf(seed):
     key = random.key(seed)
