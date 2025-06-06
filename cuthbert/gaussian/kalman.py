@@ -234,5 +234,5 @@ def convert_filter_to_smoother_state(
         g=filter_state.mean,
         D=filter_state.chol_cov,
         E=jnp.zeros_like(filter_state.chol_cov),
-        gain=jnp.zeros_like(filter_state.chol_cov),
+        gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
     )
