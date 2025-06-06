@@ -121,8 +121,30 @@ def sqrt_associative_params(
         [chol_P0[None, ...], jnp.zeros_like(chol_P0, shape=(T - 1,) + chol_P0.shape)]
     )
 
-    return jax.vmap(_sqrt_associative_params_single)(
+    return jax.vmap(sqrt_associative_params_single)(
         ms, chol_Ps, F, c, chol_Q, H, d, chol_R, y
+    )
+
+
+def sqrt_associative_params_single(
+    m0: Array,
+    chol_P0: Array,
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
+) -> FilterScanElement:
+    """Compute the filter scan element for the square root parallel Kalman
+    filter for a single time step."""
+    return jax.lax.cond(
+        jnp.isnan(y).all() | jnp.isinf(jnp.diag(chol_R)).all(),
+        lambda: _sqrt_associative_params_single_nan(F, c, chol_Q),
+        lambda: _sqrt_associative_params_single(
+            m0, chol_P0, F, c, chol_Q, H, d, chol_R, y
+        ),
     )
 
 
@@ -138,7 +160,7 @@ def _sqrt_associative_params_single(
     y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step."""
+    filter for a single time step, with observation guaranteed not to be missing."""
 
     ny, nx = H.shape
 
@@ -180,13 +202,32 @@ def _sqrt_associative_params_single(
     return FilterScanElement(A, b, U, eta, Z, ell)
 
 
+def _sqrt_associative_params_single_nan(
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+) -> FilterScanElement:
+    """Compute the filter scan element for the square root parallel Kalman
+    filter for a single time step when the observation is missing,
+    i.e. just a prediction step."""
+    return FilterScanElement(
+        A=F,
+        b=c,
+        U=chol_Q,
+        eta=jnp.zeros_like(c),
+        Z=jnp.zeros_like(F),
+        ell=jnp.zeros(()),
+    )
+
+
 def sqrt_filtering_operator(
     elem_i: FilterScanElement, elem_j: FilterScanElement
 ) -> FilterScanElement:
     """Binary associative operator for the square root Kalman filter.
 
     Args:
-        elem_i, elem_j: Filter scan elements.
+        elem_i: Filter scan element for the previous time step.
+        elem_j: Filter scan element for the current time step.
 
     Returns:
         FilterScanElement: The output of the associative operator applied to the input elements.

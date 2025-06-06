@@ -1,5 +1,4 @@
 import itertools
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -51,6 +50,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
         seed, x_dim, y_dim, num_time_steps
     )
+
+    if num_time_steps > 1:
+        # Set an observation to nan
+        ys[1] *= jnp.nan
 
     # Run both sequential and parallel versions of the square root filter.
     (seq_means, seq_chol_covs), (seq_ells,) = filter(

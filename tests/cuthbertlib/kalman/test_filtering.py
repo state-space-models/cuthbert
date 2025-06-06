@@ -21,14 +21,24 @@ def std_predict(m, P, F, c, Q):
     return m, P
 
 
-def std_update(m, P, H, d, R, y):
+def _std_update(m, P, H, d, R, y):
     residual = y - H @ m - d
     S = H @ P @ H.T + R
     K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
+
     m = m + K @ residual
     P = P - K @ S @ K.T
     ell = mvn_logpdf(residual, jnp.linalg.cholesky(S))
+
     return m, P, ell
+
+
+def std_update(m, P, H, d, R, y):
+    m_update, P_update, ell = _std_update(m, P, H, d, R, y)
+    m_update = jnp.where(jnp.isnan(y).all(), m, m_update)
+    P_update = jnp.where(jnp.isnan(y).all(), P, P_update)
+    ell = jnp.where(jnp.isnan(y).all(), jnp.zeros(()), ell)
+    return m_update, P_update, ell
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
