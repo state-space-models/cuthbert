@@ -34,7 +34,7 @@ def sqrt_associative_params(
 def _sqrt_associative_params_interm(
     m: Array, chol_P: Array, F: Array, c: Array, chol_Q: Array, eps: Array
 ) -> SamplerScanElement:
-    inc_m, gain, L = _sqrt_associative_params_single(m, chol_P, F, c, chol_Q)
+    inc_m, gain, L, _ = _sqrt_associative_params_single(m, chol_P, F, c, chol_Q)
     inc = inc_m + eps @ L.T
     return SamplerScanElement(gain, inc)
 
