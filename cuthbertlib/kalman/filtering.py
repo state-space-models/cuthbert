@@ -143,7 +143,6 @@ def sqrt_associative_params_single(
 
     # Handle case where there is no observation
     H = jnp.where(jnp.isnan(y).all(), jnp.zeros_like(H), H)
-    d = jnp.where(jnp.isnan(y).all(), jnp.zeros_like(d), d)
     chol_R = jnp.where(
         jnp.isnan(y).all(),
         jnp.eye(chol_R.shape[0])
