@@ -139,29 +139,18 @@ def sqrt_associative_params_single(
     y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step."""
-    return jax.lax.cond(
-        jnp.isnan(y).all() | jnp.isinf(jnp.diag(chol_R)).all(),
-        lambda: _sqrt_associative_params_single_nan(F, c, chol_Q),
-        lambda: _sqrt_associative_params_single(
-            m0, chol_P0, F, c, chol_Q, H, d, chol_R, y
-        ),
-    )
-
-
-def _sqrt_associative_params_single(
-    m0: Array,
-    chol_P0: Array,
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-    H: Array,
-    d: Array,
-    chol_R: Array,
-    y: Array,
-) -> FilterScanElement:
-    """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step, with observation guaranteed not to be missing."""
+
+    # Handle case where there is no observation
+    H = jnp.where(jnp.isnan(y).all(), jnp.zeros_like(H), H)
+    d = jnp.where(jnp.isnan(y).all(), jnp.zeros_like(d), d)
+    chol_R = jnp.where(
+        jnp.isnan(y).all(),
+        jnp.eye(chol_R.shape[0])
+        / jnp.sqrt(2 * jnp.pi),  # Chose to ensure that the log marginal likelihood is 0
+        chol_R,
+    )
+    y = jnp.where(jnp.isnan(y).all(), d, y)
 
     ny, nx = H.shape
 
@@ -200,24 +189,6 @@ def _sqrt_associative_params_single(
     ell = -jnp.asarray(multivariate_normal.logpdf(y, H @ m1 + d, Psi11))
 
     return FilterScanElement(A, b, U, eta, Z, ell)
-
-
-def _sqrt_associative_params_single_nan(
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-) -> FilterScanElement:
-    """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step when the observation is missing,
-    i.e. just a prediction step."""
-    return FilterScanElement(
-        A=F,
-        b=c,
-        U=chol_Q,
-        eta=jnp.zeros_like(c),
-        Z=jnp.zeros_like(F),
-        ell=jnp.zeros(()),
-    )
 
 
 def sqrt_filtering_operator(
