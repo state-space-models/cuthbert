@@ -1,5 +1,3 @@
-from functools import partial
-
 import numpy as np
 from jax import lax
 from jax import numpy as jnp
@@ -85,14 +83,12 @@ def logpdf(
                 # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
                 diag_chol_cov = jnp.diag(chol_cov)
                 diag_chol_cov = diag_chol_cov.at[flag].set(1.0)
-
                 diag_indices = jnp.diag_indices_from(chol_cov)
                 chol_cov = chol_cov.at[diag_indices].set(diag_chol_cov)
 
-            y = jnp.vectorize(
-                partial(lax.linalg.triangular_solve, lower=True, transpose_a=True),
-                signature="(n,n),(n)->(n)",
-            )(chol_cov, x - mean)
+            y = lax.linalg.triangular_solve(
+                chol_cov, x - mean, lower=True, transpose_a=True
+            )
             return (
                 -1 / 2 * jnp.einsum("i,i->", y, y)
                 - (n - n_nan) / 2 * jnp.log(2 * np.pi)
