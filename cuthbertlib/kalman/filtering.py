@@ -142,14 +142,8 @@ def sqrt_associative_params_single(
     filter for a single time step, with observation guaranteed not to be missing."""
 
     # Handle case where there is no observation
-    H = jnp.where(jnp.isnan(y).all(), jnp.zeros_like(H), H)
-    chol_R = jnp.where(
-        jnp.isnan(y).all(),
-        jnp.eye(chol_R.shape[0])
-        / jnp.sqrt(2 * jnp.pi),  # Chose to ensure that the log marginal likelihood is 0
-        chol_R,
-    )
-    y = jnp.where(jnp.isnan(y).all(), d, y)
+    flag = jnp.isnan(y)
+    H = H.at[flag, :].set(0.0)
 
     ny, nx = H.shape
 
@@ -172,11 +166,16 @@ def sqrt_associative_params_single(
     K = Psi21 @ Psi11_inv  # local Kalman gain
     HF = H @ F  # temporary variable
     A = F - K @ HF  # corrected transition matrix
-    b = m1 + K @ (y - H @ m1 - d)  # corrected transition offset
+
+    # fill y with dummies where y is NaN
+    # the actual logic will come from H = 0, but we do not want numerical issues
+    y_filled = jnp.where(flag, 0.0, y)
+
+    b = m1 + K @ (y_filled - H @ m1 - d)  # corrected transition offset
 
     # information filter
     Z = HF.T @ Psi11_inv.T
-    eta = Psi11_inv @ (y - H @ c - d)
+    eta = Psi11_inv @ (y_filled - H @ c - d)
     eta = Z @ eta
 
     if nx > ny:
