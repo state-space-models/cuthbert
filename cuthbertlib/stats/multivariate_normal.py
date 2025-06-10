@@ -9,7 +9,9 @@ from jax._src.numpy.util import promote_dtypes_inexact
 from cuthbertlib.types import Array, ArrayLike
 
 
-def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True) -> ArrayLike:
+def logpdf(
+    x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
+) -> ArrayLike:
     """Multivariate normal log probability distribution function
     with (generalized) Cholesky factor of covariance input.
 
@@ -29,8 +31,8 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool
 
     if not mean.shape:
         # nan-support is not relevant for scalar case
-        return -1 / 2 * jnp.square(x - mean) / chol_cov ** 2 - 1 / 2 * (
-                jnp.log(2 * np.pi) + 2 * jnp.log(chol_cov)
+        return -1 / 2 * jnp.square(x - mean) / chol_cov**2 - 1 / 2 * (
+            jnp.log(2 * np.pi) + 2 * jnp.log(chol_cov)
         )
     else:
         n = mean.shape[-1]
@@ -47,17 +49,21 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool
 
         if not np.shape(chol_cov):
             y = x - mean
-            return -1 / 2 * jnp.einsum("i,i->", y, y) / chol_cov ** 2 - (n - n_nan) / 2 * (
-                    jnp.log(2 * np.pi) + 2 * jnp.log(chol_cov)
-            )
+            return -1 / 2 * jnp.einsum("i,i->", y, y) / chol_cov**2 - (
+                n - n_nan
+            ) / 2 * (jnp.log(2 * np.pi) + 2 * jnp.log(chol_cov))
         elif chol_cov.ndim == 1:
             if chol_cov.shape[0] != n:
                 raise ValueError("multivariate_normal.logpdf got incompatible shapes")
             if nan_support:
                 # set nans in chol_cov to 1
-                chol_cov = jnp.where(flag, 1., chol_cov)
+                chol_cov = jnp.where(flag, 1.0, chol_cov)
             y = (x - mean) / chol_cov
-            return -1 / 2 * jnp.einsum("i,i->", y, y) - (n - n_nan) / 2 * jnp.log(2 * np.pi) - jnp.log(chol_cov).sum()
+            return (
+                -1 / 2 * jnp.einsum("i,i->", y, y)
+                - (n - n_nan) / 2 * jnp.log(2 * np.pi)
+                - jnp.log(chol_cov).sum()
+            )
 
         else:
             if chol_cov.shape != (n, n):
@@ -68,7 +74,7 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool
 
                 # group the NaN entries together
                 argsort = jnp.argsort(flag, stable=True)
-                chol_cov = chol_cov.at[flag, :].set(0.)
+                chol_cov = chol_cov.at[flag, :].set(0.0)
                 chol_cov, x, mean = chol_cov[argsort], x[argsort], mean[argsort]
                 flag = flag[argsort]
 
@@ -78,7 +84,7 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool
 
                 # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
                 diag_chol_cov = jnp.diag(chol_cov)
-                diag_chol_cov = diag_chol_cov.at[flag].set(1.)
+                diag_chol_cov = diag_chol_cov.at[flag].set(1.0)
 
                 diag_indices = jnp.diag_indices_from(chol_cov)
                 chol_cov = chol_cov.at[diag_indices].set(diag_chol_cov)
@@ -88,13 +94,15 @@ def logpdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool
                 signature="(n,n),(n)->(n)",
             )(chol_cov, x - mean)
             return (
-                    -1 / 2 * jnp.einsum("i,i->", y, y)
-                    - (n - n_nan) / 2 * jnp.log(2 * np.pi)
-                    - jnp.log(jnp.abs(jnp.diag(chol_cov))).sum(-1)
+                -1 / 2 * jnp.einsum("i,i->", y, y)
+                - (n - n_nan) / 2 * jnp.log(2 * np.pi)
+                - jnp.log(jnp.abs(jnp.diag(chol_cov))).sum(-1)
             )
 
 
-def pdf(x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True) -> Array:
+def pdf(
+    x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
+) -> Array:
     """Multivariate normal probability distribution function
     with (generalized) Cholesky factor of covariance input.
 
