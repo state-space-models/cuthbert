@@ -19,8 +19,10 @@ def logpdf(
     Args:
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
-      chol_cov: arraylike, generalized Cholesky factor of the covariance matrix of distribution
-      nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto the lower-dimensional subspace spanned by the non-NaN entries of x (default: True)
+      chol_cov: arraylike,
+        generalized Cholesky factor of the covariance matrix of distribution
+      nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
+        the lower-dimensional subspace spanned by the non-NaN entries of x
 
     Returns:
       array of logpdf values.
@@ -107,9 +109,10 @@ def pdf(
     Args:
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
-      chol_cov: arraylike, generalized Cholesky factor of the covariance matrix of distribution
-        nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto the lower-dimensional subspace spanned by the non-NaN entries of x (default: True)
-
+      chol_cov: arraylike,
+        generalized Cholesky factor of the covariance matrix of distribution
+    nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
+        the lower-dimensional subspace spanned by the non-NaN entries of x
 
     Returns:
       array of pdf values.
