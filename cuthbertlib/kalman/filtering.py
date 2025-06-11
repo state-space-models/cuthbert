@@ -100,7 +100,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
 
-    ell = multivariate_normal.logpdf(y, y_hat, Imat)
+    ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=True)
     return (my, chol_Py), jnp.asarray(ell)
 
 
@@ -184,7 +184,9 @@ def sqrt_associative_params_single(
         Z = tria(Z)
 
     # local log marginal likelihood
-    ell = -jnp.asarray(multivariate_normal.logpdf(y, H @ m1 + d, Psi11))
+    ell = -jnp.asarray(
+        multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=True)
+    )
 
     return FilterScanElement(A, b, U, eta, Z, ell)
 
