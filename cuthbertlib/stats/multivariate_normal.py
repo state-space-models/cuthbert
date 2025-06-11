@@ -1,10 +1,10 @@
 import numpy as np
 from jax import lax
 from jax import numpy as jnp
-from jax.scipy.linalg import qr
 from jax._src.numpy.util import promote_dtypes_inexact
 
 from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.linalg import tria
 
 
 def logpdf(
@@ -77,8 +77,7 @@ def logpdf(
                 flag = flag[argsort]
 
                 # compute the tria of the covariance matrix with NaNs set to 0
-                _, R = qr(chol_cov.T, mode="economic")
-                chol_cov = R.T
+                chol_cov = tria(chol_cov)
 
                 # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
                 diag_chol_cov = jnp.diag(chol_cov)
