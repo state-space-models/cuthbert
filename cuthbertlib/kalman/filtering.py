@@ -6,6 +6,7 @@ from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
 
 from cuthbertlib.stats import multivariate_normal
+from cuthbertlib.stats.multivariate_normal import _nans_chol_cov
 from cuthbertlib.linalg import tria
 
 
@@ -143,7 +144,12 @@ def sqrt_associative_params_single(
 
     # Handle case where there is no observation
     flag = jnp.isnan(y)
+    chol_R, flag, argsort = _nans_chol_cov(flag, chol_R)
+    H = H[argsort]
+    d = d[argsort]
+    y = y[argsort]
     H = jnp.where(flag[:, None], 0.0, H)
+    d = jnp.where(flag, 0.0, d)
 
     ny, nx = H.shape
 
@@ -152,7 +158,9 @@ def sqrt_associative_params_single(
     N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
 
     # joint over the predictive and the observation
+    # Psi_ = jnp.block([[H_filled @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
     Psi_ = jnp.block([[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
+
     Tria_Psi_ = tria(Psi_)
 
     Psi11 = Tria_Psi_[:ny, :ny]
@@ -188,7 +196,7 @@ def sqrt_associative_params_single(
         multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=True)
     )
 
-    return FilterScanElement(A, b, U, eta, Z, ell)
+    return FilterScanElement(A, b, U, eta, Z, ell), Psi11
 
 
 def sqrt_filtering_operator(

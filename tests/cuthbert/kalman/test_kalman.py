@@ -54,6 +54,60 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         seed, x_dim, y_dim, num_time_steps
     )
 
+    ############################################################################
+    seed = 0
+    x_dim = 3
+    y_dim = 2
+    num_time_steps = 25
+
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, num_time_steps
+    )
+    Fs = jnp.eye(x_dim)[None]
+    cs = jnp.zeros(x_dim)[None]
+    chol_Qs = jnp.zeros((x_dim, x_dim))[None]
+    Hs = Hs[1][None]
+    ds = ds[1][None]
+    chol_Rs = chol_Rs[1][None]
+    ys = ys[1][None]
+    ys[0][0] *= jnp.nan
+
+    F = Fs[0]
+    c = cs[0]
+    chol_Q = chol_Qs[0]
+    H = Hs[0]
+    d = ds[0]
+    chol_R = chol_Rs[0]
+    y = ys[0]
+
+    flag = jnp.isnan(y)
+    H2 = H[~flag]
+    d2 = d[~flag]
+    chol_R2 = chol_R[~flag][:, ~flag]
+    y2 = y[~flag]
+
+    from cuthbertlib.kalman.filtering import sqrt_associative_params_single
+
+    elem, chol = sqrt_associative_params_single(
+        m0, chol_P0, F, c, chol_Q, H, d, chol_R, y
+    )
+
+    elem2, chol2 = sqrt_associative_params_single(
+        m0, chol_P0, F, c, chol_Q, H2, d2, chol_R2, y2
+    )
+
+    print(chol @ chol.T)
+    print(chol2 @ chol2.T)
+
+    print(elem[0] - elem2[0])
+    print(elem[1] - elem2[1])
+    print(elem[2] @ elem[2].T - elem2[2] @ elem2[2].T)
+    print(elem[3] - elem2[3])
+    print(elem[4] @ elem[4].T - elem2[4] @ elem2[4].T)
+    print(elem[5] - elem2[5])
+
+    ############################################################################
+
     if num_time_steps > 1:
         # Set an observation to nan
         ys[1][0] *= jnp.nan
