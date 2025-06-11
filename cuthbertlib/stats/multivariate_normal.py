@@ -72,7 +72,7 @@ def logpdf(
 
                 # group the NaN entries together
                 argsort = jnp.argsort(flag, stable=True)
-                chol_cov = chol_cov.at[flag, :].set(0.0)
+                chol_cov = jnp.where(flag[:, None], 0.0, chol_cov)
                 chol_cov, x, mean = chol_cov[argsort], x[argsort], mean[argsort]
                 flag = flag[argsort]
 
@@ -82,7 +82,7 @@ def logpdf(
 
                 # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
                 diag_chol_cov = jnp.diag(chol_cov)
-                diag_chol_cov = diag_chol_cov.at[flag].set(1.0)
+                diag_chol_cov = jnp.where(flag, 1.0, diag_chol_cov)
                 diag_indices = jnp.diag_indices_from(chol_cov)
                 chol_cov = chol_cov.at[diag_indices].set(diag_chol_cov)
 

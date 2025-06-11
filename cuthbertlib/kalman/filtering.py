@@ -143,7 +143,7 @@ def sqrt_associative_params_single(
 
     # Handle case where there is no observation
     flag = jnp.isnan(y)
-    H = H.at[flag, :].set(0.0)
+    H = jnp.where(flag[:, None], 0.0, H)
 
     ny, nx = H.shape
 
