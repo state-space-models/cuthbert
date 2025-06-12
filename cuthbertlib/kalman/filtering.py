@@ -1,12 +1,11 @@
 from typing import NamedTuple
-
 import jax
 import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
 
 from cuthbertlib.stats import multivariate_normal
-from cuthbertlib.stats.multivariate_normal import _nans_chol_cov
+from cuthbertlib.stats.multivariate_normal import collect_nans_chol
 from cuthbertlib.linalg import tria
 
 
@@ -142,12 +141,9 @@ def sqrt_associative_params_single(
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step, with observation guaranteed not to be missing."""
 
-    # Handle case where there is no observation
+    # # Handle case where there is no observation
     flag = jnp.isnan(y)
-    chol_R, flag, argsort = _nans_chol_cov(flag, chol_R)
-    H = H[argsort]
-    d = d[argsort]
-    y = y[argsort]
+    flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)
     H = jnp.where(flag[:, None], 0.0, H)
     d = jnp.where(flag, 0.0, d)
 
@@ -196,7 +192,7 @@ def sqrt_associative_params_single(
         multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=True)
     )
 
-    return FilterScanElement(A, b, U, eta, Z, ell), Psi11
+    return FilterScanElement(A, b, U, eta, Z, ell)
 
 
 def sqrt_filtering_operator(

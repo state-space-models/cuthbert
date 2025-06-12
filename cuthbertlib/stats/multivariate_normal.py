@@ -1,5 +1,6 @@
+from typing import Any
 import numpy as np
-from jax import lax
+from jax import lax, tree
 from jax import numpy as jnp
 from jax._src.numpy.util import promote_dtypes_inexact
 
@@ -7,38 +8,50 @@ from cuthbertlib.types import Array, ArrayLike
 from cuthbertlib.linalg import tria
 
 
-def _nans_chol_cov(flag: Array, chol_cov: Array) -> tuple[Array, Array, Array]:
+def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
     """
     Converts a generalized Cholesky factor of a covariance matrix with NaNs
     into an ordered generalized Cholesky factor with NaNs rows and columns
     moved to the end with diagonal elements set to 1.
 
-    Also returns the reordered flag and the reordering vector.
+    Also reorders the rest of the arguments in the same way along the first axis.
+
+    Example behavior:
+    ```
+    flag = jnp.array([False, True, False, True])
+    new_flag, new_chol, new_mean = collect_nans_chol(flag, chol, mean)
+    ```
 
     Args:
         flag: Array, boolean array indicating which entries are NaN
-        chol_cov: Array, Cholesky factor of the covariance matrix
+            True for NaN entries, False for valid
+        chol: Array, Cholesky factor of the covariance matrix
+        rest: Any, rest of the arguments to be reordered in the same way
+            along the first axis
 
     Returns:
-        Cholesky factor of the covariance matrix with NaNs set to 0,
-        and the indices of the NaNs
+        flag, chol and rest reordered so that valid entries are first and NaNs are last.
+            Diagonal elements of chol are set to 1 for the NaN coordinates to avoid
+            division by zero
     """
+    flag = jnp.asarray(flag)
 
     # group the NaN entries together
     argsort = jnp.argsort(flag, stable=True)
-    chol_cov = jnp.where(flag[:, None], 0.0, chol_cov)
-    chol_cov = chol_cov[argsort]
+    chol = jnp.where(flag[:, None], 0.0, chol)
+    chol = chol[argsort]
     flag = flag[argsort]
 
     # compute the tria of the covariance matrix with NaNs set to 0
-    chol_cov = tria(chol_cov)
+    chol = tria(chol)
 
     # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
-    diag_chol_cov = jnp.diag(chol_cov)
-    diag_chol_cov = jnp.where(flag, 1.0, diag_chol_cov)
-    diag_indices = jnp.diag_indices_from(chol_cov)
-    chol_cov = chol_cov.at[diag_indices].set(diag_chol_cov)
-    return chol_cov, flag, argsort
+    diag_chol = jnp.diag(chol)
+    diag_chol = jnp.where(flag, 1.0, diag_chol)
+    diag_indices = jnp.diag_indices_from(chol)
+    chol = chol.at[diag_indices].set(diag_chol)
+
+    return flag, chol, *tree.map(lambda x: x[argsort], rest)
 
 
 def logpdf(
@@ -108,24 +121,10 @@ def logpdf(
                 # This is a tria based implementation of marginal covariance
                 # The idea is to group the NaN entries together and then for the tria operation of [observed, rest] obtain the marginal covariance.
 
-                chol_cov, flag, argsort = _nans_chol_cov(flag, chol_cov)
-                mean = mean[argsort]
-                x = x[argsort]
-
-                # # group the NaN entries together
-                # argsort = jnp.argsort(flag, stable=True)
-                # chol_cov = jnp.where(flag[:, None], 0.0, chol_cov)
-                # chol_cov, x, mean = chol_cov[argsort], x[argsort], mean[argsort]
-                # flag = flag[argsort]
-
-                # # compute the tria of the covariance matrix with NaNs set to 0
-                # chol_cov = tria(chol_cov)
-
-                # # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
-                # diag_chol_cov = jnp.diag(chol_cov)
-                # diag_chol_cov = jnp.where(flag, 1.0, diag_chol_cov)
-                # diag_indices = jnp.diag_indices_from(chol_cov)
-                # chol_cov = chol_cov.at[diag_indices].set(diag_chol_cov)
+                # group the NaN entries together
+                flag, chol_cov, mean, x = collect_nans_chol(flag, chol_cov, mean, x)
+                x = jnp.asarray(x)
+                mean = jnp.asarray(mean)
 
             y = lax.linalg.triangular_solve(
                 chol_cov, x - mean, lower=True, transpose_a=True
