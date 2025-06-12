@@ -8,7 +8,9 @@ from cuthbertlib.types import Array, ArrayLike
 from cuthbertlib.linalg import tria
 
 
-def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
+def collect_nans_chol(
+    flag: ArrayLike, chol: ArrayLike, *rest: Any, set_rest_zero: bool = True
+) -> Any:
     """
     Converts a generalized Cholesky factor of a covariance matrix with NaNs
     into an ordered generalized Cholesky factor with NaNs rows and columns
@@ -28,6 +30,8 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
         chol: Array, Cholesky factor of the covariance matrix
         rest: Any, rest of the arguments to be reordered in the same way
             along the first axis
+        set_rest_zero: bool, if True, sets the rest of the arguments to 0 for dimensions
+            where flag is True
 
     Returns:
         flag, chol and rest reordered so that valid entries are first and NaNs are last.
@@ -47,11 +51,21 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
 
     # set the diagonal of chol_cov to 1 where nans were present to avoid division by zero
     diag_chol = jnp.diag(chol)
-    diag_chol = jnp.where(flag, 1.0, diag_chol)
+    # diag_chol = jnp.where(flag, 1.0, diag_chol)
+    diag_chol = jnp.where(flag, 1 / jnp.sqrt(2 * jnp.pi), diag_chol)
     diag_indices = jnp.diag_indices_from(chol)
     chol = chol.at[diag_indices].set(diag_chol)
 
-    return flag, chol, *tree.map(lambda x: x[argsort], rest)
+    rest = tree.map(lambda x: x[argsort], rest)
+
+    def set_to_zero(x):
+        broadcast_flag = jnp.expand_dims(flag, list(range(1, x.ndim)))
+        return jnp.where(broadcast_flag, 0.0, x)
+
+    if set_rest_zero:
+        rest = tree.map(set_to_zero, rest)
+
+    return flag, chol, *rest
 
 
 def logpdf(

@@ -77,6 +77,10 @@ def update(
         Paper: G. J. Bierman, Factorization Methods for Discrete Sequential Estimation,
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/tree/main/parsmooth/sequential
     """
+    # Handle case where there is no observation
+    flag = jnp.isnan(y)
+    flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)
+
     m, chol_P = jnp.asarray(m), jnp.asarray(chol_P)
     H, d, chol_R = jnp.asarray(H), jnp.asarray(d), jnp.asarray(chol_R)
     y = jnp.asarray(y)
@@ -100,7 +104,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
 
-    ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=True)
+    ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=False)
     return (my, chol_Py), jnp.asarray(ell)
 
 
@@ -141,11 +145,9 @@ def sqrt_associative_params_single(
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step, with observation guaranteed not to be missing."""
 
-    # # Handle case where there is no observation
+    # Handle case where there is no observation
     flag = jnp.isnan(y)
     flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)
-    H = jnp.where(flag[:, None], 0.0, H)
-    d = jnp.where(flag, 0.0, d)
 
     ny, nx = H.shape
 
@@ -171,15 +173,11 @@ def sqrt_associative_params_single(
     HF = H @ F  # temporary variable
     A = F - K @ HF  # corrected transition matrix
 
-    # fill y with dummies where y is NaN
-    # the actual logic will come from H = 0, but we do not want numerical issues
-    y_filled = jnp.where(flag, 0.0, y)
-
-    b = m1 + K @ (y_filled - H @ m1 - d)  # corrected transition offset
+    b = m1 + K @ (y - H @ m1 - d)  # corrected transition offset
 
     # information filter
     Z = HF.T @ Psi11_inv.T
-    eta = Psi11_inv @ (y_filled - H @ c - d)
+    eta = Psi11_inv @ (y - H @ c - d)
     eta = Z @ eta
 
     if nx > ny:
@@ -189,7 +187,7 @@ def sqrt_associative_params_single(
 
     # local log marginal likelihood
     ell = -jnp.asarray(
-        multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=True)
+        multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=False)
     )
 
     return FilterScanElement(A, b, U, eta, Z, ell)
