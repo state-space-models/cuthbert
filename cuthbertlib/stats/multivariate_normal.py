@@ -20,7 +20,7 @@ def logpdf(
     Args:
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
-      cov: arraylike, covariance matrix of distribution
+      chol_cov: arraylike, (generalized) Cholesky factor of the covariance matrix
       nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
         the lower-dimensional subspace spanned by the non-NaN entries of x
         Note that `nan_support=True` uses tria (QR decomposition) and therefore
@@ -84,7 +84,7 @@ def pdf(
     Args:
       x: arraylike, value at which to evaluate the PDF
       mean: arraylike, centroid of distribution
-      cov: arraylike, covariance matrix of distribution
+      chol_cov: arraylike, (generalized) Cholesky factor of the covariance matrix
       nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
         the lower-dimensional subspace spanned by the non-NaN entries of x
         Note that `nan_support=True` uses tria (QR decomposition) and therefore
