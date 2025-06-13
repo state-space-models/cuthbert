@@ -1,11 +1,11 @@
 from typing import NamedTuple
-
 import jax
 import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
 
 from cuthbertlib.stats import multivariate_normal
+from cuthbertlib.stats.multivariate_normal import collect_nans_chol
 from cuthbertlib.linalg import tria
 
 
@@ -77,6 +77,10 @@ def update(
         Paper: G. J. Bierman, Factorization Methods for Discrete Sequential Estimation,
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/tree/main/parsmooth/sequential
     """
+    # Handle case where there is no observation
+    flag = jnp.isnan(y)
+    flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)
+
     m, chol_P = jnp.asarray(m), jnp.asarray(chol_P)
     H, d, chol_R = jnp.asarray(H), jnp.asarray(d), jnp.asarray(chol_R)
     y = jnp.asarray(y)
@@ -100,7 +104,7 @@ def update(
 
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
 
-    ell = multivariate_normal.logpdf(y, y_hat, Imat)
+    ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=False)
     return (my, chol_Py), jnp.asarray(ell)
 
 
@@ -122,12 +126,12 @@ def sqrt_associative_params(
         [chol_P0[None, ...], jnp.zeros_like(chol_P0, shape=(T - 1,) + chol_P0.shape)]
     )
 
-    return jax.vmap(_sqrt_associative_params_single)(
+    return jax.vmap(sqrt_associative_params_single)(
         ms, chol_Ps, F, c, chol_Q, H, d, chol_R, y
     )
 
 
-def _sqrt_associative_params_single(
+def sqrt_associative_params_single(
     m0: Array,
     chol_P0: Array,
     F: Array,
@@ -139,7 +143,11 @@ def _sqrt_associative_params_single(
     y: Array,
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step."""
+    filter for a single time step, with observation guaranteed not to be missing."""
+
+    # Handle case where there is no observation
+    flag = jnp.isnan(y)
+    flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)
 
     ny, nx = H.shape
 
@@ -148,7 +156,9 @@ def _sqrt_associative_params_single(
     N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
 
     # joint over the predictive and the observation
+    # Psi_ = jnp.block([[H_filled @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
     Psi_ = jnp.block([[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
+
     Tria_Psi_ = tria(Psi_)
 
     Psi11 = Tria_Psi_[:ny, :ny]
@@ -162,6 +172,7 @@ def _sqrt_associative_params_single(
     K = Psi21 @ Psi11_inv  # local Kalman gain
     HF = H @ F  # temporary variable
     A = F - K @ HF  # corrected transition matrix
+
     b = m1 + K @ (y - H @ m1 - d)  # corrected transition offset
 
     # information filter
@@ -175,7 +186,9 @@ def _sqrt_associative_params_single(
         Z = tria(Z)
 
     # local log marginal likelihood
-    ell = -jnp.asarray(multivariate_normal.logpdf(y, H @ m1 + d, Psi11))
+    ell = -jnp.asarray(
+        multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=False)
+    )
 
     return FilterScanElement(A, b, U, eta, Z, ell)
 
@@ -186,7 +199,8 @@ def sqrt_filtering_operator(
     """Binary associative operator for the square root Kalman filter.
 
     Args:
-        elem_i, elem_j: Filter scan elements.
+        elem_i: Filter scan element for the previous time step.
+        elem_j: Filter scan element for the current time step.
 
     Returns:
         FilterScanElement: The output of the associative operator applied to the input elements.

@@ -1,5 +1,4 @@
 import itertools
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -20,21 +19,24 @@ def config():
 
 def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     """The standard Kalman filter."""
+    # Use for loop instead of jax.lax.scan because std_update supports smaller
+    # dimensional updates via NaNs in y
+    ms = [m0]
+    Ps = [P0]
+    ells_incrs = []
 
-    def body(carry, inp):
-        m, P, ell = carry
-        F, c, Q, H, d, R, y = inp
-        pred_m, pred_P = std_predict(m, P, F, c, Q)
+    for i in range(len(Fs)):
+        F, c, Q, H, d, R, y = Fs[i], cs[i], Qs[i], Hs[i], ds[i], Rs[i], ys[i]
+        pred_m, pred_P = std_predict(ms[-1], Ps[-1], F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
-        ell_cumulative = ell + ell_incr
-        return (m, P, ell_cumulative), (m, P, ell_cumulative)
+        ms.append(m)
+        Ps.append(P)
+        ells_incrs.append(ell_incr)
 
-    (_, _, _), (m, P, ell_cumulative) = jax.lax.scan(
-        body, (m0, P0, 0.0), (Fs, cs, Qs, Hs, ds, Rs, ys)
-    )
-    m = jnp.vstack([m0[None, ...], m])
-    P = jnp.vstack([P0[None, ...], P])
-    return m, P, ell_cumulative
+    ms = jnp.stack(ms)
+    Ps = jnp.stack(Ps)
+    ells = jnp.cumsum(jnp.stack(ells_incrs))
+    return ms, Ps, ells
 
 
 seeds = [0, 42, 99, 123, 456]
@@ -51,6 +53,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
         seed, x_dim, y_dim, num_time_steps
     )
+
+    if num_time_steps > 1:
+        # Set an observation to nan
+        ys[1][0] *= jnp.nan
 
     # Run both sequential and parallel versions of the square root filter.
     (seq_means, seq_chol_covs), (seq_ells,) = filter(

@@ -2,7 +2,6 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax.scipy.stats import multivariate_normal
 
 from cuthbertlib.kalman.filtering import predict, update
 from tests.cuthbertlib.kalman.utils import generate_lgssm
@@ -21,14 +20,26 @@ def std_predict(m, P, F, c, Q):
     return m, P
 
 
-def std_update(m, P, H, d, R, y):
+def _std_update(m, P, H, d, R, y):
     residual = y - H @ m - d
     S = H @ P @ H.T + R
     K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
+
     m = m + K @ residual
     P = P - K @ S @ K.T
-    ell = multivariate_normal.logpdf(residual, jnp.zeros(residual.shape[0]), S)
+
+    ell = jax.scipy.stats.multivariate_normal.logpdf(
+        residual, jnp.zeros(residual.shape[0]), S
+    )
     return m, P, ell
+
+
+def std_update(m, P, H, d, R, y):
+    flag = jnp.isnan(y)
+    m_update, P_update, ell = _std_update(
+        m, P, H[~flag], d[~flag], R[~flag][:, ~flag], y[~flag]
+    )
+    return m_update, P_update, ell
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
