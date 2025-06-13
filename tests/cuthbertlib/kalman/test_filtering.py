@@ -36,11 +36,9 @@ def _std_update(m, P, H, d, R, y):
 
 def std_update(m, P, H, d, R, y):
     flag = jnp.isnan(y)
-
     m_update, P_update, ell = _std_update(
         m, P, H[~flag], d[~flag], R[~flag][:, ~flag], y[~flag]
     )
-
     return m_update, P_update, ell
 
 
