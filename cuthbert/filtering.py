@@ -50,10 +50,10 @@ def filter(
     init_state = inference.init_prepare(init_model_input)
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
-    prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
+    other_prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
         prep_model_inputs, prepare_keys
     )
-    prep_states = append_tree(prep_states, init_state, prepend=True)
+    prep_states = append_tree(other_prep_states, init_state, prepend=True)
 
     if parallel:
         states = associative_scan(
@@ -61,8 +61,6 @@ def filter(
             prep_states,
         )
     else:
-        init_prep_state = tree.map(lambda x: x[0], prep_states)
-        other_prep_states = tree.map(lambda x: x[1:], prep_states)
 
         def body(prev_state, prep_state):
             state = inference.filter_combine(prev_state, prep_state)
@@ -70,10 +68,9 @@ def filter(
 
         _, states = scan(
             body,
-            init_prep_state,
+            init_state,
             other_prep_states,
         )
-        states = append_tree(states, init_prep_state, prepend=True)
+        states = append_tree(states, init_state, prepend=True)
 
-    # states = append_tree(states, init_state, prepend=True)
     return states

@@ -56,10 +56,6 @@ def load_kalman_inference(
     """Builds Kalman inference object and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        ################## TODO: This is very bad and needs fixing, init_params should only be called for T = 0
-        # m = jnp.where(model_inputs <= 1, m0, jnp.zeros_like(m0))
-        # chol_P = jnp.where(model_inputs <= 1, chol_P0, jnp.zeros_like(chol_P0))
-        # return m, chol_P
         return m0, chol_P0
 
     def get_dynamics_params(model_inputs: int) -> tuple[Array, Array, Array]:
@@ -97,7 +93,8 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
 
     if num_time_steps > 1:
         # Set an observation to nan
-        ys[1][0] *= jnp.nan
+        # ys[1][0] *= jnp.nan
+        ys = ys.at[1, 0].set(jnp.nan)
 
     inference, model_inputs = load_kalman_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
@@ -130,8 +127,8 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ells),
-        (par_means, par_covs, par_ells),
+        (seq_means, seq_covs, seq_ells[1:]),
+        (par_means, par_covs, par_ells[1:]),
         (des_means, des_covs, des_ells),
         rtol=1e-10,
     )

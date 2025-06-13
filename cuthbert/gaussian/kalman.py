@@ -76,7 +76,6 @@ def build(
         init_prepare=partial(init_prepare, get_init_params=get_init_params),
         filter_prepare=partial(
             filter_prepare,
-            get_init_params=get_init_params,
             get_dynamics_params=get_dynamics_params,
             get_observation_params=get_observation_params,
         ),
@@ -101,7 +100,7 @@ def init_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 to initialize filter state.
+        get_init_params: Function to get m0, chol_P0 from model inputs.
         key: JAX random key - not used.
 
     Returns:
@@ -122,7 +121,6 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_params: GetInitParams,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
     key: KeyArray | None = None,
@@ -132,8 +130,6 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 to initialize filter state.
-            Typically this is non-zero for the first time step and otherwise zero.
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q.
         get_observation_params: Function to get observation parameters, H, d, chol_R, y.
         key: JAX random key - not used.
@@ -141,12 +137,11 @@ def filter_prepare(
     Returns:
         Prepared state for Kalman filter.
     """
-    m0, chol_P0 = get_init_params(model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
     elem = filtering.sqrt_associative_params_single(
-        m0,
-        chol_P0,
+        jnp.zeros_like(c),
+        jnp.zeros_like(chol_Q),
         F,
         c,
         chol_Q,
