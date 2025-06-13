@@ -38,8 +38,15 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
         flag, chol and rest reordered so that valid entries are first and NaNs are last.
             Diagonal elements of chol are set to 1/√2π so that normalization is correct
     """
+
     flag = jnp.asarray(flag)
     chol = jnp.asarray(chol)
+
+    # TODO: Can we support batching? I.e. when `chol` is a batch of Cholesky factors,
+    # possibly with multiple leading dimensions
+
+    if flag.ndim > 1 or chol.ndim > 2:
+        raise ValueError("Batched flag or chol not supported yet")
 
     if not flag.shape:
         return (
