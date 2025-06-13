@@ -2,9 +2,9 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
+from jax.scipy.stats import multivariate_normal
 
 from cuthbertlib.kalman.filtering import predict, update
-from cuthbertlib.kalman.utils import mvn_logpdf
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
@@ -27,7 +27,7 @@ def std_update(m, P, H, d, R, y):
     K = jax.scipy.linalg.solve(S, H @ P, assume_a="pos").T
     m = m + K @ residual
     P = P - K @ S @ K.T
-    ell = mvn_logpdf(residual, jnp.linalg.cholesky(S))
+    ell = multivariate_normal.logpdf(residual, jnp.zeros(residual.shape[0]), S)
     return m, P, ell
 
 
