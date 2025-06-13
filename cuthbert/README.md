@@ -25,7 +25,7 @@ state = inference.init_prepare(tree.map(lambda x: x[0], model_inputs))
 
 for t in range(1, T):
     model_inputs_t = tree.map(lambda x: x[t], model_inputs)
-    prepare_state = inference.filter_prepare(model_inputs_t, state)
+    prepare_state = inference.filter_prepare(model_inputs_t)
     state = inference.filter_combine(state, prepare_state)
 ```
 
