@@ -44,7 +44,7 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
 
     def callback(args):
         su, w, idx_ = args
-        idx_ = np.array(idx_)
+        idx_ = np.array(idx_, dtype=idx.dtype)
         su = np.asarray(su)
         w = np.asarray(w)
         inverse_cdf_numba(su, w, idx_)
