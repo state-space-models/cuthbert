@@ -34,7 +34,7 @@ class KalmanFilterState(NamedTuple):
 
     @property
     def log_likelihood(self) -> Array:
-        return -self.elem.ell
+        return self.elem.ell
 
 
 class KalmanSmootherState(NamedTuple):

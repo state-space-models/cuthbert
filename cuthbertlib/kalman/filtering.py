@@ -186,7 +186,7 @@ def sqrt_associative_params_single(
         Z = tria(Z)
 
     # local log marginal likelihood
-    ell = -jnp.asarray(
+    ell = jnp.asarray(
         multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=False)
     )
 
@@ -228,6 +228,6 @@ def sqrt_filtering_operator(
 
     mu = cho_solve((U1, True), b1)
     t1 = b1 @ mu - (eta2 + mu) @ tmp_2
-    ell = ell1 + ell2 + 0.5 * t1 - 0.5 * jnp.linalg.slogdet(D_inv)[1]
+    ell = ell1 + ell2 - 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
 
     return FilterScanElement(A, b, U, eta, Z, ell)
