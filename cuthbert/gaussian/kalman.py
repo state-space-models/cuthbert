@@ -139,17 +139,7 @@ def filter_prepare(
     """
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
-    elem = filtering.sqrt_associative_params_single(
-        jnp.zeros_like(c),
-        jnp.zeros_like(chol_Q),
-        F,
-        c,
-        chol_Q,
-        H,
-        d,
-        chol_R,
-        y,
-    )
+    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
     return KalmanFilterState(elem=elem)
 
 
@@ -174,7 +164,7 @@ def filter_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
-    combined_elem = filtering.sqrt_filtering_operator(
+    combined_elem = filtering.filtering_operator(
         state_1.elem,
         state_2.elem,
     )
@@ -203,12 +193,8 @@ def smoother_prepare(
     F, c, chol_Q = get_dynamics_params(model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
-    state = smoothing._sqrt_associative_params_single(
-        filter_mean,
-        filter_chol_cov,
-        F,
-        c,
-        chol_Q,
+    state = smoothing.associative_params_single(
+        filter_mean, filter_chol_cov, F, c, chol_Q
     )
     return KalmanSmootherState(elem=state, gain=state.E)
 
@@ -236,7 +222,7 @@ def smoother_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and gain (which can be used to compute temporal cross-covariance).
     """
-    state_elem = smoothing.sqrt_smoothing_operator(
+    state_elem = smoothing.smoothing_operator(
         state_2.elem,
         state_1.elem,
     )

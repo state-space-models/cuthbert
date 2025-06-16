@@ -3,7 +3,7 @@ from typing import NamedTuple, Sequence
 import jax
 import jax.numpy as jnp
 from cuthbertlib.types import ArrayLike, Array
-from cuthbertlib.kalman.smoothing import _sqrt_associative_params_single
+from cuthbertlib.kalman.smoothing import associative_params_single
 from cuthbertlib.kalman.utils import append_tree
 
 
@@ -34,7 +34,7 @@ def sqrt_associative_params(
 def _sqrt_associative_params_interm(
     m: Array, chol_P: Array, F: Array, c: Array, chol_Q: Array, eps: Array
 ) -> SamplerScanElement:
-    inc_m, gain, L = _sqrt_associative_params_single(m, chol_P, F, c, chol_Q)
+    inc_m, gain, L = associative_params_single(m, chol_P, F, c, chol_Q)
     inc = inc_m + eps @ L.T
     return SamplerScanElement(gain, inc)
 
