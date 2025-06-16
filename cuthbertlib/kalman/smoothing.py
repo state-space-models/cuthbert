@@ -5,7 +5,6 @@ import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike
 from jax.scipy.linalg import solve_triangular
 
-from cuthbertlib.kalman.utils import append_tree
 from cuthbertlib.linalg import tria
 
 
@@ -63,18 +62,7 @@ def update(
     return (mean, chol), gain
 
 
-def sqrt_associative_params(
-    ms: Array, Ps: Array, Fs: Array, cs: Array, chol_Qs: Array
-) -> SmootherScanElement:
-    """Compute the smoother scan elements for the square root parallel Kalman smoother."""
-    scan_elements = jax.vmap(_sqrt_associative_params_single)(
-        ms[:-1], Ps[:-1], Fs, cs, chol_Qs
-    )
-    final_element = SmootherScanElement(ms[-1], jnp.zeros_like(Ps[-1]), Ps[-1])
-    return append_tree(scan_elements, final_element)
-
-
-def _sqrt_associative_params_single(
+def associative_params_single(
     m: Array,
     chol_P: Array,
     F: Array,
@@ -96,7 +84,7 @@ def _sqrt_associative_params_single(
     return SmootherScanElement(g, E, D)
 
 
-def sqrt_smoothing_operator(
+def smoothing_operator(
     elem_i: SmootherScanElement, elem_j: SmootherScanElement
 ) -> SmootherScanElement:
     """Binary associative operator for the square root Kalman smoother.
