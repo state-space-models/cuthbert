@@ -40,18 +40,19 @@ def filter(
     if key is None:
         # This will throw error if used as a key, which is desired behavior
         # (albeit not a useful error, we could improve this)
-        prepare_keys = jnp.empty(T + 1)
+        init_key = jnp.empty(())
+        prepare_keys = jnp.empty(T)
     else:
-        prepare_keys = random.split(key, T + 1)
+        init_key, *prepare_keys = random.split(key, T + 1)
 
     init_model_input = tree.map(lambda x: x[0], model_inputs)
-    init_state = inference.init_prepare(init_model_input, key=prepare_keys[0])
+    init_state = inference.init_prepare(init_model_input, key=init_key)
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
     if parallel:
         other_prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
-            prep_model_inputs, prepare_keys[1:]
+            prep_model_inputs, prepare_keys
         )
         prep_states = append_tree(other_prep_states, init_state, prepend=True)
         states = associative_scan(
@@ -69,7 +70,7 @@ def filter(
         _, states = scan(
             body,
             init_state,
-            (prep_model_inputs, prepare_keys[1:]),
+            (prep_model_inputs, prepare_keys),
         )
         states = append_tree(states, init_state, prepend=True)
 
