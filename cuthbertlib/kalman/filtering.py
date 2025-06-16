@@ -119,13 +119,8 @@ def associative_params_single(
 
     ny, nx = H.shape
 
-    # one step prediction
-    m1 = c
-    N1 = tria(jnp.concatenate([jnp.zeros_like(chol_Q), chol_Q], 1))
-
     # joint over the predictive and the observation
-    # Psi_ = jnp.block([[H_filled @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
-    Psi_ = jnp.block([[H @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])
+    Psi_ = jnp.block([[H @ chol_Q, chol_R], [chol_Q, jnp.zeros((nx, ny))]])
 
     Tria_Psi_ = tria(Psi_)
 
@@ -141,7 +136,7 @@ def associative_params_single(
     HF = H @ F  # temporary variable
     A = F - K @ HF  # corrected transition matrix
 
-    b = m1 + K @ (y - H @ m1 - d)  # corrected transition offset
+    b = c + K @ (y - H @ c - d)  # corrected transition offset
 
     # information filter
     Z = HF.T @ Psi11_inv.T
@@ -155,7 +150,7 @@ def associative_params_single(
 
     # local log marginal likelihood
     ell = jnp.asarray(
-        multivariate_normal.logpdf(y, H @ m1 + d, Psi11, nan_support=False)
+        multivariate_normal.logpdf(y, H @ c + d, Psi11, nan_support=False)
     )
 
     return FilterScanElement(A, b, U, eta, Z, ell)
