@@ -52,14 +52,16 @@ def smoother(
         final_filter_state
     )
 
+    # Model inputs for dynamics distribution from t to t+1 is stored
+    # in the (t+1)th model_inputs i.e. model_inputs[t] thus we need model_inputs[1:]
     other_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
-    prep_states = vmap(lambda fs, inp, k: inference.smoother_prepare(fs, inp, key=k))(
-        other_filter_states, other_model_inputs, prepare_keys
-    )
-    prep_states = append_tree(prep_states, final_smoother_state)
-
     if parallel:
+        prep_states = vmap(
+            lambda fs, inp, k: inference.smoother_prepare(fs, inp, key=k)
+        )(other_filter_states, other_model_inputs, prepare_keys)
+        prep_states = append_tree(prep_states, final_smoother_state)
+
         states = associative_scan(
             vmap(lambda current, next: inference.smoother_combine(next, current)),
             # TODO: Maybe change cuthbertlib direction so that this lambda isn't needed
@@ -67,20 +69,20 @@ def smoother(
             reverse=True,
         )
     else:
-        final_prep_state = tree.map(lambda x: x[-1], prep_states)
-        other_prep_states = tree.map(lambda x: x[:-1], prep_states)
 
-        def body(next_state, prep_state):
+        def body(next_state, filt_state_and_prep_inp_and_k):
+            filt_state, prep_inp, k = filt_state_and_prep_inp_and_k
+            prep_state = inference.smoother_prepare(filt_state, prep_inp, key=k)
             state = inference.smoother_combine(prep_state, next_state)
             return state, state
 
         _, states = scan(
             body,
-            final_prep_state,
-            other_prep_states,
+            final_smoother_state,
+            (other_filter_states, other_model_inputs, prepare_keys),
             reverse=True,
         )
 
-        states = append_tree(states, final_prep_state)
+        states = append_tree(states, final_smoother_state)
 
     return states
