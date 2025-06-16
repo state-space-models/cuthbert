@@ -1,5 +1,4 @@
 from typing import NamedTuple
-import jax
 import jax.numpy as jnp
 from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
