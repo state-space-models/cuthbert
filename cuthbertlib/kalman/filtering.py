@@ -108,39 +108,8 @@ def update(
     return (my, chol_Py), jnp.asarray(ell)
 
 
-def sqrt_associative_params(
-    m0: Array,
-    chol_P0: Array,
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-    H: Array,
-    d: Array,
-    chol_R: Array,
-    y: Array,
-) -> FilterScanElement:
-    """Compute the filter scan elements for the square root parallel Kalman filter."""
-    T = y.shape[0]
-    ms = jnp.concatenate([m0[None, ...], jnp.zeros_like(m0, shape=(T - 1,) + m0.shape)])
-    chol_Ps = jnp.concatenate(
-        [chol_P0[None, ...], jnp.zeros_like(chol_P0, shape=(T - 1,) + chol_P0.shape)]
-    )
-
-    return jax.vmap(sqrt_associative_params_single)(
-        ms, chol_Ps, F, c, chol_Q, H, d, chol_R, y
-    )
-
-
 def sqrt_associative_params_single(
-    m0: Array,
-    chol_P0: Array,
-    F: Array,
-    c: Array,
-    chol_Q: Array,
-    H: Array,
-    d: Array,
-    chol_R: Array,
-    y: Array,
+    F: Array, c: Array, chol_Q: Array, H: Array, d: Array, chol_R: Array, y: Array
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
     filter for a single time step, with observation guaranteed not to be missing."""
@@ -152,8 +121,8 @@ def sqrt_associative_params_single(
     ny, nx = H.shape
 
     # one step prediction
-    m1 = F @ m0 + c
-    N1 = tria(jnp.concatenate([F @ chol_P0, chol_Q], 1))
+    m1 = c
+    N1 = tria(jnp.concatenate([jnp.zeros_like(chol_Q), chol_Q], 1))
 
     # joint over the predictive and the observation
     # Psi_ = jnp.block([[H_filled @ N1, chol_R], [N1, jnp.zeros((nx, ny))]])

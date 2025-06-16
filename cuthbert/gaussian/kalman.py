@@ -139,17 +139,7 @@ def filter_prepare(
     """
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
-    elem = filtering.sqrt_associative_params_single(
-        jnp.zeros_like(c),
-        jnp.zeros_like(chol_Q),
-        F,
-        c,
-        chol_Q,
-        H,
-        d,
-        chol_R,
-        y,
-    )
+    elem = filtering.sqrt_associative_params_single(F, c, chol_Q, H, d, chol_R, y)
     return KalmanFilterState(elem=elem)
 
 
