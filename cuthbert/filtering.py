@@ -4,9 +4,7 @@ import warnings
 
 from cuthbert.inference import SSMInference
 from cuthbertlib.types import ArrayTreeLike, KeyArray, ArrayTree
-from cuthbertlib.kalman.utils import (
-    append_tree,
-)  # Should move this to cuthbertlib.linalg? Or maybe not needed at all
+from cuthbertlib.kalman.utils import append_tree
 
 
 def filter(
@@ -50,26 +48,28 @@ def filter(
     init_state = inference.init_prepare(init_model_input)
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
-    other_prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
-        prep_model_inputs, prepare_keys
-    )
-    prep_states = append_tree(other_prep_states, init_state, prepend=True)
 
     if parallel:
+        other_prep_states = vmap(lambda inp, k: inference.filter_prepare(inp, key=k))(
+            prep_model_inputs, prepare_keys
+        )
+        prep_states = append_tree(other_prep_states, init_state, prepend=True)
         states = associative_scan(
             vmap(inference.filter_combine),
             prep_states,
         )
     else:
 
-        def body(prev_state, prep_state):
+        def body(prev_state, prep_inp_and_k):
+            prep_inp, k = prep_inp_and_k
+            prep_state = inference.filter_prepare(prep_inp, key=k)
             state = inference.filter_combine(prev_state, prep_state)
             return state, state
 
         _, states = scan(
             body,
             init_state,
-            other_prep_states,
+            (prep_model_inputs, prepare_keys),
         )
         states = append_tree(states, init_state, prepend=True)
 
