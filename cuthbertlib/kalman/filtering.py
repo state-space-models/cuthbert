@@ -108,7 +108,7 @@ def update(
     return (my, chol_Py), jnp.asarray(ell)
 
 
-def sqrt_associative_params_single(
+def associative_params_single(
     F: Array, c: Array, chol_Q: Array, H: Array, d: Array, chol_R: Array, y: Array
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
@@ -162,7 +162,7 @@ def sqrt_associative_params_single(
     return FilterScanElement(A, b, U, eta, Z, ell)
 
 
-def sqrt_filtering_operator(
+def filtering_operator(
     elem_i: FilterScanElement, elem_j: FilterScanElement
 ) -> FilterScanElement:
     """Binary associative operator for the square root Kalman filter.

@@ -139,7 +139,7 @@ def filter_prepare(
     """
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
-    elem = filtering.sqrt_associative_params_single(F, c, chol_Q, H, d, chol_R, y)
+    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
     return KalmanFilterState(elem=elem)
 
 
@@ -164,7 +164,7 @@ def filter_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
-    combined_elem = filtering.sqrt_filtering_operator(
+    combined_elem = filtering.filtering_operator(
         state_1.elem,
         state_2.elem,
     )
