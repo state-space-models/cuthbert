@@ -33,7 +33,6 @@ class TestInverseCdf(chex.TestCase):
 
             # Test for general properties
             self.assertEqual(indices.shape, sorted_uniforms.shape)
-            self.assertEqual(indices.dtype, jnp.int32)
             npt.assert_array_less(indices, M)
             npt.assert_array_less(-1, indices)
 

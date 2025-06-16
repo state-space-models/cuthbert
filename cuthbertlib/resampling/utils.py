@@ -31,7 +31,9 @@ def inverse_cdf_default(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array
     M = weights.shape[0]
     cs = jnp.cumsum(weights)
     idx = jnp.searchsorted(cs, sorted_uniforms, method="sort")
-    return jnp.clip(idx, 0, M - 1)
+    return jnp.clip(idx, 0, M - 1).astype(
+        int
+    )  # Ensure indices are integers from the same dtype as basic jax ints.
 
 
 @jax.jit
@@ -44,7 +46,7 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
 
     def callback(args):
         su, w, idx_ = args
-        idx_ = np.array(idx_)
+        idx_ = np.array(idx_, dtype=idx.dtype)
         su = np.asarray(su)
         w = np.asarray(w)
         inverse_cdf_numba(su, w, idx_)
