@@ -42,6 +42,7 @@ def linearize_taylor(
 
     Returns:
         Linearized mean and cholesky factor of the covariance matrix.
+            As well as the auxiliary value if `has_aux` is True.
     """
 
     g_and_maybe_aux = jax.grad(log_potential, has_aux=has_aux)(x)
