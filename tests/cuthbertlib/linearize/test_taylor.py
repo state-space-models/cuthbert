@@ -37,3 +37,15 @@ def test_linearize_taylor(dim_x, seed):
         (m, L @ L.T),
         rtol=1e-7,
     )
+
+    # Test with auxiliary value
+    def log_potential_aux(x):
+        return log_potential(x), {"aux": x}
+
+    m_lin, L_lin, aux = linearize_taylor(log_potential_aux, x, has_aux=True)
+
+    chex.assert_trees_all_close(
+        (m_lin, L_lin @ L_lin.T, aux),
+        (m, L @ L.T, {"aux": x}),
+        rtol=1e-7,
+    )
