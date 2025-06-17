@@ -5,14 +5,13 @@ from jax.typing import ArrayLike
 
 
 def linearize_moments(
-    mean_function: Callable[[ArrayLike], Array],
-    chol_cov_function: Callable[[ArrayLike], Array],
+    mean_and_chol_cov_function: Callable[[ArrayLike], tuple[Array, Array]],
     x: ArrayLike,
 ) -> tuple[Array, Array, Array]:
     """Linearize conditional mean and cholesky factor of the covariance matrix
     functions into a linear Gaussian form.
 
-    Takes functions mean_function(x) and chol_cov_function(x) that return the
+    Takes a function mean_and_chol_cov_function(x) that returns the
     conditional mean and cholesky factor of the covariance matrix of the distribution
     p(y | x) for a given input x.
 
@@ -20,10 +19,9 @@ def linearize_moments(
     distribution p(y | x) ≈ N(y | H x + d, L L^T).
 
     Args:
-        mean_function: A callable that returns the conditional mean of the distribution
-            for a given input.
-        chol_cov_function: A callable that returns the cholesky factor of the covariance
-            matrix of the distribution for a given input.
+        mean_and_chol_cov_function: A callable that returns the conditional mean and
+            cholesky factor of the covariance matrix of the distribution for a given
+            input.
         x: Point to linearize around.
 
     Returns:
@@ -32,7 +30,13 @@ def linearize_moments(
     References:
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py
     """
-    F = jax.jacfwd(mean_function, 0)(x)
-    b = mean_function(x) - F @ x
-    Chol = chol_cov_function(x)
-    return F, b, Chol
+
+    def mean_and_chol_cov_function_wrapper(
+        x: ArrayLike,
+    ) -> tuple[Array, tuple[Array, Array]]:
+        mean, chol_cov = mean_and_chol_cov_function(x)
+        return mean, (mean, chol_cov)
+
+    F, (m, chol_cov) = jax.jacfwd(mean_and_chol_cov_function_wrapper, has_aux=True)(x)
+    b = m - F @ x
+    return F, b, chol_cov

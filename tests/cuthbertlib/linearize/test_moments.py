@@ -57,7 +57,10 @@ def test_linear_conditional(dim_x, dim_q, seed):
     E_f = partial(linear_conditional_mean, q=m_q, a=a, b=b, c=c)
     chol_f = partial(linear_conditional_chol, b=b, chol_q=chol_q)
 
-    F_x, remainder, Q_lin = linearize_moments(E_f, chol_f, m_x)
+    def mean_and_chol_cov(x):
+        return E_f(x), chol_f(x)
+
+    F_x, remainder, Q_lin = linearize_moments(mean_and_chol_cov, m_x)
     Q_lin = Q_lin @ Q_lin.T
     x_prime = np.random.randn(dim_x)
 
