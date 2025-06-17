@@ -1,17 +1,39 @@
-from typing import Callable
-from jax.typing import ArrayLike
+from typing import Callable, overload
 from jax import hessian, jacobian, grad
 import jax.numpy as jnp
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
-from cuthbertlib.types import Array
+from cuthbertlib.types import Array, ArrayTree, ArrayLike
 
 
+LogDensity = Callable[[ArrayLike, ArrayLike], Array]
+LogDensityAux = Callable[[ArrayLike, ArrayLike], tuple[Array, ArrayTree]]
+
+
+@overload
 def linearize_log_density(
-    log_density: Callable[[ArrayLike, ArrayLike], Array],
+    log_density: LogDensity,
     x: ArrayLike,
     y: ArrayLike,
     rtol: float | None = None,
-) -> tuple[Array, Array, Array]:
+    has_aux: bool = False,
+) -> tuple[Array, Array, Array]: ...
+@overload
+def linearize_log_density(
+    log_density: LogDensityAux,
+    x: ArrayLike,
+    y: ArrayLike,
+    rtol: float | None = None,
+    has_aux: bool = True,
+) -> tuple[Array, Array, Array, ArrayTree]: ...
+
+
+def linearize_log_density(
+    log_density: LogDensity | LogDensityAux,
+    x: ArrayLike,
+    y: ArrayLike,
+    rtol: float | None = None,
+    has_aux: bool = False,
+) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
     Is exact in the case of a linear Gaussian log_density that is returns
@@ -36,22 +58,46 @@ def linearize_log_density(
         rtol: The relative tolerance for the singular values of the precision matrix.
             Passed to `linearize.utils.inv_sqrt` with default calculated based on
             singular values of the precision matrix.
+        has_aux: Whether the log_density function returns an auxiliary value.
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
+            As well as the auxiliary value if `has_aux` is True.
     """
-    prec = -hessian(log_density, 1)(x, y)
+    prec_and_maybe_aux = hessian(log_density, 1, has_aux=has_aux)(x, y)
+    prec = -prec_and_maybe_aux[0] if has_aux else -prec_and_maybe_aux
     chol_cov = symmetric_inv_sqrt(prec, rtol=rtol)
-    mat, shift = linearize_log_density_given_chol_cov(log_density, x, y, chol_cov)
-    return mat, shift, chol_cov
+    mat, shift, *extra = linearize_log_density_given_chol_cov(
+        log_density, x, y, chol_cov, has_aux=has_aux
+    )
+    return mat, shift, chol_cov, *extra
 
 
+@overload
 def linearize_log_density_given_chol_cov(
-    log_density: Callable[[ArrayLike, ArrayLike], Array],
+    log_density: LogDensity,
     x: ArrayLike,
     y: ArrayLike,
     chol_cov: ArrayLike,
-) -> tuple[Array, Array]:
+    has_aux: bool = False,
+) -> tuple[Array, Array]: ...
+@overload
+def linearize_log_density_given_chol_cov(
+    log_density: LogDensityAux,
+    x: ArrayLike,
+    y: ArrayLike,
+    chol_cov: ArrayLike,
+    has_aux: bool = True,
+) -> tuple[Array, Array, ArrayTree]: ...
+
+
+def linearize_log_density_given_chol_cov(
+    log_density: LogDensity | LogDensityAux,
+    x: ArrayLike,
+    y: ArrayLike,
+    chol_cov: ArrayLike,
+    has_aux: bool = False,
+) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
     Is exact in the case of a linear Gaussian log_density that is returns
@@ -68,16 +114,26 @@ def linearize_log_density_given_chol_cov(
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
+            As well as the auxiliary value if `has_aux` is True.
     """
     chol_cov = jnp.asarray(chol_cov)
     cov = chol_cov @ chol_cov.T
 
-    def grad_log_density_wrapper(x, y):
-        g = grad(log_density, 1)(x, y)
-        return g, g
+    if has_aux:
 
-    jac, g = jacobian(grad_log_density_wrapper, 0, has_aux=True)(x, y)
+        def grad_log_density_wrapper_aux(x, y):
+            g, aux = grad(log_density, 1, has_aux=True)(x, y)
+            return g, (g, aux)
+
+        jac, (g, *extra) = jacobian(grad_log_density_wrapper_aux, 0, has_aux=True)(x, y)
+    else:
+
+        def grad_log_density_wrapper(x, y):
+            g = grad(log_density, 1)(x, y)
+            return g, (g,)
+
+        jac, (g, *extra) = jacobian(grad_log_density_wrapper, 0, has_aux=True)(x, y)
 
     mat = cov @ jac
     shift = y - mat @ x + cov @ g
-    return mat, shift
+    return mat, shift, *extra
