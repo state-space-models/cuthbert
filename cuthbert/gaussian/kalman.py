@@ -8,7 +8,7 @@ from cuthbertlib.types import (
     KeyArray,
 )
 from cuthbertlib.kalman import filtering, smoothing
-from cuthbert.inference import SSMInference
+from cuthbert.inference import Inference
 
 
 # model_inputs -> (m0, chol_P0) for T = 0
@@ -54,7 +54,7 @@ def build(
     get_init_params: GetInitParams,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
-) -> SSMInference:
+) -> Inference:
     """
     Build exact Kalman inference object for linear Gaussian SSMs.
 
@@ -72,7 +72,7 @@ def build(
         SSMInference: Inference object for exact Kalman filter and smoother.
             Suitable for associative scan.
     """
-    return SSMInference(
+    return Inference(
         init_prepare=partial(init_prepare, get_init_params=get_init_params),
         filter_prepare=partial(
             filter_prepare,

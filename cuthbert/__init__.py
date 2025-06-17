@@ -4,7 +4,7 @@ from cuthbert.inference import (
     FilterCombine,
     SmootherPrepare,
     SmootherCombine,
-    SSMInference,
+    Inference,
 )
 from cuthbert.filtering import filter
 from cuthbert.smoothing import smoother

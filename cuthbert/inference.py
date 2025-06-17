@@ -149,7 +149,7 @@ class ConvertFilterToSmootherState(Protocol):
         ...
 
 
-class SSMInference(NamedTuple):
+class Inference(NamedTuple):
     init_prepare: InitPrepare
     filter_prepare: FilterPrepare
     filter_combine: FilterCombine

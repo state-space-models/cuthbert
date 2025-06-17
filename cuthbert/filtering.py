@@ -2,13 +2,13 @@ from jax import vmap, tree, random, numpy as jnp
 from jax.lax import scan, associative_scan
 import warnings
 
-from cuthbert.inference import SSMInference
+from cuthbert.inference import Inference
 from cuthbertlib.types import ArrayTreeLike, KeyArray, ArrayTree
 from cuthbertlib.kalman.utils import append_tree
 
 
 def filter(
-    inference: SSMInference,
+    inference: Inference,
     model_inputs: ArrayTreeLike,
     parallel: bool = False,
     key: KeyArray | None = None,

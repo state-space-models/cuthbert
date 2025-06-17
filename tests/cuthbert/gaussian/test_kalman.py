@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import pytest
 from jax import Array
 
-from cuthbert.inference import SSMInference
+from cuthbert.inference import Inference
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
@@ -52,7 +52,7 @@ def load_kalman_inference(
     ds: Array,
     chol_Rs: Array,
     ys: Array,
-) -> tuple[SSMInference, Array]:
+) -> tuple[Inference, Array]:
     """Builds Kalman inference object and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
