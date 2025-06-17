@@ -102,7 +102,9 @@ def filter_combine(
     )
 
     # Reweight
-    log_potentials = jax.vmap(log_gt)(ancestors, next_particles, state_1.model_inputs)
+    log_potentials = jax.vmap(log_gt, (0, 0, None))(
+        ancestors, next_particles, state_1.model_inputs
+    )
     next_log_weights = log_potentials + log_weights
 
     # Compute the log likelihood increment
