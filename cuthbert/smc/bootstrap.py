@@ -11,7 +11,7 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 class M0(Protocol):
     """Get a sample from the initial distribution $M_0(x_0)$."""
 
-    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> Array: ...
+    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> ArrayTree: ...
 
 
 class Mt(Protocol):
@@ -27,7 +27,7 @@ class LogG0(Protocol):
 
     def __call__(
         self, state: ArrayTreeLike, model_inputs: ArrayTreeLike
-    ) -> ArrayTree: ...
+    ) -> ScalarArray: ...
 
 
 class LogGt(Protocol):
@@ -38,7 +38,7 @@ class LogGt(Protocol):
         state_prev: ArrayTreeLike,
         state: ArrayTreeLike,
         model_inputs: ArrayTreeLike,
-    ) -> ArrayTree: ...
+    ) -> ScalarArray: ...
 
 
 class BootstrapFilterState(NamedTuple):
@@ -77,9 +77,9 @@ def filter_prepare(
 def filter_combine(
     state_1: BootstrapFilterState,
     state_2: BootstrapFilterState,
-    resampling_fn: Resampling,
     mt: Mt,
     log_gt: LogGt,
+    resampling_fn: Resampling,
     ess_threshold: float,
 ) -> BootstrapFilterState:
     if state_1.particles is None or state_1.log_weights is None:
