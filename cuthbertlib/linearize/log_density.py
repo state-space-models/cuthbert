@@ -70,10 +70,14 @@ def linearize_log_density_given_chol_cov(
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
     """
     chol_cov = jnp.asarray(chol_cov)
-
     cov = chol_cov @ chol_cov.T
-    jac = jacobian(grad(log_density, 1), 0)(x, y)
+
+    def grad_log_density_wrapper(x, y):
+        g = grad(log_density, 1)(x, y)
+        return g, g
+
+    jac, g = jacobian(grad_log_density_wrapper, 0, has_aux=True)(x, y)
+
     mat = cov @ jac
-    g = grad(log_density, 1)(x, y)
     shift = y - mat @ x + cov @ g
     return mat, shift
