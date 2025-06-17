@@ -1,38 +1,93 @@
-from typing import Callable
+from typing import Callable, overload, cast
 import jax
-from cuthbertlib.types import Array
+from cuthbertlib.types import Array, ArrayTree
 from jax.typing import ArrayLike
 
 
+MeanAndCholCovFunc = Callable[[ArrayLike], tuple[Array, Array]]
+MeanAndCholCovFuncAux = Callable[[ArrayLike], tuple[Array, Array, ArrayTree]]
+
+
+@overload
 def linearize_moments(
-    mean_function: Callable[[ArrayLike], Array],
-    chol_cov_function: Callable[[ArrayLike], Array],
+    mean_and_chol_cov_function: MeanAndCholCovFunc,
     x: ArrayLike,
-) -> tuple[Array, Array, Array]:
+    has_aux: bool = False,
+) -> tuple[Array, Array, Array]: ...
+@overload
+def linearize_moments(
+    mean_and_chol_cov_function: MeanAndCholCovFuncAux,
+    x: ArrayLike,
+    has_aux: bool = True,
+) -> tuple[Array, Array, Array, ArrayTree]: ...
+
+
+def linearize_moments(
+    mean_and_chol_cov_function: MeanAndCholCovFunc | MeanAndCholCovFuncAux,
+    x: ArrayLike,
+    has_aux: bool = False,
+) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
     """Linearize conditional mean and cholesky factor of the covariance matrix
     functions into a linear Gaussian form.
 
-    Takes functions mean_function(x) and chol_cov_function(x) that return the
+    Takes a function mean_and_chol_cov_function(x) that returns the
     conditional mean and cholesky factor of the covariance matrix of the distribution
     p(y | x) for a given input x.
 
     Returns (H, d, L) defining a linear Gaussian approximation to the conditional
     distribution p(y | x) ≈ N(y | H x + d, L L^T).
 
+    `mean_and_chol_cov_function` has the following signature with `has_aux` = False:
+    ```
+    m, chol = mean_and_chol_cov_function(x)
+    ```
+    or with `has_aux` = True:
+    ```
+    m, chol, aux = mean_and_chol_cov_function(x)
+    ```
+
     Args:
-        mean_function: A callable that returns the conditional mean of the distribution
-            for a given input.
-        chol_cov_function: A callable that returns the cholesky factor of the covariance
-            matrix of the distribution for a given input.
+        mean_and_chol_cov_function: A callable that returns the conditional mean and
+            cholesky factor of the covariance matrix of the distribution for a given
+            input.
         x: Point to linearize around.
+        has_aux: Whether the mean_and_chol_cov_function returns an auxiliary value.
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
+            As well as the auxiliary value if `has_aux` is True.
 
     References:
         Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py
     """
-    F = jax.jacfwd(mean_function, 0)(x)
-    b = mean_function(x) - F @ x
-    Chol = chol_cov_function(x)
-    return F, b, Chol
+
+    if has_aux:
+        mean_and_chol_cov_function = cast(
+            MeanAndCholCovFuncAux, mean_and_chol_cov_function
+        )
+
+        def mean_and_chol_cov_function_wrapper_aux(
+            x: ArrayLike,
+        ) -> tuple[Array, tuple[Array, Array, ArrayTree]]:
+            mean, chol_cov, aux = mean_and_chol_cov_function(x)
+            return mean, (mean, chol_cov, aux)
+
+        F, (m, *extra) = jax.jacfwd(
+            mean_and_chol_cov_function_wrapper_aux, has_aux=True
+        )(x)
+
+    else:
+        mean_and_chol_cov_function = cast(
+            MeanAndCholCovFunc, mean_and_chol_cov_function
+        )
+
+        def mean_and_chol_cov_function_wrapper(
+            x: ArrayLike,
+        ) -> tuple[Array, tuple[Array, Array]]:
+            mean, chol_cov = mean_and_chol_cov_function(x)
+            return mean, (mean, chol_cov)
+
+        F, (m, *extra) = jax.jacfwd(mean_and_chol_cov_function_wrapper, has_aux=True)(x)
+
+    b = m - F @ x
+    return F, b, *extra

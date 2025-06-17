@@ -57,7 +57,10 @@ def test_linear_conditional(dim_x, dim_q, seed):
     E_f = partial(linear_conditional_mean, q=m_q, a=a, b=b, c=c)
     chol_f = partial(linear_conditional_chol, b=b, chol_q=chol_q)
 
-    F_x, remainder, Q_lin = linearize_moments(E_f, chol_f, m_x)
+    def mean_and_chol_cov(x):
+        return E_f(x), chol_f(x)
+
+    F_x, remainder, Q_lin = linearize_moments(mean_and_chol_cov, m_x)
     Q_lin = Q_lin @ Q_lin.T
     x_prime = np.random.randn(dim_x)
 
@@ -67,5 +70,25 @@ def test_linear_conditional(dim_x, dim_q, seed):
     chex.assert_trees_all_close(
         (F_x, actual, Q_lin),
         (a, expected, expected_Q),
+        rtol=1e-7,
+    )
+
+    # Test with auxiliary value
+    def mean_and_chol_cov_aux(x):
+        return E_f(x), chol_f(x), {"aux": x}
+
+    F_x, remainder, Q_lin, aux = linearize_moments(
+        mean_and_chol_cov_aux, m_x, has_aux=True
+    )
+    Q_lin = Q_lin @ Q_lin.T
+    x_prime = np.random.randn(dim_x)
+
+    expected = linear_conditional_mean(x_prime, m_q, a, b, c)
+    actual = F_x @ x_prime + remainder
+    expected_Q = (b @ chol_q) @ (b @ chol_q).T
+    expected_aux = {"aux": m_x}
+    chex.assert_trees_all_close(
+        (F_x, actual, Q_lin, aux),
+        (a, expected, expected_Q, expected_aux),
         rtol=1e-7,
     )

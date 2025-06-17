@@ -57,6 +57,47 @@ def test_linearize_log_density_init(seed, x_dim) -> None:
         rtol=1e-7,
     )
 
+    # Test with auxiliary value and chol_cov
+    def init_log_density_aux(_, x):
+        return init_log_density(x), {"aux": x}
+
+    mat, shift, aux = linearize_log_density_given_chol_cov(
+        init_log_density_aux,
+        linearization_point,
+        linearization_point,
+        chol_P0,
+        has_aux=True,
+    )
+
+    chex.assert_trees_all_close(
+        (mat, shift, aux),
+        (
+            jnp.zeros((x_dim, x_dim)),
+            mean,
+            {"aux": linearization_point},
+        ),
+        rtol=1e-7,
+    )
+
+    # Test with auxiliary value
+    mat, shift, chol_cov, aux = linearize_log_density(
+        init_log_density_aux,
+        linearization_point,
+        linearization_point,
+        has_aux=True,
+    )
+
+    chex.assert_trees_all_close(
+        (mat, shift, chol_cov @ chol_cov.T, aux),
+        (
+            jnp.zeros((x_dim, x_dim)),
+            mean,
+            chol_P0 @ chol_P0.T,
+            {"aux": linearization_point},
+        ),
+        rtol=1e-7,
+    )
+
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
@@ -86,5 +127,30 @@ def test_linearize_log_density(seed, x_dim, y_dim) -> None:
     chex.assert_trees_all_close(
         (mat, shift, chol_cov @ chol_cov.T),
         (H, d, chol_R @ chol_R.T),
+        rtol=1e-7,
+    )
+
+    # Test with auxiliary value and chol_cov
+    def log_density_aux(x, y):
+        return log_density(x, y), {"aux": x}
+
+    mat, shift, aux = linearize_log_density_given_chol_cov(
+        log_density_aux, linearization_point, y, chol_R, has_aux=True
+    )
+
+    chex.assert_trees_all_close(
+        (mat, shift, aux),
+        (H, d, {"aux": linearization_point}),
+        rtol=1e-7,
+    )
+
+    # Test with auxiliary value
+    mat, shift, chol_cov, aux = linearize_log_density(
+        log_density_aux, linearization_point, y, has_aux=True
+    )
+
+    chex.assert_trees_all_close(
+        (mat, shift, chol_cov @ chol_cov.T, aux),
+        (H, d, chol_R @ chol_R.T, {"aux": linearization_point}),
         rtol=1e-7,
     )
