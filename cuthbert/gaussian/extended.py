@@ -1,4 +1,4 @@
-from typing import Callable, NamedTuple
+from typing import NamedTuple, Protocol
 from functools import partial
 from jax import numpy as jnp, tree
 
@@ -20,15 +20,43 @@ from cuthbert.gaussian.kalman import (
 )
 
 
-# (linearization_point, model_inputs) -> (m, chol_Q) for T = 1, ..., T
-# where m(x_t) = E[x_t | x_{t-1}] and Q(x_t) = Cov(x_t | x_{t-1})
-GetDynamicsExtendedParams = Callable[[Array, ArrayTreeLike], tuple[Array, Array]]
+class GetDynamicsExtendedParams(Protocol):
+    def __call__(
+        self,
+        x: Array,
+        model_inputs: ArrayTreeLike,
+    ) -> tuple[Array, Array]:
+        """
+        Get dynamics conditional mean and (generalised) Cholesky covariance
+            from model inputs and linearization point.
 
-# (linearization_point, model_inputs) -> (m_y, chol_R, y) for T = 1, ..., T,
-# where m_y(x_t) = E[y_t | x_t] and R(x_t) = Cov(y_t | x_t) and y is the observation
-GetObservationExtendedParams = Callable[
-    [Array, ArrayTreeLike], tuple[Array, Array, Array]
-]
+        Args:
+            x: Linearization point.
+            model_inputs: Model inputs.
+
+        Returns:
+            Tuple with conditional mean and (generalised) Cholesky covariance.
+        """
+        ...
+
+
+class GetObservationExtendedParams(Protocol):
+    def __call__(
+        self, x: Array, model_inputs: ArrayTreeLike
+    ) -> tuple[Array, Array, Array]:
+        """
+        Get observation conditional mean, (generalised) Cholesky covariance
+            and the observation itself from model inputs and linearization point.
+
+        Args:
+            x: Linearization point.
+            model_inputs: Model inputs.
+
+        Returns:
+            Tuple with conditional mean, (generalised) Cholesky covariance
+                and observation.
+        """
+        ...
 
 
 class ExtendedKalmanFilterState(NamedTuple):
