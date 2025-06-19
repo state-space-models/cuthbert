@@ -157,7 +157,6 @@ def filter_combine(
     Args:
         state_1: State from previous time step.
         state_2: State prepared with latest model inputs.
-        key: JAX random key - not used.
 
     Returns:
         Combined Kalman filter state.
@@ -215,7 +214,6 @@ def smoother_combine(
     Args:
         state_1: State prepared with model inputs at time t.
         state_2: Smoother state at time t + 1.
-        key: JAX random key - not used.
 
     Returns:
         Combined Kalman filter state.
