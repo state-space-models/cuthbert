@@ -1,4 +1,4 @@
-from typing import Callable, NamedTuple
+from typing import Callable, NamedTuple, Protocol
 from functools import partial
 from jax import numpy as jnp
 
@@ -11,14 +11,24 @@ from cuthbertlib.kalman import filtering, smoothing
 from cuthbert.inference import Inference
 
 
-# model_inputs -> (m0, chol_P0) for T = 0
-GetInitParams = Callable[[ArrayTreeLike], tuple[Array, Array]]
+class GetInitParams(Protocol):
+    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array]:
+        """Get initial parameters (m0, chol_P0) from model inputs."""
+        ...
 
-# model_inputs -> (F, c, chol_Q) for T = 1, ..., T
-GetDynamicsParams = Callable[[ArrayTreeLike], tuple[Array, Array, Array]]
 
-# model_inputs -> (H, d, chol_R, y) for T = 1, ..., T
-GetObservationParams = Callable[[ArrayTreeLike], tuple[Array, Array, Array, Array]]
+class GetDynamicsParams(Protocol):
+    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array, Array]:
+        """Get dynamics parameters (F, c, chol_Q) from model inputs."""
+        ...
+
+
+class GetObservationParams(Protocol):
+    def __call__(
+        self, model_inputs: ArrayTreeLike
+    ) -> tuple[Array, Array, Array, Array]:
+        """Get observation parameters (H, d, chol_R, y) from model inputs."""
+        ...
 
 
 class KalmanFilterState(NamedTuple):
