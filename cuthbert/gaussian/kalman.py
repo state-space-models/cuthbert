@@ -1,4 +1,4 @@
-from typing import Callable, NamedTuple, Protocol
+from typing import NamedTuple, Protocol
 from functools import partial
 from jax import numpy as jnp
 
