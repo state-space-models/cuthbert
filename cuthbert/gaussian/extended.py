@@ -180,7 +180,7 @@ def filter_combine(
     return ExtendedKalmanFilterState(
         mean=update_mean,
         chol_cov=update_chol_cov,
-        log_likelihood=log_likelihood,
+        log_likelihood=state_1.log_likelihood + log_likelihood,
         model_inputs=tree.map(lambda x: jnp.asarray(x), state_2.model_inputs),
     )
 
