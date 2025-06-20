@@ -1,9 +1,11 @@
+from functools import partial
 from typing import NamedTuple, Protocol
 
 import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
+from cuthbert.inference import SSMInference
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
@@ -20,17 +22,6 @@ class PropagateSample(Protocol):
     def __call__(
         self, key: KeyArray, state: ArrayTreeLike, model_inputs: ArrayTreeLike
     ) -> ArrayTree: ...
-
-
-class TransitionDensity(Protocol):
-    """Compute the transition density :math:`\\log M_t(x_t \\mid x_{t-1})`."""
-
-    def __call__(
-        self,
-        state_prev: ArrayTreeLike,
-        state: ArrayTreeLike,
-        model_inputs: ArrayTreeLike,
-    ) -> ScalarArray: ...
 
 
 class LogPotential(Protocol):
@@ -53,18 +44,55 @@ class BootstrapFilterState(NamedTuple):
     log_likelihood: ScalarArray
 
 
-class SmootherState(NamedTuple):
+class GTSmootherState(NamedTuple):
     particles: ArrayTree
-    filtered_particles: ArrayTree
-    filtered_log_weights: Array
+    ancestor_indices: Array
+
+
+def build(
+    init_sample: InitSample,
+    propagate_sample: PropagateSample,
+    log_potential: LogPotential,
+    num_samples: int,
+    n_smoother_particles: int,
+    resampling_fn: Resampling,
+    ess_threshold: float,
+) -> SSMInference:
+    """Build a bootstrap particle filter inference object."""
+    return SSMInference(
+        init_prepare=partial(
+            init_prepare, init_sample=init_sample, num_samples=num_samples
+        ),
+        filter_prepare=partial(
+            filter_prepare, init_sample=init_sample, num_samples=num_samples
+        ),
+        filter_combine=partial(
+            filter_combine,
+            propagate_sample=propagate_sample,
+            log_potential=log_potential,
+            resampling_fn=resampling_fn,
+            ess_threshold=ess_threshold,
+        ),
+        smoother_prepare=partial(
+            smoother_prepare, n_smoother_particles=n_smoother_particles
+        ),
+        smoother_combine=smoother_combine,
+        convert_filter_to_smoother_state=partial(
+            convert_filter_to_smoother_state, n_smoother_particles=n_smoother_particles
+        ),
+        associative_filter=False,
+        associative_smoother=False,
+    )
 
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
     num_samples: int,
-    key: KeyArray,
+    key: KeyArray | None = None,
 ) -> BootstrapFilterState:
+    if key is None:
+        raise ValueError("A JAX PRNG key must be provided.")
     keys = random.split(key, num_samples)
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
     return BootstrapFilterState(
@@ -81,8 +109,10 @@ def filter_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
     num_samples: int,
-    key: KeyArray,
+    key: KeyArray | None = None,
 ) -> BootstrapFilterState:
+    if key is None:
+        raise ValueError("A JAX PRNG key must be provided.")
     dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
     particles = tree.map(lambda x: jnp.empty((num_samples,) + x.shape), dummy_particle)
     return BootstrapFilterState(
@@ -148,16 +178,18 @@ def log_ess(log_weights: Array) -> Array:
 def convert_filter_to_smoother_state(
     filter_state: BootstrapFilterState,
     n_smoother_particles: int,
-    key: KeyArray,
-) -> SmootherState:
+) -> GTSmootherState:
     weights = jax.nn.softmax(filter_state.log_weights)
+    # TODO: The key for the final filter state is used here.
+    # It must not have been used before in the `filter_combine` function.
     indices = random.choice(
-        key, filter_state.particles.shape[0], (n_smoother_particles,), p=weights
+        filter_state.key,
+        filter_state.particles.shape[0],
+        (n_smoother_particles,),
+        p=weights,
     )
-    return SmootherState(
-        filter_state.particles[indices],
-        filter_state.particles,
-        filter_state.log_weights,
+    return GTSmootherState(
+        filter_state.particles[indices], filter_state.ancestor_indices[indices]
     )
 
 
@@ -165,31 +197,29 @@ def smoother_prepare(
     filter_state: BootstrapFilterState,
     model_inputs: ArrayTreeLike,
     n_smoother_particles: int,
-    key: KeyArray,
-) -> SmootherState:
+    key: KeyArray | None = None,
+) -> GTSmootherState:
     dummy_smoothed_particles = tree.map(
         lambda x: jnp.empty((n_smoother_particles,) + x.shape[1:]),
         filter_state.particles,
     )
-    return SmootherState(
-        dummy_smoothed_particles,
-        filter_state.particles,
-        filter_state.log_weights,
-    )
+    dummy_ancestor_indices = jnp.empty((n_smoother_particles,), dtype=int)
+    return GTSmootherState(dummy_smoothed_particles, dummy_ancestor_indices)
 
 
 def smoother_combine(
-    state_1: SmootherState,
-    state_2: SmootherState,
-    transition_density: TransitionDensity,
-    key: KeyArray,
-) -> SmootherState:
-    """Backward sampling.
+    state_1: GTSmootherState,
+    state_2: GTSmootherState,
+) -> GTSmootherState:
+    """Combine step for the genealogy tracking smoother.
 
     Args:
         state_1: Output of `smoother_prepare` at time t.
         state_2: Smoother state at time t + 1.
-        transition_density: The state transition density function.
-        key: JAX random key.
+
+    Returns:
+        Smoother state at time t.
     """
-    ...
+    particles = state_1.particles[state_2.ancestor_indices]
+    ancestor_indices = state_1.ancestor_indices[state_2.ancestor_indices]
+    return GTSmootherState(particles, ancestor_indices)
