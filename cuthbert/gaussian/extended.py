@@ -85,7 +85,7 @@ def build(
 
     Returns:
         Inference object for extended Kalman filter and smoother.
-            Suitable for associative scan.
+            Filter not suitable for associative scan, smoother suitable.
     """
     return Inference(
         init_prepare=partial(init_prepare, get_init_params=get_init_params),
