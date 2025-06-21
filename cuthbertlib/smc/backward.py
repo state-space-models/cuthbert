@@ -47,9 +47,9 @@ def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     Returns:
         Log normalized backward weights for each sample x0 given single sample x1.
     """
-    backward_log_weights_all = vmap(log_weights_single, in_axes=(0, None, None, 0))(
-        x0_all, x1, log_density, log_weight_x0_all
-    )
+    backward_log_weights_all = vmap(
+        lambda x0, log_weight_x0: log_weights_single(x0, x1, log_weight_x0, log_density)
+    )(x0_all, log_weight_x0_all)
 
     # Log normalize
     backward_log_weights_all = backward_log_weights_all - logsumexp(
@@ -97,7 +97,8 @@ def simulate(
     Returns:
         A collection of x0 and their sampled indices.
     """
-    keys = random.split(key, x0_all.shape[0])
-    return vmap(simulate_single, in_axes=(0, None, 0, None, 0))(
-        keys, x0_all, x1_all, log_weight_x0_all, log_density
-    )
+    keys = random.split(key, x1_all.shape[0])
+
+    return vmap(
+        lambda k, x1: simulate_single(k, x0_all, x1, log_weight_x0_all, log_density)
+    )(keys, x1_all)
