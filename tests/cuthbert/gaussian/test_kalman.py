@@ -137,9 +137,9 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_smoother(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = [
-        jnp.asarray(x) for x in generate_lgssm(seed, x_dim, y_dim, num_time_steps)
-    ]
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, num_time_steps
+    )
 
     inference, model_inputs = load_kalman_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
