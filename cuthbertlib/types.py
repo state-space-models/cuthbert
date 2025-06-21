@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, Callable
 from jax import Array
 from jax.typing import ArrayLike
 
@@ -10,3 +10,9 @@ ScalarArray: TypeAlias = (
     Array  # jax.Array with just a single float element, i.e. shape ()
 )
 ScalarArrayLike: TypeAlias = ArrayLike  # Object that will be cast to a ScalarArray
+
+
+LogConditionalDensity: TypeAlias = Callable[[ArrayLike, ArrayLike], Array]
+LogConditionalDensityAux: TypeAlias = Callable[
+    [ArrayLike, ArrayLike], tuple[Array, ArrayTree]
+]

@@ -1,17 +1,19 @@
-from typing import Callable, overload
+from typing import overload
 from jax import hessian, jacobian, grad
 import jax.numpy as jnp
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
-from cuthbertlib.types import Array, ArrayTree, ArrayLike
-
-
-LogDensity = Callable[[ArrayLike, ArrayLike], Array]
-LogDensityAux = Callable[[ArrayLike, ArrayLike], tuple[Array, ArrayTree]]
+from cuthbertlib.types import (
+    Array,
+    ArrayTree,
+    ArrayLike,
+    LogConditionalDensity,
+    LogConditionalDensityAux,
+)
 
 
 @overload
 def linearize_log_density(
-    log_density: LogDensity,
+    log_density: LogConditionalDensity,
     x: ArrayLike,
     y: ArrayLike,
     rtol: float | None = None,
@@ -19,7 +21,7 @@ def linearize_log_density(
 ) -> tuple[Array, Array, Array]: ...
 @overload
 def linearize_log_density(
-    log_density: LogDensityAux,
+    log_density: LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
     rtol: float | None = None,
@@ -28,7 +30,7 @@ def linearize_log_density(
 
 
 def linearize_log_density(
-    log_density: LogDensity | LogDensityAux,
+    log_density: LogConditionalDensity | LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
     rtol: float | None = None,
@@ -75,7 +77,7 @@ def linearize_log_density(
 
 @overload
 def linearize_log_density_given_chol_cov(
-    log_density: LogDensity,
+    log_density: LogConditionalDensity,
     x: ArrayLike,
     y: ArrayLike,
     chol_cov: ArrayLike,
@@ -83,7 +85,7 @@ def linearize_log_density_given_chol_cov(
 ) -> tuple[Array, Array]: ...
 @overload
 def linearize_log_density_given_chol_cov(
-    log_density: LogDensityAux,
+    log_density: LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
     chol_cov: ArrayLike,
@@ -92,7 +94,7 @@ def linearize_log_density_given_chol_cov(
 
 
 def linearize_log_density_given_chol_cov(
-    log_density: LogDensity | LogDensityAux,
+    log_density: LogConditionalDensity | LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
     chol_cov: ArrayLike,
