@@ -130,7 +130,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_ells[1:]),
         (par_means, par_covs, par_ells[1:]),
         (des_means, des_covs, des_ells),
-        rtol=1e-10,
+        rtol=2e-10,
     )
 
 
@@ -177,7 +177,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_cross_covs),
         (par_means, par_covs, par_cross_covs),
         (des_means, des_covs, des_cross_covs),
-        rtol=1e-10,
+        rtol=2e-10,
     )
 
 

@@ -1,38 +1,36 @@
+import jax
 import jax.numpy as jnp
 from jax import Array, random
+from functools import partial
 
 from cuthbertlib.types import KeyArray
 
 
+@partial(jax.jit, static_argnames=("x_dim", "y_dim", "num_time_steps"))
 def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
+    """Generate a linear-Gaussian state-space model with a set of observations."""
     key = random.key(seed)
-    key, init_key, trans_key, obs_key = random.split(key, 4)
 
-    # Initial, transition, and observation models.
+    key, init_key, sample_key = random.split(key, 3)
     m0, chol_P0 = generate_init_model(init_key, x_dim)
-    F, c, chol_Q = generate_trans_model(trans_key, x_dim)
-    H, d, chol_R = generate_obs_model(obs_key, x_dim, y_dim)
+    x0 = m0 + chol_P0 @ random.normal(sample_key, (x_dim,))
 
-    # Make copies for every time step.
-    Fs, cs, chol_Qs, Hs, ds, chol_Rs = batch_arrays(
-        num_time_steps, F, c, chol_Q, H, d, chol_R
-    )
+    def body(_x, _key):
+        trans_model_key, trans_key, obs_model_key, obs_key = random.split(key, 4)
 
-    # Simulate observations
-    ys = []
+        F, c, chol_Q = generate_trans_model(trans_model_key, x_dim)
+        state_noise = chol_Q @ random.normal(trans_key, (x_dim,))
+        x = F @ _x + c + state_noise
 
-    key, sub_key = random.split(key)
-    x = m0 + chol_P0 @ random.normal(sub_key, (x_dim,))
-
-    for t in range(num_time_steps):
-        key, state_key, obs_key = random.split(key, 3)
-        state_noise = chol_Q @ random.normal(state_key, (x_dim,))
-        x = F @ x + c + state_noise
+        H, d, chol_R = generate_obs_model(obs_model_key, x_dim, y_dim)
         obs_noise = chol_R @ random.normal(obs_key, (y_dim,))
         y = H @ x + d + obs_noise
-        ys.append(y)
 
-    ys = jnp.asarray(ys)
+        return x, (F, c, chol_Q, H, d, chol_R, y)
+
+    scan_keys = random.split(key, num_time_steps)
+    _, (Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys) = jax.lax.scan(body, x0, scan_keys)
+
     return m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
 
 
@@ -51,8 +49,8 @@ def generate_init_model(key: KeyArray, x_dim: int) -> tuple[Array, Array]:
 
 def generate_trans_model(key: KeyArray, x_dim: int) -> tuple[Array, Array, Array]:
     keys = random.split(key, 3)
-    # Generate transition matrix F and vector c such that the system is stable
-    F = jnp.eye(x_dim) + 0.1 * random.normal(keys[0], (x_dim, x_dim))
+    exp_eig_max = 0.75  # Chosen less than one to stop exploding states (in expectation)
+    F = exp_eig_max * random.normal(keys[0], (x_dim, x_dim)) / jnp.sqrt(x_dim)
     c = 0.1 * random.normal(keys[1], (x_dim,))
     chol_Q = generate_cholesky_factor(keys[2], x_dim)
     return F, c, chol_Q
@@ -62,14 +60,7 @@ def generate_obs_model(
     key: KeyArray, x_dim: int, y_dim: int
 ) -> tuple[Array, Array, Array]:
     keys = random.split(key, 3)
-    H = random.uniform(keys[0], (y_dim, x_dim))
-    d = random.uniform(keys[1], (y_dim,))
+    H = random.normal(keys[0], (y_dim, x_dim))
+    d = random.normal(keys[1], (y_dim,))
     chol_R = generate_cholesky_factor(keys[2], y_dim)
     return H, d, chol_R
-
-
-def batch_arrays(t, *args):
-    out = []
-    for arg in args:
-        out.append(jnp.repeat(arg[None], t, axis=0))
-    return out
