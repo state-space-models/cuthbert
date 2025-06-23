@@ -20,7 +20,7 @@ def test_backward_simulate(seed, x_dim, N):
     # To encourage this we increase the variance of the smoother distribution,
     # therefore decreasing influence of y1 on p(x0 | y0, y1).
     # Although you couldn't do this in practice.
-    chol_Qs *= 10.0
+    chol_Qs *= 5.0
 
     F, c, chol_Q = Fs[0], cs[0], chol_Qs[0]
 
