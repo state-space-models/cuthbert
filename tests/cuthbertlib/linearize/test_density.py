@@ -1,7 +1,6 @@
-import pytest
 import chex
-import numpy as np
 import jax
+import pytest
 from jax import numpy as jnp
 from jax.scipy.stats import multivariate_normal
 
@@ -25,11 +24,11 @@ def config():
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
 def test_linearize_log_density_init(seed, x_dim) -> None:
-    rng = np.random.default_rng(seed)
+    key = jax.random.key(seed)
+    init_key, lin_key = jax.random.split(key)
+    mean, chol_P0 = generate_init_model(init_key, x_dim)
 
-    mean, chol_P0 = generate_init_model(rng, x_dim)
-
-    linearization_point = rng.normal(size=x_dim)
+    linearization_point = jax.random.normal(lin_key, (x_dim,))
 
     def init_log_density(x):
         return jnp.asarray(multivariate_normal.logpdf(x, mean, chol_P0 @ chol_P0.T))
@@ -103,11 +102,12 @@ def test_linearize_log_density_init(seed, x_dim) -> None:
 @pytest.mark.parametrize("x_dim", [3])
 @pytest.mark.parametrize("y_dim", [1, 2])
 def test_linearize_log_density(seed, x_dim, y_dim) -> None:
-    rng = np.random.default_rng(seed)
+    key = jax.random.key(seed)
+    param_key, obs_key, lin_key = jax.random.split(key, 3)
+    H, d, chol_R = generate_obs_model(param_key, x_dim, y_dim)
+    y = jax.random.normal(obs_key, (y_dim,))
 
-    H, d, chol_R, y = generate_obs_model(rng, x_dim, y_dim)
-
-    linearization_point = rng.normal(size=x_dim)
+    linearization_point = jax.random.normal(lin_key, (x_dim,))
 
     def log_density(x, y):
         return jnp.asarray(multivariate_normal.logpdf(y, H @ x + d, chol_R @ chol_R.T))

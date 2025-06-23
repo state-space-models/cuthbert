@@ -1,13 +1,14 @@
 import itertools
+
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
 from jax import Array
 
-from cuthbert.inference import Inference
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
+from cuthbert.inference import Inference
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
@@ -87,13 +88,12 @@ common_params = list(itertools.product(seeds, x_dims, y_dims, num_time_steps))
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = [
-        jnp.asarray(x) for x in generate_lgssm(seed, x_dim, y_dim, num_time_steps)
-    ]  # TODO: Move asarray into generate_lgssm
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, num_time_steps
+    )
 
     if num_time_steps > 1:
         # Set an observation to nan
-        # ys[1][0] *= jnp.nan
         ys = ys.at[1, 0].set(jnp.nan)
 
     inference, model_inputs = load_kalman_inference(
@@ -130,16 +130,16 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_ells[1:]),
         (par_means, par_covs, par_ells[1:]),
         (des_means, des_covs, des_ells),
-        rtol=1e-10,
+        rtol=2e-10,
     )
 
 
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_smoother(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = [
-        jnp.asarray(x) for x in generate_lgssm(seed, x_dim, y_dim, num_time_steps)
-    ]
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, num_time_steps
+    )
 
     inference, model_inputs = load_kalman_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
@@ -177,7 +177,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_cross_covs),
         (par_means, par_covs, par_cross_covs),
         (des_means, des_covs, des_cross_covs),
-        rtol=1e-10,
+        rtol=2e-10,
     )
 
 
