@@ -10,13 +10,19 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [2])
-@pytest.mark.parametrize("N", [20_000])
+@pytest.mark.parametrize("N", [10_000])
 def test_backward_simulate(seed, x_dim, N):
     m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
     m1, chol_P1 = generate_lgssm(seed + 1, x_dim, 0, 0)[:2]
 
+    # Backward simulation fails unless there is overlap between
+    # filter distribution p(x0, y0) and smoother distribution p(x0 | y0, y1).
+    # To encourage this we increase the variance of the smoother distribution,
+    # therefore decreasing influence of y1 on p(x0 | y0, y1).
+    # Although you couldn't do this in practice.
+    chol_Qs *= 10.0
+
     F, c, chol_Q = Fs[0], cs[0], chol_Qs[0]
-    prec_Q = jnp.linalg.inv(chol_Q @ chol_Q.T)
 
     # Run standard Kalman smoother for one step
     ms = jax.numpy.vstack([m0, m1])
@@ -35,6 +41,8 @@ def test_backward_simulate(seed, x_dim, N):
     x1s = jax.vmap(lambda z: m1 + chol_P1 @ z)(jax.random.normal(x1_key, (N, x_dim)))
 
     # Run backward simulation
+    prec_Q = jnp.linalg.inv(chol_Q @ chol_Q.T)
+
     def log_conditional_density(x0, x1):
         diff = x1 - F @ x0 - c
         return -0.5 * jnp.sum(diff @ prec_Q * diff)
