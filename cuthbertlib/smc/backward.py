@@ -81,7 +81,11 @@ def simulate_single(
 
 
 def simulate(
-    key, x0_all, x1_all, log_weight_x0_all, log_density
+    key: KeyArray, 
+    x0_all: ArrayTreeLike,
+    x1_all: ArrayTreeLike,
+    log_weight_x0_all: ArrayLike,
+    log_density: LogConditionalDensity,
 ) -> tuple[ArrayTreeLike, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
