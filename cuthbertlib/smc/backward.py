@@ -6,6 +6,7 @@ from cuthbertlib.types import (
     Array,
     ArrayTreeLike,
     ArrayTree,
+    KeyArray,
     LogConditionalDensity,
 )
 
@@ -81,7 +82,7 @@ def simulate_single(
 
 
 def simulate(
-    key: KeyArray, 
+    key: KeyArray,
     x0_all: ArrayTreeLike,
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
