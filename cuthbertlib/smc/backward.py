@@ -27,7 +27,7 @@ def log_weights_single(
         log_density: The log density of x1 given x0.
 
     Returns:
-        The backward weights for sample x0 given single sample x1.
+        The backward weight for sample x0 given a single sample x1.
     """
     return jnp.asarray(log_weight_x0) + log_density(x0, x1)
 
