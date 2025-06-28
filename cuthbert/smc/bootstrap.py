@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
-from cuthbert.inference import SSMInference
+from cuthbert.inference import Inference
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
@@ -53,18 +53,20 @@ def build(
     init_sample: InitSample,
     propagate_sample: PropagateSample,
     log_potential: LogPotential,
-    num_samples: int,
+    n_filter_particles: int,
     n_smoother_particles: int,
     resampling_fn: Resampling,
     ess_threshold: float,
-) -> SSMInference:
+) -> Inference:
     """Build a bootstrap particle filter inference object."""
-    return SSMInference(
+    return Inference(
         init_prepare=partial(
-            init_prepare, init_sample=init_sample, num_samples=num_samples
+            init_prepare, init_sample=init_sample, n_filter_particles=n_filter_particles
         ),
         filter_prepare=partial(
-            filter_prepare, init_sample=init_sample, num_samples=num_samples
+            filter_prepare,
+            init_sample=init_sample,
+            n_filter_particles=n_filter_particles,
         ),
         filter_combine=partial(
             filter_combine,
@@ -88,18 +90,18 @@ def build(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
-    num_samples: int,
+    n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> BootstrapFilterState:
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
-    keys = random.split(key, num_samples)
+    keys = random.split(key, n_filter_particles)
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
     return BootstrapFilterState(
         key=key,
         particles=particles,
-        log_weights=jnp.zeros(num_samples),
-        ancestor_indices=jnp.arange(num_samples),
+        log_weights=jnp.zeros(n_filter_particles),
+        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=jnp.array(0.0),
     )
@@ -108,18 +110,20 @@ def init_prepare(
 def filter_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
-    num_samples: int,
+    n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> BootstrapFilterState:
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
     dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
-    particles = tree.map(lambda x: jnp.empty((num_samples,) + x.shape), dummy_particle)
+    particles = tree.map(
+        lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
+    )
     return BootstrapFilterState(
         key=key,
         particles=particles,
-        log_weights=jnp.zeros(num_samples),
-        ancestor_indices=jnp.arange(num_samples),
+        log_weights=jnp.zeros(n_filter_particles),
+        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=jnp.array(0.0),
     )
