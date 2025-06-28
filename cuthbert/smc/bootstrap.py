@@ -139,10 +139,11 @@ def filter_combine(
 ) -> BootstrapFilterState:
     N = state_1.particles.shape[0]
     keys = random.split(state_1.key, N + 1)
+    n_filter_particles = state_1.particles.shape[0]
 
     # Resample
     ancestor_indices, log_weights = jax.lax.cond(
-        log_ess(state_1.log_weights) < jnp.log(ess_threshold),
+        log_ess(state_1.log_weights) < jnp.log(ess_threshold * n_filter_particles),
         lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),
         lambda: (jnp.arange(N), state_1.log_weights),
     )
@@ -150,12 +151,12 @@ def filter_combine(
 
     # Propagate
     next_particles = jax.vmap(propagate_sample, (0, 0, None))(
-        keys[1:], ancestors, state_1.model_inputs
+        keys[1:], ancestors, state_2.model_inputs
     )
 
     # Reweight
     log_potentials = jax.vmap(log_potential, (0, 0, None))(
-        ancestors, next_particles, state_1.model_inputs
+        ancestors, next_particles, state_2.model_inputs
     )
     next_log_weights = log_potentials + log_weights
 
