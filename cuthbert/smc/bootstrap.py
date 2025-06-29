@@ -58,7 +58,24 @@ def build(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> Inference:
-    """Build a bootstrap particle filter inference object."""
+    """
+    Build a bootstrap particle filter inference object for general state-space models.
+
+    Args:
+        init_sample: Function to sample from the initial distribution M_0(x_0).
+        propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
+        log_potential: Function to compute the log potential function log G_t(x_{t-1}, x_t).
+            Typically the log observation likelihood log p(y_t | x_t).
+        n_filter_particles: Number of particles for the filter.
+        n_smoother_particles: Number of particles for the smoother.
+        resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
+        ess_threshold: Effective sample size threshold for triggering resampling.
+            Resampling occurs when ESS < ess_threshold * n_filter_particles.
+
+    Returns:
+        Inference object for bootstrap particle filter and genealogy tracking smoother.
+            Associative scan is not supported.
+    """
     return Inference(
         init_prepare=partial(
             init_prepare, init_sample=init_sample, n_filter_particles=n_filter_particles
@@ -93,6 +110,21 @@ def init_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> BootstrapFilterState:
+    """
+    Prepare the initial state for the bootstrap particle filter.
+
+    Args:
+        model_inputs: Model inputs.
+        init_sample: Function to sample from the initial distribution M_0(x_0).
+        n_filter_particles: Number of particles to sample.
+        key: JAX random key.
+
+    Returns:
+        Initial state for the bootstrap filter.
+
+    Raises:
+        ValueError: If `key` is None.
+    """
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
     keys = random.split(key, n_filter_particles)
@@ -113,6 +145,22 @@ def filter_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> BootstrapFilterState:
+    """
+    Prepare a state for a bootstrap particle filter step.
+
+    Args:
+        model_inputs: Model inputs.
+        init_sample: Function to sample from the initial distribution M_0(x_0).
+            Only used to infer particle shapes.
+        n_filter_particles: Number of particles for the filter.
+        key: JAX random key.
+
+    Returns:
+        Prepared state for the bootstrap filter.
+
+    Raises:
+        ValueError: If `key` is None.
+    """
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
     dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
@@ -137,6 +185,24 @@ def filter_combine(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> BootstrapFilterState:
+    """
+    Combine the filter state from the previous time step with the state prepared
+    for the current step.
+
+    Implements the bootstrap particle filter update: conditional resampling,
+    propagation through state dynamics, and reweighting based on the potential function.
+
+    Args:
+        state_1: Filter state from the previous time step.
+        state_2: Filter state prepared for the current step.
+        propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
+        log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
+        resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
+        ess_threshold: ESS threshold as fraction of particle count for triggering resampling.
+
+    Returns:
+        The filtered state at the current time step.
+    """
     N = state_1.particles.shape[0]
     keys = random.split(state_1.key, N + 1)
     n_filter_particles = state_1.particles.shape[0]
@@ -176,7 +242,11 @@ def filter_combine(
 
 
 def log_ess(log_weights: Array) -> Array:
-    """Logarithm of the effective sample size."""
+    """Compute the logarithm of the effective sample size (ESS).
+
+    Args:
+        log_weights: Array of log weights for the particles.
+    """
     return 2 * jax.nn.logsumexp(log_weights) - jax.nn.logsumexp(2 * log_weights)
 
 
@@ -184,8 +254,23 @@ def convert_filter_to_smoother_state(
     filter_state: BootstrapFilterState,
     n_smoother_particles: int,
 ) -> GTSmootherState:
+    """
+    Convert the final filter state to initial smoother state.
+
+    Samples particles from the final filter distribution to initialize
+    the backward smoother. The sampling is done according to the
+    normalized filter weights.
+
+    Args:
+        filter_state: Final filter state containing particles and log weights.
+        n_smoother_particles: Number of particles for the smoother.
+
+    Returns:
+        Initial smoother state with sampled particles and corresponding
+        ancestor indices from the filter state.
+    """
     weights = jax.nn.softmax(filter_state.log_weights)
-    # TODO: The key for the final filter state is used here.
+    # Note: The key for the final filter state is used here.
     # It must not have been used before in the `filter_combine` function.
     indices = random.choice(
         filter_state.key,
@@ -204,6 +289,18 @@ def smoother_prepare(
     n_smoother_particles: int,
     key: KeyArray | None = None,
 ) -> GTSmootherState:
+    """
+    Prepare a state for a genealogy tracking smoother step.
+
+    Args:
+        filter_state: Filter state used to infer particle shapes.
+        model_inputs: Model inputs for the current time step (not used).
+        n_smoother_particles: Number of particles for the smoother.
+        key: JAX random key (not used).
+
+    Returns:
+        Prepared smoother state with empty particle and ancestor index arrays.
+    """
     dummy_smoothed_particles = tree.map(
         lambda x: jnp.empty((n_smoother_particles,) + x.shape[1:]),
         filter_state.particles,
@@ -216,10 +313,15 @@ def smoother_combine(
     state_1: GTSmootherState,
     state_2: GTSmootherState,
 ) -> GTSmootherState:
-    """Combine step for the genealogy tracking smoother.
+    """
+    Combine step for the genealogy tracking smoother.
+
+    Performs the backward pass of the smoother by tracing particle genealogies.
+    The smoother iterates backwards in time, using ancestor indices to
+    reconstruct the particle trajectories.
 
     Args:
-        state_1: Output of `smoother_prepare` at time t.
+        state_1: Prepared state at time t.
         state_2: Smoother state at time t + 1.
 
     Returns:
