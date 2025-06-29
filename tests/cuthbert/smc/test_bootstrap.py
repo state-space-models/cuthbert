@@ -40,7 +40,7 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         propagate_sample=propagate_sample,
         log_potential=log_potential,
         n_filter_particles=1000_000,
-        n_smoother_particles=10,
+        n_smoother_particles=10_000,
         resampling_fn=systematic.resampling,
         ess_threshold=0.7,
     )
@@ -97,4 +97,6 @@ def test_bootstrap(seed, x_dim, y_dim, num_time_steps):
     # Run the Kalman smoother
     (des_smoother_means, _), _ = std_kalman_smoother(des_means, des_covs, Fs, cs, Qs)
 
-    chex.assert_trees_all_close(bt_smoother_means, des_smoother_means, atol=5e-1)
+    chex.assert_trees_all_close(
+        bt_smoother_means, des_smoother_means, atol=5e-2, rtol=0.0
+    )
