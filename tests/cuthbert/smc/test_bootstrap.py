@@ -1,23 +1,21 @@
-import itertools
-
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
 from jax import random
 
-from cuthbert import filter
+from cuthbert import filter, smoother
 from cuthbert.smc import bootstrap
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
+from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.fixture(scope="module", autouse=True)
 def config():
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_disable_jit", True)
     yield
     jax.config.update("jax_enable_x64", False)
 
@@ -50,16 +48,11 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     return bootstrap_inference, model_inputs
 
 
-seeds = [1, 42, 99, 123, 456]
-x_dims = [3]
-y_dims = [2]
-num_time_steps = [20]
-
-common_params = list(itertools.product(seeds, x_dims, y_dims, num_time_steps))
-
-
-@pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
-def test_filter(seed, x_dim, y_dim, num_time_steps):
+@pytest.mark.parametrize("seed", [1, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+@pytest.mark.parametrize("y_dim", [2])
+@pytest.mark.parametrize("num_time_steps", [20])
+def test_bootstrap(seed, x_dim, y_dim, num_time_steps):
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
         seed, x_dim, y_dim, num_time_steps
     )
@@ -74,6 +67,9 @@ def test_filter(seed, x_dim, y_dim, num_time_steps):
     )
     weights = jax.nn.softmax(bootstrap_states.log_weights)
     bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
+    bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
+        bootstrap_states.particles, weights
+    )
     bt_ells = bootstrap_states.log_likelihood
 
     # Run the standard Kalman filter.
@@ -85,5 +81,22 @@ def test_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     chex.assert_trees_all_close(
-        (bt_ells[1:], bt_means), (des_ells, des_means), atol=1e-1, rtol=1e-1
+        (bt_ells[1:], bt_means, bt_covs),
+        (des_ells, des_means, des_covs),
+        atol=1e-1,
+        rtol=1e-1,
+    )
+
+    # Run the genealogy tracking smoother
+    smoother_key = random.key(seed + 2)
+    bt_smoother_states = smoother(
+        bootstrap_inference, bootstrap_states, model_inputs, key=smoother_key
+    )
+    bt_smoother_means = jnp.mean(bt_smoother_states.particles, axis=1)
+
+    # Run the Kalman smoother
+    (des_smoother_means, _), _ = std_kalman_smoother(des_means, des_covs, Fs, cs, Qs)
+
+    chex.assert_trees_all_close(
+        bt_smoother_means, des_smoother_means, atol=1e-1, rtol=1e-1
     )
