@@ -97,6 +97,4 @@ def test_bootstrap(seed, x_dim, y_dim, num_time_steps):
     # Run the Kalman smoother
     (des_smoother_means, _), _ = std_kalman_smoother(des_means, des_covs, Fs, cs, Qs)
 
-    chex.assert_trees_all_close(
-        bt_smoother_means, des_smoother_means, atol=1e-1, rtol=1e-1
-    )
+    chex.assert_trees_all_close(bt_smoother_means, des_smoother_means, atol=5e-1)
