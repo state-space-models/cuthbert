@@ -48,8 +48,6 @@ class BootstrapFilterState(NamedTuple):
 class GTSmootherState(NamedTuple):
     particles: ArrayTree
     ancestor_indices: Array
-    filter_particles: ArrayTree
-    filter_ancestor_indices: Array
 
 
 def build(
@@ -273,10 +271,7 @@ def convert_filter_to_smoother_state(
         p=weights,
     )
     return GTSmootherState(
-        filter_state.particles[indices],
-        filter_state.ancestor_indices[indices],
-        filter_state.particles,
-        filter_state.ancestor_indices,
+        filter_state.particles[indices], filter_state.ancestor_indices[indices]
     )
 
 
@@ -298,22 +293,11 @@ def smoother_prepare(
     Returns:
         Prepared smoother state with empty particle and ancestor index arrays.
     """
-    dummy_smoothed_particles = tree.map(
-        lambda x: jnp.empty((n_smoother_particles,) + x.shape[1:]),
-        filter_state.particles,
-    )
-    dummy_ancestor_indices = jnp.empty((n_smoother_particles,), dtype=int)
-    return GTSmootherState(
-        dummy_smoothed_particles,
-        dummy_ancestor_indices,
-        filter_state.particles,
-        filter_state.ancestor_indices,
-    )
+    return GTSmootherState(filter_state.particles, filter_state.ancestor_indices)
 
 
 def smoother_combine(
-    state_1: GTSmootherState,
-    state_2: GTSmootherState,
+    state_1: GTSmootherState, state_2: GTSmootherState
 ) -> GTSmootherState:
     """
     Combine step for the genealogy tracking smoother.
@@ -329,11 +313,6 @@ def smoother_combine(
     Returns:
         Smoother state at time t.
     """
-    particles = state_1.filter_particles[state_2.ancestor_indices]
-    ancestor_indices = state_1.filter_ancestor_indices[state_2.ancestor_indices]
-    return GTSmootherState(
-        particles,
-        ancestor_indices,
-        state_1.filter_particles,
-        state_1.filter_ancestor_indices,
-    )
+    particles = state_1.particles[state_2.ancestor_indices]
+    ancestor_indices = state_1.ancestor_indices[state_2.ancestor_indices]
+    return GTSmootherState(particles, ancestor_indices)
