@@ -36,7 +36,7 @@ def log_weights_single(
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
-    Compute smoothing smoothing weights given a collection of samples from x0 with
+    Compute smoothing weights given a collection of samples from x0 with
     accompanying log weights, a single sample x1 and a log conditional density
     p(x1 | x0).
 
