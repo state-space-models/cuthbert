@@ -51,7 +51,7 @@ def test_backward(seed, x_dim, N, method):
         diff = x1 - F @ x0 - c
         return -0.5 * jnp.sum(diff @ prec_Q * diff)
 
-    backward_method = partial(mcmc, n_steps=50) if method == "mcmc" else exact
+    backward_method = partial(mcmc, n_steps=200) if method == "mcmc" else exact
 
     smoothed_x0s, smoothed_x0_indices = backward_method(
         sim_key,
