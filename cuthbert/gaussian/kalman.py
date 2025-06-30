@@ -1,14 +1,11 @@
-from typing import NamedTuple, Protocol
 from functools import partial
+from typing import NamedTuple, Protocol
+
 from jax import numpy as jnp
 
-from cuthbertlib.types import (
-    Array,
-    ArrayTreeLike,
-    KeyArray,
-)
-from cuthbertlib.kalman import filtering, smoothing
 from cuthbert.inference import Inference
+from cuthbertlib.kalman import filtering, smoothing
+from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
 class GetInitParams(Protocol):
@@ -79,7 +76,7 @@ def build(
             p(y_t | x_t) = N(H @ x_t + d, chol_R @ chol_R^T).
 
     Returns:
-        SSMInference: Inference object for exact Kalman filter and smoother.
+        Inference object for exact Kalman filter and smoother.
             Suitable for associative scan.
     """
     return Inference(

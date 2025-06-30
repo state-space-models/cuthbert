@@ -1,4 +1,5 @@
 from functools import partial
+
 import numpy as np
 from jax import lax
 from jax import numpy as jnp
@@ -10,7 +11,7 @@ from cuthbertlib.linalg import collect_nans_chol
 
 def logpdf(
     x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
-) -> ArrayLike:
+) -> Array:
     """Multivariate normal log probability distribution function
     with (generalized) Cholesky factor of covariance input.
 
