@@ -59,11 +59,11 @@ def simulate(
         acc = lu < log_alpha
 
         idx = jnp.where(acc, prop_idx, idx)
-        x0_res = jax.tree_map(lambda z: z[idx], x0_all)
+        x0_res = jax.tree.map(lambda z: z[idx], x0_all)
         idx_log_p = jnp.where(acc, prop_log_p, idx_log_p)
         return (idx, x0_res, idx_log_p), None
 
-    x0_init = jax.tree_map(lambda z: z[x1_ancestors], x0_all)
+    x0_init = jax.tree.map(lambda z: z[x1_ancestors], x0_all)
     init_log_p = jax.vmap(log_density)(x1_all, x0_init)
     init = (x1_ancestors, x0_init, init_log_p)
     (out_index, out_samples, _), _ = jax.lax.scan(body, init, keys)
