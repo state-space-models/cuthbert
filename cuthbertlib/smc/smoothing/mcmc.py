@@ -23,7 +23,7 @@ def simulate(
     **_kwargs,
 ) -> tuple[ArrayTree, Array]:
     """
-    An implementation of the IMH algorithm for smoothing smoothing in SMC.
+    An implementation of the IMH algorithm for smoothing in SMC.
 
     Args:
         key: A JAX random key.
