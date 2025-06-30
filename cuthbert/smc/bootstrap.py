@@ -1,11 +1,9 @@
-from functools import partial
 from typing import NamedTuple, Protocol
 
 import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
-from cuthbert.inference import Inference
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
@@ -43,66 +41,6 @@ class BootstrapFilterState(NamedTuple):
     ancestor_indices: Array
     model_inputs: ArrayTreeLike
     log_likelihood: ScalarArray
-
-
-class GTSmootherState(NamedTuple):
-    particles: ArrayTree
-    ancestor_indices: Array
-
-
-def build(
-    init_sample: InitSample,
-    propagate_sample: PropagateSample,
-    log_potential: LogPotential,
-    n_filter_particles: int,
-    n_smoother_particles: int,
-    resampling_fn: Resampling,
-    ess_threshold: float,
-) -> Inference:
-    """
-    Build a bootstrap particle filter inference object for general state-space models.
-
-    Args:
-        init_sample: Function to sample from the initial distribution M_0(x_0).
-        propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
-        log_potential: Function to compute the log potential function log G_t(x_{t-1}, x_t).
-            Typically the log observation likelihood log p(y_t | x_t).
-        n_filter_particles: Number of particles for the filter.
-        n_smoother_particles: Number of particles for the smoother.
-        resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
-        ess_threshold: Effective sample size threshold for triggering resampling.
-            Resampling occurs when ESS < ess_threshold * n_filter_particles.
-
-    Returns:
-        Inference object for bootstrap particle filter and genealogy tracking smoother.
-            Associative scan is not supported.
-    """
-    return Inference(
-        init_prepare=partial(
-            init_prepare, init_sample=init_sample, n_filter_particles=n_filter_particles
-        ),
-        filter_prepare=partial(
-            filter_prepare,
-            init_sample=init_sample,
-            n_filter_particles=n_filter_particles,
-        ),
-        filter_combine=partial(
-            filter_combine,
-            propagate_sample=propagate_sample,
-            log_potential=log_potential,
-            resampling_fn=resampling_fn,
-            ess_threshold=ess_threshold,
-        ),
-        smoother_prepare=partial(
-            smoother_prepare, n_smoother_particles=n_smoother_particles
-        ),
-        smoother_combine=smoother_combine,
-        convert_filter_to_smoother_state=partial(
-            convert_filter_to_smoother_state, n_smoother_particles=n_smoother_particles
-        ),
-        associative_filter=False,
-        associative_smoother=False,
-    )
 
 
 def init_prepare(
@@ -199,7 +137,8 @@ def filter_combine(
         propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
         log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
         resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
-        ess_threshold: ESS threshold as fraction of particle count for triggering resampling.
+        ess_threshold: Fraction of particle count specifying when to resample.
+            Resampling is triggered when the effective sample size (ESS) < ess_threshold * N.
 
     Returns:
         The filtered state at the current time step.
@@ -240,79 +179,3 @@ def filter_combine(
         state_2.model_inputs,
         log_likelihood,
     )
-
-
-def convert_filter_to_smoother_state(
-    filter_state: BootstrapFilterState,
-    n_smoother_particles: int,
-) -> GTSmootherState:
-    """
-    Convert the final filter state to initial smoother state.
-
-    Samples particles from the final filter distribution to initialize
-    the backward smoother. The sampling is done according to the
-    normalized filter weights.
-
-    Args:
-        filter_state: Final filter state containing particles and log weights.
-        n_smoother_particles: Number of particles for the smoother.
-
-    Returns:
-        Initial smoother state with sampled particles and corresponding
-        ancestor indices from the filter state.
-    """
-    weights = jax.nn.softmax(filter_state.log_weights)
-    # Note: The key for the final filter state is used here.
-    # It must not have been used before in the `filter_combine` function.
-    indices = random.choice(
-        filter_state.key,
-        filter_state.particles.shape[0],
-        (n_smoother_particles,),
-        p=weights,
-    )
-    return GTSmootherState(
-        filter_state.particles[indices], filter_state.ancestor_indices[indices]
-    )
-
-
-def smoother_prepare(
-    filter_state: BootstrapFilterState,
-    model_inputs: ArrayTreeLike,
-    n_smoother_particles: int,
-    key: KeyArray | None = None,
-) -> GTSmootherState:
-    """
-    Prepare a state for a genealogy tracking smoother step.
-
-    Args:
-        filter_state: Filter state used to infer particle shapes.
-        model_inputs: Model inputs for the current time step (not used).
-        n_smoother_particles: Number of particles for the smoother.
-        key: JAX random key (not used).
-
-    Returns:
-        Prepared smoother state with empty particle and ancestor index arrays.
-    """
-    return GTSmootherState(filter_state.particles, filter_state.ancestor_indices)
-
-
-def smoother_combine(
-    state_1: GTSmootherState, state_2: GTSmootherState
-) -> GTSmootherState:
-    """
-    Combine step for the genealogy tracking smoother.
-
-    Performs the backward pass of the smoother by tracing particle genealogies.
-    The smoother iterates backwards in time, using ancestor indices to
-    reconstruct the particle trajectories.
-
-    Args:
-        state_1: Prepared state at time t.
-        state_2: Smoother state at time t + 1.
-
-    Returns:
-        Smoother state at time t.
-    """
-    particles = state_1.particles[state_2.ancestor_indices]
-    ancestor_indices = state_1.ancestor_indices[state_2.ancestor_indices]
-    return GTSmootherState(particles, ancestor_indices)
