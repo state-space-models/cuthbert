@@ -64,7 +64,7 @@ def simulate_single(
     key, x0_all, x1, log_weight_x0_all, log_density
 ) -> tuple[ArrayTree, Array]:
     """
-    Sample a smoothing x0 given a collection of samples from x0 with accompanying
+    Sample a smoothed x0 given a collection of samples from x0 with accompanying
     log weights, a single sample x1 and a log conditional density p(x1 | x0).
 
     Args:
