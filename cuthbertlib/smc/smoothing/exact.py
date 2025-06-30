@@ -1,3 +1,4 @@
+import jax.tree
 from jax import numpy as jnp, vmap, random
 from jax.scipy.special import logsumexp
 
@@ -78,7 +79,7 @@ def simulate_single(
     """
     backward_log_weights_all = log_weights(x0_all, x1, log_weight_x0_all, log_density)
     sampled_index = random.categorical(key, backward_log_weights_all)
-    return x0_all[sampled_index], sampled_index
+    return jax.tree.map(lambda z: z[sampled_index], x0_all), sampled_index
 
 
 def simulate(
@@ -89,7 +90,7 @@ def simulate(
     log_density: LogConditionalDensity,
     *_args,
     **_kwargs,
-) -> tuple[ArrayTreeLike, Array]:
+) -> tuple[ArrayTree, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
     pairs (x0, x1) from the smoothing distribution.
@@ -104,7 +105,8 @@ def simulate(
     Returns:
         A collection of x0 and their sampled indices.
     """
-    keys = random.split(key, x1_all.shape[0])
+    keys = random.split(key, log_weight_x0_all.shape[0])  # pyright: ignore
+    # ArrayLike has Scalar types.
 
     return vmap(
         lambda k, x1: simulate_single(k, x0_all, x1, log_weight_x0_all, log_density)
