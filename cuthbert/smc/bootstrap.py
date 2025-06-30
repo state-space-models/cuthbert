@@ -7,6 +7,7 @@ from jax import Array, random, tree
 
 from cuthbert.inference import Inference
 from cuthbertlib.resampling import Resampling
+from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
@@ -241,15 +242,6 @@ def filter_combine(
         state_2.model_inputs,
         log_likelihood,
     )
-
-
-def log_ess(log_weights: Array) -> Array:
-    """Compute the logarithm of the effective sample size (ESS).
-
-    Args:
-        log_weights: Array of log weights for the particles.
-    """
-    return 2 * jax.nn.logsumexp(log_weights) - jax.nn.logsumexp(2 * log_weights)
 
 
 def convert_filter_to_smoother_state(
