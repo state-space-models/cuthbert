@@ -4,6 +4,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
+from absl.testing import parameterized
 from jax import random
 
 from cuthbert import filter
@@ -68,41 +69,42 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     return bootstrap_inference, model_inputs
 
 
-@pytest.mark.parametrize("seed", [1, 42, 99, 123, 455])
-@pytest.mark.parametrize("x_dim", [3])
-@pytest.mark.parametrize("y_dim", [2])
-@pytest.mark.parametrize("num_time_steps", [20])
-def test_bootstrap(seed, x_dim, y_dim, num_time_steps):
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
-        seed, x_dim, y_dim, num_time_steps
+class BootstrapTest(chex.TestCase):
+    @chex.variants(with_jit=True, without_jit=True)
+    @parameterized.product(
+        seed=[1, 42, 99, 123, 455], x_dim=[3], y_dim=[2], num_time_steps=[20]
     )
+    def test_bootstrap(self, seed, x_dim, y_dim, num_time_steps):
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+            seed, x_dim, y_dim, num_time_steps
+        )
 
-    # Run the bootstrap particle filter.
-    bootstrap_inference, model_inputs = load_bootstrap_inference(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
-    )
-    key = random.key(seed + 1)
-    bootstrap_states = filter(
-        bootstrap_inference, model_inputs, parallel=False, key=key
-    )
-    weights = jax.nn.softmax(bootstrap_states.log_weights)
-    bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
-    bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
-        bootstrap_states.particles, weights
-    )
-    bt_ells = bootstrap_states.log_likelihood
+        # Run the bootstrap particle filter.
+        bootstrap_inference, model_inputs = load_bootstrap_inference(
+            m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+        )
+        key = random.key(seed + 1)
+        bootstrap_states = self.variant(
+            filter, static_argnames=("inference", "parallel")
+        )(bootstrap_inference, model_inputs, parallel=False, key=key)
+        weights = jax.nn.softmax(bootstrap_states.log_weights)
+        bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
+        bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
+            bootstrap_states.particles, weights
+        )
+        bt_ells = bootstrap_states.log_likelihood
 
-    # Run the standard Kalman filter.
-    P0 = chol_P0 @ chol_P0.T
-    Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
-    Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
-    des_means, des_covs, des_ells = std_kalman_filter(
-        m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
-    )
+        # Run the standard Kalman filter.
+        P0 = chol_P0 @ chol_P0.T
+        Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
+        Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
+        des_means, des_covs, des_ells = std_kalman_filter(
+            m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
+        )
 
-    chex.assert_trees_all_close(
-        (bt_ells[1:], bt_means, bt_covs),
-        (des_ells, des_means, des_covs),
-        atol=1e-2,
-        rtol=1e-2,
-    )
+        chex.assert_trees_all_close(
+            (bt_ells[1:], bt_means, bt_covs),
+            (des_ells, des_means, des_covs),
+            atol=1e-2,
+            rtol=1e-2,
+        )
