@@ -15,8 +15,10 @@ authors = [
 ]
 
 dependencies = [
+    "chex>=0.1.89",
     "jax>=0.4.35",
     "numba>=0.60.0",
+    "pytest>=8.4.0",
 ]
 
 [tool.setuptools.packages.find]

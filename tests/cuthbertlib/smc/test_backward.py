@@ -1,9 +1,12 @@
+from functools import partial
+
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
 
-from cuthbertlib.smc import backward
+from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
+from cuthbertlib.smc.smoothing.exact import simulate as exact
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
@@ -11,7 +14,8 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [2])
 @pytest.mark.parametrize("N", [10_000])
-def test_backward_simulate(seed, x_dim, N):
+@pytest.mark.parametrize("method", ["mcmc", "exact"])
+def test_backward(seed, x_dim, N, method):
     m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
     m1, chol_P1 = generate_lgssm(seed + 1, x_dim, 0, 0)[:2]
 
@@ -40,15 +44,22 @@ def test_backward_simulate(seed, x_dim, N):
     x0s = jax.vmap(lambda z: m0 + chol_P0 @ z)(jax.random.normal(x0_key, (N, x_dim)))
     x1s = jax.vmap(lambda z: m1 + chol_P1 @ z)(jax.random.normal(x1_key, (N, x_dim)))
 
-    # Run backward simulation
+    # Run smoothing simulation
     prec_Q = jnp.linalg.inv(chol_Q @ chol_Q.T)
 
     def log_conditional_density(x0, x1):
         diff = x1 - F @ x0 - c
         return -0.5 * jnp.sum(diff @ prec_Q * diff)
 
-    smoothed_x0s, smoothed_x0_indices = backward.simulate(
-        sim_key, x0s, x1s, jnp.zeros(N), log_conditional_density
+    backward_method = partial(mcmc, n_steps=50) if method == "mcmc" else exact
+
+    smoothed_x0s, smoothed_x0_indices = backward_method(
+        sim_key,
+        x0s,
+        x1s,
+        jnp.zeros(N),
+        log_conditional_density,
+        jnp.zeros(N, dtype=int),
     )
 
     # Check indices are correct

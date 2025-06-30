@@ -18,7 +18,7 @@ def log_weights_single(
     log_density: LogConditionalDensity,
 ) -> Array:
     """
-    Compute backward smoothing weights given a single sample from x0 with accompanying
+    Compute smoothing smoothing weights given a single sample from x0 with accompanying
     log weight, a single sample x1 and a log conditional density p(x1 | x0).
 
     Args:
@@ -28,14 +28,14 @@ def log_weights_single(
         log_density: The log density of x1 given x0.
 
     Returns:
-        The backward weight for sample x0 given a single sample x1.
+        The smoothing weight for sample x0 given a single sample x1.
     """
     return jnp.asarray(log_weight_x0) + log_density(x0, x1)
 
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
-    Compute backward smoothing weights given a collection of samples from x0 with
+    Compute smoothing smoothing weights given a collection of samples from x0 with
     accompanying log weights, a single sample x1 and a log conditional density
     p(x1 | x0).
 
@@ -46,7 +46,7 @@ def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
         log_density: The log density of x1 given x0.
 
     Returns:
-        Log normalized backward weights for each sample x0 given single sample x1.
+        Log normalized smoothing weights for each sample x0 given single sample x1.
     """
     backward_log_weights_all = vmap(
         lambda x0, log_weight_x0: log_weights_single(x0, x1, log_weight_x0, log_density)
@@ -63,7 +63,7 @@ def simulate_single(
     key, x0_all, x1, log_weight_x0_all, log_density
 ) -> tuple[ArrayTree, Array]:
     """
-    Sample a backward x0 given a collection of samples from x0 with accompanying
+    Sample a smoothing x0 given a collection of samples from x0 with accompanying
     log weights, a single sample x1 and a log conditional density p(x1 | x0).
 
     Args:
@@ -74,7 +74,7 @@ def simulate_single(
         log_density: The log density of x1 given x0.
 
     Returns:
-        A single sample x0 from the backward trajectory along with its index.
+        A single sample x0 from the smoothing trajectory along with its index.
     """
     backward_log_weights_all = log_weights(x0_all, x1, log_weight_x0_all, log_density)
     sampled_index = random.categorical(key, backward_log_weights_all)
@@ -87,6 +87,8 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
+    *_args,
+    **_kwargs,
 ) -> tuple[ArrayTreeLike, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
