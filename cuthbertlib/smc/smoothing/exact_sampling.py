@@ -41,7 +41,7 @@ def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     p(x1 | x0).
 
     Args:
-        x0: Collection of previous states.
+        x0_all: Collection of previous states.
         x1: The current state.
         log_weight_x0_all: Collection of log weights of the previous state.
         log_density: The log density of x1 given x0.
@@ -88,8 +88,6 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
-    *_args,
-    **_kwargs,
 ) -> tuple[ArrayTree, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
@@ -105,7 +103,8 @@ def simulate(
     Returns:
         A collection of x0 and their sampled indices.
     """
-    keys = random.split(key, log_weight_x0_all.shape[0])  # pyright: ignore
+    log_weight_x0_all = jnp.asarray(log_weight_x0_all)
+    keys = random.split(key, log_weight_x0_all.shape[0])
     # ArrayLike has Scalar types.
 
     return vmap(

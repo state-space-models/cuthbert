@@ -1,5 +1,7 @@
-from jax import numpy as jnp, random
 import jax
+from jax import numpy as jnp, random
+
+from cuthbertlib.resampling import multinomial
 from cuthbertlib.types import (
     ArrayLike,
     Array,
@@ -8,7 +10,6 @@ from cuthbertlib.types import (
     LogConditionalDensity,
     ArrayTree,
 )
-from cuthbertlib.resampling.multinomial import resampling as multinomial
 
 
 def simulate(
@@ -19,8 +20,6 @@ def simulate(
     log_density: LogConditionalDensity,
     x1_ancestors: ArrayLike,
     n_steps: int,
-    *_args,
-    **_kwargs,
 ) -> tuple[ArrayTree, Array]:
     """
     An implementation of the IMH algorithm for smoothing in SMC.
@@ -40,17 +39,17 @@ def simulate(
     References:
         https://arxiv.org/abs/2207.00976
     """
-    init_key, mcmc_key = jax.random.split(key, 2)
-    n_samples = x1_ancestors.shape[0]  # pyright: ignore
+    x1_ancestors = jnp.asarray(x1_ancestors)
+    n_samples = x1_ancestors.shape[0]
 
-    keys = random.split(mcmc_key, n_steps)
+    keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2, -1))
 
-    def body(carry, key_t):
+    def body(carry, keys_t):
         # IMH proposal
         idx, x0_res, idx_log_p = carry
-        key_prop, key_acc = jax.random.split(key_t, 2)
+        key_prop, key_acc = keys_t
 
-        prop_idx = multinomial(key_prop, log_weight_x0_all, n_samples)
+        prop_idx = multinomial.resampling(key_prop, log_weight_x0_all, n_samples)
         x0_prop = jax.tree.map(lambda z: z[prop_idx], x0_all)
         prop_log_p = jax.vmap(log_density)(x0_prop, x1_all)
 
@@ -68,6 +67,4 @@ def simulate(
     init_log_p = jax.vmap(log_density)(x1_all, x0_init)
     init = (x1_ancestors, x0_init, init_log_p)
     (out_index, out_samples, _), _ = jax.lax.scan(body, init, keys)
-    # Again, we suffer from ArrayTree and ArrayTreeLike not being compatible
-    # TODO: fix choice in cuthbertlib.types
-    return out_samples, out_index  # pyright: ignore
+    return out_samples, out_index

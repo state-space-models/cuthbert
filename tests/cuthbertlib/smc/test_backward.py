@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import pytest
 
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
-from cuthbertlib.smc.smoothing.exact import simulate as exact
+from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
@@ -51,7 +51,12 @@ def test_backward(seed, x_dim, N, method):
         diff = x1 - F @ x0 - c
         return -0.5 * jnp.sum(diff @ prec_Q * diff)
 
-    backward_method = partial(mcmc, n_steps=200) if method == "mcmc" else exact
+    # We may want to make this configuration more professional in the future, when we add more methods.
+    backward_method = (
+        partial(mcmc, x1_ancestors=jnp.zeros(N, int), n_steps=200)
+        if method == "mcmc"
+        else exact
+    )
 
     smoothed_x0s, smoothed_x0_indices = backward_method(
         sim_key,
@@ -59,7 +64,6 @@ def test_backward(seed, x_dim, N, method):
         x1s,
         jnp.zeros(N),
         log_conditional_density,
-        jnp.zeros(N, dtype=int),
     )
 
     # Check indices are correct
