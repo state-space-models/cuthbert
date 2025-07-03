@@ -108,3 +108,66 @@ class BootstrapTest(chex.TestCase):
             atol=1e-2,
             rtol=1e-2,
         )
+
+    @chex.variants(with_jit=True, without_jit=True)
+    def test_bootstrap_pytree_particles(self):
+        """Test that the bootstrap pf handles pytree states correctly."""
+
+        def init_sample(key, model_inputs):
+            keys = random.split(key, 2)
+            position = random.normal(keys[0], (2,))
+            velocity = random.normal(keys[1], (2,))
+            return (position, velocity)
+
+        def propagate_sample(key, state, model_inputs):
+            position, velocity = state
+            new_position = position + velocity * 0.1
+            new_velocity = velocity + random.normal(key, (2,))
+            return (new_position, new_velocity)
+
+        def log_potential(state_prev, state, model_inputs):
+            return jnp.zeros(())
+
+        n_filter_particles = 1000
+        ess_threshold = 0.7
+
+        bootstrap_inference = Inference(
+            init_prepare=partial(
+                bootstrap.init_prepare,
+                init_sample=init_sample,
+                n_filter_particles=n_filter_particles,
+            ),
+            filter_prepare=partial(
+                bootstrap.filter_prepare,
+                init_sample=init_sample,
+                n_filter_particles=n_filter_particles,
+            ),
+            filter_combine=partial(
+                bootstrap.filter_combine,
+                propagate_sample=propagate_sample,
+                log_potential=log_potential,
+                resampling_fn=systematic.resampling,
+                ess_threshold=ess_threshold,
+            ),
+            smoother_prepare=None,
+            smoother_combine=None,
+            convert_filter_to_smoother_state=None,
+            associative_filter=False,
+            associative_smoother=False,
+        )
+
+        key = random.key(0)
+        num_time_steps = 5
+
+        # Run the bootstrap particle filter
+        model_inputs = jnp.empty(num_time_steps + 1)
+        key, subkey = random.split(key)
+        bootstrap_states = self.variant(
+            filter, static_argnames=("inference", "parallel")
+        )(bootstrap_inference, model_inputs, parallel=False, key=subkey)
+
+        # Verify that the pytree structure is preserved
+        particles = bootstrap_states.particles
+        assert isinstance(particles, tuple) and len(particles) == 2
+        expected_shape = (num_time_steps + 1, n_filter_particles, 2)
+        chex.assert_shape(particles, expected_shape)
