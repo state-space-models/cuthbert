@@ -143,13 +143,12 @@ def filter_combine(
     Returns:
         The filtered state at the current time step.
     """
-    N = state_1.particles.shape[0]
+    N = state_1.log_weights.shape[0]
     keys = random.split(state_1.key, N + 1)
-    n_filter_particles = state_1.particles.shape[0]
 
     # Resample
     ancestor_indices, log_weights = jax.lax.cond(
-        log_ess(state_1.log_weights) < jnp.log(ess_threshold * n_filter_particles),
+        log_ess(state_1.log_weights) < jnp.log(ess_threshold * N),
         lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),
         lambda: (jnp.arange(N), state_1.log_weights),
     )
