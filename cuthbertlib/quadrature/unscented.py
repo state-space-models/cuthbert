@@ -1,9 +1,9 @@
 from typing import NamedTuple
 
 import jax.numpy as jnp
-from cuthbertlib.types import Array
 
 from cuthbertlib.quadrature.common import SigmaPoints
+from cuthbertlib.types import Array
 
 __all__ = ["weights", "UnscentedQuadrature"]
 

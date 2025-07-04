@@ -1,8 +1,9 @@
-from typing import Callable, overload, cast
+from typing import Callable, cast, overload
+
 import jax
-from cuthbertlib.types import Array, ArrayTree
 from jax.typing import ArrayLike
 
+from cuthbertlib.types import Array, ArrayTree
 
 MeanAndCholCovFunc = Callable[[ArrayLike], tuple[Array, Array]]
 MeanAndCholCovFuncAux = Callable[[ArrayLike], tuple[Array, Array, ArrayTree]]

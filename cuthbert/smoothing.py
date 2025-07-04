@@ -1,10 +1,12 @@
-from jax import vmap, tree, random, numpy as jnp
-from jax.lax import scan, associative_scan
 import warnings
 
+from jax import numpy as jnp
+from jax import random, tree, vmap
+from jax.lax import associative_scan, scan
+
 from cuthbert.inference import Inference
-from cuthbertlib.types import ArrayTreeLike, KeyArray, ArrayTree
 from cuthbertlib.kalman.utils import append_tree
+from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 def smoother(

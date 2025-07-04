@@ -4,8 +4,8 @@ import jax.numpy as jnp
 import pytest
 
 from cuthbertlib.smc import backward
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
+from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])

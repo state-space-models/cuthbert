@@ -1,9 +1,6 @@
 from typing import NamedTuple, Protocol
-from cuthbertlib.types import (
-    ArrayTree,
-    ArrayTreeLike,
-    KeyArray,
-)
+
+from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 class InitPrepare(Protocol):

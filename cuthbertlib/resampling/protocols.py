@@ -1,6 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 import jax
+
 from cuthbertlib.types import Array, ArrayLike
 
 

@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
-from cuthbertlib.types import ArrayTreeLike, ArrayTree
+
+from cuthbertlib.types import ArrayTree, ArrayTreeLike
 
 
 def append_tree(

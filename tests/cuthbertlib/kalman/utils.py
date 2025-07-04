@@ -1,7 +1,8 @@
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 from jax import Array, random
-from functools import partial
 
 from cuthbertlib.types import KeyArray
 

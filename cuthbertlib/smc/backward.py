@@ -1,11 +1,12 @@
-from jax import numpy as jnp, vmap, random
+from jax import numpy as jnp
+from jax import random, vmap
 from jax.scipy.special import logsumexp
 
 from cuthbertlib.types import (
-    ArrayLike,
     Array,
-    ArrayTreeLike,
+    ArrayLike,
     ArrayTree,
+    ArrayTreeLike,
     KeyArray,
     LogConditionalDensity,
 )

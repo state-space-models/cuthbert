@@ -1,22 +1,24 @@
-from typing import NamedTuple, Protocol
 from functools import partial
-from jax import numpy as jnp, tree
+from typing import NamedTuple, Protocol
 
+from jax import numpy as jnp
+from jax import tree
+
+from cuthbert.gaussian.kalman import (
+    GetInitParams,
+    KalmanFilterState,
+    KalmanSmootherState,
+    convert_filter_to_smoother_state,
+    smoother_combine,
+)
+from cuthbert.inference import Inference
+from cuthbertlib.kalman import filtering, smoothing
+from cuthbertlib.linearize import linearize_moments
 from cuthbertlib.types import (
     Array,
     ArrayTree,
     ArrayTreeLike,
     KeyArray,
-)
-from cuthbertlib.kalman import filtering, smoothing
-from cuthbertlib.linearize import linearize_moments
-from cuthbert.inference import Inference
-from cuthbert.gaussian.kalman import (
-    KalmanFilterState,
-    KalmanSmootherState,
-    GetInitParams,
-    smoother_combine,
-    convert_filter_to_smoother_state,
 )
 
 
