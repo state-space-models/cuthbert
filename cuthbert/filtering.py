@@ -10,7 +10,7 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 def filter(
-    filter: Filter,
+    filter_obj: Filter,
     model_inputs: ArrayTreeLike,
     parallel: bool = False,
     key: KeyArray | None = None,
@@ -21,7 +21,7 @@ def filter(
     excluding the initial state).
 
     Args:
-        filter: The filter inference object.
+        filter_obj: The filter inference object.
         model_inputs: The model inputs (with leading temporal dimension of len T + 1).
         parallel: Whether to run the filter in parallel.
             Requires inference.associative_filter to be True.
@@ -31,9 +31,9 @@ def filter(
         The filtered states (NamedTuple with leading temporal dimension of len T + 1).
     """
 
-    if parallel and not filter.associative:
+    if parallel and not filter_obj.associative:
         warnings.warn(
-            f"Parallel filtering attempted but filter.associative is False for {filter}"
+            f"Parallel filtering attempted but filter.associative is False for {filter_obj}"
         )
 
     T = tree.leaves(model_inputs)[0].shape[0] - 1
@@ -46,25 +46,25 @@ def filter(
         prepare_keys = random.split(key, T + 1)
 
     init_model_input = tree.map(lambda x: x[0], model_inputs)
-    init_state = filter.init_prepare(init_model_input, key=prepare_keys[0])
+    init_state = filter_obj.init_prepare(init_model_input, key=prepare_keys[0])
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
     if parallel:
-        other_prep_states = vmap(lambda inp, k: filter.filter_prepare(inp, key=k))(
+        other_prep_states = vmap(lambda inp, k: filter_obj.filter_prepare(inp, key=k))(
             prep_model_inputs, prepare_keys[1:]
         )
         prep_states = append_tree(other_prep_states, init_state, prepend=True)
         states = associative_scan(
-            vmap(filter.filter_combine),
+            vmap(filter_obj.filter_combine),
             prep_states,
         )
     else:
 
         def body(prev_state, prep_inp_and_k):
             prep_inp, k = prep_inp_and_k
-            prep_state = filter.filter_prepare(prep_inp, key=k)
-            state = filter.filter_combine(prev_state, prep_state)
+            prep_state = filter_obj.filter_prepare(prep_inp, key=k)
+            state = filter_obj.filter_combine(prev_state, prep_state)
             return state, state
 
         _, states = scan(
