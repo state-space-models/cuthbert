@@ -127,7 +127,7 @@ class BootstrapTest(chex.TestCase):
         # Run the bootstrap particle filter
         model_inputs = jnp.empty(num_time_steps + 1)
         key, subkey = random.split(key)
-        bootstrap_states = self.variant(filter, static_argnames=("filter", "parallel"))(
+        bootstrap_states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             bootstrap_filter, model_inputs, parallel=False, key=subkey
         )
 
