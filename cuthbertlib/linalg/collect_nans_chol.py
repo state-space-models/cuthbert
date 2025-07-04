@@ -3,7 +3,7 @@ from typing import Any
 from jax import numpy as jnp
 from jax import tree
 
-from cuthbertlib.linalg import tria
+from cuthbertlib.linalg.tria import tria
 from cuthbertlib.types import Array, ArrayLike
 
 
