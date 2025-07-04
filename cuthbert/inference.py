@@ -149,12 +149,15 @@ class ConvertFilterToSmootherState(Protocol):
         ...
 
 
-class Inference(NamedTuple):
+class Filter(NamedTuple):
     init_prepare: InitPrepare
     filter_prepare: FilterPrepare
     filter_combine: FilterCombine
+    associative: bool = False
+
+
+class Smoother(NamedTuple):
+    convert_filter_to_smoother_state: ConvertFilterToSmootherState
     smoother_prepare: SmootherPrepare
     smoother_combine: SmootherCombine
-    convert_filter_to_smoother_state: ConvertFilterToSmootherState
-    associative_filter: bool = False
-    associative_smoother: bool = False
+    associative: bool = False
