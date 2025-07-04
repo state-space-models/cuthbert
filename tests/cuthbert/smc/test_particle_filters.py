@@ -9,7 +9,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.inference import Inference
-from cuthbert.smc import bootstrap
+from cuthbert.smc import particle_filter, marginal_particle_filter
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
@@ -23,7 +23,18 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
+def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
+    # Maybe make this more flexible in the future if we want to support other methods.
+    if method == "bootstrap":
+        n_filter_particles = 1_000_000
+        algo = particle_filter
+    elif method == "marginal":
+        n_filter_particles = 3_000
+
+        algo = marginal_particle_filter
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
     def init_sample(key, model_inputs):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
@@ -38,21 +49,20 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
 
-    n_filter_particles = 1_000_000
     ess_threshold = 0.7
-    bootstrap_inference = Inference(
+    inference = Inference(
         init_prepare=partial(
-            bootstrap.init_prepare,
+            algo.init_prepare,
             init_sample=init_sample,
             n_filter_particles=n_filter_particles,
         ),
         filter_prepare=partial(
-            bootstrap.filter_prepare,
+            algo.filter_prepare,
             init_sample=init_sample,
             n_filter_particles=n_filter_particles,
         ),
         filter_combine=partial(
-            bootstrap.filter_combine,
+            algo.filter_combine,
             propagate_sample=propagate_sample,
             log_potential=log_potential,
             resampling_fn=systematic.resampling,
@@ -66,33 +76,37 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
-    return bootstrap_inference, model_inputs
+    return inference, model_inputs
 
 
-class BootstrapTest(chex.TestCase):
+class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[1, 42, 99, 123, 455], x_dim=[3], y_dim=[2], num_time_steps=[20]
+        seed=[1, 42, 99, 123, 455],
+        x_dim=[3],
+        y_dim=[2],
+        num_time_steps=[20],
+        method=["bootstrap", "marginal"],
     )
-    def test_bootstrap(self, seed, x_dim, y_dim, num_time_steps):
+    def test(self, seed, x_dim, y_dim, num_time_steps, method):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
             seed, x_dim, y_dim, num_time_steps
         )
 
-        # Run the bootstrap particle filter.
-        bootstrap_inference, model_inputs = load_bootstrap_inference(
-            m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+        # Run the particle filter.
+        inference, model_inputs = load_inference(
+            m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method
         )
         key = random.key(seed + 1)
-        bootstrap_states = self.variant(
-            filter, static_argnames=("inference", "parallel")
-        )(bootstrap_inference, model_inputs, parallel=False, key=key)
-        weights = jax.nn.softmax(bootstrap_states.log_weights)
-        bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
-        bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
-            bootstrap_states.particles, weights
+        states = self.variant(filter, static_argnames=("inference", "parallel"))(
+            inference, model_inputs, parallel=False, key=key
         )
-        bt_ells = bootstrap_states.log_likelihood
+        weights = jax.nn.softmax(states.log_weights)
+        means = jnp.sum(states.particles * weights[..., None], axis=1)
+        covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
+            states.particles, weights
+        )
+        ells = states.log_likelihood
 
         # Run the standard Kalman filter.
         P0 = chol_P0 @ chol_P0.T
@@ -101,17 +115,26 @@ class BootstrapTest(chex.TestCase):
         des_means, des_covs, des_ells = std_kalman_filter(
             m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
         )
+        if method == "marginal":
+            chex.assert_trees_all_close(
+                (means, covs),
+                (des_means, des_covs),
+                atol=1e-1,
+                rtol=0.25,
+            )
 
-        chex.assert_trees_all_close(
-            (bt_ells[1:], bt_means, bt_covs),
-            (des_ells, des_means, des_covs),
-            atol=1e-2,
-            rtol=1e-2,
-        )
+        else:
+            chex.assert_trees_all_close(
+                (ells[1:], means, covs),
+                (des_ells, des_means, des_covs),
+                atol=1e-2,
+                rtol=1e-2,
+            )
 
     @chex.variants(with_jit=True, without_jit=True)
-    def test_bootstrap_pytree_particles(self):
-        """Test that the bootstrap pf handles pytree states correctly."""
+    @parameterized.product(method=["bootstrap", "marginal"])
+    def test_pytree_particles(self, method):
+        """Test that the pf handles pytree states correctly."""
 
         def init_sample(key, model_inputs):
             keys = random.split(key, 2)
@@ -128,22 +151,30 @@ class BootstrapTest(chex.TestCase):
         def log_potential(state_prev, state, model_inputs):
             return jnp.zeros(())
 
-        n_filter_particles = 1000
         ess_threshold = 0.7
 
-        bootstrap_inference = Inference(
+        if method == "bootstrap":
+            n_filter_particles = 1_000
+            algo = particle_filter
+        elif method == "marginal":
+            n_filter_particles = 100
+            algo = marginal_particle_filter
+        else:
+            raise ValueError(f"Unknown method: {method}")
+
+        inference = Inference(
             init_prepare=partial(
-                bootstrap.init_prepare,
+                algo.init_prepare,
                 init_sample=init_sample,
                 n_filter_particles=n_filter_particles,
             ),
             filter_prepare=partial(
-                bootstrap.filter_prepare,
+                algo.filter_prepare,
                 init_sample=init_sample,
                 n_filter_particles=n_filter_particles,
             ),
             filter_combine=partial(
-                bootstrap.filter_combine,
+                algo.filter_combine,
                 propagate_sample=propagate_sample,
                 log_potential=log_potential,
                 resampling_fn=systematic.resampling,
@@ -162,12 +193,12 @@ class BootstrapTest(chex.TestCase):
         # Run the bootstrap particle filter
         model_inputs = jnp.empty(num_time_steps + 1)
         key, subkey = random.split(key)
-        bootstrap_states = self.variant(
-            filter, static_argnames=("inference", "parallel")
-        )(bootstrap_inference, model_inputs, parallel=False, key=subkey)
+        states = self.variant(filter, static_argnames=("inference", "parallel"))(
+            inference, model_inputs, parallel=False, key=subkey
+        )
 
         # Verify that the pytree structure is preserved
-        particles = bootstrap_states.particles
+        particles = states.particles
         assert isinstance(particles, tuple) and len(particles) == 2
         expected_shape = (num_time_steps + 1, n_filter_particles, 2)
         chex.assert_shape(particles, expected_shape)

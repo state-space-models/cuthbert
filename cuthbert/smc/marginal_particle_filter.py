@@ -1,44 +1,20 @@
-from typing import NamedTuple, Protocol
+from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
+from cuthbert.smc.types import InitSample, PropagateSample, LogPotential
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
-class InitSample(Protocol):
-    """Get a sample from the initial distribution :math:`M_0(x_0)`."""
-
-    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> ArrayTree: ...
-
-
-class PropagateSample(Protocol):
-    """Sample from the Markov kernel :math:`M_t(x_t \\mid x_{t-1})`."""
-
-    def __call__(
-        self, key: KeyArray, state: ArrayTreeLike, model_inputs: ArrayTreeLike
-    ) -> ArrayTree: ...
-
-
-class LogPotential(Protocol):
-    """Compute the log potential function :math:`\\log G_t(x_{t-1}, x_t)`."""
-
-    def __call__(
-        self,
-        state_prev: ArrayTreeLike,
-        state: ArrayTreeLike,
-        model_inputs: ArrayTreeLike,
-    ) -> ScalarArray: ...
-
-
-class BootstrapFilterState(NamedTuple):
+class MarginalParticleFilterState(NamedTuple):
+    # no ancestors, as it does not make sense for marginal particle filters
     key: KeyArray
     particles: ArrayTree
     log_weights: Array
-    ancestor_indices: Array
     model_inputs: ArrayTreeLike
     log_likelihood: ScalarArray
 
@@ -48,9 +24,9 @@ def init_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> BootstrapFilterState:
+) -> MarginalParticleFilterState:
     """
-    Prepare the initial state for the bootstrap particle filter.
+    Prepare the initial state for the particle filter.
 
     Args:
         model_inputs: Model inputs.
@@ -59,7 +35,7 @@ def init_prepare(
         key: JAX random key.
 
     Returns:
-        Initial state for the bootstrap filter.
+        Initial state for the filter.
 
     Raises:
         ValueError: If `key` is None.
@@ -68,11 +44,10 @@ def init_prepare(
         raise ValueError("A JAX PRNG key must be provided.")
     keys = random.split(key, n_filter_particles)
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
-    return BootstrapFilterState(
+    return MarginalParticleFilterState(
         key=key,
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
-        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=jnp.array(0.0),
     )
@@ -83,9 +58,9 @@ def filter_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> BootstrapFilterState:
+) -> MarginalParticleFilterState:
     """
-    Prepare a state for a bootstrap particle filter step.
+    Prepare a state for a particle filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -95,7 +70,7 @@ def filter_prepare(
         key: JAX random key.
 
     Returns:
-        Prepared state for the bootstrap filter.
+        Prepared state for the filter.
 
     Raises:
         ValueError: If `key` is None.
@@ -106,29 +81,28 @@ def filter_prepare(
     particles = tree.map(
         lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
     )
-    return BootstrapFilterState(
+    return MarginalParticleFilterState(
         key=key,
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
-        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=jnp.array(0.0),
     )
 
 
 def filter_combine(
-    state_1: BootstrapFilterState,
-    state_2: BootstrapFilterState,
+    state_1: MarginalParticleFilterState,
+    state_2: MarginalParticleFilterState,
     propagate_sample: PropagateSample,
     log_potential: LogPotential,
     resampling_fn: Resampling,
     ess_threshold: float,
-) -> BootstrapFilterState:
+) -> MarginalParticleFilterState:
     """
     Combine the filter state from the previous time step with the state prepared
     for the current step.
 
-    Implements the bootstrap particle filter update: conditional resampling,
+    Implements the particle filter update: conditional resampling,
     propagation through state dynamics, and reweighting based on the potential function.
 
     Args:
@@ -147,6 +121,7 @@ def filter_combine(
     keys = random.split(state_1.key, N + 1)
 
     # Resample
+    prev_log_weights = state_1.log_weights
     ancestor_indices, log_weights = jax.lax.cond(
         log_ess(state_1.log_weights) < jnp.log(ess_threshold * N),
         lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),
@@ -159,22 +134,28 @@ def filter_combine(
         keys[1:], ancestors, state_2.model_inputs
     )
 
-    # Reweight
-    log_potentials = jax.vmap(log_potential, (0, 0, None))(
-        ancestors, next_particles, state_2.model_inputs
+    # N^2 Reweight by comparing all ancestors with all next particles
+    log_potential_vmapped = jax.vmap(
+        jax.vmap(log_potential, (0, None, None), out_axes=0),
+        (None, 0, None),
+        out_axes=0,
     )
-    next_log_weights = log_potentials + log_weights
+
+    log_potentials = log_potential_vmapped(
+        state_1.particles, next_particles, state_2.model_inputs
+    )
+    next_log_weights = log_potentials + prev_log_weights[None, :]
+    next_log_weights = jax.nn.logsumexp(next_log_weights, axis=1)
 
     # Compute the log likelihood
     logsum_weights = jax.nn.logsumexp(next_log_weights)
     log_likelihood_incr = logsum_weights - jax.nn.logsumexp(log_weights)
     log_likelihood = log_likelihood_incr + state_1.log_likelihood
 
-    return BootstrapFilterState(
+    return MarginalParticleFilterState(
         state_2.key,
         next_particles,
         next_log_weights,
-        ancestor_indices,
         state_2.model_inputs,
         log_likelihood,
     )
