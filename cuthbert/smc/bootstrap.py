@@ -1,5 +1,6 @@
-from typing import NamedTuple, Protocol
 from functools import partial
+from typing import NamedTuple, Protocol
+
 import jax
 import jax.numpy as jnp
 from jax import Array, random, tree

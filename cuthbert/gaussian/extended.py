@@ -11,7 +11,7 @@ from cuthbert.gaussian.kalman import (
     convert_filter_to_smoother_state,
     smoother_combine,
 )
-from cuthbert.inference import Inference
+from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.linearize import linearize_moments
 from cuthbertlib.types import (
