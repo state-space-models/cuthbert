@@ -65,9 +65,9 @@ class BootstrapTest(chex.TestCase):
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
         key = random.key(seed + 1)
-        bootstrap_states = self.variant(filter, static_argnames=("filter", "parallel"))(
-            bootstrap_filter, model_inputs, parallel=False, key=key
-        )
+        bootstrap_states = self.variant(
+            filter, static_argnames=("filter_obj", "parallel")
+        )(bootstrap_filter, model_inputs, parallel=False, key=key)
         weights = jax.nn.softmax(bootstrap_states.log_weights)
         bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
         bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
