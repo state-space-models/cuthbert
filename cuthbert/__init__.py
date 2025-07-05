@@ -1,10 +1,11 @@
 from cuthbert import gaussian
 from cuthbert.filtering import filter
 from cuthbert.inference import (
+    Filter,
     FilterCombine,
     FilterPrepare,
-    Inference,
     InitPrepare,
+    Smoother,
     SmootherCombine,
     SmootherPrepare,
 )

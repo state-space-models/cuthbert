@@ -1,9 +1,11 @@
+from functools import partial
 from typing import NamedTuple, Protocol
 
 import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
+from cuthbert.inference import Filter
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
@@ -41,6 +43,52 @@ class BootstrapFilterState(NamedTuple):
     ancestor_indices: Array
     model_inputs: ArrayTreeLike
     log_likelihood: ScalarArray
+
+
+def build_filter(
+    init_sample: InitSample,
+    propagate_sample: PropagateSample,
+    log_potential: LogPotential,
+    n_filter_particles: int,
+    resampling_fn: Resampling,
+    ess_threshold: float,
+) -> Filter:
+    """
+    Build a bootstrap particle filter object.
+
+    Args:
+        init_sample: Function to sample from the initial distribution M_0(x_0).
+        propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
+        log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
+        n_filter_particles: Number of particles for the filter.
+        resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
+        ess_threshold: Fraction of particle count specifying when to resample.
+            Resampling is triggered when the
+            effective sample size (ESS) < ess_threshold * n_filter_particles.
+
+    Returns:
+        Filter object for the bootstrap particle filter.
+    """
+    return Filter(
+        init_prepare=partial(
+            init_prepare,
+            init_sample=init_sample,
+            n_filter_particles=n_filter_particles,
+        ),
+        filter_prepare=partial(
+            filter_prepare,
+            init_sample=init_sample,
+            n_filter_particles=n_filter_particles,
+        ),
+        filter_combine=partial(
+            filter_combine,
+            propagate_sample=propagate_sample,
+            log_potential=log_potential,
+            resampling_fn=resampling_fn,
+            ess_threshold=ess_threshold,
+        ),
+        associative=False,
+    )
 
 
 def init_prepare(

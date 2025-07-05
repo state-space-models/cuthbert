@@ -8,7 +8,7 @@ from jax import Array
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import extended
-from cuthbert.inference import Inference
+from cuthbert.inference import Filter, Smoother
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
@@ -31,8 +31,8 @@ def load_extended_inference(
     ds: Array,
     chol_Rs: Array,
     ys: Array,
-) -> tuple[Inference, Array]:
-    """Builds Kalman inference object and model_inputs for a linear-Gaussian SSM."""
+) -> tuple[Filter, Smoother, Array]:
+    """Builds extended Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
@@ -49,11 +49,12 @@ def load_extended_inference(
             ys[model_inputs - 1],
         )
 
-    inference = extended.build(
+    filter = extended.build_filter(
         get_init_params, dynamics_mean_and_chol_cov, observation_mean_and_chol_cov_and_y
     )
+    smoother = extended.build_smoother(dynamics_mean_and_chol_cov)
     model_inputs = jnp.arange(len(ys) + 1)
-    return inference, model_inputs
+    return filter, smoother, model_inputs
 
 
 seeds = [0, 42, 99, 123, 456]
@@ -75,12 +76,12 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         # Set an observation to nan
         ys = ys.at[1, 0].set(jnp.nan)
 
-    inference, model_inputs = load_extended_inference(
+    extended_filter, _, model_inputs = load_extended_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
     # Run sequential sqrt filter
-    seq_states = filter(inference, model_inputs, parallel=False)
+    seq_states = filter(extended_filter, model_inputs, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
@@ -110,12 +111,12 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         seed, x_dim, y_dim, num_time_steps
     )
 
-    inference, model_inputs = load_extended_inference(
+    extended_filter, extended_smoother, model_inputs = load_extended_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    filt_states = filter(inference, model_inputs)
+    filt_states = filter(extended_filter, model_inputs)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
@@ -124,14 +125,18 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the sequential and parallel versions of the square root smoother.
-    seq_smoother_states = smoother(inference, filt_states, model_inputs, parallel=False)
+    seq_smoother_states = smoother(
+        extended_smoother, filt_states, model_inputs, parallel=False
+    )
     seq_means, seq_chol_covs, seq_gains = (
         seq_smoother_states.mean,
         seq_smoother_states.chol_cov,
         seq_smoother_states.gain,
     )
 
-    par_smoother_states = smoother(inference, filt_states, model_inputs, parallel=True)
+    par_smoother_states = smoother(
+        extended_smoother, filt_states, model_inputs, parallel=True
+    )
     par_means, par_chol_covs, par_gains = (
         par_smoother_states.mean,
         par_smoother_states.chol_cov,

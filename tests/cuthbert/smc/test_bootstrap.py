@@ -1,5 +1,3 @@
-from functools import partial
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -8,7 +6,6 @@ from absl.testing import parameterized
 from jax import random
 
 from cuthbert import filter
-from cuthbert.inference import Inference
 from cuthbert.smc import bootstrap
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
@@ -23,7 +20,7 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
+def load_bootstrap_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     def init_sample(key, model_inputs):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
@@ -40,33 +37,17 @@ def load_bootstrap_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
 
     n_filter_particles = 1_000_000
     ess_threshold = 0.7
-    bootstrap_inference = Inference(
-        init_prepare=partial(
-            bootstrap.init_prepare,
-            init_sample=init_sample,
-            n_filter_particles=n_filter_particles,
-        ),
-        filter_prepare=partial(
-            bootstrap.filter_prepare,
-            init_sample=init_sample,
-            n_filter_particles=n_filter_particles,
-        ),
-        filter_combine=partial(
-            bootstrap.filter_combine,
-            propagate_sample=propagate_sample,
-            log_potential=log_potential,
-            resampling_fn=systematic.resampling,
-            ess_threshold=ess_threshold,
-        ),
-        smoother_prepare=None,
-        smoother_combine=None,
-        convert_filter_to_smoother_state=None,
-        associative_filter=False,
-        associative_smoother=False,
+    bootstrap_filter = bootstrap.build_filter(
+        init_sample,
+        propagate_sample,
+        log_potential,
+        n_filter_particles,
+        systematic.resampling,
+        ess_threshold,
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
-    return bootstrap_inference, model_inputs
+    return bootstrap_filter, model_inputs
 
 
 class BootstrapTest(chex.TestCase):
@@ -80,13 +61,13 @@ class BootstrapTest(chex.TestCase):
         )
 
         # Run the bootstrap particle filter.
-        bootstrap_inference, model_inputs = load_bootstrap_inference(
+        bootstrap_filter, model_inputs = load_bootstrap_filter(
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
         key = random.key(seed + 1)
         bootstrap_states = self.variant(
-            filter, static_argnames=("inference", "parallel")
-        )(bootstrap_inference, model_inputs, parallel=False, key=key)
+            filter, static_argnames=("filter_obj", "parallel")
+        )(bootstrap_filter, model_inputs, parallel=False, key=key)
         weights = jax.nn.softmax(bootstrap_states.log_weights)
         bt_means = jnp.sum(bootstrap_states.particles * weights[..., None], axis=1)
         bt_covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
@@ -131,29 +112,13 @@ class BootstrapTest(chex.TestCase):
         n_filter_particles = 1000
         ess_threshold = 0.7
 
-        bootstrap_inference = Inference(
-            init_prepare=partial(
-                bootstrap.init_prepare,
-                init_sample=init_sample,
-                n_filter_particles=n_filter_particles,
-            ),
-            filter_prepare=partial(
-                bootstrap.filter_prepare,
-                init_sample=init_sample,
-                n_filter_particles=n_filter_particles,
-            ),
-            filter_combine=partial(
-                bootstrap.filter_combine,
-                propagate_sample=propagate_sample,
-                log_potential=log_potential,
-                resampling_fn=systematic.resampling,
-                ess_threshold=ess_threshold,
-            ),
-            smoother_prepare=None,
-            smoother_combine=None,
-            convert_filter_to_smoother_state=None,
-            associative_filter=False,
-            associative_smoother=False,
+        bootstrap_filter = bootstrap.build_filter(
+            init_sample,
+            propagate_sample,
+            log_potential,
+            n_filter_particles,
+            systematic.resampling,
+            ess_threshold,
         )
 
         key = random.key(0)
@@ -163,8 +128,8 @@ class BootstrapTest(chex.TestCase):
         model_inputs = jnp.empty(num_time_steps + 1)
         key, subkey = random.split(key)
         bootstrap_states = self.variant(
-            filter, static_argnames=("inference", "parallel")
-        )(bootstrap_inference, model_inputs, parallel=False, key=subkey)
+            filter, static_argnames=("filter_obj", "parallel")
+        )(bootstrap_filter, model_inputs, parallel=False, key=subkey)
 
         # Verify that the pytree structure is preserved
         particles = bootstrap_states.particles
