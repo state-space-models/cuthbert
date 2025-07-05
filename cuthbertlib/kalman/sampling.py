@@ -2,9 +2,10 @@ from typing import NamedTuple, Sequence
 
 import jax
 import jax.numpy as jnp
-from cuthbertlib.types import ArrayLike, Array
+
 from cuthbertlib.kalman.smoothing import associative_params_single
 from cuthbertlib.kalman.utils import append_tree
+from cuthbertlib.types import Array, ArrayLike
 
 
 class SamplerScanElement(NamedTuple):

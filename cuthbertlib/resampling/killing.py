@@ -1,14 +1,15 @@
 from functools import partial
 
-from jax import random, numpy as jnp
-from cuthbertlib.types import Array, ArrayLike
+from jax import numpy as jnp
+from jax import random
 from jax.scipy.special import logsumexp
 
-from cuthbertlib.resampling.protocols import (
-    resampling_decorator,
-    conditional_resampling_decorator,
-)
 from cuthbertlib.resampling import multinomial
+from cuthbertlib.resampling.protocols import (
+    conditional_resampling_decorator,
+    resampling_decorator,
+)
+from cuthbertlib.types import Array, ArrayLike
 
 _DESCRIPTION = """
 The Killing resampling is a simple resampling mechanism that checks if 

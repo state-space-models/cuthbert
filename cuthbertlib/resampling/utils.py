@@ -1,10 +1,11 @@
 import jax
-import numpy as np
 import jax.numpy as jnp
-from jax.scipy.special import logsumexp
-from cuthbertlib.types import Array, ArrayLike
 import numba as nb
+import numpy as np
 from jax.lax import platform_dependent
+from jax.scipy.special import logsumexp
+
+from cuthbertlib.types import Array, ArrayLike
 
 
 @jax.jit

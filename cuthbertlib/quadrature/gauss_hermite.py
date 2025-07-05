@@ -1,9 +1,9 @@
-from typing import NamedTuple
 from itertools import product
+from typing import NamedTuple
 
 import numpy as np
-from numpy.polynomial.hermite_e import hermegauss
 from jax.typing import ArrayLike
+from numpy.polynomial.hermite_e import hermegauss
 
 from cuthbertlib.quadrature import cubature
 from cuthbertlib.quadrature.common import Quadrature, SigmaPoints

@@ -2,10 +2,10 @@ from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
-from cuthbertlib.types import Array, ArrayLike
 from jax.scipy.linalg import solve_triangular
 
 from cuthbertlib.linalg import tria
+from cuthbertlib.types import Array, ArrayLike
 
 
 class SmootherScanElement(NamedTuple):

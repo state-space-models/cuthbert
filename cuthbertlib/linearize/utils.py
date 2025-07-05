@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+
 from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayLike
 

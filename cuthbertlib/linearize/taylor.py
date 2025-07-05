@@ -1,8 +1,10 @@
 from typing import Callable, overload
+
 import jax
-from cuthbertlib.types import Array, ArrayTree
 from jax.typing import ArrayLike
+
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
+from cuthbertlib.types import Array, ArrayTree
 
 
 @overload
