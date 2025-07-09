@@ -90,7 +90,11 @@ def build_filter(
             Filter not suitable for associative scan, smoother suitable.
     """
     return Filter(
-        init_prepare=partial(init_prepare, get_init_params=get_init_params),
+        init_prepare=partial(
+            init_prepare,
+            get_init_params=get_init_params,
+            get_observation_params=get_observation_params,
+        ),
         filter_prepare=filter_prepare,
         filter_combine=partial(
             filter_combine,
@@ -128,6 +132,7 @@ def build_smoother(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
+    get_observation_params: GetObservationExtendedParams,
     key: KeyArray | None = None,
 ) -> ExtendedKalmanFilterState:
     """
@@ -136,6 +141,9 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
+        get_observation_params: Function to get observation conditional mean,
+            (generalised) Cholesky covariance and observation from linearization point
+            and model inputs.
         key: JAX random key - not used.
 
     Returns:
@@ -144,10 +152,19 @@ def init_prepare(
             and log_likelihood.
     """
     m0, chol_P0 = get_init_params(model_inputs)
+
+    def observation_mean_and_chol_cov_and_y(x):
+        return get_observation_params(x, model_inputs)
+
+    H, d, chol_R, y = linearize_moments(
+        observation_mean_and_chol_cov_and_y, m0, has_aux=True
+    )
+    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+
     return ExtendedKalmanFilterState(
-        mean=m0,
-        chol_cov=chol_P0,
-        log_likelihood=jnp.array(0.0),
+        mean=m,
+        chol_cov=chol_P,
+        log_likelihood=ell,
         model_inputs=tree.map(lambda x: jnp.asarray(x), model_inputs),
     )
 

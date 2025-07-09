@@ -44,16 +44,16 @@ def load_extended_inference(
 
     def observation_mean_and_chol_cov_and_y(x, model_inputs):
         return (
-            Hs[model_inputs - 1] @ x + ds[model_inputs - 1],
-            chol_Rs[model_inputs - 1],
-            ys[model_inputs - 1],
+            Hs[model_inputs] @ x + ds[model_inputs],
+            chol_Rs[model_inputs],
+            ys[model_inputs],
         )
 
     filter = extended.build_filter(
         get_init_params, dynamics_mean_and_chol_cov, observation_mean_and_chol_cov_and_y
     )
     smoother = extended.build_smoother(dynamics_mean_and_chol_cov)
-    model_inputs = jnp.arange(len(ys) + 1)
+    model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
 
@@ -98,7 +98,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ells[1:]),
+        (seq_means, seq_covs, seq_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-10,
     )
