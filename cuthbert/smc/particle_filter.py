@@ -73,6 +73,7 @@ def build_filter(
         init_prepare=partial(
             init_prepare,
             init_sample=init_sample,
+            log_potential=log_potential,
             n_filter_particles=n_filter_particles,
         ),
         filter_prepare=partial(
@@ -94,6 +95,7 @@ def build_filter(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
+    log_potential: LogPotential,
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> ParticleFilterState:
@@ -103,6 +105,8 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         init_sample: Function to sample from the initial distribution M_0(x_0).
+        log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
+            x_{t-1} is None since there is no previous state at t=0.
         n_filter_particles: Number of particles to sample.
         key: JAX random key.
 
@@ -114,15 +118,26 @@ def init_prepare(
     """
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
+
+    # Sample
     keys = random.split(key, n_filter_particles)
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
+
+    # Weight
+    log_weights = jax.vmap(log_potential, (None, 0, None))(
+        None, particles, model_inputs
+    )
+
+    # Compute the log likelihood
+    log_likelihood = jax.nn.logsumexp(log_weights) - jnp.log(n_filter_particles)
+
     return ParticleFilterState(
         key=key,
         particles=particles,
-        log_weights=jnp.zeros(n_filter_particles),
+        log_weights=log_weights,
         ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
-        log_likelihood=jnp.array(0.0),
+        log_likelihood=log_likelihood,
     )
 
 

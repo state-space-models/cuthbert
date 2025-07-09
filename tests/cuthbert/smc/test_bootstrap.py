@@ -30,7 +30,7 @@ def load_particle_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
 
     def log_potential(state_prev, state, model_inputs: int):
-        idx = model_inputs - 1
+        idx = model_inputs
         return logpdf(
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
@@ -46,7 +46,7 @@ def load_particle_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         ess_threshold,
     )
 
-    model_inputs = jnp.arange(len(ys) + 1)
+    model_inputs = jnp.arange(len(ys))
     return particle_filter_obj, model_inputs
 
 
@@ -84,7 +84,7 @@ class ParticleFilterTest(chex.TestCase):
         )
 
         chex.assert_trees_all_close(
-            (bt_ells[1:], bt_means, bt_covs),
+            (bt_ells, bt_means, bt_covs),
             (des_ells, des_means, des_covs),
             atol=1e-2,
             rtol=1e-2,
@@ -92,7 +92,7 @@ class ParticleFilterTest(chex.TestCase):
 
     @chex.variants(with_jit=True, without_jit=True)
     def test_particle_pytree_particles(self):
-        """Test that the particle pf handles pytree states correctly."""
+        """Test that the particle filter handles pytree states correctly."""
 
         def init_sample(key, model_inputs):
             keys = random.split(key, 2)
