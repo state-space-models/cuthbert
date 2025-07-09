@@ -79,7 +79,11 @@ def build_filter(
         Filter object for exact Kalman filter. Suitable for associative scan.
     """
     return Filter(
-        init_prepare=partial(init_prepare, get_init_params=get_init_params),
+        init_prepare=partial(
+            init_prepare,
+            get_init_params=get_init_params,
+            get_observation_params=get_observation_params,
+        ),
         filter_prepare=partial(
             filter_prepare,
             get_dynamics_params=get_dynamics_params,
@@ -117,6 +121,7 @@ def build_smoother(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
+    get_observation_params: GetObservationParams,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """
@@ -125,6 +130,7 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
+        get_observation_params: Function to get observation parameters, H, d, chol_R, y.
         key: JAX random key - not used.
 
     Returns:
@@ -132,13 +138,16 @@ def init_prepare(
             Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
     m0, chol_P0 = get_init_params(model_inputs)
+    H, d, chol_R, y = get_observation_params(model_inputs)
+
+    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
     elem = filtering.FilterScanElement(
-        A=jnp.zeros_like(chol_P0),
-        b=m0,
-        U=chol_P0,
-        eta=jnp.zeros_like(m0),
-        Z=jnp.zeros_like(chol_P0),
-        ell=jnp.array(0.0),
+        A=jnp.zeros_like(chol_P),
+        b=m,
+        U=chol_P,
+        eta=jnp.zeros_like(m),
+        Z=jnp.zeros_like(chol_P),
+        ell=ell,
     )
     return KalmanFilterState(elem=elem)
 

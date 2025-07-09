@@ -25,12 +25,27 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     """The standard Kalman filter."""
     # Use for loop instead of jax.lax.scan because std_update supports smaller
     # dimensional updates via NaNs in y
-    ms = [m0]
-    Ps = [P0]
+    ms = []
+    Ps = []
     ells_incrs = []
 
+    # Handle observation at time 0
+    H0, d0, R0, y0 = Hs[0], ds[0], Rs[0], ys[0]
+    m, P, ell_incr = std_update(m0, P0, H0, d0, R0, y0)
+    ms.append(m)
+    Ps.append(P)
+    ells_incrs.append(ell_incr)
+
     for i in range(len(Fs)):
-        F, c, Q, H, d, R, y = Fs[i], cs[i], Qs[i], Hs[i], ds[i], Rs[i], ys[i]
+        F, c, Q, H, d, R, y = (
+            Fs[i],
+            cs[i],
+            Qs[i],
+            Hs[i + 1],
+            ds[i + 1],
+            Rs[i + 1],
+            ys[i + 1],
+        )
         pred_m, pred_P = std_predict(ms[-1], Ps[-1], F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
         ms.append(m)
@@ -64,17 +79,17 @@ def load_kalman_inference(
 
     def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
         return (
-            Hs[model_inputs - 1],
-            ds[model_inputs - 1],
-            chol_Rs[model_inputs - 1],
-            ys[model_inputs - 1],
+            Hs[model_inputs],
+            ds[model_inputs],
+            chol_Rs[model_inputs],
+            ys[model_inputs],
         )
 
     filter = kalman.build_filter(
         get_init_params, get_dynamics_params, get_observation_params
     )
     smoother = kalman.build_smoother(get_dynamics_params)
-    model_inputs = jnp.arange(len(ys) + 1)
+    model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
 
@@ -128,8 +143,8 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ells[1:]),
-        (par_means, par_covs, par_ells[1:]),
+        (seq_means, seq_covs, seq_ells),
+        (par_means, par_covs, par_ells),
         (des_means, des_covs, des_ells),
         rtol=2e-10,
     )
