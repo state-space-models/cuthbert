@@ -36,7 +36,7 @@ class LogPotential(Protocol):
     ) -> ScalarArray: ...
 
 
-class BootstrapFilterState(NamedTuple):
+class ParticleFilterState(NamedTuple):
     key: KeyArray
     particles: ArrayTree
     log_weights: Array
@@ -54,7 +54,7 @@ def build_filter(
     ess_threshold: float,
 ) -> Filter:
     """
-    Build a bootstrap particle filter object.
+    Build a particle filter object.
 
     Args:
         init_sample: Function to sample from the initial distribution M_0(x_0).
@@ -67,7 +67,7 @@ def build_filter(
             effective sample size (ESS) < ess_threshold * n_filter_particles.
 
     Returns:
-        Filter object for the bootstrap particle filter.
+        Filter object for the particle filter.
     """
     return Filter(
         init_prepare=partial(
@@ -96,9 +96,9 @@ def init_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> BootstrapFilterState:
+) -> ParticleFilterState:
     """
-    Prepare the initial state for the bootstrap particle filter.
+    Prepare the initial state for the particle filter.
 
     Args:
         model_inputs: Model inputs.
@@ -107,7 +107,7 @@ def init_prepare(
         key: JAX random key.
 
     Returns:
-        Initial state for the bootstrap filter.
+        Initial state for the particle filter.
 
     Raises:
         ValueError: If `key` is None.
@@ -116,7 +116,7 @@ def init_prepare(
         raise ValueError("A JAX PRNG key must be provided.")
     keys = random.split(key, n_filter_particles)
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
-    return BootstrapFilterState(
+    return ParticleFilterState(
         key=key,
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
@@ -131,9 +131,9 @@ def filter_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> BootstrapFilterState:
+) -> ParticleFilterState:
     """
-    Prepare a state for a bootstrap particle filter step.
+    Prepare a state for a particle filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -143,7 +143,7 @@ def filter_prepare(
         key: JAX random key.
 
     Returns:
-        Prepared state for the bootstrap filter.
+        Prepared state for the filter.
 
     Raises:
         ValueError: If `key` is None.
@@ -154,7 +154,7 @@ def filter_prepare(
     particles = tree.map(
         lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
     )
-    return BootstrapFilterState(
+    return ParticleFilterState(
         key=key,
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
@@ -165,18 +165,18 @@ def filter_prepare(
 
 
 def filter_combine(
-    state_1: BootstrapFilterState,
-    state_2: BootstrapFilterState,
+    state_1: ParticleFilterState,
+    state_2: ParticleFilterState,
     propagate_sample: PropagateSample,
     log_potential: LogPotential,
     resampling_fn: Resampling,
     ess_threshold: float,
-) -> BootstrapFilterState:
+) -> ParticleFilterState:
     """
     Combine the filter state from the previous time step with the state prepared
     for the current step.
 
-    Implements the bootstrap particle filter update: conditional resampling,
+    Implements the particle filter update: conditional resampling,
     propagation through state dynamics, and reweighting based on the potential function.
 
     Args:
@@ -218,7 +218,7 @@ def filter_combine(
     log_likelihood_incr = logsum_weights - jax.nn.logsumexp(log_weights)
     log_likelihood = log_likelihood_incr + state_1.log_likelihood
 
-    return BootstrapFilterState(
+    return ParticleFilterState(
         state_2.key,
         next_particles,
         next_log_weights,
