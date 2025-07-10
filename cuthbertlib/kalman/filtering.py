@@ -1,11 +1,12 @@
 from typing import NamedTuple
+
 import jax.numpy as jnp
-from cuthbertlib.types import Array, ArrayLike, ScalarArray
 from jax.scipy.linalg import cho_solve, solve_triangular
 
+from cuthbertlib.linalg import tria
 from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.stats.multivariate_normal import collect_nans_chol
-from cuthbertlib.linalg import tria
+from cuthbertlib.types import Array, ArrayLike, ScalarArray
 
 
 class FilterScanElement(NamedTuple):

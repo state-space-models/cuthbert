@@ -1,12 +1,11 @@
-import jax.tree
 from jax import numpy as jnp, vmap, random
 from jax.scipy.special import logsumexp
-
+import jax.tree
 from cuthbertlib.types import (
-    ArrayLike,
     Array,
-    ArrayTreeLike,
+    ArrayLike,
     ArrayTree,
+    ArrayTreeLike,
     KeyArray,
     LogConditionalDensity,
 )
@@ -105,7 +104,6 @@ def simulate(
     """
     log_weight_x0_all = jnp.asarray(log_weight_x0_all)
     keys = random.split(key, log_weight_x0_all.shape[0])
-    # ArrayLike has Scalar types.
 
     return vmap(
         lambda k, x1: simulate_single(k, x0_all, x1, log_weight_x0_all, log_density)

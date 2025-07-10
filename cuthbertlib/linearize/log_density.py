@@ -1,11 +1,13 @@
 from typing import overload
-from jax import hessian, jacobian, grad
+
 import jax.numpy as jnp
+from jax import grad, hessian, jacobian
+
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
 from cuthbertlib.types import (
     Array,
-    ArrayTree,
     ArrayLike,
+    ArrayTree,
     LogConditionalDensity,
     LogConditionalDensityAux,
 )

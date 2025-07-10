@@ -1,12 +1,12 @@
-from cuthbert.inference import (
-    InitPrepare,
-    FilterPrepare,
-    FilterCombine,
-    SmootherPrepare,
-    SmootherCombine,
-    Inference,
-)
-from cuthbert.filtering import filter
-from cuthbert.smoothing import smoother
-
 from cuthbert import gaussian
+from cuthbert.filtering import filter
+from cuthbert.inference import (
+    Filter,
+    FilterCombine,
+    FilterPrepare,
+    InitPrepare,
+    Smoother,
+    SmootherCombine,
+    SmootherPrepare,
+)
+from cuthbert.smoothing import smoother

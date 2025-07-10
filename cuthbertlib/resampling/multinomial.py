@@ -1,13 +1,15 @@
 from functools import partial
 
 import jax
-from jax import random, numpy as jnp
-from cuthbertlib.types import Array, ArrayLike
-from cuthbertlib.resampling.utils import inverse_cdf
+from jax import numpy as jnp
+from jax import random
+
 from cuthbertlib.resampling.protocols import (
-    resampling_decorator,
     conditional_resampling_decorator,
+    resampling_decorator,
 )
+from cuthbertlib.resampling.utils import inverse_cdf
+from cuthbertlib.types import Array, ArrayLike
 
 _DESCRIPTION = """
 This has higher variance than other resampling schemes as it samples from

@@ -1,7 +1,7 @@
-from typing import Any, TypeAlias, Callable
+from typing import Any, Callable, TypeAlias
+
 from jax import Array
 from jax.typing import ArrayLike
-
 
 KeyArray: TypeAlias = Array  # No native JAX type annotation for keys https://jax.readthedocs.io/en/latest/changelog.html#jax-0-4-16-sept-18-2023
 ArrayTree: TypeAlias = Any  # No native JAX type annotation for PyTrees https://github.com/google/jax/issues/3340

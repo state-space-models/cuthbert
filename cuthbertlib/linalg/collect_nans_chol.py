@@ -1,9 +1,10 @@
 from typing import Any
-from jax import tree
-from jax import numpy as jnp
 
+from jax import numpy as jnp
+from jax import tree
+
+from cuthbertlib.linalg.tria import tria
 from cuthbertlib.types import Array, ArrayLike
-from cuthbertlib.linalg import tria
 
 
 def set_to_zero(flag: ArrayLike, x: ArrayLike) -> Array:

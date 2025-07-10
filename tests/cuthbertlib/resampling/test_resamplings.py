@@ -4,10 +4,10 @@ import chex
 import jax
 from absl.testing import parameterized
 
-from cuthbertlib.resampling import systematic, killing, multinomial
+from cuthbertlib.resampling import killing, multinomial, systematic
 from tests.cuthbertlib.resampling.utils import (
-    resampling_tester,
     conditional_resampling_tester,
+    resampling_tester,
 )
 
 Ms = [5, 10]

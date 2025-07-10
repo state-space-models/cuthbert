@@ -1,15 +1,16 @@
 from functools import partial
 
-from jax import random, numpy as jnp
-from cuthbertlib.types import Array, ArrayLike
-from jax.scipy.special import logsumexp
+from jax import numpy as jnp
+from jax import random
 from jax.lax import cond, select
+from jax.scipy.special import logsumexp
 
 from cuthbertlib.resampling.protocols import (
-    resampling_decorator,
     conditional_resampling_decorator,
+    resampling_decorator,
 )
 from cuthbertlib.resampling.utils import inverse_cdf
+from cuthbertlib.types import Array, ArrayLike
 
 _DESCRIPTION = """
 The Systematic resampling is a variance reduction which places marginally
