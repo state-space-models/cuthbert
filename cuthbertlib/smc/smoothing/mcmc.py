@@ -1,14 +1,15 @@
 import jax
-from jax import numpy as jnp, random
+from jax import numpy as jnp
+from jax import random
 
 from cuthbertlib.resampling import multinomial
 from cuthbertlib.types import (
-    ArrayLike,
     Array,
+    ArrayLike,
+    ArrayTree,
     ArrayTreeLike,
     KeyArray,
     LogConditionalDensity,
-    ArrayTree,
 )
 
 

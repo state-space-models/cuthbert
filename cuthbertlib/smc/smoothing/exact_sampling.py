@@ -1,6 +1,8 @@
-from jax import numpy as jnp, vmap, random
-from jax.scipy.special import logsumexp
 import jax.tree
+from jax import numpy as jnp
+from jax import random, vmap
+from jax.scipy.special import logsumexp
+
 from cuthbertlib.types import (
     Array,
     ArrayLike,
@@ -37,7 +39,7 @@ def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
     Compute smoothing weights given a collection of samples from x0 with
     accompanying log weights, a single sample x1 and a log conditional density
-    p(x1 | x0).
+py    p(x1 | x0).
 
     Args:
         x0_all: Collection of previous states.

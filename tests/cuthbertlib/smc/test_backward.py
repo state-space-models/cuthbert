@@ -5,10 +5,10 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
-from tests.cuthbertlib.kalman.utils import generate_lgssm
+from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
+from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
