@@ -37,18 +37,18 @@ def log_weights_single(
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
-    Compute smoothing weights given a collection of samples from x0 with
-    accompanying log weights, a single sample x1 and a log conditional density
-py    p(x1 | x0).
+        Compute smoothing weights given a collection of samples from x0 with
+        accompanying log weights, a single sample x1 and a log conditional density
+    py    p(x1 | x0).
 
-    Args:
-        x0_all: Collection of previous states.
-        x1: The current state.
-        log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        Args:
+            x0_all: Collection of previous states.
+            x1: The current state.
+            log_weight_x0_all: Collection of log weights of the previous state.
+            log_density: The log density of x1 given x0.
 
-    Returns:
-        Log normalized smoothing weights for each sample x0 given single sample x1.
+        Returns:
+            Log normalized smoothing weights for each sample x0 given single sample x1.
     """
     backward_log_weights_all = vmap(
         lambda x0, log_weight_x0: log_weights_single(x0, x1, log_weight_x0, log_density)
