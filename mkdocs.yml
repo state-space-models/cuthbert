@@ -1,0 +1,15 @@
+site_name: cuthbert
+site_url: https://state-space-models.github.io/cuthbert
+repo_url: https://github.com/state-space-models/cuthbert
+theme:
+  name: material
+  logo: cuthbert.png
+
+markdown_extensions:
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
