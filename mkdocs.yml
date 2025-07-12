@@ -4,6 +4,8 @@ repo_url: https://github.com/state-space-models/cuthbert
 theme:
   name: material
   logo: cuthbert.png
+  palette:
+    primary: black
 
 markdown_extensions:
   - admonition

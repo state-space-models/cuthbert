@@ -1,4 +1,4 @@
-# Cuthbert
+# cuthbert
 
 <div align="center">
 <img src="cuthbert.png" alt="logo"></img>
