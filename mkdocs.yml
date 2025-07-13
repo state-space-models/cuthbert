@@ -6,6 +6,12 @@ theme:
   logo: cuthbert.png
   palette:
     primary: black
+  features:
+    - navigation.instant
+
+nav:
+  - Home: index.md
+  - Contributing: contributing.md
 
 markdown_extensions:
   - admonition
