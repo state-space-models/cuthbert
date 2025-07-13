@@ -8,6 +8,7 @@ theme:
     primary: black
   features:
     - navigation.instant
+    - content.code.copy
 
 nav:
   - Home: index.md
@@ -17,6 +18,13 @@ markdown_extensions:
   - admonition
   - pymdownx.arithmatex:
       generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 extra_javascript:
   - javascripts/katex.js
