@@ -249,7 +249,7 @@ def smoother_combine(
         state_2: Smoother state at time t + 1.
 
     Returns:
-        Combined Kalman filter state.
+        Combined Kalman smoother state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and gain (which can be used to compute temporal cross-covariance).
     """
@@ -262,6 +262,7 @@ def smoother_combine(
 
 def convert_filter_to_smoother_state(
     filter_state: KalmanFilterState,
+    key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
     Convert the filter state to a smoother state.
@@ -270,6 +271,7 @@ def convert_filter_to_smoother_state(
 
     Args:
         filter_state: Filter state.
+        key: JAX random key - not used.
 
     Returns:
         Smoother state, same data as filter state just different structure.

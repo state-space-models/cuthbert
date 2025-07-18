@@ -2,14 +2,14 @@ from typing import Protocol, runtime_checkable
 
 import jax
 
-from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.types import Array, ArrayLike, KeyArray
 
 
 @runtime_checkable
 class Resampling(Protocol):
     """Protocol for resampling operations."""
 
-    def __call__(self, key: Array, logits: ArrayLike, n: int) -> Array: ...
+    def __call__(self, key: KeyArray, logits: ArrayLike, n: int) -> Array: ...
 
 
 @runtime_checkable
@@ -18,7 +18,7 @@ class ConditionalResampling(Protocol):
 
     def __call__(
         self,
-        key: Array,
+        key: KeyArray,
         logits: ArrayLike,
         n: int,
         pivot_in: int,

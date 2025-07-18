@@ -44,6 +44,11 @@ class ParticleFilterState(NamedTuple):
     model_inputs: ArrayTreeLike
     log_likelihood: ScalarArray
 
+    @property
+    def n_particles(self) -> int:
+        """Number of particles in the filter state."""
+        return self.log_weights.shape[-1]
+
 
 def build_filter(
     init_sample: InitSample,

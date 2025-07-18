@@ -130,6 +130,7 @@ class ConvertFilterToSmootherState(Protocol):
     def __call__(
         self,
         filter_state: ArrayTreeLike,
+        key: KeyArray | None = None,
     ) -> ArrayTree:
         """Convert the filter state to a smoother state.
 
@@ -139,6 +140,8 @@ class ConvertFilterToSmootherState(Protocol):
 
         Args:
             filter_state: The filter state.
+            key: The key for the random number generator.
+                Optional, as only used for stochastic inference methods
 
         Returns:
             The smoother state.

@@ -12,7 +12,7 @@ ScalarArray: TypeAlias = (
 ScalarArrayLike: TypeAlias = ArrayLike  # Object that will be cast to a ScalarArray
 
 
-LogConditionalDensity: TypeAlias = Callable[[ArrayTreeLike, ArrayTreeLike], Array]
+LogConditionalDensity: TypeAlias = Callable[[ArrayTreeLike, ArrayTreeLike], ScalarArray]
 LogConditionalDensityAux: TypeAlias = Callable[
-    [ArrayTreeLike, ArrayTreeLike], tuple[Array, ArrayTree]
+    [ArrayTreeLike, ArrayTreeLike], tuple[ScalarArray, ArrayTree]
 ]

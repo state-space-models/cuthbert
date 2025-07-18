@@ -1,0 +1,41 @@
+import jax
+from jax import numpy as jnp
+
+from cuthbertlib.types import (
+    Array,
+    ArrayLike,
+    ArrayTree,
+    ArrayTreeLike,
+    KeyArray,
+    LogConditionalDensity,
+)
+
+
+def simulate(
+    key: KeyArray,
+    x0_all: ArrayTreeLike,
+    x1_all: ArrayTreeLike,
+    log_weight_x0_all: ArrayLike,
+    log_density: LogConditionalDensity,
+    x1_ancestors: ArrayLike,
+) -> tuple[ArrayTree, Array]:
+    """
+    An implementation of the ancestor tracing algorithm for smoothing in SMC.
+
+    Args:
+        key: A JAX random key. Not used in this implementation, but included for compatibility with the protocol.
+        x0_all: Collection of previous states.
+        x1_all: Collection of current states. Not used in this implementation, but included for compatibility with the protocol.
+        log_weight_x0_all: Collection of log weights of the previous state. Not used in this implementation.
+        log_density: The log density of x1 given x0. Not used in this implementation.
+        x1_ancestors: The ancestors of x1 in the genealogy tracking
+
+    Returns:
+        A collection of x0 and their sampled indices.
+
+    References:
+        https://arxiv.org/abs/2207.00976
+    """
+    x1_ancestors = jnp.asarray(x1_ancestors)
+    x0 = jax.tree.map(lambda z: z[x1_ancestors], x0_all)
+    return x0, x1_ancestors

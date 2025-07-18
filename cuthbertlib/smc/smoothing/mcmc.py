@@ -3,6 +3,7 @@ from jax import numpy as jnp
 from jax import random
 
 from cuthbertlib.resampling import multinomial
+from cuthbertlib.smc.smoothing.tracing import simulate as ancestor_tracing_simulate
 from cuthbertlib.types import (
     Array,
     ArrayLike,
@@ -40,7 +41,10 @@ def simulate(
     References:
         https://arxiv.org/abs/2207.00976
     """
-    x1_ancestors = jnp.asarray(x1_ancestors)
+    key, subkey = random.split(key)
+    x0_init, x1_ancestors = ancestor_tracing_simulate(
+        subkey, x0_all, x1_all, log_weight_x0_all, log_density, x1_ancestors
+    )
     n_samples = x1_ancestors.shape[0]
 
     keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2, -1))

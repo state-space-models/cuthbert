@@ -89,6 +89,7 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
+    x_1_ancestors: ArrayLike | None = None,
 ) -> tuple[ArrayTree, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
@@ -100,6 +101,7 @@ def simulate(
         x1_all: Collection of current states.
         log_weight_x0_all: Collection of log weights of the previous state.
         log_density: The log density of x1 given x0.
+        x_1_ancestors: The ancestors of x1 in the genealogy tracking (not used in this function).
 
     Returns:
         A collection of x0 and their sampled indices.
