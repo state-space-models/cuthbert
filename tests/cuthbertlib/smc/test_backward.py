@@ -5,9 +5,9 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from cuthbertlib.smc.smoothing.tracing import simulate as tracing
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
+from cuthbertlib.smc.smoothing.tracing import simulate as tracing
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
@@ -54,10 +54,16 @@ def test_backward(seed, x_dim, N, method):
 
     # We may want to make this configuration more professional in the future, when we add more methods.
     match method:
-        case "tracing": backward_method = partial(tracing, x1_ancestors=jnp.arange(N))  # bit of a weird test.
-        case "exact": backward_method = exact
-        case "mcmc": backward_method = partial(mcmc, x1_ancestors=jnp.arange(N), n_steps=10)
-        case _: raise ValueError(f"Unknown method: {method}")
+        case "tracing":
+            backward_method = partial(
+                tracing, x1_ancestors=jnp.arange(N)
+            )  # bit of a weird test.
+        case "exact":
+            backward_method = exact
+        case "mcmc":
+            backward_method = partial(mcmc, x1_ancestors=jnp.arange(N), n_steps=10)
+        case _:
+            raise ValueError(f"Unknown method: {method}")
 
     smoothed_x0s, smoothed_x0_indices = backward_method(
         sim_key,
