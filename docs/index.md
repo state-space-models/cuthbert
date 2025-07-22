@@ -20,7 +20,7 @@ A JAX library for state-space model inference
 - Simple, flexible and performant interface for state-space model inference.
 - Compose with the [JAX ecosystem](#ecosystem) for extensive external tools.
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](https://github.com/state-space-models/cuthbert/blob/main/cuthbertlib/types.py).
-All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
+All functions are pure and work seamlessly with JAX transformations such as `jax.grad`, `jax.jit`, `jax.vmap`, etc.
 - Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
 - Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$.
 - Methods for static parameter estimation: $p(\theta \mid y_{0:T})$

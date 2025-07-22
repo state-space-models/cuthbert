@@ -31,11 +31,11 @@ pre-commit run --all-files
 python -m pytest --cov=cuthbert --cov-report term-missing
 ```
 
-!!! tip "VS Code Users"
-    VS Code users can use the [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
-    and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
-    (with Type Checking Mode: standard)
-    extensions for assistance with linting and type checking during development.
+    !!! tip "VS Code Users"
+        VS Code users can use the [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
+        and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
+        (with Type Checking Mode: standard)
+        extensions for assistance with linting and type checking during development.
 
 5. Commit your changes and push your new branch to your fork.
 

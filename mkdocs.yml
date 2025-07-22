@@ -25,10 +25,12 @@ theme:
 
 nav:
   - Home: index.md
+  - Quick Start: quickstart.md
   - Contributing: contributing.md
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.highlight:
