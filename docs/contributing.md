@@ -23,7 +23,7 @@ pip install -e ".[test, docs]"
 pre-commit install
 ```
 
-3. **Add your code. Add your tests. Update the docs if needed.**  
+3. **Add your code. Add your tests. Update the docs if needed.**
 
 4. If you have made changes to the docs, check that they render nicely:
 ```bash
