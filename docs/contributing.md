@@ -9,23 +9,28 @@ We love to chat about state-space-models! If you do too, you can get involved in
 
 ## Opening a Pull Request
 
-A pull request can be opened by following these steps:
+If you would like to contribute to `cuthbert`, please follow these steps:
 
-1. Fork the repo from GitHub and clone it locally:
+1. Fork the [repo](https://github.com/state-space-models/cuthbert/pulls) from GitHub and clone it locally:
 ```bash
 git clone git@github.com/YourUserName/cuthbert.git
 cd cuthbert
 ```
 
-2. Install the cloned version and pre-commit hooks:
+2. Install the package with the development dependencies and pre-commit hooks:
 ```bash
-pip install -e .
+pip install -e ".[test, docs]"
 pre-commit install
 ```
 
-3. **Add your code. Add your tests. Update the docs.**  
+3. **Add your code. Add your tests. Update the docs if needed.**  
 
-4. Make sure to run the linter, type checker, tests and check coverage:
+4. If you have made changes to the docs, check that they render nicely:
+```bash
+mkdocs serve
+```
+
+5. Make sure to run the linter, type checker, tests and check coverage:
 ```bash
 pre-commit run --all-files
 python -m pytest --cov=cuthbert --cov-report term-missing
@@ -37,6 +42,6 @@ python -m pytest --cov=cuthbert --cov-report term-missing
         (with Type Checking Mode: standard)
         extensions for assistance with linting and type checking during development.
 
-5. Commit your changes and push your new branch to your fork.
+6. Commit your changes and push your new branch to your fork.
 
-6. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
+7. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
