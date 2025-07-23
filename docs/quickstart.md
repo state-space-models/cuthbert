@@ -127,13 +127,11 @@ m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, true_states = generate_car_tr
 
 The state-space model specification for using the Kalman filter in `cuthbert` is as follows:
 
-$$
 \begin{align*}
     x_{0} & \sim \mathcal{N}(m_{0}, \mathrm{chol\_P}_{0} \, @ \, \mathrm{chol\_P}_{0}^{\top}), \\
     x_{t+1} \mid x_{t} & \sim \mathcal{N}(F_{t} x_{t} + c_{t}, \mathrm{chol\_Q}_{t} \, @ \, \mathrm{chol\_Q}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
     y_{t} \mid x_{t} & \sim \mathcal{N}(H_{t} x_{t} + d_{t}, \mathrm{chol\_R}_{t} \, @ \, \mathrm{chol\_R}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T\}.
 \end{align*}
-$$
 
 Note that instead of working with full covariance matrices, we work with their
 *square roots* or generalized Cholesky decompositions for improved numerical
