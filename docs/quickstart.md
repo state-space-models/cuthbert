@@ -26,7 +26,6 @@ where the goal is to track a car's position and velocity in 2D space at discrete
 ### Setup and imports
 
 ```python
-import jax
 import jax.numpy as jnp
 import jax.random as random
 import matplotlib.pyplot as plt
@@ -41,80 +40,54 @@ We first simulate the system to generate a sequence of observations. The state v
 
 ```python
 def generate_car_tracking_data(key, num_steps=50):
-    # State: [x_pos, y_pos, x_vel, y_vel]
-    x_dim = 4
-    y_dim = 2  # Observe [x_pos, y_pos] only
-    dt = 1.0   # Time step
+    # Model specification follows Example 6.8 from Särkka and Svensson (2023).
+    x_dim, y_dim, dt = 4, 2, 0.1
 
-    # Initial state: car starts at origin moving northeast
-    m0 = jnp.array([0.0, 0.0, 1.0, -1.0])  # Initial position and velocity
-    chol_P0 = 0.1 * jnp.eye(x_dim)  # Initial uncertainty
+    # Initial state
+    m0 = jnp.array([0.0, 0.0, 1.0, -1.0])
+    chol_P0 = 0.05 * jnp.eye(x_dim)
 
-    # Dynamics model: discrete-time constant velocity (Eq. 6.32)
-    F = jnp.array([
-        [1, 0, dt, 0],   # x₁ₖ = x₁ₖ₋₁ + Δt·x₃ₖ₋₁
-        [0, 1, 0, dt],   # x₂ₖ = x₂ₖ₋₁ + Δt·x₄ₖ₋₁
-        [0, 0, 1, 0],    # x₃ₖ = x₃ₖ₋₁ (velocity x unchanged)
-        [0, 0, 0, 1]     # x₄ₖ = x₄ₖ₋₁ (velocity y unchanged)
-    ])
-
-    # Process noise covariance Q (discrete-time from continuous model)
-    q1_squared = 0.1  # Spectral density q₁²
-    q2_squared = 0.1  # Spectral density q₂²
-    Q = jnp.array([
-        [q1_squared * dt**3 / 3, 0, q1_squared * dt**2 / 2, 0],
-        [0, q2_squared * dt**3 / 3, 0, q2_squared * dt**2 / 2],
-        [q1_squared * dt**2 / 2, 0, q1_squared * dt, 0],
-        [0, q2_squared * dt**2 / 2, 0, q2_squared * dt]
-    ])
+    # Dynamics model
+    F = jnp.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+    q1_squared = 1.0
+    q2_squared = 1.0
+    Q = jnp.array(
+        [
+            [q1_squared * dt**3 / 3, 0, q1_squared * dt**2 / 2, 0],
+            [0, q2_squared * dt**3 / 3, 0, q2_squared * dt**2 / 2],
+            [q1_squared * dt**2 / 2, 0, q1_squared * dt, 0],
+            [0, q2_squared * dt**2 / 2, 0, q2_squared * dt],
+        ]
+    )
     chol_Q = jnp.linalg.cholesky(Q)
 
-    # Observation model: observe position only (Eq. 6.33)
-    H = jnp.array([
-        [1, 0, 0, 0],  # Observe x₁ (x position)
-        [0, 1, 0, 0]   # Observe x₂ (y position)
-    ])
+    # Observation model
+    H = jnp.array([[1, 0, 0, 0], [0, 1, 0, 0]])
+    chol_R = 0.5 * jnp.eye(2)
 
-    # Measurement noise covariance R
-    sigma1_squared = 0.1  # Measurement noise variance in x
-    sigma2_squared = 0.1  # Measurement noise variance in y
-    R = jnp.array([
-        [sigma1_squared, 0],
-        [0, sigma2_squared]
-    ])
-    chol_R = jnp.linalg.cholesky(R)
-
-    # Simulate car trajectory with a turning maneuver
-    key, sim_key = random.split(key)
-    x = m0.copy()
+    # Simulate states and observations
     xs, ys = [], []
+    key, state_key, obs_key = random.split(key, 3)
+    x = m0 + chol_P0 @ random.normal(state_key, (x_dim,))
+    y = H @ x + chol_R @ random.normal(obs_key, (y_dim,))
+    xs.append(x)
+    ys.append(y)
 
-    for t in range(num_steps + 1):
-        # Record current state and generate observation
-        xs.append(x.copy())
-        obs_noise = chol_R @ random.normal(random.fold_in(sim_key, t), (y_dim,))
-        y = H @ x + obs_noise
+    for t in range(num_steps):
+        key, state_key, obs_key = random.split(key, 3)
+        x = F @ x + chol_Q @ random.normal(state_key, (x_dim,))
+        y = H @ x + chol_R @ random.normal(obs_key, (y_dim,))
+        xs.append(x)
         ys.append(y)
 
-        # Simulate next state with dynamics
-        if t < num_steps:
-            # Add some control input to create a turning trajectory
-            if 15 <= t <= 35:  # Turn during middle part of trajectory
-                turn_acceleration = jnp.array([0.0, 0.0, -0.05, -0.03])  # Left turn
-                x = x + turn_acceleration
+    # Duplicate the model parameters across time steps
+    Fs = jnp.repeat(F[None], num_steps, axis=0)
+    cs = jnp.zeros((num_steps, x_dim))
+    chol_Qs = jnp.repeat(chol_Q[None], num_steps, axis=0)
 
-            # Apply dynamics with process noise
-            process_noise = chol_Q @ random.normal(random.fold_in(sim_key, t + 100), (x_dim,))
-            x = F @ x + process_noise
-
-    # Package parameters for cuthbert (time-invariant in this case)
-    Fs = jnp.tile(F[None], (num_steps, 1, 1))
-    cs = jnp.zeros((num_steps, x_dim))  # No control input in the model
-    chol_Qs = jnp.tile(chol_Q[None], (num_steps, 1, 1))
-
-    Hs = jnp.tile(H[None], (num_steps + 1, 1, 1))
-    ds = jnp.zeros((num_steps + 1, y_dim))  # No observation bias
-    chol_Rs = jnp.tile(chol_R[None], (num_steps + 1, 1, 1))
+    Hs = jnp.repeat(H[None], num_steps + 1, axis=0)
+    ds = jnp.zeros((num_steps + 1, y_dim))
+    chol_Rs = jnp.repeat(chol_R[None], num_steps + 1, axis=0)
     ys = jnp.stack(ys)
     true_states = jnp.stack(xs)
 
@@ -232,46 +205,27 @@ car's position.
 
 ??? "Code to plot the results."
     ```python
-    # Extract positions for plotting
-    true_pos = true_states[:, :2]  # True x₁, x₂ positions
-    obs_pos = ys  # Observed x₁, x₂ positions
-    filtered_pos = means[:, :2]  # Filtered x₁, x₂ positions
+    true_pos = true_states[:, :2]
+    filtered_pos = means[:, :2]
 
-    # Create the trajectory plot matching the textbook style
     plt.figure(figsize=(10, 8))
     plt.plot(true_pos[:, 0], true_pos[:, 1], '-', color='#2E86AB', linewidth=3,
             label='True trajectory', alpha=0.9)
-    plt.scatter(obs_pos[:, 0], obs_pos[:, 1], c='#F24236', edgecolors='darkred',
+    plt.scatter(ys[:, 0], ys[:, 1], c='#F24236', edgecolors='darkred',
             s=50, alpha=0.8, label='Measurements')
     plt.plot(filtered_pos[:, 0], filtered_pos[:, 1], '-', color='#F6AE2D', linewidth=3,
             label='Filter estimate')
 
-    # Set labels and styling to match the textbook
-    plt.xlabel('x₁', fontsize=14)
-    plt.ylabel('x₂', fontsize=14)
-    plt.title('Car Tracking with Kalman Filter (Example 6.8)', fontsize=16, pad=20)
+    plt.xlabel("x", fontsize=14)
+    plt.ylabel("y", fontsize=14)
     plt.legend(fontsize=12, loc='upper right')
     plt.grid(True, alpha=0.3)
-
-    # Set axis limits to match the reference plot approximately
-    plt.xlim(-5, 10)
-    plt.ylim(-14, 2)
-
-    # Add some styling to match academic presentation
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
-
-    # Save the plot for documentation
-    plt.savefig('docs/assets/car_tracking_example.png', dpi=150, bbox_inches='tight')
     plt.show()
-
-    # Print some statistics
-    final_rmse_x = jnp.sqrt(jnp.mean((true_pos[:, 0] - filtered_pos[:, 0])**2))
-    final_rmse_y = jnp.sqrt(jnp.mean((true_pos[:, 1] - filtered_pos[:, 1])**2))
-    print(f"Filter RMSE - X: {final_rmse_x:.3f}, Y: {final_rmse_y:.3f}")
     ```
 
-![Car Tracking Results](assets/car_tracking_example.png)
+![Car Tracking Results](assets/car_tracking.png)
 
 ??? tip "Bonus: Handle missing observations"
     `cuthbert` automatically handles missing data when observations contain NaN values:
