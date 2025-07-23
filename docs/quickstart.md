@@ -128,9 +128,9 @@ m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, true_states = generate_car_tr
 The state-space model specification for using the Kalman filter in `cuthbert` is as follows:
 
 \begin{align*}
-    x_{0} & \sim \mathcal{N}(m_{0}, \mathrm{chol\_P}_{0} \, @ \, \mathrm{chol\_P}_{0}^{\top}), \\
-    x_{t+1} \mid x_{t} & \sim \mathcal{N}(F_{t} x_{t} + c_{t}, \mathrm{chol\_Q}_{t} \, @ \, \mathrm{chol\_Q}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
-    y_{t} \mid x_{t} & \sim \mathcal{N}(H_{t} x_{t} + d_{t}, \mathrm{chol\_R}_{t} \, @ \, \mathrm{chol\_R}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T\}.
+    x_{0} & \sim \mathcal{N}(m_{0}, \mathrm{chol\_P}_{0} \times \mathrm{chol\_P}_{0}^{\top}), \\
+    x_{t+1} \mid x_{t} & \sim \mathcal{N}(F_{t} x_{t} + c_{t}, \mathrm{chol\_Q}_{t} \times \mathrm{chol\_Q}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
+    y_{t} \mid x_{t} & \sim \mathcal{N}(H_{t} x_{t} + d_{t}, \mathrm{chol\_R}_{t} \times \mathrm{chol\_R}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T\}.
 \end{align*}
 
 Note that instead of working with full covariance matrices, we work with their
@@ -154,15 +154,19 @@ Instead of passing matrices directly, `kalman.build_filter()` takes three functi
 This pattern separates the model specification from the filtering algorithm, making the code more modular and allowing the same filter to work with different parameterizations (time-varying, hierarchical, etc.).
 
 ??? "Understanding `model_inputs`"
-    The `model_inputs` parameter passed to each extraction function can be any data structure that helps identify what parameters to return. In the most common case, it's simply a time index, but it could be more complex data like hyperparameters, external covariates, or nested structures.
+    The `model_inputs` parameter passed to each extraction function can be any
+    [pytree](https://docs.jax.dev/en/latest/pytrees.html) that helps identify what parameters to return.
+    In the most common case, it's simply a time index, but it could be more complex data like
+    hyperparameters or external covariates.
 
-    In our car tracking example, `model_inputs` is just an integer time index (0, 1, 2, ..., T), allowing each function to select the appropriate matrices for that time step. The filtering algorithm passes each element of the `model_inputs` array to the extraction functions in sequence.
+    In our car tracking example, `model_inputs` is just an array of time indices (0, 1, 2, ..., T),
+    allowing each function to select the appropriate matrices for that time step. The filtering
+    algorithm passes each element of the `model_inputs` array to the extraction functions in sequence.
 
 **Important indexing note**: The `get_dynamics_params` function uses `model_inputs - 1` because dynamics describe transitions from time $t-1$ to $t$, while `get_observation_params` uses `model_inputs` directly since observations occur at each time step.
 
 ```python
 def build_car_tracking_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
-    """Build Kalman filter for the car tracking problem."""
 
     def get_init_params(model_inputs):
         return m0, chol_P0
@@ -175,32 +179,30 @@ def build_car_tracking_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys)
         t = model_inputs
         return Hs[t], ds[t], chol_Rs[t], ys[t]
 
-    kalman_filter = kalman.build_filter(
-        get_init_params,
-        get_dynamics_params,
-        get_observation_params
+    filter_obj = kalman.build_filter(
+        get_init_params, get_dynamics_params, get_observation_params
     )
-
     model_inputs = jnp.arange(len(ys))
-    return kalman_filter, model_inputs
+    return filter_obj, model_inputs
 
-kalman_filter, model_inputs = build_car_tracking_filter(
+filter_obj, model_inputs = build_car_tracking_filter(
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
 )
 ```
 
 ### Run the Kalman filter
 
-With the filter built, running the Kalman filter is now as simple as calling the `filter` function with our constructed filter and model inputs:
+With the filter built, running the Kalman filter is now as simple as calling the `cuthbert.filter`
+function with our constructed filter object and model inputs:
 
 ```python
 # Run the filter
-filtered_states = filter(kalman_filter, model_inputs, parallel=True)
+filtered_states = filter(filter_obj, model_inputs, parallel=True)
 
 # Extract results
 means = filtered_states.mean  # Posterior state means
 chol_covs = filtered_states.chol_cov  # Cholesky factors of posterior covariances
-log_likelihood = filtered_states.log_likelihood  # Log marginal likelihood
+log_likelihood = filtered_states.log_likelihood  # Log marginal likelihoods
 ```
 
 !!! tip "Temporal parallelization of the filter"
@@ -210,8 +212,11 @@ log_likelihood = filtered_states.log_likelihood  # Log marginal likelihood
     $\mathcal{O}(T)$ for the sequential filter to $\mathcal{O}(\log T)$ for the
     parallel filter). Our implementation is based on [Yaghoobi et al. (2025)](https://epubs-siam-org.libproxy.aalto.fi/doi/10.1137/23M156121X).
 
-!!! tip "Just-in-time compilation for repeated use"
-    If you need to run the filter multiple times (e.g., during parameter optimization), you can JIT-compile it for better performance. All functions in `cuthbert` are pure and designed to work seamlessly with JAX function transformations.
+!!! tip "Just-in-time (JIT) compilation for repeated use"
+    If you need to run the filter multiple times (e.g., during parameter optimization), you can
+    JIT-compile it for better performance with
+    [`jax.jit`](https://docs.jax.dev/en/latest/_autosummary/jax.jit.html). All functions in `cuthbert` are
+    pure and designed to work seamlessly with JAX function transformations.
 
     ```python
     jitted_filter = jax.jit(filter, static_argnames=['parallel'])
@@ -268,30 +273,42 @@ car's position.
 
 ![Car Tracking Results](assets/car_tracking_example.png)
 
-### Handle Missing Observations
+??? tip "Bonus: Handle missing observations"
+    `cuthbert` automatically handles missing data when observations contain NaN values:
 
-cuthbert automatically handles missing data when observations contain NaN values:
+    ```python
+    # Create data with missing observations (simulate GPS outage)
+    ys_missing = ys.at[20:30, :].set(jnp.nan)  # Missing position observations during turn
 
-```python
-# Create data with missing observations (simulate GPS outage)
-ys_missing = ys.at[20:30, :].set(jnp.nan)  # Missing position observations during turn
+    # Rebuild filter with missing data
+    filter_obj_missing, model_inputs_missing = build_car_tracking_filter(
+        m0, chol_P0, As, cs, chol_Qs, Hs, ds, chol_Rs, ys_missing
+    )
 
-# Rebuild filter with missing data
-kalman_filter_missing, model_inputs_missing = build_car_tracking_filter(
-    m0, chol_P0, As, cs, chol_Qs, Hs, ds, chol_Rs, ys_missing
-)
+    # Run filtering - cuthbert handles NaNs automatically
+    filtered_states_missing = filter(filter_obj_missing, model_inputs_missing)
 
-# Run filtering - cuthbert handles NaNs automatically
-filtered_states_missing = filter(kalman_filter_missing, model_inputs_missing)
+    print("Successfully handled missing observations!")
+    print(f"Missing observation period: steps 20-30 during the car's turn")
+    print(f"Filter uncertainty automatically increased during GPS outage")
+    ```
 
-print("Successfully handled missing observations!")
-print(f"Missing observation period: steps 20-30 during the car's turn")
-print(f"Filter uncertainty automatically increased during GPS outage")
-```
+## Recap
+
+Congratulations! You've successfully implemented a complete Kalman filtering solution with `cuthbert`. The key steps were:
+
+1. **Model specification**: Specify the matrices and vectors that define the linear-Gaussian
+   state-space model, and collect/generate observations.
+2. **Filter construction**: Use the parameter extraction pattern with `kalman.build_filter()` to create a flexible filter object.
+3. **Filtering**: Execute the algorithm with `cuthbert.filter()` to obtain posterior state
+   estimates.
+
+This functional approach makes `cuthbert` naturally compatible with JAX's ecosystem, enabling automatic differentiation, JIT compilation, and vectorization for your state-space modeling needs.
 
 ## Next Steps
 
-- **Smoothing**: Use `cuthbert.smoother` for backward pass smoothing
-- **Parameter Learning**: Combine with optimization libraries like `optax`
-- **Sequential Monte Carlo**: Explore nonlinear filtering with `cuthbert.smc`
-- **Advanced Models**: Check out extended and unscented Kalman filters
+- **Smoothing**: Use `cuthbert.smoother` for backward pass smoothing.
+- **Parameter Learning**: Combine with optimization libraries like `optax`.
+- **Sequential Monte Carlo**: Explore nonlinear and non-Gaussian filtering with `cuthbert.smc`.
+- **Advanced Models**: Check out extended and unscented Kalman filters for nonlinear state-space
+models.
