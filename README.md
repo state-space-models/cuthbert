@@ -71,5 +71,6 @@ mentioned [above](#non-goals).
 
 ## Contributing
 
-
+We're always looking for contributions!
+Check out the [contributing guide](CONTRIBUTING.md) for more information.
 

@@ -31,7 +31,7 @@ nav:
   - Contributing: contributing.md
 
 plugins:
-  - include-markdown:
+  - include-markdown
 
 
 markdown_extensions:
