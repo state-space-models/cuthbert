@@ -185,7 +185,9 @@ def filter_combine(
     keys = random.split(state_1.key, N + 1)
 
     # Resample
-    prev_log_weights = state_1.log_weights
+    prev_log_weights = state_1.log_weights - jax.nn.logsumexp(
+        state_1.log_weights
+    )  # Ensure normalized
     ancestor_indices, log_weights = jax.lax.cond(
         log_ess(state_1.log_weights) < jnp.log(ess_threshold * N),
         lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),

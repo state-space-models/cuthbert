@@ -1,5 +1,4 @@
 from functools import partial
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -95,10 +94,9 @@ class Test(chex.TestCase):
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method
         )
         key = random.key(seed + 1)
-        states = self.variant(filter, static_argnames=("inference", "parallel"))(
+        states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference, model_inputs, parallel=False, key=key
         )
-        states = filter(inference, model_inputs, parallel=False, key=key)
         weights = jax.nn.softmax(states.log_weights)
         means = jnp.sum(states.particles * weights[..., None], axis=1)
         covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
@@ -188,7 +186,7 @@ class Test(chex.TestCase):
         # Run the particle filter
         model_inputs = jnp.empty(num_time_steps + 1)
         key, subkey = random.split(key)
-        states = self.variant(filter, static_argnames=("inference", "parallel"))(
+        states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference, model_inputs, parallel=False, key=subkey
         )
 
