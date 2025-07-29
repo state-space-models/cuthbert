@@ -162,11 +162,12 @@ def filter_combine(
     ess_threshold: float,
 ) -> MarginalParticleFilterState:
     """
-    Combine the filter state from the previous time step with the state prepared
-    for the current step.
+    Combine the marginal particle filter state from the previous time step with the
+    state prepared for the current step.
 
-    Implements the particle filter update: conditional resampling,
-    propagation through state dynamics, and reweighting based on the potential function.
+    Implements the marginal particle filter update: conditional resampling,
+    propagation through state dynamics, and N^2 reweighting based on the
+    potential function.
 
     Args:
         state_1: Filter state from the previous time step.

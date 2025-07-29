@@ -1,3 +1,5 @@
+from functools import partial
+
 import chex
 import jax
 import jax.numpy as jnp
@@ -6,7 +8,7 @@ from absl.testing import parameterized
 from jax import random
 
 from cuthbert import filter
-from cuthbert.inference import Inference
+from cuthbert.inference import Filter
 from cuthbert.smc import marginal_particle_filter, particle_filter
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
@@ -48,10 +50,11 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
         )
 
     ess_threshold = 0.7
-    inference = Inference(
+    inference = Filter(
         init_prepare=partial(
             algo.init_prepare,
             init_sample=init_sample,
+            log_potential=log_potential,
             n_filter_particles=n_filter_particles,
         ),
         filter_prepare=partial(
@@ -66,14 +69,10 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
             resampling_fn=systematic.resampling,
             ess_threshold=ess_threshold,
         ),
-        smoother_prepare=None,
-        smoother_combine=None,
-        convert_filter_to_smoother_state=None,
-        associative_filter=False,
-        associative_smoother=False,
+        associative=False,
     )
 
-    model_inputs = jnp.arange(len(ys) + 1)
+    model_inputs = jnp.arange(len(ys))
     return inference, model_inputs
 
 
@@ -99,6 +98,7 @@ class Test(chex.TestCase):
         states = self.variant(filter, static_argnames=("inference", "parallel"))(
             inference, model_inputs, parallel=False, key=key
         )
+        states = filter(inference, model_inputs, parallel=False, key=key)
         weights = jax.nn.softmax(states.log_weights)
         means = jnp.sum(states.particles * weights[..., None], axis=1)
         covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
@@ -115,15 +115,15 @@ class Test(chex.TestCase):
         )
         if method == "marginal":
             chex.assert_trees_all_close(
-                (means, covs),
-                (des_means, des_covs),
+                (ells, means, covs),
+                (des_ells, des_means, des_covs),
                 atol=1e-1,
                 rtol=0.25,
             )
 
         else:
             chex.assert_trees_all_close(
-                (ells[1:], means, covs),
+                (ells, means, covs),
                 (des_ells, des_means, des_covs),
                 atol=1e-2,
                 rtol=1e-2,
@@ -160,10 +160,11 @@ class Test(chex.TestCase):
         else:
             raise ValueError(f"Unknown method: {method}")
 
-        inference = Inference(
+        inference = Filter(
             init_prepare=partial(
                 algo.init_prepare,
                 init_sample=init_sample,
+                log_potential=log_potential,
                 n_filter_particles=n_filter_particles,
             ),
             filter_prepare=partial(
@@ -178,11 +179,7 @@ class Test(chex.TestCase):
                 resampling_fn=systematic.resampling,
                 ess_threshold=ess_threshold,
             ),
-            smoother_prepare=None,
-            smoother_combine=None,
-            convert_filter_to_smoother_state=None,
-            associative_filter=False,
-            associative_smoother=False,
+            associative=False,
         )
 
         key = random.key(0)
