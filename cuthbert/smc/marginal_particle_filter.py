@@ -12,11 +12,11 @@ from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
-class ParticleFilterState(NamedTuple):
+class MarginalParticleFilterState(NamedTuple):
+    # no ancestors, as it does not make sense for marginal particle filters
     key: KeyArray
     particles: ArrayTree
     log_weights: Array
-    ancestor_indices: Array
     model_inputs: ArrayTreeLike
     log_likelihood: ScalarArray
 
@@ -30,7 +30,7 @@ def build_filter(
     ess_threshold: float,
 ) -> Filter:
     """
-    Build a particle filter object.
+    Build a marginal particle filter object.
 
     Args:
         init_sample: Function to sample from the initial distribution M_0(x_0).
@@ -74,9 +74,9 @@ def init_prepare(
     log_potential: LogPotential,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> ParticleFilterState:
+) -> MarginalParticleFilterState:
     """
-    Prepare the initial state for the particle filter.
+    Prepare the initial state for the marginal particle filter.
 
     Args:
         model_inputs: Model inputs.
@@ -87,7 +87,7 @@ def init_prepare(
         key: JAX random key.
 
     Returns:
-        Initial state for the particle filter.
+        Initial state for the filter.
 
     Raises:
         ValueError: If `key` is None.
@@ -107,11 +107,10 @@ def init_prepare(
     # Compute the log likelihood
     log_likelihood = jax.nn.logsumexp(log_weights) - jnp.log(n_filter_particles)
 
-    return ParticleFilterState(
+    return MarginalParticleFilterState(
         key=key,
         particles=particles,
         log_weights=log_weights,
-        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=log_likelihood,
     )
@@ -122,9 +121,9 @@ def filter_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-) -> ParticleFilterState:
+) -> MarginalParticleFilterState:
     """
-    Prepare a state for a particle filter step.
+    Prepare a state for a marginal particle filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -145,30 +144,30 @@ def filter_prepare(
     particles = tree.map(
         lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
     )
-    return ParticleFilterState(
+    return MarginalParticleFilterState(
         key=key,
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
-        ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
         log_likelihood=jnp.array(0.0),
     )
 
 
 def filter_combine(
-    state_1: ParticleFilterState,
-    state_2: ParticleFilterState,
+    state_1: MarginalParticleFilterState,
+    state_2: MarginalParticleFilterState,
     propagate_sample: PropagateSample,
     log_potential: LogPotential,
     resampling_fn: Resampling,
     ess_threshold: float,
-) -> ParticleFilterState:
+) -> MarginalParticleFilterState:
     """
-    Combine the filter state from the previous time step with the state prepared
-    for the current step.
+    Combine the marginal particle filter state from the previous time step with the
+    state prepared for the current step.
 
-    Implements the particle filter update: conditional resampling,
-    propagation through state dynamics, and reweighting based on the potential function.
+    Implements the marginal particle filter update: conditional resampling,
+    propagation through state dynamics, and N^2 reweighting based on the
+    potential function.
 
     Args:
         state_1: Filter state from the previous time step.
@@ -186,6 +185,9 @@ def filter_combine(
     keys = random.split(state_1.key, N + 1)
 
     # Resample
+    prev_log_weights = state_1.log_weights - jax.nn.logsumexp(
+        state_1.log_weights
+    )  # Ensure normalized
     ancestor_indices, log_weights = jax.lax.cond(
         log_ess(state_1.log_weights) < jnp.log(ess_threshold * N),
         lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),
@@ -198,22 +200,28 @@ def filter_combine(
         keys[1:], ancestors, state_2.model_inputs
     )
 
-    # Reweight
-    log_potentials = jax.vmap(log_potential, (0, 0, None))(
-        ancestors, next_particles, state_2.model_inputs
+    # N^2 Reweight by comparing all ancestors with all next particles
+    log_potential_vmapped = jax.vmap(
+        jax.vmap(log_potential, (0, None, None), out_axes=0),
+        (None, 0, None),
+        out_axes=0,
     )
-    next_log_weights = log_potentials + log_weights
+
+    log_potentials = log_potential_vmapped(
+        state_1.particles, next_particles, state_2.model_inputs
+    )
+    next_log_weights = log_potentials + prev_log_weights[None, :]
+    next_log_weights = jax.nn.logsumexp(next_log_weights, axis=1)
 
     # Compute the log likelihood
     logsum_weights = jax.nn.logsumexp(next_log_weights)
     log_likelihood_incr = logsum_weights - jax.nn.logsumexp(log_weights)
     log_likelihood = log_likelihood_incr + state_1.log_likelihood
 
-    return ParticleFilterState(
-        state_2.key,
-        next_particles,
-        next_log_weights,
-        ancestor_indices,
-        state_2.model_inputs,
-        log_likelihood,
+    return MarginalParticleFilterState(
+        key=state_2.key,
+        particles=next_particles,
+        log_weights=next_log_weights,
+        model_inputs=state_2.model_inputs,
+        log_likelihood=log_likelihood,
     )
