@@ -16,19 +16,21 @@ def simulate(
     x0_all: ArrayTreeLike,
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
-    log_density: LogConditionalDensity,
+    log_potential: LogConditionalDensity,
     x1_ancestors: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
     An implementation of the ancestor tracing algorithm for smoothing in SMC.
 
+    Some arguments are included for protocol compatibility but not used in this implementation.
+
     Args:
-        key: A JAX random key. Not used in this implementation, but included for compatibility with the protocol.
+        key: A JAX random key. Not used.
         x0_all: Collection of previous states.
-        x1_all: Collection of current states. Not used in this implementation, but included for compatibility with the protocol.
-        log_weight_x0_all: Collection of log weights of the previous state. Not used in this implementation.
-        log_density: The log density of x1 given x0. Not used in this implementation.
-        x1_ancestors: The ancestors of x1 in the genealogy tracking
+        x1_all: Collection of current states. Not used.
+        log_weight_x0_all: Collection of log weights of the previous state. Not used.
+        log_potential: The log density function of x1 given x0. Not used.
+        x1_ancestors: The ancestors of x1.
 
     Returns:
         A collection of x0 and their sampled indices.

@@ -29,21 +29,25 @@ def build_smoother(
     log_potential: LogPotential,
     backward_sampling_fn: BackwardSampling,
     resampling_fn: Resampling,
+    n_smoother_particles: int,
 ) -> Smoother:
     """
-    Build a particle filter object.
+    Build a particle smoother object.
 
     Args:
         log_potential: Function to compute the JOINT log potential log G_t(x_{t-1}, x_t) + log M_t(x_t | x_{t-1}).
         backward_sampling_fn: Backward sampling algorithm to use (e.g., exact backward sampling, IMH)
         resampling_fn: Resampling algorithm to use (e.g., multinomial, systematic).
+        n_smoother_particles: Number of samples to draw from the backward sampling algorithm.
 
     Returns:
-        Smoother object for the particle smoother.
+        Smoother object.
     """
     return Smoother(
         convert_filter_to_smoother_state=partial(
-            convert_filter_to_smoother_state, resampling=resampling_fn
+            convert_filter_to_smoother_state,
+            resampling=resampling_fn,
+            n_smoother_particles=n_smoother_particles,
         ),
         smoother_prepare=smoother_prepare,
         smoother_combine=partial(
@@ -58,6 +62,7 @@ def build_smoother(
 def convert_filter_to_smoother_state(
     filter_state: ParticleFilterState,
     resampling: Resampling,
+    n_smoother_particles: int,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """
@@ -66,6 +71,7 @@ def convert_filter_to_smoother_state(
     Args:
         filter_state: Particle filter state.
         resampling: Resampling algorithm to use (e.g., multinomial, systematic).
+        n_smoother_particles: Number of smoother samples to draw.
         key: JAX random key.
 
     Returns:
@@ -76,18 +82,16 @@ def convert_filter_to_smoother_state(
     """
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
+
     key, resampling_key = random.split(key)
-    indices = resampling(
-        resampling_key, filter_state.log_weights, filter_state.n_particles
-    )
-    n_samples = indices.shape[0]
+    indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
 
     return ParticleSmootherState(
         key=key,
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
         model_inputs=filter_state.model_inputs,
-        log_weights=-jnp.log(n_samples) * jnp.ones_like(filter_state.log_weights),
+        log_weights=-jnp.log(n_smoother_particles) * jnp.ones(n_smoother_particles),
     )
 
 
@@ -97,7 +101,7 @@ def smoother_prepare(
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """
-    Prepare the initial state for the particle filter.
+    Prepare a state for a particle smoother step.
 
     Args:
         filter_state: Particle filter state from the previous time step.
@@ -131,8 +135,6 @@ def smoother_combine(
 
     Remember smoothing iterates backwards in time.
 
-    Applies backward sampling smoother update.
-
     Args:
         state_1: State prepared with model inputs at time t.
         state_2: Smoother state at time t + 1.
@@ -140,7 +142,7 @@ def smoother_combine(
         log_potential: Function to compute log potential.
 
     Returns:
-        Combined Particle smoother state.
+        Combined particle smoother state.
         Contains particles, the original ancestor indices of the particles, and model inputs.
     """
     new_particles_1, ancestors_1 = backward_sampling_fn(
@@ -149,10 +151,11 @@ def smoother_combine(
         x1_all=state_2.particles,
         log_weight_x0_all=state_1.log_weights,
         log_potential=lambda s1, s2: log_potential(s1, s2, state_2.model_inputs),
+        x1_ancestors=state_2.ancestor_indices,
     )
 
-    n_samples = state_1.n_particles
-    log_weights = -jnp.log(n_samples) * jnp.ones_like(state_2.log_weights)
+    n_particles = new_particles_1.n_particles
+    log_weights = -jnp.log(n_particles) * jnp.ones(n_particles)
     new_state = ParticleSmootherState(
         key=state_1.key,
         particles=new_particles_1,

@@ -12,7 +12,7 @@ from cuthbertlib.types import (
 
 @runtime_checkable
 class BackwardSampling(Protocol):
-    """Protocol for resampling operations."""
+    """Protocol for backward sampling functions."""
 
     def __call__(
         self,
