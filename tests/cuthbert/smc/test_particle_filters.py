@@ -1,4 +1,5 @@
 from functools import partial
+
 import chex
 import jax
 import jax.numpy as jnp
