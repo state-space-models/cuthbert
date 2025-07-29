@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 from jax import Array, random, tree
 
-from cuthbert.smc.types import InitSample, PropagateSample, LogPotential
+from cuthbert.smc.types import InitSample, LogPotential, PropagateSample
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray

@@ -7,7 +7,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.inference import Inference
-from cuthbert.smc import particle_filter, marginal_particle_filter
+from cuthbert.smc import marginal_particle_filter, particle_filter
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter

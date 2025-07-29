@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from cuthbertlib.types import KeyArray, ArrayTreeLike, ArrayTree, ScalarArray
+from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
 class InitSample(Protocol):
