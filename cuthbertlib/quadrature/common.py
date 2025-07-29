@@ -1,9 +1,9 @@
-from typing import NamedTuple, Protocol, runtime_checkable, Self
+from typing import NamedTuple, Protocol, Self, runtime_checkable
 
-from cuthbertlib.types import Array, ArrayLike
 import jax.numpy as jnp
 
 from cuthbertlib.linalg import tria
+from cuthbertlib.types import Array, ArrayLike
 
 __all__ = ["SigmaPoints", "Quadrature"]
 

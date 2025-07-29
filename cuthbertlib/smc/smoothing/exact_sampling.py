@@ -1,11 +1,13 @@
-from jax import numpy as jnp, vmap, random
+import jax.tree
+from jax import numpy as jnp
+from jax import random, vmap
 from jax.scipy.special import logsumexp
 
 from cuthbertlib.types import (
-    ArrayLike,
     Array,
-    ArrayTreeLike,
+    ArrayLike,
     ArrayTree,
+    ArrayTreeLike,
     KeyArray,
     LogConditionalDensity,
 )
@@ -18,7 +20,7 @@ def log_weights_single(
     log_density: LogConditionalDensity,
 ) -> Array:
     """
-    Compute backward smoothing weights given a single sample from x0 with accompanying
+    Compute smoothing weight given a single sample from x0 with accompanying
     log weight, a single sample x1 and a log conditional density p(x1 | x0).
 
     Args:
@@ -28,25 +30,25 @@ def log_weights_single(
         log_density: The log density of x1 given x0.
 
     Returns:
-        The backward weight for sample x0 given a single sample x1.
+        The smoothing weight for sample x0 given a single sample x1.
     """
     return jnp.asarray(log_weight_x0) + log_density(x0, x1)
 
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
-    Compute backward smoothing weights given a collection of samples from x0 with
-    accompanying log weights, a single sample x1 and a log conditional density
-    p(x1 | x0).
+        Compute smoothing weights given a collection of samples from x0 with
+        accompanying log weights, a single sample x1 and a log conditional density
+    py    p(x1 | x0).
 
-    Args:
-        x0: Collection of previous states.
-        x1: The current state.
-        log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        Args:
+            x0_all: Collection of previous states.
+            x1: The current state.
+            log_weight_x0_all: Collection of log weights of the previous state.
+            log_density: The log density of x1 given x0.
 
-    Returns:
-        Log normalized backward weights for each sample x0 given single sample x1.
+        Returns:
+            Log normalized smoothing weights for each sample x0 given single sample x1.
     """
     backward_log_weights_all = vmap(
         lambda x0, log_weight_x0: log_weights_single(x0, x1, log_weight_x0, log_density)
@@ -63,7 +65,7 @@ def simulate_single(
     key, x0_all, x1, log_weight_x0_all, log_density
 ) -> tuple[ArrayTree, Array]:
     """
-    Sample a backward x0 given a collection of samples from x0 with accompanying
+    Sample a smoothed x0 given a collection of samples from x0 with accompanying
     log weights, a single sample x1 and a log conditional density p(x1 | x0).
 
     Args:
@@ -74,11 +76,11 @@ def simulate_single(
         log_density: The log density of x1 given x0.
 
     Returns:
-        A single sample x0 from the backward trajectory along with its index.
+        A single sample x0 from the smoothing trajectory along with its index.
     """
     backward_log_weights_all = log_weights(x0_all, x1, log_weight_x0_all, log_density)
     sampled_index = random.categorical(key, backward_log_weights_all)
-    return x0_all[sampled_index], sampled_index
+    return jax.tree.map(lambda z: z[sampled_index], x0_all), sampled_index
 
 
 def simulate(
@@ -87,7 +89,7 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
-) -> tuple[ArrayTreeLike, Array]:
+) -> tuple[ArrayTree, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
     pairs (x0, x1) from the smoothing distribution.
@@ -102,7 +104,8 @@ def simulate(
     Returns:
         A collection of x0 and their sampled indices.
     """
-    keys = random.split(key, x1_all.shape[0])
+    log_weight_x0_all = jnp.asarray(log_weight_x0_all)
+    keys = random.split(key, log_weight_x0_all.shape[0])
 
     return vmap(
         lambda k, x1: simulate_single(k, x0_all, x1, log_weight_x0_all, log_density)

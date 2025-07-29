@@ -1,6 +1,7 @@
-from cuthbertlib.linearize.log_density import linearize_log_density_given_chol_cov
-from cuthbertlib.linearize.log_density import linearize_log_density
+from cuthbertlib.linearize.log_density import (
+    linearize_log_density,
+    linearize_log_density_given_chol_cov,
+)
 from cuthbertlib.linearize.moments import linearize_moments
 from cuthbertlib.linearize.taylor import linearize_taylor
-
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt

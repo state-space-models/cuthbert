@@ -3,11 +3,11 @@ from typing import Callable
 import jax.numpy as jnp
 from jax import vmap
 from jax.scipy.linalg import cho_solve
-from cuthbertlib.types import Array, ArrayLike
-from cuthbertlib.linalg import tria
-from cuthbertlib.quadrature.common import SigmaPoints, Quadrature
-from cuthbertlib.quadrature.utils import cholesky_update_many
 
+from cuthbertlib.linalg import tria
+from cuthbertlib.quadrature.common import Quadrature, SigmaPoints
+from cuthbertlib.quadrature.utils import cholesky_update_many
+from cuthbertlib.types import Array, ArrayLike
 
 __all__ = ["conditional_moments", "functional"]
 

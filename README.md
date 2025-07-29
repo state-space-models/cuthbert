@@ -18,16 +18,16 @@ A JAX library for state-space model inference
 - Compose with [JAX ecosystem](#ecosystem) for extensive external tools.
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](/cuthbertlib/types.py).
 All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
-- Methods for filtering: $p(x_t \mid y_{1:t}, \theta)$.
-- Methods for smoothing: $p(x_{0:T} \mid y_{1:T}, \theta)$.
-- Methods for static parameter estimation: $p(\theta \mid y_{1:T})$
-or $\text{argmax} p(y_{1:T} \mid \theta)$.
-- This includes forward-backward/Baum-Welch, particle filtering/sequential Monte Carlo,
-Kalman filtering (+ extended/unscented/ensemble), expectation-maximization more!
+- Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
+- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$.
+- Methods for static parameter estimation: $p(\theta \mid y_{0:T})$
+or $\text{argmax} p(y_{0:T} \mid \theta)$.
+- This includes support for forward-backward/Baum-Welch, particle filtering/sequential Monte Carlo,
+Kalman filtering (+ extended/unscented/ensemble), expectation-maximization and more!
 
 ### Non-goals
 - Tools for defining models and distributions. `cuthbert` is not a probabilistic programming language (PPL).
-But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro), [`oryx`](https://github.com/microsoft/Oryx) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
+But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
 - ["SMC Samplers"](https://www.stats.ox.ac.uk/~doucet/delmoral_doucet_jasra_sequentialmontecarlosamplersJRSSB.pdf) which sample from a posterior
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 
@@ -37,9 +37,9 @@ distribution which is not (necessarily) a state-space model - [`blackjax` is gre
 
 The repository is structured as follows:
 
-- `cuthbert`: The main package with user-facing interface.
-- `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference.
-This package contains the building blocks that power the main `cuthbert` package.
+- `cuthbert`: The main package with unified interface for filtering and smoothing.
+- `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference,
+that represent the building blocks that power the main `cuthbert` package.
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
 - `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
@@ -64,8 +64,7 @@ mentioned [above](#non-goals).
     [Sequential Monte Carlo Methods in Practice](https://link.springer.com/book/10.1007/978-3-030-47845-2)
     are wonderful learning materials for state-space models and SMC.
     `cuthbert` is more focused on performance and composability with the JAX ecosystem.
-- Much of the code in `cuthbert` is built on work from [`sqrt-parallel-smoothers`](https://github.com/EEA-sensors/sqrt-parallel-smoothers), [`mocat`](https://github.com/SamDuffield/mocat), [`abile`](https://github.com/SamDuffield/abile)
-and [`bayesfilter`](https://github.com/hugohadfield/bayesfilter).
+- Much of the code in `cuthbert` is built on work from [`sqrt-parallel-smoothers`](https://github.com/EEA-sensors/sqrt-parallel-smoothers), [`mocat`](https://github.com/SamDuffield/mocat) and [`abile`](https://github.com/SamDuffield/abile).
 
 
 ## Contributing
@@ -90,7 +89,7 @@ cd cuthbert
 pip install -e .
 pre-commit install
 ```
-3. **Add your code. Add your tests.**  
+3. **Add your code. Add your tests. Update the docs.**  
 4. Make sure to run the linter, type checker, tests and check coverage:
 ```
 pre-commit run --all-files

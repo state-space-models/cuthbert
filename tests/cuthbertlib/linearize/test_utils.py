@@ -1,7 +1,7 @@
-import pytest
 import chex
-import numpy as np
 import jax
+import numpy as np
+import pytest
 from jax import numpy as jnp
 
 from cuthbertlib.linearize import symmetric_inv_sqrt

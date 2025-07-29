@@ -1,5 +1,3 @@
-from functools import partial
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -44,7 +42,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
         return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
 
     def log_potential(state_prev, state, model_inputs: int):
-        idx = model_inputs - 1
+        idx = model_inputs
         return logpdf(
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
@@ -190,7 +188,7 @@ class Test(chex.TestCase):
         key = random.key(0)
         num_time_steps = 5
 
-        # Run the bootstrap particle filter
+        # Run the particle filter
         model_inputs = jnp.empty(num_time_steps + 1)
         key, subkey = random.split(key)
         states = self.variant(filter, static_argnames=("inference", "parallel"))(

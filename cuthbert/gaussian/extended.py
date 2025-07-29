@@ -1,22 +1,24 @@
-from typing import NamedTuple, Protocol
 from functools import partial
-from jax import numpy as jnp, tree
+from typing import NamedTuple, Protocol
 
+from jax import numpy as jnp
+from jax import tree
+
+from cuthbert.gaussian.kalman import (
+    GetInitParams,
+    KalmanFilterState,
+    KalmanSmootherState,
+    convert_filter_to_smoother_state,
+    smoother_combine,
+)
+from cuthbert.inference import Filter, Smoother
+from cuthbertlib.kalman import filtering, smoothing
+from cuthbertlib.linearize import linearize_moments
 from cuthbertlib.types import (
     Array,
     ArrayTree,
     ArrayTreeLike,
     KeyArray,
-)
-from cuthbertlib.kalman import filtering, smoothing
-from cuthbertlib.linearize import linearize_moments
-from cuthbert.inference import Inference
-from cuthbert.gaussian.kalman import (
-    KalmanFilterState,
-    KalmanSmootherState,
-    GetInitParams,
-    smoother_combine,
-    convert_filter_to_smoother_state,
 )
 
 
@@ -66,11 +68,11 @@ class ExtendedKalmanFilterState(NamedTuple):
     model_inputs: ArrayTree
 
 
-def build(
+def build_filter(
     get_init_params: GetInitParams,
     get_dynamics_params: GetDynamicsExtendedParams,
     get_observation_params: GetObservationExtendedParams,
-) -> Inference:
+) -> Filter:
     """
     Build extended Kalman inference object for conditionally Gaussian SSMs.
 
@@ -87,27 +89,50 @@ def build(
         Inference object for extended Kalman filter and smoother.
             Filter not suitable for associative scan, smoother suitable.
     """
-    return Inference(
-        init_prepare=partial(init_prepare, get_init_params=get_init_params),
+    return Filter(
+        init_prepare=partial(
+            init_prepare,
+            get_init_params=get_init_params,
+            get_observation_params=get_observation_params,
+        ),
         filter_prepare=filter_prepare,
         filter_combine=partial(
             filter_combine,
             get_dynamics_params=get_dynamics_params,
             get_observation_params=get_observation_params,
         ),
+        associative=False,
+    )
+
+
+def build_smoother(
+    get_dynamics_params: GetDynamicsExtendedParams,
+) -> Smoother:
+    """
+    Build extended Kalman inference object for conditionally Gaussian SSMs.
+
+    Args:
+        get_dynamics_params: Function to get dynamics conditional mean and
+            (generalised) Cholesky covariance from linearization point and model inputs.
+
+    Returns:
+        Inference object for extended Kalman filter and smoother.
+            Filter not suitable for associative scan, smoother suitable.
+    """
+    return Smoother(
         smoother_prepare=partial(
             smoother_prepare, get_dynamics_params=get_dynamics_params
         ),
         smoother_combine=smoother_combine,
         convert_filter_to_smoother_state=convert_filter_to_smoother_state,
-        associative_filter=False,
-        associative_smoother=True,
+        associative=True,
     )
 
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
+    get_observation_params: GetObservationExtendedParams,
     key: KeyArray | None = None,
 ) -> ExtendedKalmanFilterState:
     """
@@ -116,6 +141,9 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
+        get_observation_params: Function to get observation conditional mean,
+            (generalised) Cholesky covariance and observation from linearization point
+            and model inputs.
         key: JAX random key - not used.
 
     Returns:
@@ -124,10 +152,19 @@ def init_prepare(
             and log_likelihood.
     """
     m0, chol_P0 = get_init_params(model_inputs)
+
+    def observation_mean_and_chol_cov_and_y(x):
+        return get_observation_params(x, model_inputs)
+
+    H, d, chol_R, y = linearize_moments(
+        observation_mean_and_chol_cov_and_y, m0, has_aux=True
+    )
+    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+
     return ExtendedKalmanFilterState(
-        mean=m0,
-        chol_cov=chol_P0,
-        log_likelihood=jnp.array(0.0),
+        mean=m,
+        chol_cov=chol_P,
+        log_likelihood=ell,
         model_inputs=tree.map(lambda x: jnp.asarray(x), model_inputs),
     )
 

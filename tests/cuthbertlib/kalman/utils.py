@@ -1,7 +1,8 @@
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 from jax import Array, random
-from functools import partial
 
 from cuthbertlib.types import KeyArray
 
@@ -11,9 +12,14 @@ def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
     """Generate a linear-Gaussian state-space model with a set of observations."""
     key = random.key(seed)
 
-    key, init_key, sample_key = random.split(key, 3)
+    key, init_key, sample_key, obs_model_key, obs_key = random.split(key, 5)
     m0, chol_P0 = generate_init_model(init_key, x_dim)
     x0 = m0 + chol_P0 @ random.normal(sample_key, (x_dim,))
+
+    # Generate an observation for time 0
+    H0, d0, chol_R0 = generate_obs_model(obs_model_key, x_dim, y_dim)
+    obs_noise = chol_R0 @ random.normal(obs_key, (y_dim,))
+    y0 = H0 @ x0 + d0 + obs_noise
 
     def body(_x, _key):
         trans_model_key, trans_key, obs_model_key, obs_key = random.split(key, 4)
@@ -30,6 +36,13 @@ def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
 
     scan_keys = random.split(key, num_time_steps)
     _, (Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys) = jax.lax.scan(body, x0, scan_keys)
+
+    # Prepend the observation model parameters and observation for t=0
+    Hs, ds, chol_Rs, ys = jax.tree.map(
+        lambda x, xs: jnp.concatenate([x[None], xs]),
+        (H0, d0, chol_R0, y0),
+        (Hs, ds, chol_Rs, ys),
+    )
 
     return m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
 

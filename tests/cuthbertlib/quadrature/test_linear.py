@@ -7,8 +7,8 @@ import jax.numpy as jnp
 import numpy.testing as npt
 from absl.testing import parameterized
 
-from cuthbertlib.quadrature import cubature, unscented, gauss_hermite
-from cuthbertlib.quadrature.linearize import functional, conditional_moments
+from cuthbertlib.quadrature import cubature, gauss_hermite, unscented
+from cuthbertlib.quadrature.linearize import conditional_moments, functional
 
 QUADRATURES = [
     {"name": "cubature", "params": []},

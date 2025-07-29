@@ -8,7 +8,7 @@ from jax import Array
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
-from cuthbert.inference import Inference
+from cuthbert.inference import Filter, Smoother
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
@@ -25,12 +25,27 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     """The standard Kalman filter."""
     # Use for loop instead of jax.lax.scan because std_update supports smaller
     # dimensional updates via NaNs in y
-    ms = [m0]
-    Ps = [P0]
+    ms = []
+    Ps = []
     ells_incrs = []
 
+    # Handle observation at time 0
+    H0, d0, R0, y0 = Hs[0], ds[0], Rs[0], ys[0]
+    m, P, ell_incr = std_update(m0, P0, H0, d0, R0, y0)
+    ms.append(m)
+    Ps.append(P)
+    ells_incrs.append(ell_incr)
+
     for i in range(len(Fs)):
-        F, c, Q, H, d, R, y = Fs[i], cs[i], Qs[i], Hs[i], ds[i], Rs[i], ys[i]
+        F, c, Q, H, d, R, y = (
+            Fs[i],
+            cs[i],
+            Qs[i],
+            Hs[i + 1],
+            ds[i + 1],
+            Rs[i + 1],
+            ys[i + 1],
+        )
         pred_m, pred_P = std_predict(ms[-1], Ps[-1], F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
         ms.append(m)
@@ -53,8 +68,8 @@ def load_kalman_inference(
     ds: Array,
     chol_Rs: Array,
     ys: Array,
-) -> tuple[Inference, Array]:
-    """Builds Kalman inference object and model_inputs for a linear-Gaussian SSM."""
+) -> tuple[Filter, Smoother, Array]:
+    """Builds Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
@@ -64,17 +79,18 @@ def load_kalman_inference(
 
     def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
         return (
-            Hs[model_inputs - 1],
-            ds[model_inputs - 1],
-            chol_Rs[model_inputs - 1],
-            ys[model_inputs - 1],
+            Hs[model_inputs],
+            ds[model_inputs],
+            chol_Rs[model_inputs],
+            ys[model_inputs],
         )
 
-    inference = kalman.build(
+    filter = kalman.build_filter(
         get_init_params, get_dynamics_params, get_observation_params
     )
-    model_inputs = jnp.arange(len(ys) + 1)
-    return inference, model_inputs
+    smoother = kalman.build_smoother(get_dynamics_params)
+    model_inputs = jnp.arange(len(ys))
+    return filter, smoother, model_inputs
 
 
 seeds = [0, 42, 99, 123, 456]
@@ -96,12 +112,12 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         # Set an observation to nan
         ys = ys.at[1, 0].set(jnp.nan)
 
-    inference, model_inputs = load_kalman_inference(
+    kalman_filter, _, model_inputs = load_kalman_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
     # Run sequential sqrt filter
-    seq_states = filter(inference, model_inputs, parallel=False)
+    seq_states = filter(kalman_filter, model_inputs, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
@@ -109,7 +125,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run parallel sqrt filter
-    par_states = filter(inference, model_inputs, parallel=True)
+    par_states = filter(kalman_filter, model_inputs, parallel=True)
     par_means, par_chol_covs, par_ells = (
         par_states.mean,
         par_states.chol_cov,
@@ -127,8 +143,8 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ells[1:]),
-        (par_means, par_covs, par_ells[1:]),
+        (seq_means, seq_covs, seq_ells),
+        (par_means, par_covs, par_ells),
         (des_means, des_covs, des_ells),
         rtol=2e-10,
     )
@@ -141,12 +157,12 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         seed, x_dim, y_dim, num_time_steps
     )
 
-    inference, model_inputs = load_kalman_inference(
+    kalman_filter, kalman_smoother, model_inputs = load_kalman_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    filt_states = filter(inference, model_inputs)
+    filt_states = filter(kalman_filter, model_inputs)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
@@ -155,14 +171,18 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the sequential and parallel versions of the square root smoother.
-    seq_smoother_states = smoother(inference, filt_states, model_inputs, parallel=False)
+    seq_smoother_states = smoother(
+        kalman_smoother, filt_states, model_inputs, parallel=False
+    )
     seq_means, seq_chol_covs, seq_gains = (
         seq_smoother_states.mean,
         seq_smoother_states.chol_cov,
         seq_smoother_states.gain,
     )
 
-    par_smoother_states = smoother(inference, filt_states, model_inputs, parallel=True)
+    par_smoother_states = smoother(
+        kalman_smoother, filt_states, model_inputs, parallel=True
+    )
     par_means, par_chol_covs, par_gains = (
         par_smoother_states.mean,
         par_smoother_states.chol_cov,

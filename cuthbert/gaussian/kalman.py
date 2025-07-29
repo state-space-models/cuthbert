@@ -3,7 +3,7 @@ from typing import NamedTuple, Protocol
 
 from jax import numpy as jnp
 
-from cuthbert.inference import Inference
+from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
@@ -57,13 +57,13 @@ class KalmanSmootherState(NamedTuple):
         return self.elem.D
 
 
-def build(
+def build_filter(
     get_init_params: GetInitParams,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
-) -> Inference:
+) -> Filter:
     """
-    Build exact Kalman inference object for linear Gaussian SSMs.
+    Build exact Kalman filter object for linear Gaussian SSMs.
 
     Args:
         get_init_params: Function to get m0, chol_P0 to initialize filter state,
@@ -76,30 +76,52 @@ def build(
             p(y_t | x_t) = N(H @ x_t + d, chol_R @ chol_R^T).
 
     Returns:
-        Inference object for exact Kalman filter and smoother.
-            Suitable for associative scan.
+        Filter object for exact Kalman filter. Suitable for associative scan.
     """
-    return Inference(
-        init_prepare=partial(init_prepare, get_init_params=get_init_params),
+    return Filter(
+        init_prepare=partial(
+            init_prepare,
+            get_init_params=get_init_params,
+            get_observation_params=get_observation_params,
+        ),
         filter_prepare=partial(
             filter_prepare,
             get_dynamics_params=get_dynamics_params,
             get_observation_params=get_observation_params,
         ),
         filter_combine=filter_combine,
+        associative=True,
+    )
+
+
+def build_smoother(
+    get_dynamics_params: GetDynamicsParams,
+) -> Smoother:
+    """
+    Build exact Kalman smoother object for linear Gaussian SSMs.
+
+    Args:
+        get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q
+            given model inputs sufficient to define
+            p(x_t | x_{t-1}) = N(F @ x_{t-1} + c, chol_Q @ chol_Q^T).
+
+    Returns:
+        Smoother object for exact Kalman smoother. Suitable for associative scan.
+    """
+    return Smoother(
+        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
         smoother_prepare=partial(
             smoother_prepare, get_dynamics_params=get_dynamics_params
         ),
         smoother_combine=smoother_combine,
-        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
-        associative_filter=True,
-        associative_smoother=True,
+        associative=True,
     )
 
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
+    get_observation_params: GetObservationParams,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """
@@ -108,6 +130,7 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
+        get_observation_params: Function to get observation parameters, H, d, chol_R, y.
         key: JAX random key - not used.
 
     Returns:
@@ -115,13 +138,16 @@ def init_prepare(
             Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
     m0, chol_P0 = get_init_params(model_inputs)
+    H, d, chol_R, y = get_observation_params(model_inputs)
+
+    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
     elem = filtering.FilterScanElement(
-        A=jnp.zeros_like(chol_P0),
-        b=m0,
-        U=chol_P0,
-        eta=jnp.zeros_like(m0),
-        Z=jnp.zeros_like(chol_P0),
-        ell=jnp.array(0.0),
+        A=jnp.zeros_like(chol_P),
+        b=m,
+        U=chol_P,
+        eta=jnp.zeros_like(m),
+        Z=jnp.zeros_like(chol_P),
+        ell=ell,
     )
     return KalmanFilterState(elem=elem)
 
