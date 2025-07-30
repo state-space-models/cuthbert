@@ -1,0 +1,4 @@
+/* Reduce whitespace around KaTeX block equations */
+.katex-display {
+  margin: -1em 0 !important;
+}
