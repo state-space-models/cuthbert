@@ -28,6 +28,9 @@ test = [
     "pre-commit", "ruff", "pyright",  # linting etc
     "pytest", "pytest-xdist",  # testing
 ]
+doc = [
+    "mkdocs-material>=9.6.16",
+]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]

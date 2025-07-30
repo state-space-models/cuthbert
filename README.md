@@ -19,7 +19,7 @@ A JAX library for state-space model inference
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](/cuthbertlib/types.py).
 All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
 - Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
-- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$.
+- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$ or $p(x_{t} \mid y_{0:T}, \theta)$.
 - Methods for static parameter estimation: $p(\theta \mid y_{0:T})$
 or $\text{argmax} p(y_{0:T} \mid \theta)$.
 - This includes support for forward-backward/Baum-Welch, particle filtering/sequential Monte Carlo,
