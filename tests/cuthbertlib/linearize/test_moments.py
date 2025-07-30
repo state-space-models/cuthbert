@@ -13,8 +13,7 @@ from cuthbertlib.linearize.utils import tria
 @pytest.fixture(scope="session", autouse=True)
 def config():
     jax.config.update("jax_enable_x64", True)
-    yield
-    jax.config.update("jax_enable_x64", False)
+    jax.config.update("jax_debug_nans", False)
 
 
 def linear_function(x, a, c):
