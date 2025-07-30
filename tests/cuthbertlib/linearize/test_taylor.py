@@ -12,7 +12,8 @@ from cuthbertlib.linearize import linearize_taylor
 @pytest.fixture(scope="session", autouse=True)
 def config():
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_debug_nans", False)
+    yield
+    jax.config.update("jax_enable_x64", False)
 
 
 def quadratic_log_potential(x, m, L):
