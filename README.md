@@ -1,5 +1,6 @@
+<!--intro-start-->
 <div align="center">
-<img src="docs/cuthbert.png" alt="logo"></img>
+<img src="docs/assets/cuthbert.png" alt="logo"></img>
 </div>
 
 A JAX library for state-space model inference
@@ -11,15 +12,16 @@ A JAX library for state-space model inference
 > has no formal connection to Aldi, M&S, or any food products (notwithstanding the coffee drunk during its writeup).
 > `cuthbert` is simply a fun name for this state-space model library and should not be interpreted as an
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
+<!--intro-end-->
 
+<!--goals-start-->
 ### Goals
-
 - Simple, flexible and performant interface for state-space model inference.
 - Compose with [JAX ecosystem](#ecosystem) for extensive external tools.
-- Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](/cuthbertlib/types.py).
+- Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](https://github.com/state-space-models/cuthbert/blob/main/cuthbertlib/types.py).
 All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
 - Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
-- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$.
+- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$ or $p(x_{t} \mid y_{0:T}, \theta)$.
 - Methods for static parameter estimation: $p(\theta \mid y_{0:T})$
 or $\text{argmax} p(y_{0:T} \mid \theta)$.
 - This includes support for forward-backward/Baum-Welch, particle filtering/sequential Monte Carlo,
@@ -30,6 +32,7 @@ Kalman filtering (+ extended/unscented/ensemble), expectation-maximization and m
 But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
 - ["SMC Samplers"](https://www.stats.ox.ac.uk/~doucet/delmoral_doucet_jasra_sequentialmontecarlosamplersJRSSB.pdf) which sample from a posterior
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
+<!--goals-end-->
 
 
 
@@ -43,9 +46,8 @@ that represent the building blocks that power the main `cuthbert` package.
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
 - `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
-
+<!--ecosystem-start-->
 ## Ecosystem
-
 - `cuthbert` is built on top of [`jax`](https://github.com/google/jax) and composes
 easily with other JAX packages, e.g. [`optax`](https://github.com/google-deepmind/optax)
 for optimization, [`flax`](https://github.com/google/flax) for neural networks, and
@@ -65,41 +67,10 @@ mentioned [above](#non-goals).
     are wonderful learning materials for state-space models and SMC.
     `cuthbert` is more focused on performance and composability with the JAX ecosystem.
 - Much of the code in `cuthbert` is built on work from [`sqrt-parallel-smoothers`](https://github.com/EEA-sensors/sqrt-parallel-smoothers), [`mocat`](https://github.com/SamDuffield/mocat) and [`abile`](https://github.com/SamDuffield/abile).
-
+<!--ecosystem-end-->
 
 ## Contributing
 
-We love to chat about state-space-models! If you do too, you can get involved in the following ways:
-
-- [Open an issue](https://github.com/state-space-models/cuthbert/issues) if you have a question, suggestion or spotted a bug or specific code that could be improved.
-- [Start or join a discussion](https://github.com/state-space-models/cuthbert/discussions) for more general conversation regarding `cuthbert` code structure and design.
-- [Open a pull request](https://github.com/state-space-models/cuthbert/pulls) to add code yourself (feel free to make it a draft at an early stage for feedback).
-- [Join us on discord](https://discord.gg/EWTjkRjY) for everything else; including memes, research ideas and meetups.
-
-
-A pull request can be opened by following these steps:
-
-1. Fork the repo from GitHub and clone it locally:
-```
-git clone git@github.com/YourUserName/cuthbert.git
-cd cuthbert
-```
-2. Install the cloned version and pre-commit hooks:
-```
-pip install -e .
-pre-commit install
-```
-3. **Add your code. Add your tests. Update the docs.**  
-4. Make sure to run the linter, type checker, tests and check coverage:
-```
-pre-commit run --all-files
-python -m pytest --cov=cuthbert --cov-report term-missing
-```
->VS Code users can use the [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
-and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance)
-(with Type Checking Mode: standard)
-extensions for assistance with linting and type checking during development.
-5. Commit your changes and push your new branch to your fork.
-6. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
-
+We're always looking for contributions!
+Check out the [contributing guide](CONTRIBUTING.md) for more information.
 

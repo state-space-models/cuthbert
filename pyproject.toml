@@ -28,6 +28,7 @@ test = [
     "pre-commit", "ruff", "pyright",  # linting etc
     "pytest", "pytest-xdist",  # testing
 ]
+docs = ["mkdocs-material", "mkdocs-include-markdown-plugin"]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
