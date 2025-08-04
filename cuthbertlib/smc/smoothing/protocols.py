@@ -16,10 +16,10 @@ class BackwardSampling(Protocol):
 
     def __call__(
         self,
-        key: KeyArray | None,
+        key: KeyArray,
         x0_all: ArrayTreeLike,
         x1_all: ArrayTreeLike,
         log_weight_x0_all: ArrayLike,
-        log_potential: LogConditionalDensity,
-        x1_ancestors: ArrayLike | None = None,
+        log_density: LogConditionalDensity,
+        x1_ancestors: ArrayLike,
     ) -> tuple[ArrayTree, Array]: ...

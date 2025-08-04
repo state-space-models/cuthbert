@@ -27,7 +27,7 @@ def log_weights_single(
         x0: The previous state.
         x1: The current state.
         log_weight_x0: The log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        log_density: The log density function of x1 given x0.
 
     Returns:
         The smoothing weight for sample x0 given a single sample x1.
@@ -37,18 +37,17 @@ def log_weights_single(
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
     """
-        Compute smoothing weights given a collection of samples from x0 with
-        accompanying log weights, a single sample x1 and a log conditional density
-    py    p(x1 | x0).
+    Compute smoothing weights given a collection of samples from x0 with
+    accompanying log weights, a single sample x1 and a log conditional density p(x1 | x0).
 
-        Args:
-            x0_all: Collection of previous states.
-            x1: The current state.
-            log_weight_x0_all: Collection of log weights of the previous state.
-            log_density: The log density of x1 given x0.
+    Args:
+        x0_all: Collection of previous states.
+        x1: The current state.
+        log_weight_x0_all: Collection of log weights of the previous state.
+        log_density: The log density function of x1 given x0.
 
-        Returns:
-            Log normalized smoothing weights for each sample x0 given single sample x1.
+    Returns:
+        Log normalized smoothing weights for each sample x0 given single sample x1.
     """
     backward_log_weights_all = vmap(
         lambda x0, log_weight_x0: log_weights_single(x0, x1, log_weight_x0, log_density)
@@ -73,7 +72,7 @@ def simulate_single(
         x0_all: Collection of previous states.
         x1: The current state.
         log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        log_density: The log density function of x1 given x0.
 
     Returns:
         A single sample x0 from the smoothing trajectory along with its index.
@@ -89,7 +88,7 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
-    x_1_ancestors: ArrayLike | None = None,
+    x_1_ancestors: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
     Sample a collection of x0 that combine with the provided x1 to give a collection of
@@ -100,7 +99,7 @@ def simulate(
         x0_all: Collection of previous states.
         x1_all: Collection of current states.
         log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        log_density: The log density function of x1 given x0.
         x_1_ancestors: The ancestors of x1 in the genealogy tracking (not used in this function).
 
     Returns:

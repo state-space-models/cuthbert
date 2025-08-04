@@ -31,7 +31,7 @@ def simulate(
         x0_all: Collection of previous states.
         x1_all: Collection of current states.
         log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density of x1 given x0.
+        log_density: The log density function of x1 given x0.
         x1_ancestors: The ancestors of x1 in the genealogy tracking
         n_steps: number of MCMC steps
 

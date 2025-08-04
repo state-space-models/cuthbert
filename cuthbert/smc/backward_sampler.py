@@ -13,7 +13,7 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 class ParticleSmootherState(NamedTuple):
-    key: KeyArray | None
+    key: KeyArray
     particles: ArrayTree
     ancestor_indices: Array
     model_inputs: ArrayTreeLike
@@ -87,7 +87,7 @@ def convert_filter_to_smoother_state(
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
 
     return ParticleSmootherState(
-        key=key,
+        key=key,  # pyright: ignore
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
         model_inputs=filter_state.model_inputs,
@@ -105,7 +105,7 @@ def smoother_prepare(
 
     Args:
         filter_state: Particle filter state from the previous time step.
-        model_inputs: Model inputs for the current time step if None, uses model inputs from filter state.
+        model_inputs: Model inputs for the current time step. If None, uses model inputs from filter state.
         key: JAX random key.
 
     Returns:
@@ -150,7 +150,7 @@ def smoother_combine(
         x0_all=state_1.particles,
         x1_all=state_2.particles,
         log_weight_x0_all=state_1.log_weights,
-        log_potential=lambda s1, s2: log_potential(s1, s2, state_2.model_inputs),
+        log_density=lambda s1, s2: log_potential(s1, s2, state_2.model_inputs),
         x1_ancestors=state_2.ancestor_indices,
     )
 

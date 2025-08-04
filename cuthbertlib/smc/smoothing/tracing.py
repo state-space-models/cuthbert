@@ -16,7 +16,7 @@ def simulate(
     x0_all: ArrayTreeLike,
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
-    log_potential: LogConditionalDensity,
+    log_density: LogConditionalDensity,
     x1_ancestors: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
@@ -29,7 +29,7 @@ def simulate(
         x0_all: Collection of previous states.
         x1_all: Collection of current states. Not used.
         log_weight_x0_all: Collection of log weights of the previous state. Not used.
-        log_potential: The log density function of x1 given x0. Not used.
+        log_density: The log density function of x1 given x0. Not used.
         x1_ancestors: The ancestors of x1.
 
     Returns:
