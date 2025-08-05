@@ -55,13 +55,11 @@ def test_backward(seed, x_dim, N, method):
     # We may want to make this configuration more professional in the future, when we add more methods.
     match method:
         case "tracing":
-            backward_method = partial(
-                tracing, x1_ancestors=jnp.arange(N)
-            )  # bit of a weird test.
+            backward_method = tracing  # bit of a weird test.
         case "exact":
             backward_method = exact
         case "mcmc":
-            backward_method = partial(mcmc, x1_ancestors=jnp.arange(N), n_steps=10)
+            backward_method = partial(mcmc, n_steps=10)
         case _:
             raise ValueError(f"Unknown method: {method}")
 
@@ -71,6 +69,7 @@ def test_backward(seed, x_dim, N, method):
         x1s,
         jnp.zeros(N),
         log_conditional_density,
+        jnp.arange(N),
     )
 
     # Check indices are correct
