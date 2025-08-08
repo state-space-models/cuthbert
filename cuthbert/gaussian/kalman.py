@@ -1,7 +1,7 @@
 from functools import partial
 from typing import NamedTuple, Protocol
 
-from jax import numpy as jnp
+from jax import numpy as jnp, tree
 
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
@@ -139,6 +139,7 @@ def init_prepare(
         State for the Kalman filter.
             Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
 
@@ -172,6 +173,7 @@ def filter_prepare(
     Returns:
         Prepared state for Kalman filter.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
     elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
@@ -224,6 +226,7 @@ def smoother_prepare(
     Returns:
         Prepared state for the Kalman smoother.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov

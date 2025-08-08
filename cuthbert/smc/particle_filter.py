@@ -92,6 +92,7 @@ def init_prepare(
     Raises:
         ValueError: If `key` is None.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
@@ -139,6 +140,7 @@ def filter_prepare(
     Raises:
         ValueError: If `key` is None.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
     dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
