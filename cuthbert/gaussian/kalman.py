@@ -1,7 +1,8 @@
 from functools import partial
 from typing import NamedTuple, Protocol
 
-from jax import numpy as jnp, tree
+from jax import numpy as jnp
+from jax import tree
 
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
