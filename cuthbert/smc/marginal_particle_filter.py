@@ -17,7 +17,7 @@ class MarginalParticleFilterState(NamedTuple):
     key: KeyArray
     particles: ArrayTree
     log_weights: Array
-    model_inputs: ArrayTreeLike
+    model_inputs: ArrayTree
     log_likelihood: ScalarArray
 
 
