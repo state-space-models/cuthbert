@@ -17,7 +17,7 @@ class ParticleFilterState(NamedTuple):
     particles: ArrayTree
     log_weights: Array
     ancestor_indices: Array
-    model_inputs: ArrayTreeLike
+    model_inputs: ArrayTree
     log_likelihood: ScalarArray
 
 
