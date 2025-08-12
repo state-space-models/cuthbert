@@ -47,7 +47,7 @@ def simulate(
     )
     n_samples = x1_ancestors.shape[0]
 
-    keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2, -1))
+    keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2))
 
     def body(carry, keys_t):
         # IMH proposal
@@ -60,7 +60,7 @@ def simulate(
 
         log_alpha = prop_log_p - idx_log_p
 
-        lu = jnp.log(jax.random.uniform(key_prop, (n_samples,)))
+        lu = jnp.log(random.uniform(key_acc, (n_samples,)))
         acc = lu < log_alpha
 
         idx: Array = jnp.where(acc, prop_idx, idx)

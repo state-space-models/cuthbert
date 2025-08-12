@@ -43,15 +43,15 @@ def smoother(
     if key is None:
         # This will throw error if used as a key, which is desired
         # (albeit not a useful error, we could improve this)
-        prepare_keys = jnp.empty(T)
+        prepare_keys = jnp.empty(T + 1)
     else:
-        prepare_keys = random.split(key, T)
+        prepare_keys = random.split(key, T + 1)
 
     final_filter_state = tree.map(lambda x: x[-1], filter_states)
     other_filter_states = tree.map(lambda x: x[:-1], filter_states)
 
     final_smoother_state = smoother_obj.convert_filter_to_smoother_state(
-        final_filter_state
+        final_filter_state, key=prepare_keys[0]
     )
 
     # Model inputs for dynamics distribution from t to t+1 is stored
@@ -61,7 +61,7 @@ def smoother(
     if parallel:
         prep_states = vmap(
             lambda fs, inp, k: smoother_obj.smoother_prepare(fs, inp, key=k)
-        )(other_filter_states, other_model_inputs, prepare_keys)
+        )(other_filter_states, other_model_inputs, prepare_keys[1:])
         prep_states = append_tree(prep_states, final_smoother_state)
 
         states = associative_scan(
@@ -81,7 +81,7 @@ def smoother(
         _, states = scan(
             body,
             final_smoother_state,
-            (other_filter_states, other_model_inputs, prepare_keys),
+            (other_filter_states, other_model_inputs, prepare_keys[1:]),
             reverse=True,
         )
 

@@ -1,4 +1,4 @@
-import jax.tree
+import jax
 from jax import numpy as jnp
 from jax import random, vmap
 from jax.scipy.special import logsumexp
@@ -106,7 +106,8 @@ def simulate(
         A collection of x0 and their sampled indices.
     """
     log_weight_x0_all = jnp.asarray(log_weight_x0_all)
-    keys = random.split(key, log_weight_x0_all.shape[0])
+    n_smoother_particles = jax.tree.leaves(x1_all)[0].shape[0]
+    keys = random.split(key, n_smoother_particles)
 
     return vmap(
         lambda k, x1: simulate_single(k, x0_all, x1, log_weight_x0_all, log_density)

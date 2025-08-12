@@ -154,7 +154,7 @@ def smoother_combine(
         x1_ancestors=state_2.ancestor_indices,
     )
 
-    n_particles = new_particles_1.n_particles
+    n_particles = len(ancestors_1)
     log_weights = -jnp.log(n_particles) * jnp.ones(n_particles)
     new_state = ParticleSmootherState(
         key=state_1.key,

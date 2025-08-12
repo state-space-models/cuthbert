@@ -40,7 +40,7 @@ def test_backward(seed, x_dim, N, method):
     des_m0, des_P0 = des_smooth_ms[0], des_smooth_Ps[0]
 
     # Sample filter particles
-    key = jax.random.PRNGKey(seed)
+    key = jax.random.key(seed)
     x0_key, x1_key, sim_key = jax.random.split(key, 3)
     x0s = jax.vmap(lambda z: m0 + chol_P0 @ z)(jax.random.normal(x0_key, (N, x_dim)))
     x1s = jax.vmap(lambda z: m1 + chol_P1 @ z)(jax.random.normal(x1_key, (N, x_dim)))
