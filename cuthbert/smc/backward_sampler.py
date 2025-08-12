@@ -1,5 +1,5 @@
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import jax
 import jax.numpy as jnp
@@ -87,7 +87,7 @@ def convert_filter_to_smoother_state(
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
 
     return ParticleSmootherState(
-        key=key,  # pyright: ignore
+        key=cast(KeyArray, key),
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
         model_inputs=filter_state.model_inputs,
