@@ -20,7 +20,7 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
-    x1_ancestors: ArrayLike,
+    x1_ancestor_indices: ArrayLike,
     n_steps: int,
 ) -> tuple[ArrayTree, Array]:
     """
@@ -32,7 +32,7 @@ def simulate(
         x1_all: Collection of current states.
         log_weight_x0_all: Collection of log weights of the previous state.
         log_density: The log density function of x1 given x0.
-        x1_ancestors: The ancestors of x1 in the genealogy tracking
+        x1_ancestor_indices: The ancestor indices of x1.
         n_steps: number of MCMC steps
 
     Returns:
@@ -42,10 +42,10 @@ def simulate(
         https://arxiv.org/abs/2207.00976
     """
     key, subkey = random.split(key)
-    x0_init, x1_ancestors = ancestor_tracing_simulate(
-        subkey, x0_all, x1_all, log_weight_x0_all, log_density, x1_ancestors
+    x0_init, x1_ancestor_indices = ancestor_tracing_simulate(
+        subkey, x0_all, x1_all, log_weight_x0_all, log_density, x1_ancestor_indices
     )
-    n_samples = x1_ancestors.shape[0]
+    n_samples = x1_ancestor_indices.shape[0]
 
     keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2))
 
@@ -68,8 +68,8 @@ def simulate(
         idx_log_p: Array = jnp.where(acc, prop_log_p, idx_log_p)
         return (idx, x0_res, idx_log_p), None
 
-    x0_init = jax.tree.map(lambda z: z[x1_ancestors], x0_all)
+    x0_init = jax.tree.map(lambda z: z[x1_ancestor_indices], x0_all)
     init_log_p = jax.vmap(log_density)(x1_all, x0_init)
-    init = (x1_ancestors, x0_init, init_log_p)
+    init = (x1_ancestor_indices, x0_init, init_log_p)
     (out_index, out_samples, _), _ = jax.lax.scan(body, init, keys)
     return out_samples, out_index

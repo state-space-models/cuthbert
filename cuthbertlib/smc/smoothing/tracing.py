@@ -17,7 +17,7 @@ def simulate(
     x1_all: ArrayTreeLike,
     log_weight_x0_all: ArrayLike,
     log_density: LogConditionalDensity,
-    x1_ancestors: ArrayLike,
+    x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
     An implementation of the ancestor tracing algorithm for smoothing in SMC.
@@ -30,7 +30,7 @@ def simulate(
         x1_all: Collection of current states. Not used.
         log_weight_x0_all: Collection of log weights of the previous state. Not used.
         log_density: The log density function of x1 given x0. Not used.
-        x1_ancestors: The ancestors of x1.
+        x1_ancestor_indices: The ancestor indices of x1.
 
     Returns:
         A collection of x0 and their sampled indices.
@@ -38,6 +38,6 @@ def simulate(
     References:
         https://arxiv.org/abs/2207.00976
     """
-    x1_ancestors = jnp.asarray(x1_ancestors)
-    x0 = jax.tree.map(lambda z: z[x1_ancestors], x0_all)
-    return x0, x1_ancestors
+    x1_ancestor_indices = jnp.asarray(x1_ancestor_indices)
+    x0 = jax.tree.map(lambda z: z[x1_ancestor_indices], x0_all)
+    return x0, x1_ancestor_indices

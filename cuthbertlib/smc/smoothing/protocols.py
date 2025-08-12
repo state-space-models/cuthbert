@@ -21,5 +21,5 @@ class BackwardSampling(Protocol):
         x1_all: ArrayTreeLike,
         log_weight_x0_all: ArrayLike,
         log_density: LogConditionalDensity,
-        x1_ancestors: ArrayLike,
+        x1_ancestor_indices: ArrayLike,
     ) -> tuple[ArrayTree, Array]: ...

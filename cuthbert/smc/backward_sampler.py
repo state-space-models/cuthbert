@@ -151,7 +151,7 @@ def smoother_combine(
         x1_all=state_2.particles,
         log_weight_x0_all=state_1.log_weights,
         log_density=lambda s1, s2: log_potential(s1, s2, state_2.model_inputs),
-        x1_ancestors=state_2.ancestor_indices,
+        x1_ancestor_indices=state_2.ancestor_indices,
     )
 
     n_particles = len(ancestors_1)
