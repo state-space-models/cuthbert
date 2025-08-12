@@ -41,7 +41,7 @@ def build_smoother(
         n_smoother_particles: Number of samples to draw from the backward sampling algorithm.
 
     Returns:
-        Smoother object.
+        Particle smoother object.
     """
     return Smoother(
         convert_filter_to_smoother_state=partial(
