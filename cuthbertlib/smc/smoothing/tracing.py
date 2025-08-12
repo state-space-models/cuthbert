@@ -20,7 +20,7 @@ def simulate(
     x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
-    An implementation of the ancestor tracing algorithm for smoothing in SMC.
+    An implementation of the ancestor/genealogy tracing algorithm for smoothing in SMC.
 
     Some arguments are included for protocol compatibility but not used in this implementation.
 

@@ -91,7 +91,9 @@ def simulate(
     x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
-    Sample a collection of x0 that combine with the provided x1 to give a collection of
+    An implementation of the exact backward sampling algorithm for smoothing in SMC.
+
+    Samples a collection of x0 that combine with the provided x1 to give a collection of
     pairs (x0, x1) from the smoothing distribution.
 
     Args:
