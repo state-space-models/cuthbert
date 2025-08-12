@@ -151,6 +151,7 @@ def init_prepare(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
 
     def observation_mean_and_chol_cov_and_y(x):
@@ -183,11 +184,12 @@ def filter_prepare(
     Returns:
         Prepared state for extended Kalman filter.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     return ExtendedKalmanFilterState(
         mean=None,
         chol_cov=None,
         log_likelihood=jnp.array(0.0),
-        model_inputs=tree.map(lambda x: jnp.asarray(x), model_inputs),
+        model_inputs=model_inputs,
     )
 
 
@@ -269,6 +271,7 @@ def smoother_prepare(
     Returns:
         Prepared state for the Kalman smoother.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
 
@@ -280,4 +283,4 @@ def smoother_prepare(
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
-    return KalmanSmootherState(elem=state, gain=state.E)
+    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)

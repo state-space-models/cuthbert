@@ -2,10 +2,11 @@ from functools import partial
 from typing import NamedTuple, Protocol
 
 from jax import numpy as jnp
+from jax import tree
 
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
-from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
 class GetInitParams(Protocol):
@@ -30,6 +31,7 @@ class GetObservationParams(Protocol):
 
 class KalmanFilterState(NamedTuple):
     elem: filtering.FilterScanElement
+    model_inputs: ArrayTree
 
     @property
     def mean(self) -> Array:
@@ -46,6 +48,7 @@ class KalmanFilterState(NamedTuple):
 
 class KalmanSmootherState(NamedTuple):
     elem: smoothing.SmootherScanElement
+    model_inputs: ArrayTree
     gain: Array | None = None
 
     @property
@@ -137,6 +140,7 @@ def init_prepare(
         State for the Kalman filter.
             Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
 
@@ -149,7 +153,7 @@ def init_prepare(
         Z=jnp.zeros_like(chol_P),
         ell=ell,
     )
-    return KalmanFilterState(elem=elem)
+    return KalmanFilterState(elem=elem, model_inputs=model_inputs)
 
 
 def filter_prepare(
@@ -170,10 +174,11 @@ def filter_prepare(
     Returns:
         Prepared state for Kalman filter.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
     elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
-    return KalmanFilterState(elem=elem)
+    return KalmanFilterState(elem=elem, model_inputs=model_inputs)
 
 
 def filter_combine(
@@ -200,7 +205,7 @@ def filter_combine(
         state_1.elem,
         state_2.elem,
     )
-    return KalmanFilterState(elem=combined_elem)
+    return KalmanFilterState(elem=combined_elem, model_inputs=state_2.model_inputs)
 
 
 def smoother_prepare(
@@ -222,13 +227,14 @@ def smoother_prepare(
     Returns:
         Prepared state for the Kalman smoother.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
-    return KalmanSmootherState(elem=state, gain=state.E)
+    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
 
 
 def smoother_combine(
@@ -257,7 +263,9 @@ def smoother_combine(
         state_2.elem,
         state_1.elem,
     )
-    return KalmanSmootherState(elem=state_elem, gain=state_1.gain)
+    return KalmanSmootherState(
+        elem=state_elem, gain=state_1.gain, model_inputs=state_1.model_inputs
+    )
 
 
 def convert_filter_to_smoother_state(
@@ -284,4 +292,5 @@ def convert_filter_to_smoother_state(
     return KalmanSmootherState(
         elem=elem,
         gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
+        model_inputs=filter_state.model_inputs,
     )
