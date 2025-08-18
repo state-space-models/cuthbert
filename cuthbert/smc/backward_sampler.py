@@ -65,6 +65,7 @@ def convert_filter_to_smoother_state(
     filter_state: ParticleFilterState,
     resampling: Resampling,
     n_smoother_particles: int,
+    model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """
@@ -74,6 +75,8 @@ def convert_filter_to_smoother_state(
         filter_state: Particle filter state.
         resampling: Resampling algorithm to use (e.g., multinomial, systematic).
         n_smoother_particles: Number of smoother samples to draw.
+        model_inputs: Model inputs at the final time point.
+            Optional, if None then filter_state.model_inputs are used.
         key: JAX random key.
 
     Returns:
@@ -85,6 +88,8 @@ def convert_filter_to_smoother_state(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
+    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
+
     key, resampling_key = random.split(key)
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
 
@@ -92,14 +97,14 @@ def convert_filter_to_smoother_state(
         key=cast(KeyArray, key),
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
-        model_inputs=filter_state.model_inputs,
+        model_inputs=model_inputs,
         log_weights=-jnp.log(n_smoother_particles) * jnp.ones(n_smoother_particles),
     )
 
 
 def smoother_prepare(
     filter_state: ParticleFilterState,
-    model_inputs: ArrayTreeLike | None,
+    model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """
@@ -107,7 +112,8 @@ def smoother_prepare(
 
     Args:
         filter_state: Particle filter state from the previous time step.
-        model_inputs: Model inputs for the current time step. If None, uses model inputs from filter state.
+        model_inputs: Model inputs for the current time step.
+            Optional, if None then filter_state.model_inputs are used.
         key: JAX random key.
 
     Returns:
@@ -116,11 +122,13 @@ def smoother_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
+    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
+
     return ParticleSmootherState(
         key,
         filter_state.particles,
         filter_state.ancestor_indices,
-        model_inputs if model_inputs is not None else filter_state.model_inputs,
+        model_inputs,
         filter_state.log_weights,
     )
 

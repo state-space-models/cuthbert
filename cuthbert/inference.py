@@ -74,7 +74,7 @@ class SmootherPrepare(Protocol):
     def __call__(
         self,
         filter_state: ArrayTreeLike,
-        model_inputs: ArrayTreeLike,
+        model_inputs: ArrayTreeLike | None = None,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Prepare the state for the smoother at the next time point.
@@ -92,6 +92,7 @@ class SmootherPrepare(Protocol):
         Args:
             filter_state: The state from the filter at the previous time point.
             model_inputs: The model inputs at the next time point.
+                Optional, if None then filter_state.model_inputs are used.
             key: The key for the random number generator.
                 Optional, as only used for stochastic inference methods
 
@@ -130,6 +131,7 @@ class ConvertFilterToSmootherState(Protocol):
     def __call__(
         self,
         filter_state: ArrayTreeLike,
+        model_inputs: ArrayTreeLike | None = None,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Convert the filter state to a smoother state.
@@ -140,6 +142,8 @@ class ConvertFilterToSmootherState(Protocol):
 
         Args:
             filter_state: The filter state.
+            model_inputs: The model inputs at the final time point.
+                Optional, if None then filter_state.model_inputs are used.
             key: The key for the random number generator.
                 Optional, as only used for stochastic inference methods
 
