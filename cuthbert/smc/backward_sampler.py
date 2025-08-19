@@ -16,7 +16,7 @@ class ParticleSmootherState(NamedTuple):
     key: KeyArray
     particles: ArrayTree
     ancestor_indices: Array
-    model_inputs: ArrayTreeLike
+    model_inputs: ArrayTree
     log_weights: Array
 
     @property
