@@ -153,3 +153,9 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (des_means, des_covs, des_cross_covs),
         rtol=1e-10,
     )
+
+    seq_default_mi = smoother(extended_smoother, filt_states, parallel=False)
+    chex.assert_trees_all_close(seq_default_mi, seq_smoother_states, rtol=1e-10)
+
+    par_default_mi = smoother(extended_smoother, filt_states, parallel=True)
+    chex.assert_trees_all_close(par_default_mi, par_smoother_states, rtol=1e-10)
