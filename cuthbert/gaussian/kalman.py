@@ -228,8 +228,10 @@ def smoother_prepare(
     Returns:
         Prepared state for the Kalman smoother.
     """
-    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
@@ -289,7 +291,10 @@ def convert_filter_to_smoother_state(
     Returns:
         Smoother state, same data as filter state just different structure.
     """
-    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     elem = smoothing.SmootherScanElement(
         g=filter_state.mean,
         D=filter_state.chol_cov,

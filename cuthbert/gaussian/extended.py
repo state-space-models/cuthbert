@@ -166,7 +166,7 @@ def init_prepare(
         mean=m,
         chol_cov=chol_P,
         log_likelihood=ell,
-        model_inputs=tree.map(lambda x: jnp.asarray(x), model_inputs),
+        model_inputs=model_inputs,
     )
 
 
@@ -248,7 +248,7 @@ def filter_combine(
         mean=update_mean,
         chol_cov=update_chol_cov,
         log_likelihood=state_1.log_likelihood + log_likelihood,
-        model_inputs=tree.map(lambda x: jnp.asarray(x), state_2.model_inputs),
+        model_inputs=state_2.model_inputs,
     )
 
 
@@ -272,8 +272,10 @@ def smoother_prepare(
     Returns:
         Prepared state for the Kalman smoother.
     """
-    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
 
