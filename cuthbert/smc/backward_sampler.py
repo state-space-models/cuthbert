@@ -88,7 +88,10 @@ def convert_filter_to_smoother_state(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = jax.tree.map(lambda x: jnp.asarray(x), model_inputs)
 
     key, resampling_key = random.split(key)
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
