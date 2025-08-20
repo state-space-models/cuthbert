@@ -125,7 +125,10 @@ def smoother_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    model_inputs = filter_state.model_inputs if model_inputs is None else model_inputs
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = jax.tree.map(lambda x: jnp.asarray(x), model_inputs)
 
     return ParticleSmootherState(
         key,
