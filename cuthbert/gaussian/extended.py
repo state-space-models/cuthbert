@@ -6,9 +6,7 @@ from jax import tree
 
 from cuthbert.gaussian.kalman import (
     GetInitParams,
-    KalmanFilterState,
     KalmanSmootherState,
-    convert_filter_to_smoother_state,
     smoother_combine,
 )
 from cuthbert.inference import Filter, Smoother
@@ -74,7 +72,7 @@ def build_filter(
     get_observation_params: GetObservationExtendedParams,
 ) -> Filter:
     """
-    Build extended Kalman inference object for conditionally Gaussian SSMs.
+    Build extended Kalman inference filter for conditionally Gaussian SSMs.
 
     Args:
         get_init_params: Function to get m0, chol_P0 to initialize filter state,
@@ -86,8 +84,7 @@ def build_filter(
             and model inputs.
 
     Returns:
-        Inference object for extended Kalman filter and smoother.
-            Filter not suitable for associative scan, smoother suitable.
+        Extended Kalman filter object, not suitable for associative scan.
     """
     return Filter(
         init_prepare=partial(
@@ -109,15 +106,14 @@ def build_smoother(
     get_dynamics_params: GetDynamicsExtendedParams,
 ) -> Smoother:
     """
-    Build extended Kalman inference object for conditionally Gaussian SSMs.
+    Build extended Kalman inference smoother for conditionally Gaussian SSMs.
 
     Args:
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
 
     Returns:
-        Inference object for extended Kalman filter and smoother.
-            Filter not suitable for associative scan, smoother suitable.
+        Extended Kalman smoother object, suitable for associative scan.
     """
     return Smoother(
         smoother_prepare=partial(
@@ -253,7 +249,7 @@ def filter_combine(
 
 
 def smoother_prepare(
-    filter_state: KalmanFilterState,
+    filter_state: ExtendedKalmanFilterState,
     get_dynamics_params: GetDynamicsExtendedParams,
     model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
@@ -276,6 +272,10 @@ def smoother_prepare(
         model_inputs = filter_state.model_inputs
     else:
         model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+
+    if filter_state.mean is None or filter_state.chol_cov is None:
+        raise ValueError("State from previous time step must have mean and chol_cov.")
+
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
 
@@ -288,3 +288,42 @@ def smoother_prepare(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
     return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
+
+
+def convert_filter_to_smoother_state(
+    filter_state: ExtendedKalmanFilterState,
+    model_inputs: ArrayTreeLike | None = None,
+    key: KeyArray | None = None,
+) -> KalmanSmootherState:
+    """
+    Convert the filter state to a smoother state.
+
+    Useful for the final filter state which is equivalent to the final smoother state.
+
+    Args:
+        filter_state: Filter state.
+        model_inputs: Model inputs at the final time point.
+            Optional, if None then filter_state.model_inputs are used.
+        key: JAX random key - not used.
+
+    Returns:
+        Smoother state, same data as filter state just different structure.
+    """
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+
+    if filter_state.mean is None or filter_state.chol_cov is None:
+        raise ValueError("State from previous time step must have mean and chol_cov.")
+
+    elem = smoothing.SmootherScanElement(
+        g=filter_state.mean,
+        D=filter_state.chol_cov,
+        E=jnp.zeros_like(filter_state.chol_cov),
+    )
+    return KalmanSmootherState(
+        elem=elem,
+        gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
+        model_inputs=model_inputs,
+    )
