@@ -1,23 +1,24 @@
 from functools import partial
-from typing import NamedTuple, Protocol, Callable
+from typing import Callable, NamedTuple, Protocol
 
+from jax import eval_shape, tree
 from jax import numpy as jnp
-from jax import tree, eval_shape
 
 from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
-    smoother_combine,
     _convert_filter_to_smoother_state,
+    smoother_combine,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
-from cuthbertlib.types import LogDensity, LogConditionalDensity
 from cuthbertlib.types import (
     Array,
     ArrayTree,
     ArrayTreeLike,
     KeyArray,
+    LogConditionalDensity,
+    LogDensity,
     ScalarArray,
 )
 
