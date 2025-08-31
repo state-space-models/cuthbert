@@ -2,11 +2,12 @@ from functools import partial
 from typing import NamedTuple, Protocol, Callable
 
 from jax import numpy as jnp
-from jax import tree
+from jax import tree, eval_shape
 
 from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
     smoother_combine,
+    _convert_filter_to_smoother_state,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
@@ -24,8 +25,8 @@ LogPotential = Callable[[ArrayTreeLike], ScalarArray]
 
 
 class LogDensityKalmanFilterState(NamedTuple):
-    mean: Array | None
-    chol_cov: Array | None
+    mean: Array
+    chol_cov: Array
     log_likelihood: Array
     model_inputs: ArrayTree
 
@@ -50,7 +51,7 @@ class GetObservationLogDensity(Protocol):
         self, state: LogDensityKalmanFilterState | None, model_inputs: ArrayTreeLike
     ) -> tuple[LogConditionalDensity, Array, Array]:
         """Extract observation log density, linearization point and observation.
-        At first time point, state is None, otherwise it is predicted state."""
+        At first time point, state is None, otherwise it is the predicted state."""
         ...
 
 
@@ -59,7 +60,7 @@ class GetLogPotential(Protocol):
         self, state: LogDensityKalmanFilterState | None, model_inputs: ArrayTreeLike
     ) -> tuple[LogPotential, Array]:
         """Extract log potential and linearization point.
-        At first time point, state is None, otherwise it is predicted state."""
+        At first time point, state is None, otherwise it is the predicted state."""
         ...
 
 
@@ -88,7 +89,10 @@ def build_filter(
             get_init_log_density=get_init_log_density,
             get_observation_func=get_observation_func,
         ),
-        filter_prepare=filter_prepare,
+        filter_prepare=partial(
+            filter_prepare,
+            get_init_log_density=get_init_log_density,
+        ),
         filter_combine=partial(
             filter_combine,
             get_dynamics_log_density=get_dynamics_log_density,
@@ -194,6 +198,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
+    get_init_log_density: GetInitLogDensity,
     key: KeyArray | None = None,
 ) -> LogDensityKalmanFilterState:
     """
@@ -202,15 +207,22 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
+        get_init_log_density: Function that returns log density log p(x_0)
+            and linearization point. Only used to infer shape of mean and chol_cov.
         key: JAX random key - not used.
 
     Returns:
         Prepared state for log density Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+    dummy_mean = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
+    dummy_chol_cov = jnp.cov(dummy_mean[..., None])
+    mean = jnp.empty_like(dummy_mean)
+    chol_cov = jnp.empty_like(dummy_chol_cov)
+
     return LogDensityKalmanFilterState(
-        mean=None,
-        chol_cov=None,
+        mean=mean,
+        chol_cov=chol_cov,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
     )
@@ -243,8 +255,6 @@ def filter_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
-    if state_1.mean is None or state_1.chol_cov is None:
-        raise ValueError("State from previous time step must have mean and chol_cov.")
 
     log_dynamics_density, linearization_point_prev, linearization_point_curr = (
         get_dynamics_log_density(state_1, state_2.model_inputs)
@@ -299,9 +309,6 @@ def smoother_prepare(
     else:
         model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
 
-    if filter_state.mean is None or filter_state.chol_cov is None:
-        raise ValueError("State from previous time step must have mean and chol_cov.")
-
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
 
@@ -343,16 +350,6 @@ def convert_filter_to_smoother_state(
     else:
         model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
 
-    if filter_state.mean is None or filter_state.chol_cov is None:
-        raise ValueError("State from previous time step must have mean and chol_cov.")
-
-    elem = smoothing.SmootherScanElement(
-        g=filter_state.mean,
-        D=filter_state.chol_cov,
-        E=jnp.zeros_like(filter_state.chol_cov),
-    )
-    return KalmanSmootherState(
-        elem=elem,
-        gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
-        model_inputs=model_inputs,
+    return _convert_filter_to_smoother_state(
+        filter_state.mean, filter_state.chol_cov, model_inputs
     )
