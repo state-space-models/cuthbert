@@ -272,6 +272,23 @@ def smoother_combine(
     )
 
 
+def _convert_filter_to_smoother_state(
+    mean: Array,
+    chol_cov: Array,
+    model_inputs: ArrayTreeLike,
+) -> KalmanSmootherState:
+    elem = smoothing.SmootherScanElement(
+        g=mean,
+        D=chol_cov,
+        E=jnp.zeros_like(chol_cov),
+    )
+    return KalmanSmootherState(
+        elem=elem,
+        gain=jnp.full_like(chol_cov, jnp.nan),
+        model_inputs=model_inputs,
+    )
+
+
 def convert_filter_to_smoother_state(
     filter_state: KalmanFilterState,
     model_inputs: ArrayTreeLike | None = None,
@@ -295,13 +312,6 @@ def convert_filter_to_smoother_state(
         model_inputs = filter_state.model_inputs
     else:
         model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    elem = smoothing.SmootherScanElement(
-        g=filter_state.mean,
-        D=filter_state.chol_cov,
-        E=jnp.zeros_like(filter_state.chol_cov),
-    )
-    return KalmanSmootherState(
-        elem=elem,
-        gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
-        model_inputs=model_inputs,
+    return _convert_filter_to_smoother_state(
+        filter_state.mean, filter_state.chol_cov, model_inputs
     )
