@@ -30,6 +30,7 @@ class LogDensityKalmanFilterState(NamedTuple):
     chol_cov: Array
     log_likelihood: Array
     model_inputs: ArrayTree
+    mean_prev: Array
 
 
 class GetInitLogDensity(Protocol):
@@ -194,6 +195,7 @@ def init_prepare(
         chol_cov=chol_P,
         log_likelihood=ell,
         model_inputs=model_inputs,
+        mean_prev=jnp.empty_like(m),
     )
 
 
@@ -226,6 +228,7 @@ def filter_prepare(
         chol_cov=chol_cov,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
+        mean_prev=jnp.empty_like(mean),
     )
 
 
@@ -281,6 +284,7 @@ def filter_combine(
         chol_cov=update_chol_cov,
         log_likelihood=state_1.log_likelihood + log_likelihood,
         model_inputs=state_2.model_inputs,
+        mean_prev=state_1.mean,
     )
 
 
@@ -315,7 +319,7 @@ def smoother_prepare(
 
     log_dynamics_density, linearization_point_prev, linearization_point_curr = (
         get_dynamics_log_density(filter_state, model_inputs)
-    )  ###### Might want to allow this to see filter_state_prev as well for linearization purposes
+    )
 
     F, c, chol_Q = linearize_log_density(
         log_dynamics_density, linearization_point_prev, linearization_point_curr
