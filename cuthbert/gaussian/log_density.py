@@ -219,9 +219,8 @@ def filter_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     dummy_mean = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
-    dummy_chol_cov = jnp.cov(dummy_mean[..., None])
     mean = jnp.empty_like(dummy_mean)
-    chol_cov = jnp.empty_like(dummy_chol_cov)
+    chol_cov = jnp.empty_like(jnp.cov(mean[..., None]))
 
     return LogDensityKalmanFilterState(
         mean=mean,
