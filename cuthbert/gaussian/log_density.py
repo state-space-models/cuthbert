@@ -50,19 +50,19 @@ class GetDynamicsLogDensity(Protocol):
 
 class GetObservationLogDensity(Protocol):
     def __call__(
-        self, state: LogDensityKalmanFilterState | None, model_inputs: ArrayTreeLike
+        self, state: LogDensityKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[LogConditionalDensity, Array, Array]:
         """Extract observation log density, linearization point and observation.
-        At first time point, state is None, otherwise it is the predicted state."""
+        State is the predicted state after applying the Kalman dynamics propagation."""
         ...
 
 
 class GetLogPotential(Protocol):
     def __call__(
-        self, state: LogDensityKalmanFilterState | None, model_inputs: ArrayTreeLike
+        self, state: LogDensityKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[LogPotential, Array]:
         """Extract log potential and linearization point.
-        At first time point, state is None, otherwise it is the predicted state."""
+        State is the predicted state after applying the Kalman dynamics propagation."""
         ...
 
 
@@ -128,7 +128,7 @@ def build_smoother(
 
 
 def process_observation(
-    state: LogDensityKalmanFilterState | None,
+    state: LogDensityKalmanFilterState,
     get_observation_func: GetObservationLogDensity | GetLogPotential,
     model_inputs: ArrayTreeLike,
 ) -> tuple[Array, Array, Array, Array]:
@@ -184,8 +184,16 @@ def init_prepare(
         lambda _, x: init_log_density(x), linearization_point, linearization_point
     )
 
+    predict_state = LogDensityKalmanFilterState(
+        mean=m0,
+        chol_cov=chol_P0,
+        log_likelihood=jnp.array(0.0),
+        model_inputs=model_inputs,
+        mean_prev=jnp.empty_like(m0),
+    )
+
     H, d, chol_R, observation = process_observation(
-        None, get_observation_func, model_inputs
+        predict_state, get_observation_func, model_inputs
     )
 
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
@@ -267,13 +275,22 @@ def filter_combine(
         log_dynamics_density, linearization_point_prev, linearization_point_curr
     )
 
-    H, d, chol_R, observation = process_observation(
-        None, get_observation_func, state_2.model_inputs
-    )
-
     predict_mean, predict_chol_cov = filtering.predict(
         state_1.mean, state_1.chol_cov, F, c, chol_Q
     )
+
+    predict_state = LogDensityKalmanFilterState(
+        mean=predict_mean,
+        chol_cov=predict_chol_cov,
+        log_likelihood=state_1.log_likelihood,
+        model_inputs=state_2.model_inputs,
+        mean_prev=state_1.mean,
+    )
+
+    H, d, chol_R, observation = process_observation(
+        predict_state, get_observation_func, state_2.model_inputs
+    )
+
     (update_mean, update_chol_cov), log_likelihood = filtering.update(
         predict_mean, predict_chol_cov, H, d, chol_R, observation
     )
