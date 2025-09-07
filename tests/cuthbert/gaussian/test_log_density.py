@@ -22,17 +22,13 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_log_density_inference(
+def _load_log_density_init_and_dynamics(
     m0: Array,
     chol_P0: Array,
     Fs: Array,
     cs: Array,
     chol_Qs: Array,
-    Hs: Array,
-    ds: Array,
-    chol_Rs: Array,
-    ys: Array,
-) -> tuple[Filter, Smoother, Array]:
+) -> tuple[log_density.GetInitLogDensity, log_density.GetDynamicsLogDensity]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM."""
 
@@ -58,8 +54,29 @@ def load_log_density_inference(
             jnp.zeros_like(state.mean),
         )
 
+    return get_init_log_density, get_dynamics_log_density
+
+
+def load_log_density_inference(
+    m0: Array,
+    chol_P0: Array,
+    Fs: Array,
+    cs: Array,
+    chol_Qs: Array,
+    Hs: Array,
+    ds: Array,
+    chol_Rs: Array,
+    ys: Array,
+) -> tuple[Filter, Smoother, Array]:
+    """Builds linearized log density Kalman filter and smoother objects and model_inputs
+    for a linear-Gaussian SSM."""
+
+    get_init_log_density, get_dynamics_log_density = (
+        _load_log_density_init_and_dynamics(m0, chol_P0, Fs, cs, chol_Qs)
+    )
+
     def get_observation_log_density(
-        state: log_density.LogDensityKalmanFilterState | None, model_inputs: int
+        state: log_density.LogDensityKalmanFilterState, model_inputs: int
     ) -> tuple[log_density.LogConditionalDensity, Array, Array]:
         def observation_log_density(x, y):
             return multivariate_normal.logpdf(
@@ -182,3 +199,82 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
 
     par_default_mi = smoother(log_density_smoother, filt_states, parallel=True)
     chex.assert_trees_all_close(par_default_mi, par_smoother_states, rtol=1e-10)
+
+
+def load_log_density_inference_potential(
+    m0: Array,
+    chol_P0: Array,
+    Fs: Array,
+    cs: Array,
+    chol_Qs: Array,
+    ms: Array,
+    chol_Rs: Array,
+) -> tuple[Filter, Smoother, Array]:
+    """Builds linearized log density Kalman filter and smoother objects and model_inputs
+    for a linear-Gaussian SSM.
+
+    Uses Gaussian log potential for observations instead of conditional log density.
+    """
+    get_init_log_density, get_dynamics_log_density = (
+        _load_log_density_init_and_dynamics(m0, chol_P0, Fs, cs, chol_Qs)
+    )
+
+    def get_observation_log_potential(
+        state: log_density.LogDensityKalmanFilterState, model_inputs: int
+    ) -> tuple[log_density.LogPotential, Array]:
+        def observation_log_potential(x):
+            return multivariate_normal.logpdf(
+                x, ms[model_inputs], chol_Rs[model_inputs]
+            )
+
+        return (
+            observation_log_potential,
+            jnp.zeros_like(m0),
+        )
+
+    filter = log_density.build_filter(
+        get_init_log_density, get_dynamics_log_density, get_observation_log_potential
+    )
+    smoother = log_density.build_smoother(get_dynamics_log_density)
+    model_inputs = jnp.arange(len(ms))
+    return filter, smoother, model_inputs
+
+
+common_params_potential = list(itertools.product(seeds, x_dims, num_time_steps))
+
+
+@pytest.mark.parametrize("seed,x_dim,num_time_steps", common_params_potential)
+def test_offline_filter_potential(seed, x_dim, num_time_steps):
+    # Generate a linear-Gaussian state-space model.
+    m0, chol_P0, Fs, cs, chol_Qs, _, _, chol_Rs, ms = generate_lgssm(
+        seed, x_dim, x_dim, num_time_steps
+    )
+
+    log_density_filter, _, model_inputs = load_log_density_inference_potential(
+        m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs
+    )
+
+    # Run sequential sqrt filter
+    seq_states = filter(log_density_filter, model_inputs, parallel=False)
+    seq_means, seq_chol_covs, seq_ells = (
+        seq_states.mean,
+        seq_states.chol_cov,
+        seq_states.log_likelihood,
+    )
+
+    # Run the standard Kalman filter.
+    Hs = jnp.eye(x_dim)[None].repeat(num_time_steps, axis=0)
+    ds = jnp.zeros((num_time_steps, x_dim))
+    P0 = chol_P0 @ chol_P0.T
+    Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
+    Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
+    des_means, des_covs, des_ells = std_kalman_filter(
+        m0, P0, Fs, cs, Qs, Hs, ds, Rs, ms
+    )
+
+    seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    chex.assert_trees_all_close(
+        (seq_means, seq_covs, seq_ells),
+        (des_means, des_covs, des_ells),
+        rtol=1e-10,
+    )
