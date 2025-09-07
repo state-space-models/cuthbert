@@ -69,7 +69,7 @@ def load_log_density_inference(
         return (
             observation_log_density,
             jnp.zeros_like(m0),
-            jnp.zeros_like(ys[model_inputs]),
+            ys[model_inputs],
         )
 
     filter = log_density.build_filter(
