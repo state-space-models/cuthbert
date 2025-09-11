@@ -1,5 +1,5 @@
 from functools import partial
-from typing import NamedTuple, Protocol
+from typing import NamedTuple
 
 from jax import eval_shape, tree
 from jax import numpy as jnp
@@ -9,6 +9,10 @@ from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
     _convert_filter_to_smoother_state,
     smoother_combine,
+)
+from cuthbert.gaussian.types import (
+    GetDynamicsExtendedParams,
+    GetObservationExtendedParams,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
@@ -21,50 +25,12 @@ from cuthbertlib.types import (
 )
 
 
-class GetDynamicsExtendedParams(Protocol):
-    def __call__(
-        self,
-        x: Array,
-        model_inputs: ArrayTreeLike,
-    ) -> tuple[Array, Array]:
-        """
-        Get dynamics conditional mean and (generalised) Cholesky covariance
-            from model inputs and linearization point.
-
-        Args:
-            x: Linearization point.
-            model_inputs: Model inputs.
-
-        Returns:
-            Tuple with conditional mean and (generalised) Cholesky covariance.
-        """
-        ...
-
-
-class GetObservationExtendedParams(Protocol):
-    def __call__(
-        self, x: Array, model_inputs: ArrayTreeLike
-    ) -> tuple[Array, Array, Array]:
-        """
-        Get observation conditional mean, (generalised) Cholesky covariance
-            and the observation itself from model inputs and linearization point.
-
-        Args:
-            x: Linearization point.
-            model_inputs: Model inputs.
-
-        Returns:
-            Tuple with conditional mean, (generalised) Cholesky covariance
-                and observation.
-        """
-        ...
-
-
 class ExtendedKalmanFilterState(NamedTuple):
     mean: Array
     chol_cov: Array
     log_likelihood: Array
     model_inputs: ArrayTree
+    mean_prev: Array
 
 
 def build_filter(
@@ -167,6 +133,7 @@ def init_prepare(
         chol_cov=chol_P,
         log_likelihood=ell,
         model_inputs=model_inputs,
+        mean_prev=jnp.full_like(m0, jnp.nan),
     )
 
 
@@ -196,6 +163,7 @@ def filter_prepare(
         chol_cov=chol_cov,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
+        mean_prev=jnp.full_like(mean, jnp.nan),
     )
 
 
@@ -252,6 +220,7 @@ def filter_combine(
         chol_cov=update_chol_cov,
         log_likelihood=state_1.log_likelihood + log_likelihood,
         model_inputs=state_2.model_inputs,
+        mean_prev=state_1.mean,
     )
 
 

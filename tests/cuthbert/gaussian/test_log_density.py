@@ -8,6 +8,13 @@ from jax import Array
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import log_density
+from cuthbert.gaussian.types import (
+    LogConditionalDensity,
+    LogPotential,
+    LogDensity,
+    GetInitLogDensity,
+    GetDynamicsLogDensity,
+)
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.stats import multivariate_normal
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
@@ -28,11 +35,11 @@ def _load_log_density_init_and_dynamics(
     Fs: Array,
     cs: Array,
     chol_Qs: Array,
-) -> tuple[log_density.GetInitLogDensity, log_density.GetDynamicsLogDensity]:
+) -> tuple[GetInitLogDensity, GetDynamicsLogDensity]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM."""
 
-    def get_init_log_density(model_inputs: int) -> tuple[log_density.LogDensity, Array]:
+    def get_init_log_density(model_inputs: int) -> tuple[LogDensity, Array]:
         def init_log_density(x):
             return multivariate_normal.logpdf(x, m0, chol_P0)
 
@@ -40,7 +47,7 @@ def _load_log_density_init_and_dynamics(
 
     def get_dynamics_log_density(
         state: log_density.LogDensityKalmanFilterState, model_inputs: int
-    ) -> tuple[log_density.LogConditionalDensity, Array, Array]:
+    ) -> tuple[LogConditionalDensity, Array, Array]:
         def dynamics_log_density(x_prev, x):
             return multivariate_normal.logpdf(
                 x,
@@ -77,7 +84,7 @@ def load_log_density_inference(
 
     def get_observation_log_density(
         state: log_density.LogDensityKalmanFilterState, model_inputs: int
-    ) -> tuple[log_density.LogConditionalDensity, Array, Array]:
+    ) -> tuple[LogConditionalDensity, Array, Array]:
         def observation_log_density(x, y):
             return multivariate_normal.logpdf(
                 y, Hs[model_inputs] @ x + ds[model_inputs], chol_Rs[model_inputs]
@@ -221,7 +228,7 @@ def load_log_density_inference_potential(
 
     def get_observation_log_potential(
         state: log_density.LogDensityKalmanFilterState, model_inputs: int
-    ) -> tuple[log_density.LogPotential, Array]:
+    ) -> tuple[LogPotential, Array]:
         def observation_log_potential(x):
             return multivariate_normal.logpdf(
                 x, ms[model_inputs], chol_Rs[model_inputs]

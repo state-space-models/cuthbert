@@ -1,5 +1,5 @@
 from functools import partial
-from typing import NamedTuple, Protocol
+from typing import NamedTuple
 
 from jax import numpy as jnp
 from jax import tree
@@ -7,26 +7,11 @@ from jax import tree
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
-
-
-class GetInitParams(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array]:
-        """Get initial parameters (m0, chol_P0) from model inputs."""
-        ...
-
-
-class GetDynamicsParams(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array, Array]:
-        """Get dynamics parameters (F, c, chol_Q) from model inputs."""
-        ...
-
-
-class GetObservationParams(Protocol):
-    def __call__(
-        self, model_inputs: ArrayTreeLike
-    ) -> tuple[Array, Array, Array, Array]:
-        """Get observation parameters (H, d, chol_R, y) from model inputs."""
-        ...
+from cuthbert.gaussian.types import (
+    GetInitParams,
+    GetDynamicsParams,
+    GetObservationParams,
+)
 
 
 class KalmanFilterState(NamedTuple):

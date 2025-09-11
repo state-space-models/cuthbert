@@ -4,7 +4,6 @@ distributions. This differs from gaussian/extended which requires mean and chol_
 functions as input rather than log densities."""
 
 from functools import partial
-from typing import NamedTuple, Protocol
 
 from jax import eval_shape, tree
 from jax import numpy as jnp
@@ -14,66 +13,29 @@ from cuthbert.gaussian.kalman import (
     _convert_filter_to_smoother_state,
     smoother_combine,
 )
+from cuthbert.gaussian.types import (
+    GetInitLogDensity,
+    GetDynamicsLogDensity,
+    GetObservationFunc,
+)
 from cuthbert.inference import Filter, Smoother
+from cuthbert.gaussian.extended import ExtendedKalmanFilterState
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import (
     Array,
-    ArrayTree,
     ArrayTreeLike,
     KeyArray,
-    LogConditionalDensity,
-    LogDensity,
 )
 
-LogPotential = LogDensity
 
-
-class LogDensityKalmanFilterState(NamedTuple):
-    mean: Array
-    chol_cov: Array
-    log_likelihood: Array
-    model_inputs: ArrayTree
-    mean_prev: Array
-
-
-class GetInitLogDensity(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[LogDensity, Array]:
-        """Get the initial log density and initial linearization point."""
-        ...
-
-
-class GetDynamicsLogDensity(Protocol):
-    def __call__(
-        self, state: LogDensityKalmanFilterState, model_inputs: ArrayTreeLike
-    ) -> tuple[LogConditionalDensity, Array, Array]:
-        """Get the dynamics log density and linearization points
-        (for the previous and current time points)"""
-        ...
-
-
-class GetObservationLogDensity(Protocol):
-    def __call__(
-        self, state: LogDensityKalmanFilterState, model_inputs: ArrayTreeLike
-    ) -> tuple[LogConditionalDensity, Array, Array]:
-        """Extract observation log density, linearization point and observation.
-        State is the predicted state after applying the Kalman dynamics propagation."""
-        ...
-
-
-class GetLogPotential(Protocol):
-    def __call__(
-        self, state: LogDensityKalmanFilterState, model_inputs: ArrayTreeLike
-    ) -> tuple[LogPotential, Array]:
-        """Extract log potential and linearization point.
-        State is the predicted state after applying the Kalman dynamics propagation."""
-        ...
+LogDensityKalmanFilterState = ExtendedKalmanFilterState
 
 
 def build_filter(
     get_init_log_density: GetInitLogDensity,
     get_dynamics_log_density: GetDynamicsLogDensity,
-    get_observation_func: GetObservationLogDensity | GetLogPotential,
+    get_observation_func: GetObservationFunc,
 ) -> Filter:
     """
     Build linearized log density Kalman inference filter.
@@ -83,8 +45,9 @@ def build_filter(
             and linearization point.
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
-        get_observation_func: Function to get observation log density log p(y_t | x_t)
-            and linearization point and observation.
+        get_observation_func: Function to get observation function (either conditional
+            log density or log potential), linearization point and optional observation
+            (not required for log potential functions).
 
     Returns:
         Log density Kalman filter object, not suitable for associative scan.
@@ -133,21 +96,22 @@ def build_smoother(
 
 def process_observation(
     state: LogDensityKalmanFilterState,
-    get_observation_func: GetObservationLogDensity | GetLogPotential,
+    get_observation_func: GetObservationFunc,
     model_inputs: ArrayTreeLike,
 ) -> tuple[Array, Array, Array, Array]:
     """Process observation for log density Kalman filter."""
     observation_output = get_observation_func(state, model_inputs)
+
     if len(observation_output) == 3:
-        observation_log_density_func, linearization_point, observation = (
+        observation_cond_log_density, linearization_point, observation = (
             observation_output
         )
         H, d, chol_R = linearize_log_density(
-            observation_log_density_func, linearization_point, observation
+            observation_cond_log_density, linearization_point, observation
         )
     else:
-        log_potential, linearization_point = observation_output
-        d, chol_R = linearize_taylor(log_potential, linearization_point)
+        observation_log_potential, linearization_point = observation_output
+        d, chol_R = linearize_taylor(observation_log_potential, linearization_point)
         # dummy mat and observation as potential is unconditional
         # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
         # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
@@ -159,7 +123,7 @@ def process_observation(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_log_density: GetInitLogDensity,
-    get_observation_func: GetObservationLogDensity | GetLogPotential,
+    get_observation_func: GetObservationFunc,
     key: KeyArray | None = None,
 ) -> LogDensityKalmanFilterState:
     """
@@ -173,7 +137,7 @@ def init_prepare(
             - An observation log density
                 function log p(y_0 | x_0) as well as points x_0 and y_0
                 to linearize around.
-            - A log potential function log G(None, x_0) and a linearization point x_0.
+            - A log potential function log G(x_0) and a linearization point x_0.
         key: JAX random key - not used.
 
     Returns:
@@ -193,7 +157,7 @@ def init_prepare(
         chol_cov=chol_P0,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
-        mean_prev=jnp.empty_like(m0),
+        mean_prev=jnp.full_like(m0, jnp.nan),
     )
 
     H, d, chol_R, observation = process_observation(
@@ -247,7 +211,7 @@ def filter_combine(
     state_1: LogDensityKalmanFilterState,
     state_2: LogDensityKalmanFilterState,
     get_dynamics_log_density: GetDynamicsLogDensity,
-    get_observation_func: GetObservationLogDensity | GetLogPotential,
+    get_observation_func: GetObservationFunc,
 ) -> LogDensityKalmanFilterState:
     """
     Combine filter state from previous time point with state prepared
@@ -262,8 +226,9 @@ def filter_combine(
         state_2: State prepared (only access model_inputs attribute).
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
-        get_observation_func: Function to get observation log density log p(y_t | x_t)
-            and linearization point and observation.
+        get_observation_func: Function to get observation function (either conditional
+            log density or log potential), linearization point and optional observation
+            (not required for log potential functions).
 
     Returns:
         Predicted and updated log density Kalman filter state.
