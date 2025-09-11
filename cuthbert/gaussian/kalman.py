@@ -4,14 +4,14 @@ from typing import NamedTuple
 from jax import numpy as jnp
 from jax import tree
 
+from cuthbert.gaussian.types import (
+    GetDynamicsParams,
+    GetInitParams,
+    GetObservationParams,
+)
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
-from cuthbert.gaussian.types import (
-    GetInitParams,
-    GetDynamicsParams,
-    GetObservationParams,
-)
 
 
 class KalmanFilterState(NamedTuple):

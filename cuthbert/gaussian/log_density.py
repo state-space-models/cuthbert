@@ -8,18 +8,18 @@ from functools import partial
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
+from cuthbert.gaussian.extended import ExtendedKalmanFilterState
 from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
     _convert_filter_to_smoother_state,
     smoother_combine,
 )
 from cuthbert.gaussian.types import (
-    GetInitLogDensity,
     GetDynamicsLogDensity,
+    GetInitLogDensity,
     GetObservationFunc,
 )
 from cuthbert.inference import Filter, Smoother
-from cuthbert.gaussian.extended import ExtendedKalmanFilterState
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import (
@@ -27,7 +27,6 @@ from cuthbertlib.types import (
     ArrayTreeLike,
     KeyArray,
 )
-
 
 LogDensityKalmanFilterState = ExtendedKalmanFilterState
 

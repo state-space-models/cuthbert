@@ -1,12 +1,12 @@
 from typing import Protocol
 
+from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 from cuthbertlib.types import (
     Array,
     ArrayTreeLike,
     LogConditionalDensity,
     LogDensity,
 )
-from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 
 
 ### Kalman types

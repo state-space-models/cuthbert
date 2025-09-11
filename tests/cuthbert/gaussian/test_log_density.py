@@ -9,11 +9,11 @@ from jax import Array
 from cuthbert import filter, smoother
 from cuthbert.gaussian import log_density
 from cuthbert.gaussian.types import (
-    LogConditionalDensity,
-    LogPotential,
-    LogDensity,
-    GetInitLogDensity,
     GetDynamicsLogDensity,
+    GetInitLogDensity,
+    LogConditionalDensity,
+    LogDensity,
+    LogPotential,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.stats import multivariate_normal
