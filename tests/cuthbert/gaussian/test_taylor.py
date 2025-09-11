@@ -11,10 +11,10 @@ from cuthbert.gaussian import taylor
 from cuthbert.gaussian.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
+    LinearizedKalmanFilterState,
     LogConditionalDensity,
     LogDensity,
     LogPotential,
-    LinearizedKalmanFilterState,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.stats import multivariate_normal

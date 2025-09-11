@@ -23,8 +23,8 @@ from jax import numpy as jnp
 
 from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
-    smoother_combine,
     convert_filter_to_smoother_state,
+    smoother_combine,
 )
 from cuthbert.gaussian.types import (
     GetDynamicsLogDensity,
