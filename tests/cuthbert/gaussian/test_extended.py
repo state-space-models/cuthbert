@@ -37,22 +37,31 @@ def load_extended_inference(
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
 
-    def dynamics_mean_and_chol_cov(x, model_inputs):
-        return Fs[model_inputs - 1] @ x + cs[model_inputs - 1], chol_Qs[
-            model_inputs - 1
-        ]
+    def dynamics_moments(state, model_inputs):
+        def dynamics_mean_and_chol_cov_func(x):
+            return Fs[model_inputs - 1] @ x + cs[model_inputs - 1], chol_Qs[
+                model_inputs - 1
+            ]
 
-    def observation_mean_and_chol_cov_and_y(x, model_inputs):
+        return dynamics_mean_and_chol_cov_func, state.mean
+
+    def observation_moments(state, model_inputs):
+        def observation_mean_and_chol_cov_and_y_func(x):
+            return (
+                Hs[model_inputs] @ x + ds[model_inputs],
+                chol_Rs[model_inputs],
+            )
+
         return (
-            Hs[model_inputs] @ x + ds[model_inputs],
-            chol_Rs[model_inputs],
+            observation_mean_and_chol_cov_and_y_func,
+            state.mean,
             ys[model_inputs],
         )
 
     filter = extended.build_filter(
-        get_init_params, dynamics_mean_and_chol_cov, observation_mean_and_chol_cov_and_y
+        get_init_params, dynamics_moments, observation_moments
     )
-    smoother = extended.build_smoother(dynamics_mean_and_chol_cov)
+    smoother = extended.build_smoother(dynamics_moments)
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 

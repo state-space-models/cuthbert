@@ -11,8 +11,8 @@ from cuthbert.gaussian.kalman import (
     smoother_combine,
 )
 from cuthbert.gaussian.types import (
-    GetDynamicsExtendedParams,
-    GetObservationExtendedParams,
+    GetDynamicsMoments,
+    GetObservationMoments,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman import filtering, smoothing
@@ -35,8 +35,8 @@ class ExtendedKalmanFilterState(NamedTuple):
 
 def build_filter(
     get_init_params: GetInitParams,
-    get_dynamics_params: GetDynamicsExtendedParams,
-    get_observation_params: GetObservationExtendedParams,
+    get_dynamics_params: GetDynamicsMoments,
+    get_observation_params: GetObservationMoments,
 ) -> Filter:
     """
     Build extended Kalman inference filter for conditionally Gaussian SSMs.
@@ -45,10 +45,10 @@ def build_filter(
         get_init_params: Function to get m0, chol_P0 to initialize filter state,
             given model inputs sufficient to define p(x_0) = N(m0, chol_P0 @ chol_P0^T).
         get_dynamics_params: Function to get dynamics conditional mean and
-            (generalised) Cholesky covariance from linearization point and model inputs.
+            (generalised) Cholesky covariance function and linearization point.
         get_observation_params: Function to get observation conditional mean,
-            (generalised) Cholesky covariance and observation from linearization point
-            and model inputs.
+            (generalised) Cholesky covariance function, linearization point and
+            observation.
 
     Returns:
         Extended Kalman filter object, not suitable for associative scan.
@@ -73,7 +73,7 @@ def build_filter(
 
 
 def build_smoother(
-    get_dynamics_params: GetDynamicsExtendedParams,
+    get_dynamics_params: GetDynamicsMoments,
 ) -> Smoother:
     """
     Build extended Kalman inference smoother for conditionally Gaussian SSMs.
@@ -98,7 +98,7 @@ def build_smoother(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
-    get_observation_params: GetObservationExtendedParams,
+    get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> ExtendedKalmanFilterState:
     """
@@ -108,8 +108,8 @@ def init_prepare(
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
         get_observation_params: Function to get observation conditional mean,
-            (generalised) Cholesky covariance and observation from linearization point
-            and model inputs.
+            (generalised) Cholesky covariance function, linearization point and
+            observation.
         key: JAX random key - not used.
 
     Returns:
@@ -120,12 +120,19 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
 
-    def observation_mean_and_chol_cov_and_y(x):
-        return get_observation_params(x, model_inputs)
-
-    H, d, chol_R, y = linearize_moments(
-        observation_mean_and_chol_cov_and_y, m0, has_aux=True
+    predict_state = ExtendedKalmanFilterState(
+        mean=m0,
+        chol_cov=chol_P0,
+        log_likelihood=jnp.array(0.0),
+        model_inputs=model_inputs,
+        mean_prev=jnp.full_like(m0, jnp.nan),
     )
+
+    mean_and_chol_cov_func, linearization_point, y = get_observation_params(
+        predict_state, model_inputs
+    )
+
+    H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
 
     return ExtendedKalmanFilterState(
@@ -170,8 +177,8 @@ def filter_prepare(
 def filter_combine(
     state_1: ExtendedKalmanFilterState,
     state_2: ExtendedKalmanFilterState,
-    get_dynamics_params: GetDynamicsExtendedParams,
-    get_observation_params: GetObservationExtendedParams,
+    get_dynamics_params: GetDynamicsMoments,
+    get_observation_params: GetObservationMoments,
 ) -> ExtendedKalmanFilterState:
     """
     Combine filter state from previous time point with state prepared
@@ -194,18 +201,20 @@ def filter_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
-    linearization_point = state_1.mean
+    dynamics_mean_and_chol_cov_func, dynamics_linearization_point = get_dynamics_params(
+        state_1, state_2.model_inputs
+    )
 
-    def dynamics_mean_and_chol_cov(x):
-        return get_dynamics_params(x, state_2.model_inputs)
+    F, c, chol_Q = linearize_moments(
+        dynamics_mean_and_chol_cov_func, dynamics_linearization_point
+    )
 
-    F, c, chol_Q = linearize_moments(dynamics_mean_and_chol_cov, linearization_point)
+    observation_mean_and_chol_cov_func, observation_linearization_point, y = (
+        get_observation_params(state_1, state_2.model_inputs)
+    )
 
-    def observation_mean_and_chol_cov_and_y(x):
-        return get_observation_params(x, state_2.model_inputs)
-
-    H, d, chol_R, y = linearize_moments(
-        observation_mean_and_chol_cov_and_y, linearization_point, has_aux=True
+    H, d, chol_R = linearize_moments(
+        observation_mean_and_chol_cov_func, observation_linearization_point
     )
 
     predict_mean, predict_chol_cov = filtering.predict(
@@ -226,7 +235,7 @@ def filter_combine(
 
 def smoother_prepare(
     filter_state: ExtendedKalmanFilterState,
-    get_dynamics_params: GetDynamicsExtendedParams,
+    get_dynamics_params: GetDynamicsMoments,
     model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
@@ -252,10 +261,13 @@ def smoother_prepare(
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
 
-    def dynamics_mean_and_chol_cov(x):
-        return get_dynamics_params(x, model_inputs)
+    dynamics_mean_and_chol_cov_func, dynamics_linearization_point = get_dynamics_params(
+        filter_state, model_inputs
+    )
 
-    F, c, chol_Q = linearize_moments(dynamics_mean_and_chol_cov, filter_mean)
+    F, c, chol_Q = linearize_moments(
+        dynamics_mean_and_chol_cov_func, dynamics_linearization_point
+    )
 
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q

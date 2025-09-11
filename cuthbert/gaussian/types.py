@@ -6,6 +6,7 @@ from cuthbertlib.types import (
     LogConditionalDensity,
     LogDensity,
 )
+from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 
 
 ### Kalman types
@@ -30,36 +31,37 @@ class GetObservationParams(Protocol):
 
 
 ### Moments types
-class GetDynamicsExtendedParams(Protocol):
+class GetDynamicsMoments(Protocol):
     def __call__(
         self,
-        x: Array,
+        state: ArrayTreeLike,
         model_inputs: ArrayTreeLike,
-    ) -> tuple[Array, Array]:
+    ) -> tuple[MeanAndCholCovFunc, Array]:
         """
         Get dynamics conditional mean and (generalised) Cholesky covariance
-            from model inputs and linearization point.
+            function and linearization point.
 
         Args:
-            x: Linearization point.
+            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
             model_inputs: Model inputs.
 
         Returns:
-            Tuple with conditional mean and (generalised) Cholesky covariance.
+            Tuple with dynamics conditional mean and (generalised) Cholesky covariance
+                function and linearization point.
         """
         ...
 
 
-class GetObservationExtendedParams(Protocol):
+class GetObservationMoments(Protocol):
     def __call__(
-        self, x: Array, model_inputs: ArrayTreeLike
-    ) -> tuple[Array, Array, Array]:
+        self, state: ArrayTreeLike, model_inputs: ArrayTreeLike
+    ) -> tuple[MeanAndCholCovFunc, Array, Array]:
         """
-        Get observation conditional mean, (generalised) Cholesky covariance
-            and the observation itself from model inputs and linearization point.
+        Get observation conditional mean, (generalised) Cholesky covariance function,
+            linearization point and the observation from model inputs.
 
         Args:
-            x: Linearization point.
+            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
             model_inputs: Model inputs.
 
         Returns:
