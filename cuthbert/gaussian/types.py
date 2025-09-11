@@ -1,8 +1,9 @@
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 from cuthbertlib.types import (
     Array,
+    ArrayTree,
     ArrayTreeLike,
     LogConditionalDensity,
     LogDensity,
@@ -31,6 +32,14 @@ class GetObservationParams(Protocol):
 
 
 ### Moments types
+class LinearizedKalmanFilterState(NamedTuple):
+    mean: Array
+    chol_cov: Array
+    log_likelihood: Array
+    model_inputs: ArrayTree
+    mean_prev: Array
+
+
 class GetDynamicsMoments(Protocol):
     def __call__(
         self,

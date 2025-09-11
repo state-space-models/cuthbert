@@ -7,13 +7,14 @@ import pytest
 from jax import Array
 
 from cuthbert import filter, smoother
-from cuthbert.gaussian import log_density
+from cuthbert.gaussian import taylor
 from cuthbert.gaussian.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
     LogConditionalDensity,
     LogDensity,
     LogPotential,
+    LinearizedKalmanFilterState,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.stats import multivariate_normal
@@ -29,7 +30,7 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def _load_log_density_init_and_dynamics(
+def _load_taylor_init_and_dynamics(
     m0: Array,
     chol_P0: Array,
     Fs: Array,
@@ -46,7 +47,7 @@ def _load_log_density_init_and_dynamics(
         return init_log_density, jnp.zeros_like(m0)
 
     def get_dynamics_log_density(
-        state: log_density.LogDensityKalmanFilterState, model_inputs: int
+        state: LinearizedKalmanFilterState, model_inputs: int
     ) -> tuple[LogConditionalDensity, Array, Array]:
         def dynamics_log_density(x_prev, x):
             return multivariate_normal.logpdf(
@@ -64,7 +65,7 @@ def _load_log_density_init_and_dynamics(
     return get_init_log_density, get_dynamics_log_density
 
 
-def load_log_density_inference(
+def load_taylor_inference(
     m0: Array,
     chol_P0: Array,
     Fs: Array,
@@ -78,12 +79,12 @@ def load_log_density_inference(
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM."""
 
-    get_init_log_density, get_dynamics_log_density = (
-        _load_log_density_init_and_dynamics(m0, chol_P0, Fs, cs, chol_Qs)
+    get_init_log_density, get_dynamics_log_density = _load_taylor_init_and_dynamics(
+        m0, chol_P0, Fs, cs, chol_Qs
     )
 
     def get_observation_log_density(
-        state: log_density.LogDensityKalmanFilterState, model_inputs: int
+        state: LinearizedKalmanFilterState, model_inputs: int
     ) -> tuple[LogConditionalDensity, Array, Array]:
         def observation_log_density(x, y):
             return multivariate_normal.logpdf(
@@ -96,10 +97,10 @@ def load_log_density_inference(
             ys[model_inputs],
         )
 
-    filter = log_density.build_filter(
+    filter = taylor.build_filter(
         get_init_log_density, get_dynamics_log_density, get_observation_log_density
     )
-    smoother = log_density.build_smoother(get_dynamics_log_density)
+    smoother = taylor.build_smoother(get_dynamics_log_density)
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
@@ -123,7 +124,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         # Set an observation to nan
         ys = ys.at[1, 0].set(jnp.nan)
 
-    log_density_filter, _, model_inputs = load_log_density_inference(
+    log_density_filter, _, model_inputs = load_taylor_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
@@ -158,7 +159,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         seed, x_dim, y_dim, num_time_steps
     )
 
-    log_density_filter, log_density_smoother, model_inputs = load_log_density_inference(
+    log_density_filter, log_density_smoother, model_inputs = load_taylor_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
@@ -208,7 +209,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     chex.assert_trees_all_close(par_default_mi, par_smoother_states, rtol=1e-10)
 
 
-def load_log_density_inference_potential(
+def load_taylor_inference_potential(
     m0: Array,
     chol_P0: Array,
     Fs: Array,
@@ -222,12 +223,12 @@ def load_log_density_inference_potential(
 
     Uses Gaussian log potential for observations instead of conditional log density.
     """
-    get_init_log_density, get_dynamics_log_density = (
-        _load_log_density_init_and_dynamics(m0, chol_P0, Fs, cs, chol_Qs)
+    get_init_log_density, get_dynamics_log_density = _load_taylor_init_and_dynamics(
+        m0, chol_P0, Fs, cs, chol_Qs
     )
 
     def get_observation_log_potential(
-        state: log_density.LogDensityKalmanFilterState, model_inputs: int
+        state: LinearizedKalmanFilterState, model_inputs: int
     ) -> tuple[LogPotential, Array]:
         def observation_log_potential(x):
             return multivariate_normal.logpdf(
@@ -239,10 +240,10 @@ def load_log_density_inference_potential(
             jnp.zeros_like(m0),
         )
 
-    filter = log_density.build_filter(
+    filter = taylor.build_filter(
         get_init_log_density, get_dynamics_log_density, get_observation_log_potential
     )
-    smoother = log_density.build_smoother(get_dynamics_log_density)
+    smoother = taylor.build_smoother(get_dynamics_log_density)
     model_inputs = jnp.arange(len(ms))
     return filter, smoother, model_inputs
 
@@ -257,7 +258,7 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         seed, x_dim, x_dim, num_time_steps
     )
 
-    log_density_filter, _, model_inputs = load_log_density_inference_potential(
+    log_density_filter, _, model_inputs = load_taylor_inference_potential(
         m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs
     )
 

@@ -7,7 +7,7 @@ import pytest
 from jax import Array
 
 from cuthbert import filter, smoother
-from cuthbert.gaussian import extended
+from cuthbert.gaussian import moments
 from cuthbert.inference import Filter, Smoother
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
@@ -21,7 +21,7 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_extended_inference(
+def load_moments_inference(
     m0: Array,
     chol_P0: Array,
     Fs: Array,
@@ -32,7 +32,7 @@ def load_extended_inference(
     chol_Rs: Array,
     ys: Array,
 ) -> tuple[Filter, Smoother, Array]:
-    """Builds extended Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
+    """Builds linearized moments Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
@@ -58,10 +58,10 @@ def load_extended_inference(
             ys[model_inputs],
         )
 
-    filter = extended.build_filter(
+    filter = moments.build_filter(
         get_init_params, dynamics_moments, observation_moments
     )
-    smoother = extended.build_smoother(dynamics_moments)
+    smoother = moments.build_smoother(dynamics_moments)
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
@@ -85,7 +85,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         # Set an observation to nan
         ys = ys.at[1, 0].set(jnp.nan)
 
-    extended_filter, _, model_inputs = load_extended_inference(
+    extended_filter, _, model_inputs = load_moments_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
@@ -120,7 +120,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         seed, x_dim, y_dim, num_time_steps
     )
 
-    extended_filter, extended_smoother, model_inputs = load_extended_inference(
+    extended_filter, extended_smoother, model_inputs = load_moments_inference(
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
