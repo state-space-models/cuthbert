@@ -1,0 +1,46 @@
+from typing import NamedTuple
+
+import jax.numpy as jnp
+
+from cuthbertlib.types import Array
+
+
+class FilterScanElement(NamedTuple):
+    f: Array
+    log_g: Array
+
+
+def condition_on_obs(state_probs: Array, log_likelihoods: Array) -> tuple[Array, Array]:
+    """Condition a state on an observation.
+
+    Args:
+        state_probs: Can either be the state transition probabilities or the
+            initial distribution.
+        log_likelihoods: Vector of log p(y_t | x_t) for each possible state x_t.
+
+    Returns:
+        The conditioned state and the log normalizing constant.
+    """
+    ll_max = log_likelihoods.max(axis=-1)
+    A_cond = state_probs * jnp.exp(log_likelihoods - ll_max)
+    norm = A_cond.sum(axis=-1)
+    A_cond /= jnp.expand_dims(norm, axis=-1)
+    return A_cond, jnp.log(norm) + ll_max
+
+
+def filtering_operator(
+    elem_ij: FilterScanElement, elem_jk: FilterScanElement
+) -> FilterScanElement:
+    """Binary associative operator for HMMs.
+
+    Args:
+        elem_ij: Filter scan element for the previous step.
+        elem_jk: Filter scan element for the current step.
+
+    Returns:
+        FilterScanElement: The output of the associative operator applied to the input elements.
+    """
+    f, lognorm = condition_on_obs(elem_ij.f, elem_jk.log_g)
+    f = f @ elem_jk.f
+    log_g = elem_ij.log_g + lognorm
+    return FilterScanElement(f, log_g)

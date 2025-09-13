@@ -1,5 +1,5 @@
 """
-Parallel filter and smoother for discrete hidden Markov models~(HMMs).
+Parallel filter and smoother for discrete hidden Markov models (HMMs).
 
 Reference:
     https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
@@ -11,7 +11,8 @@ from typing import NamedTuple, Protocol
 import jax.numpy as jnp
 
 from cuthbert.inference import Filter
-from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
+from cuthbertlib.hmm import filtering
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
 class GetInitDist(Protocol):
@@ -28,8 +29,21 @@ class GetTransitionMatrix(Protocol):
 
 class GetObservationLikelihoods(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the observation matrix."""
+        """Get the observation log likelihoods."""
         ...
+
+
+class HMMFilterState(NamedTuple):
+    elem: filtering.FilterScanElement
+    model_inputs: ArrayTree
+
+    @property
+    def filtered_state(self) -> Array:
+        return jnp.take(self.elem.f, 0, axis=-2)
+
+    @property
+    def log_marginal_ll(self) -> Array:
+        return jnp.take(self.elem.log_g, 0, axis=-1)
 
 
 def build_filter(
@@ -52,50 +66,21 @@ def build_filter(
     )
 
 
-class FilterState(NamedTuple):
-    f: Array
-    log_g: Array
-
-    @property
-    def filtered_state(self) -> Array:
-        return jnp.take(self.f, 0, axis=-2)
-
-    @property
-    def log_marginal_ll(self) -> Array:
-        return jnp.take(self.log_g, 0, axis=-1)
-
-
-def condition(state_probs: Array, log_liks: Array) -> tuple[Array, Array]:
-    """Condition a state on an observation.
-
-    Args:
-        state_probs: Can either be the state transition probabilities or the
-            initial distribution.
-        log_liks: Vector of log p(y_t | x_t) for each possible state x_t.
-
-    Returns:
-        The conditioned state and the log normalizing constant.
-    """
-    ll_max = log_liks.max(axis=-1)
-    A_cond = state_probs * jnp.exp(log_liks - ll_max)
-    norm = A_cond.sum(axis=-1)
-    A_cond /= jnp.expand_dims(norm, axis=-1)
-    return A_cond, jnp.log(norm) + ll_max
-
-
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_dist: GetInitDist,
     get_obs_lls: GetObservationLikelihoods,
     key: KeyArray | None = None,
-) -> FilterState:
+) -> HMMFilterState:
     init_dist = get_init_dist(model_inputs)
     obs_log_probs = get_obs_lls(model_inputs)
-    f, log_g = condition(init_dist, obs_log_probs)
+    f, log_g = filtering.condition_on_obs(init_dist, obs_log_probs)
     K = init_dist.shape[0]
     f *= jnp.ones((K, K))
     log_g *= jnp.ones(K)
-    return FilterState(f, log_g)
+    return HMMFilterState(
+        elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
+    )
 
 
 def filter_prepare(
@@ -103,7 +88,7 @@ def filter_prepare(
     get_trans_matrix: GetTransitionMatrix,
     get_obs_lls: GetObservationLikelihoods,
     key: KeyArray | None = None,
-) -> FilterState:
+) -> HMMFilterState:
     """
     Prepare a state for a filter step.
 
@@ -116,11 +101,13 @@ def filter_prepare(
     """
     trans_matrix = get_trans_matrix(model_inputs)
     obs_log_probs = get_obs_lls(model_inputs)
-    f, log_g = condition(trans_matrix, obs_log_probs)
-    return FilterState(f, log_g)
+    f, log_g = filtering.condition_on_obs(trans_matrix, obs_log_probs)
+    return HMMFilterState(
+        elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
+    )
 
 
-def filter_combine(state_1: FilterState, state_2: FilterState) -> FilterState:
+def filter_combine(state_1: HMMFilterState, state_2: HMMFilterState) -> HMMFilterState:
     """
     Combine filter state from previous time point with state prepared
     with latest model inputs.
@@ -132,7 +119,5 @@ def filter_combine(state_1: FilterState, state_2: FilterState) -> FilterState:
     Returns:
         Combined filter state.
     """
-    f, lognorm = condition(state_1.f, state_2.log_g)
-    f = f @ state_2.f
-    log_g = state_1.log_g + lognorm
-    return FilterState(f, log_g)
+    combined_elem = filtering.filtering_operator(state_1.elem, state_2.elem)
+    return HMMFilterState(elem=combined_elem, model_inputs=state_2.model_inputs)
