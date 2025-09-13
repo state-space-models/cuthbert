@@ -7,7 +7,7 @@ import pytest
 from jax import random
 
 from cuthbert import filter
-from cuthbert.hmm.filter import build_filter
+from cuthbert.discrete.filter import build_filter
 
 
 @pytest.fixture(scope="module", autouse=True)

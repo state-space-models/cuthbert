@@ -11,7 +11,7 @@ from typing import NamedTuple, Protocol
 import jax.numpy as jnp
 
 from cuthbert.inference import Filter
-from cuthbertlib.hmm import filtering
+from cuthbertlib.discrete import filtering
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
