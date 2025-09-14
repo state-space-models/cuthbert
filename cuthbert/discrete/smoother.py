@@ -1,0 +1,88 @@
+"""
+Parallel-in-time Bayesian smoother for discrete hidden Markov models.
+
+References:
+    https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
+    https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
+"""
+
+from functools import partial
+from typing import NamedTuple
+
+import jax.numpy as jnp
+from jax import tree
+
+from cuthbert.discrete.filter import DiscreteFilterState, GetTransitionMatrix
+from cuthbert.inference import Smoother
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
+
+
+class DiscreteSmootherState(NamedTuple):
+    a: Array
+    model_inputs: ArrayTree
+
+    @property
+    def dist(self):
+        return jnp.take(self.a, 0, axis=-2)
+
+
+def build_smoother(get_trans_matrix: GetTransitionMatrix) -> Smoother:
+    return Smoother(
+        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
+        smoother_prepare=partial(smoother_prepare, get_trans_matrix=get_trans_matrix),
+        smoother_combine=smoother_combine,
+        associative=True,
+    )
+
+
+def smoother_prepare(
+    filter_state: DiscreteFilterState,
+    get_trans_matrix: GetTransitionMatrix,
+    model_inputs: ArrayTreeLike | None = None,
+    key: KeyArray | None = None,
+) -> DiscreteSmootherState:
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+
+    trans_matrix = get_trans_matrix(model_inputs)
+    filter_dist = filter_state.dist
+    pred = jnp.dot(trans_matrix.T, filter_dist)
+    a = trans_matrix.T * filter_dist[None, :] / pred[:, None]
+    return DiscreteSmootherState(a=a, model_inputs=model_inputs)
+
+
+def convert_filter_to_smoother_state(
+    filter_state: DiscreteFilterState,
+    model_inputs: ArrayTreeLike | None = None,
+    key: KeyArray | None = None,
+) -> DiscreteSmootherState:
+    if model_inputs is None:
+        model_inputs = filter_state.model_inputs
+    else:
+        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+
+    filter_dist = filter_state.dist
+    a = jnp.tile(filter_dist, (filter_dist.shape[0], 1))
+    return DiscreteSmootherState(a=a, model_inputs=model_inputs)
+
+
+def smoother_combine(
+    state_1: DiscreteSmootherState, state_2: DiscreteSmootherState
+) -> DiscreteSmootherState:
+    """
+    Combine smoother state from next time point with state prepared
+    with latest model inputs.
+
+    Remember smoothing iterates backwards in time.
+
+    Args:
+        state_1: State prepared with model inputs at time t.
+        state_2: Smoother state at time t + 1.
+
+    Returns:
+        Combined smoother state.
+    """
+    a = state_1.a @ state_2.a
+    return DiscreteSmootherState(a=a, model_inputs=state_1.model_inputs)

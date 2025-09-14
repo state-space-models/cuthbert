@@ -1,8 +1,9 @@
 """
-Parallel filter and smoother for discrete hidden Markov models (HMMs).
+Parallel-in-time Bayesian filter for discrete hidden Markov models.
 
-Reference:
+References:
     https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
+    https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
 """
 
 from functools import partial
@@ -17,39 +18,50 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 class GetInitDist(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the initial distribution.."""
+        """Get the initial distribution.
+
+        Should return an array of shape (N,) where N is the number of states.
+        """
         ...
 
 
 class GetTransitionMatrix(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the transition matrix."""
+        """Get the transition matrix.
+
+        Should return an array A of shape (N, N) where N is the number of
+        states, with A_{ij} = p(x_t = j | x_{t-1} = i).
+        """
         ...
 
 
-class GetObservationLikelihoods(Protocol):
+class GetObsLogLikelihoods(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the observation log likelihoods."""
+        """Get the observation log likelihoods.
+
+        Should return an array b of shape (N,) where N is the number of states,
+        with b_i = log p(y_t | x_t = i).
+        """
         ...
 
 
-class HMMFilterState(NamedTuple):
+class DiscreteFilterState(NamedTuple):
     elem: filtering.FilterScanElement
     model_inputs: ArrayTree
 
     @property
-    def filtered_state(self) -> Array:
+    def dist(self) -> Array:
         return jnp.take(self.elem.f, 0, axis=-2)
 
     @property
-    def log_marginal_ll(self) -> Array:
+    def log_marginal(self) -> Array:
         return jnp.take(self.elem.log_g, 0, axis=-1)
 
 
 def build_filter(
     get_init_dist: GetInitDist,
     get_trans_matrix: GetTransitionMatrix,
-    get_obs_lls: GetObservationLikelihoods,
+    get_obs_lls: GetObsLogLikelihoods,
 ) -> Filter:
     """Builds a filter object for discrete hidden Markov models."""
     return Filter(
@@ -69,16 +81,16 @@ def build_filter(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_dist: GetInitDist,
-    get_obs_lls: GetObservationLikelihoods,
+    get_obs_lls: GetObsLogLikelihoods,
     key: KeyArray | None = None,
-) -> HMMFilterState:
+) -> DiscreteFilterState:
     init_dist = get_init_dist(model_inputs)
-    obs_log_probs = get_obs_lls(model_inputs)
-    f, log_g = filtering.condition_on_obs(init_dist, obs_log_probs)
-    K = init_dist.shape[0]
-    f *= jnp.ones((K, K))
-    log_g *= jnp.ones(K)
-    return HMMFilterState(
+    obs_lls = get_obs_lls(model_inputs)
+    f, log_g = filtering.condition_on_obs(init_dist, obs_lls)
+    N = init_dist.shape[0]
+    f *= jnp.ones((N, N))
+    log_g *= jnp.ones(N)
+    return DiscreteFilterState(
         elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
     )
 
@@ -86,9 +98,9 @@ def init_prepare(
 def filter_prepare(
     model_inputs: ArrayTreeLike,
     get_trans_matrix: GetTransitionMatrix,
-    get_obs_lls: GetObservationLikelihoods,
+    get_obs_lls: GetObsLogLikelihoods,
     key: KeyArray | None = None,
-) -> HMMFilterState:
+) -> DiscreteFilterState:
     """
     Prepare a state for a filter step.
 
@@ -100,14 +112,16 @@ def filter_prepare(
         Prepared state for the filter.
     """
     trans_matrix = get_trans_matrix(model_inputs)
-    obs_log_probs = get_obs_lls(model_inputs)
-    f, log_g = filtering.condition_on_obs(trans_matrix, obs_log_probs)
-    return HMMFilterState(
+    obs_lls = get_obs_lls(model_inputs)
+    f, log_g = filtering.condition_on_obs(trans_matrix, obs_lls)
+    return DiscreteFilterState(
         elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
     )
 
 
-def filter_combine(state_1: HMMFilterState, state_2: HMMFilterState) -> HMMFilterState:
+def filter_combine(
+    state_1: DiscreteFilterState, state_2: DiscreteFilterState
+) -> DiscreteFilterState:
     """
     Combine filter state from previous time point with state prepared
     with latest model inputs.
@@ -120,4 +134,4 @@ def filter_combine(state_1: HMMFilterState, state_2: HMMFilterState) -> HMMFilte
         Combined filter state.
     """
     combined_elem = filtering.filtering_operator(state_1.elem, state_2.elem)
-    return HMMFilterState(elem=combined_elem, model_inputs=state_2.model_inputs)
+    return DiscreteFilterState(elem=combined_elem, model_inputs=state_2.model_inputs)
