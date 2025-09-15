@@ -36,4 +36,10 @@ jobs:
           pip install '.[test]'
       - name: Run the tests with pytest
         run: |
-          python -m pytest -n auto -vv
+          python -m pytest -n auto -vv -m "not examples"
+      - name: Generate examples scripts
+        run: |
+          entangled tangle docs/examples/*.md
+      - name: Run the examples scripts with pytest
+        run: |
+          python -m pytest -n auto -vv -m examples
