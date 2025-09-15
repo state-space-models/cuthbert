@@ -30,6 +30,7 @@ test = [
     "entangled_cli", # convert .md examples to .py
 ]
 docs = ["mkdocs-material", "mkdocs-include-markdown-plugin"]
+examples = ["matplotlib"]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
