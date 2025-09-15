@@ -46,3 +46,28 @@ python -m pytest --cov=cuthbert --cov-report term-missing
 6. Commit your changes and push your new branch to your fork.
 
 7. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
+
+
+## Adding an example
+
+Examples in `cuthbert` are written in Markdown and tangled into Python scripts using [entangled](https://github.com/entangled-lang/entangled) so they can be run as tests.
+
+To add an example, you can use the following steps:
+
+1. Write the example in Markdown in the `docs` directory.
+2. Make sure to start each code block with `{.python #code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
+3. Add a hidden code block at the end of the file with the following content:
+```
+```{.python file=examples_scripts/example_name.py}
+<<code_block_name_1>>
+<<code_block_name_2>>
+...
+```
+Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
+
+4. That's it!
+If you want to generate the python script and run it locally to check it works, you can run:
+```bash
+entangled tangle
+python examples_scripts/example_name.py
+```
