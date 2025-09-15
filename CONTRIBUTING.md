@@ -68,6 +68,6 @@ Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuth
 4. That's it!
 If you want to generate the python script and run it locally to check it works, you can run:
 ```bash
-entangled tangle docs/example_name.md
+entangled tangle
 python examples_scripts/example_name.py
 ```
