@@ -2,8 +2,6 @@
 .entangled/
 examples_scripts/
 
-# tangled files
-tangled/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
