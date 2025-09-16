@@ -152,6 +152,4 @@ def test_discrete(seed, num_states, num_time_steps):
     chex.assert_trees_all_close(
         log_marginals, des_log_marginals, rtol=1e-10, atol=1e-12
     )
-    print(smooth_dists[:5])
-    print(des_smooth_dists[:5])
     chex.assert_trees_all_close(smooth_dists, des_smooth_dists, rtol=1e-10, atol=1e-12)
