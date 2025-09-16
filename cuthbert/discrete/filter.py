@@ -4,12 +4,14 @@ Parallel-in-time Bayesian filter for discrete hidden Markov models.
 References:
     https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
     https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
+    https://github.com/probml/dynamax/blob/main/dynamax/hidden_markov_model/parallel_inference.py
 """
 
 from functools import partial
 from typing import NamedTuple, Protocol
 
 import jax.numpy as jnp
+from jax import tree
 
 from cuthbert.inference import Filter
 from cuthbertlib.discrete import filtering
@@ -20,7 +22,8 @@ class GetInitDist(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
         """Get the initial distribution.
 
-        Should return an array of shape (N,) where N is the number of states.
+        Should return an array m of shape (N,) where N is the number of states,
+        with m_i = p(x_0 = i).
         """
         ...
 
@@ -63,12 +66,19 @@ def build_filter(
     get_trans_matrix: GetTransitionMatrix,
     get_obs_lls: GetObsLogLikelihoods,
 ) -> Filter:
-    """Builds a filter object for discrete hidden Markov models."""
+    """Builds a filter object for discrete hidden Markov models.
+
+    Args:
+        get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
+        get_trans_matrix: Function to get the transition matrix A_{ij} = p(x_t = j | x_{t-1} = i).
+        get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
+
+    Returns:
+        Filter object. Suitable for associative scan.
+    """
     return Filter(
         init_prepare=partial(
-            init_prepare,
-            get_init_dist=get_init_dist,
-            get_obs_lls=get_obs_lls,
+            init_prepare, get_init_dist=get_init_dist, get_obs_lls=get_obs_lls
         ),
         filter_prepare=partial(
             filter_prepare, get_trans_matrix=get_trans_matrix, get_obs_lls=get_obs_lls
@@ -84,6 +94,18 @@ def init_prepare(
     get_obs_lls: GetObsLogLikelihoods,
     key: KeyArray | None = None,
 ) -> DiscreteFilterState:
+    """Prepare the initial state for the filter.
+
+    Args:
+        model_inputs: Model inputs.
+        get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
+        get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
+        key: JAX random key - not used.
+
+    Returns:
+        Prepared state for the filter.
+    """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_dist = get_init_dist(model_inputs)
     obs_lls = get_obs_lls(model_inputs)
     f, log_g = filtering.condition_on_obs(init_dist, obs_lls)
@@ -101,16 +123,18 @@ def filter_prepare(
     get_obs_lls: GetObsLogLikelihoods,
     key: KeyArray | None = None,
 ) -> DiscreteFilterState:
-    """
-    Prepare a state for a filter step.
+    """Prepare a state for a filter step.
 
-    Arcs:
+    Args:
         model_inputs: Model inputs.
+        get_trans_matrix: Function to get the transition matrix A_{ij} = p(x_t = j | x_{t-1} = i).
+        get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
         key: JAX random key - not used.
 
     Returns:
         Prepared state for the filter.
     """
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     trans_matrix = get_trans_matrix(model_inputs)
     obs_lls = get_obs_lls(model_inputs)
     f, log_g = filtering.condition_on_obs(trans_matrix, obs_lls)
@@ -122,13 +146,12 @@ def filter_prepare(
 def filter_combine(
     state_1: DiscreteFilterState, state_2: DiscreteFilterState
 ) -> DiscreteFilterState:
-    """
-    Combine filter state from previous time point with state prepared
-    with latest model inputs.
+    """Combine the filter state from the previous time point with the state
+    prepared with the latest model inputs.
 
     Args:
-        state_1: State from previous time step.
-        state_2: State prepared with latest model inputs.
+        state_1: State from the previous time step.
+        state_2: State prepared with the latest model inputs.
 
     Returns:
         Combined filter state.
