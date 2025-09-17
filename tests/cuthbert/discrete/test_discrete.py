@@ -150,10 +150,9 @@ class TestDiscrete(chex.TestCase):
         assert smooth_dists.shape == (num_time_steps + 1, num_states)
 
         # Check filtered and smoothed distributions and log marginal likelihoods
-        chex.assert_trees_all_close(filt_dists, des_filt_dists, rtol=1e-10, atol=1e-12)
         chex.assert_trees_all_close(
-            log_marginals, des_log_marginals, rtol=1e-10, atol=1e-12
-        )
-        chex.assert_trees_all_close(
-            smooth_dists, des_smooth_dists, rtol=1e-10, atol=1e-12
+            (filt_dists, log_marginals, smooth_dists),
+            (des_filt_dists, des_log_marginals, des_smooth_dists),
+            rtol=1e-10,
+            atol=1e-12,
         )
