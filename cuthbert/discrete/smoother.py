@@ -116,5 +116,5 @@ def smoother_combine(
     Returns:
         Combined smoother state.
     """
-    a = state_1.a @ state_2.a
+    a = state_2.a @ state_1.a
     return DiscreteSmootherState(a=a, model_inputs=state_1.model_inputs)

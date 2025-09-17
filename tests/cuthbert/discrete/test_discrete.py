@@ -1,9 +1,8 @@
-import itertools
-
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
+from absl.testing import parameterized
 from jax import random
 
 from cuthbert import filter, smoother
@@ -42,7 +41,7 @@ def build_hmm(seed, num_states, num_time_steps):
     trans_matrices = random.uniform(trans_key, (num_time_steps, num_states, num_states))
     trans_matrices /= trans_matrices.sum(axis=-1, keepdims=True)
 
-    # Emission likelihoods
+    # Observation log likelihoods
     log_likelihoods = random.normal(obs_key, (num_time_steps + 1, num_states))
     return init_dist, trans_matrices, log_likelihoods
 
@@ -116,40 +115,45 @@ def build_inference_object(init_dist, trans_matrices, log_likelihoods):
     return filter_obj, smoother_obj, model_inputs
 
 
-seeds = [456]
-num_states_list = [5]
-num_time_steps_list = [25]
-common_params = list(itertools.product(seeds, num_states_list, num_time_steps_list))
+class TestDiscrete(chex.TestCase):
+    @chex.variants(with_jit=True, without_jit=True)
+    @parameterized.product(seed=[1, 123, 456], num_states=[5], num_time_steps=[25])
+    def test(self, seed, num_states, num_time_steps):
+        init_dist, trans_matrices, log_likelihoods = build_hmm(
+            seed, num_states, num_time_steps
+        )
+        filter_obj, smoother_obj, model_inputs = build_inference_object(
+            init_dist, trans_matrices, log_likelihoods
+        )
 
+        # Run the filter and smoother
+        # filtered_states = filter(filter_obj, model_inputs, parallel=True)
+        filtered_states = self.variant(
+            filter, static_argnames=("filter_obj", "parallel")
+        )(filter_obj, model_inputs, parallel=True)
+        filt_dists, log_marginals = filtered_states.dist, filtered_states.log_marginal
 
-@pytest.mark.parametrize("seed,num_states,num_time_steps", common_params)
-def test_discrete(seed, num_states, num_time_steps):
-    init_dist, trans_matrices, log_likelihoods = build_hmm(
-        seed, num_states, num_time_steps
-    )
-    filter_obj, smoother_obj, model_inputs = build_inference_object(
-        init_dist, trans_matrices, log_likelihoods
-    )
+        model_inputs += 1  # This is a hack
+        smoothed_states = self.variant(
+            smoother, static_argnames=("smoother_obj", "parallel")
+        )(smoother_obj, filtered_states, model_inputs, parallel=True)
+        smooth_dists = smoothed_states.dist
 
-    # Run the filter and smoother
-    filtered_states = filter(filter_obj, model_inputs, parallel=True)
-    filt_dists, log_marginals = filtered_states.dist, filtered_states.log_marginal
-    smoothed_states = smoother(smoother_obj, filtered_states, None, parallel=True)
-    smooth_dists = smoothed_states.dist
+        # Reference solution
+        des_filt_dists, des_smooth_dists, des_log_marginals = sequential_inference(
+            init_dist, trans_matrices, log_likelihoods
+        )
 
-    # Reference solution
-    des_filt_dists, des_smooth_dists, des_log_marginals = sequential_inference(
-        init_dist, trans_matrices, log_likelihoods
-    )
+        # Check shapes
+        assert filt_dists.shape == (num_time_steps + 1, num_states)
+        assert log_marginals.shape[0] == num_time_steps + 1
+        assert smooth_dists.shape == (num_time_steps + 1, num_states)
 
-    # Check shapes
-    assert filt_dists.shape == (num_time_steps + 1, num_states)
-    assert log_marginals.shape[0] == num_time_steps + 1
-    assert smooth_dists.shape == (num_time_steps + 1, num_states)
-
-    # Check filtered and smoothed distributions and log marginal likelihoods
-    chex.assert_trees_all_close(filt_dists, des_filt_dists, rtol=1e-10, atol=1e-12)
-    chex.assert_trees_all_close(
-        log_marginals, des_log_marginals, rtol=1e-10, atol=1e-12
-    )
-    chex.assert_trees_all_close(smooth_dists, des_smooth_dists, rtol=1e-10, atol=1e-12)
+        # Check filtered and smoothed distributions and log marginal likelihoods
+        chex.assert_trees_all_close(filt_dists, des_filt_dists, rtol=1e-10, atol=1e-12)
+        chex.assert_trees_all_close(
+            log_marginals, des_log_marginals, rtol=1e-10, atol=1e-12
+        )
+        chex.assert_trees_all_close(
+            smooth_dists, des_smooth_dists, rtol=1e-10, atol=1e-12
+        )
