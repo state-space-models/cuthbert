@@ -46,20 +46,20 @@ def build_hmm(seed, num_states, num_time_steps):
     return init_dist, trans_matrices, log_likelihoods
 
 
-def sequential_inference(init_dist, trans_matrix, log_likelihoods):
-    """Filter for an HMM log space."""
+def std_two_filter_smoother(init_dist, trans_matrix, log_likelihoods):
+    """The standard two-filter smoother for discrete HMMs."""
     num_timesteps, N = trans_matrix.shape[:2]
 
     log_initial = jnp.log(init_dist)
     log_trans = jnp.log(trans_matrix)
 
-    # Initialize (time 0 includes the first observation)
+    # Forward filter
     log_alpha = []
     log_marginals = []
 
-    log_alpha_t = log_initial + log_likelihoods[0]
-    log_alpha.append(log_alpha_t)
-    log_marginals.append(jax.nn.logsumexp(log_alpha_t))
+    log_alpha_init = log_initial + log_likelihoods[0]
+    log_alpha.append(log_alpha_init)
+    log_marginals.append(jax.nn.logsumexp(log_alpha_init))
 
     for t in range(num_timesteps):
         log_alpha_t = log_likelihoods[t + 1] + jax.nn.logsumexp(
@@ -71,12 +71,10 @@ def sequential_inference(init_dist, trans_matrix, log_likelihoods):
     log_alpha = jnp.stack(log_alpha)
     log_marginals = jnp.array(log_marginals)
 
-    alpha = jax.nn.softmax(log_alpha)
-
-    # Backward pass
-    log_beta = []
-    log_beta_t = jnp.zeros(N)  # log(1)
-    log_beta.append(log_beta_t)
+    # Backward filter
+    log_beta = []  # beta_t = p(y_{t+1:T} | x_t)
+    log_beta_final = jnp.zeros(N)
+    log_beta.append(log_beta_final)
 
     for t in range(num_timesteps - 1, -1, -1):
         log_beta_t = jax.nn.logsumexp(
@@ -85,12 +83,12 @@ def sequential_inference(init_dist, trans_matrix, log_likelihoods):
         log_beta.append(log_beta_t)
 
     log_beta = jnp.stack(log_beta[::-1])
-
-    # Smoothed states
     log_gamma_unnorm = log_alpha + log_beta
-    gamma = jax.nn.softmax(log_gamma_unnorm)
 
-    return alpha, gamma, log_marginals
+    filt_states = jax.nn.softmax(log_alpha)
+    smooth_states = jax.nn.softmax(log_gamma_unnorm)
+
+    return filt_states, smooth_states, log_marginals
 
 
 def build_inference_object(init_dist, trans_matrices, log_likelihoods):
@@ -140,7 +138,7 @@ class TestDiscrete(chex.TestCase):
         smooth_dists = smoothed_states.dist
 
         # Reference solution
-        des_filt_dists, des_smooth_dists, des_log_marginals = sequential_inference(
+        des_filt_dists, des_smooth_dists, des_log_marginals = std_two_filter_smoother(
             init_dist, trans_matrices, log_likelihoods
         )
 
