@@ -18,14 +18,22 @@ def smoother(
 ) -> ArrayTree:
     """
     Applies offline smoothing given a smoother object, output from filter, and model
-    inputs (both with leading temporal dimension of len T + 1, where T is the number of
-    time steps excluding the initial state).
+    inputs.
+
+    The filter_states should have leading temporal dimension of len T + 1, where
+    T is the number of time steps excluding the initial state.
+
+    Each element of model_inputs refers to the transition from t to t+1, except for the
+    first element which refers to the initial state. The initial state model_inputs
+    are not used for smoothing. Thus the model_inputs used here have length T.
+    By default, filter_states.model_inputs[1:] are used (i.e. the model_inputs
+    used for the initial state is ignored).
 
     Args:
         smoother_obj: The smoother inference object.
         filter_states: The filtered states (with leading temporal dimension of len T + 1).
-        model_inputs: The model inputs (with leading temporal dimension of len T + 1).
-            Optional, if None then filter_states.model_inputs are used.
+        model_inputs: The model inputs (with leading temporal dimension of len T).
+            Optional, if None then filter_states.model_inputs[1:] are used.
         parallel: Whether to run the smoother in parallel.
             Requires inference.associative_smoother to be True.
         key: The key for the random number generator.
@@ -52,6 +60,11 @@ def smoother(
     model_inputs_length = tree.leaves(model_inputs)[0].shape[0]
     if model_inputs_length == T + 1:
         model_inputs = tree.map(lambda x: x[1:], model_inputs)
+    elif model_inputs_length != T:
+        raise ValueError(
+            "model_inputs must have length T + 1 or T, got length "
+            f"{model_inputs_length}"
+        )
 
     if key is None:
         # This will throw error if used as a key, which is desired
