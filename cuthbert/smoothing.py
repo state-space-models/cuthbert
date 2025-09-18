@@ -42,7 +42,16 @@ def smoother(
     if model_inputs is None:
         model_inputs = filter_states.model_inputs
 
-    T = tree.leaves(model_inputs)[0].shape[0] - 1
+    T = tree.leaves(filter_states)[0].shape[0] - 1
+
+    # model_inputs for the dynamics distribution from t-1 to t is stored
+    # in model_inputs[t] thus we need model_inputs[1:]
+    # model_inputs[0] is only used for init_prepare and not for smoothing.
+    # Therefore, we allow model_inputs to be either of length T + 1 or T
+    # where if length is T + 1 then we simply discard model_inputs[0]
+    model_inputs_length = tree.leaves(model_inputs)[0].shape[0]
+    if model_inputs_length == T + 1:
+        model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
     if key is None:
         # This will throw error if used as a key, which is desired
@@ -54,13 +63,14 @@ def smoother(
     final_filter_state = tree.map(lambda x: x[-1], filter_states)
     other_filter_states = tree.map(lambda x: x[:-1], filter_states)
 
-    # Model inputs for dynamics distribution from t to t+1 is stored
-    # in the (t+1)th model_inputs i.e. model_inputs[t] thus we need model_inputs[1:]
-    final_model_inputs = tree.map(lambda x: x[-1], model_inputs)
-    other_model_inputs = tree.map(lambda x: x[:-1], model_inputs)
+    # Final smoother state doesn't need model inputs, so we create a dummy one
+    # with the same structure as model_inputs but with all values set to nan
+    dummy_single_model_inputs = tree.map(
+        lambda x: jnp.full_like(x[0], jnp.nan), model_inputs
+    )
 
     final_smoother_state = smoother_obj.convert_filter_to_smoother_state(
-        final_filter_state, model_inputs=final_model_inputs, key=prepare_keys[0]
+        final_filter_state, model_inputs=dummy_single_model_inputs, key=prepare_keys[0]
     )
 
     if parallel:
@@ -68,7 +78,7 @@ def smoother(
             lambda fs, inp, k: smoother_obj.smoother_prepare(
                 fs, model_inputs=inp, key=k
             )
-        )(other_filter_states, other_model_inputs, prepare_keys[1:])
+        )(other_filter_states, model_inputs, prepare_keys[1:])
         prep_states = append_tree(prep_states, final_smoother_state)
 
         states = associative_scan(
@@ -90,7 +100,7 @@ def smoother(
         _, states = scan(
             body,
             final_smoother_state,
-            (other_filter_states, other_model_inputs, prepare_keys[1:]),
+            (other_filter_states, model_inputs, prepare_keys[1:]),
             reverse=True,
         )
 
