@@ -33,7 +33,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
 
-    n_filter_particles = 10000
+    n_filter_particles = 5000
     resampling_fn = systematic.resampling
     ess_threshold = 0.7
     filter_obj = build_filter(
