@@ -294,6 +294,7 @@ def convert_filter_to_smoother_state(
 
     Returns:
         Smoother state, same data as filter state just different structure.
+            Note that the model_inputs are set to nan.
     """
     if model_inputs is None:
         model_inputs = filter_state.model_inputs
