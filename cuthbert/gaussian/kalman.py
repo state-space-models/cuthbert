@@ -286,7 +286,7 @@ def convert_filter_to_smoother_state(
         filter_state: Filter state.
         model_inputs: Only used to create an empty model_inputs tree
             (the values are ignored).
-            Useful so that the final smoother state has the same structure as the rest).
+            Useful so that the final smoother state has the same structure as the rest.
             By default, filter_state.model_inputs is used. So this
             is only needed if the smoother model_inputs have a different tree
             structure to filter_state.model_inputs.
