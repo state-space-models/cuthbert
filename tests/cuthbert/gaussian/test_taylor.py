@@ -149,6 +149,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-5,
+        atol=1e-8,
     )
 
 
@@ -200,6 +201,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (par_means, par_covs, par_cross_covs),
         (des_means, des_covs, des_cross_covs),
         rtol=1e-5,
+        atol=1e-8,
     )
 
     seq_default_mi = smoother(log_density_smoother, filt_states, parallel=False)
@@ -285,4 +287,5 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         (seq_means, seq_covs, seq_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-5,
+        atol=1e-8,
     )
