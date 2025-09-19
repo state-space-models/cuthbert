@@ -12,7 +12,8 @@ from typing import NamedTuple
 import jax.numpy as jnp
 from jax import tree
 
-from cuthbert.discrete.filter import DiscreteFilterState, GetTransitionMatrix
+from cuthbert.discrete.filter import DiscreteFilterState
+from cuthbert.discrete.types import GetTransitionMatrix
 from cuthbert.inference import Smoother
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray

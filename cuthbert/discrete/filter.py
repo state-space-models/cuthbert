@@ -8,44 +8,19 @@ References:
 """
 
 from functools import partial
-from typing import NamedTuple, Protocol
+from typing import NamedTuple
 
 import jax.numpy as jnp
 from jax import tree
 
+from cuthbert.discrete.types import (
+    GetInitDist,
+    GetObsLogLikelihoods,
+    GetTransitionMatrix,
+)
 from cuthbert.inference import Filter
 from cuthbertlib.discrete import filtering
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
-
-
-class GetInitDist(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the initial distribution.
-
-        Should return an array m of shape (N,) where N is the number of states,
-        with m_i = p(x_0 = i).
-        """
-        ...
-
-
-class GetTransitionMatrix(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the transition matrix.
-
-        Should return an array A of shape (N, N) where N is the number of
-        states, with A_{ij} = p(x_t = j | x_{t-1} = i).
-        """
-        ...
-
-
-class GetObsLogLikelihoods(Protocol):
-    def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the observation log likelihoods.
-
-        Should return an array b of shape (N,) where N is the number of states,
-        with b_i = log p(y_t | x_t = i).
-        """
-        ...
 
 
 class DiscreteFilterState(NamedTuple):
