@@ -5,6 +5,7 @@ from jax import numpy as jnp
 from jax import tree
 
 from cuthbert.inference import Filter, Smoother
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
@@ -294,12 +295,12 @@ def convert_filter_to_smoother_state(
 
     Returns:
         Smoother state, same data as filter state just different structure.
-            Note that the model_inputs are set to nan.
+            Note that the model_inputs are set to dummy values.
     """
     if model_inputs is None:
         model_inputs = filter_state.model_inputs
 
-    model_inputs_nan = tree.map(lambda x: jnp.full_like(x, jnp.nan), model_inputs)
+    dummy_model_inputs = dummy_tree_like(model_inputs)
 
     elem = smoothing.SmootherScanElement(
         g=filter_state.mean,
@@ -309,5 +310,5 @@ def convert_filter_to_smoother_state(
     return KalmanSmootherState(
         elem=elem,
         gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
-        model_inputs=model_inputs_nan,
+        model_inputs=dummy_model_inputs,
     )

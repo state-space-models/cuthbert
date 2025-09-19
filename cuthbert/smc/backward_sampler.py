@@ -7,6 +7,7 @@ from jax import Array, random
 
 from cuthbert.inference import Smoother
 from cuthbert.smc.particle_filter import LogPotential, ParticleFilterState
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.smoothing.protocols import BackwardSampling
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
@@ -84,8 +85,7 @@ def convert_filter_to_smoother_state(
         key: JAX random key.
 
     Returns:
-        Particle smoother state.
-            Note that the model_inputs are set to nan.
+        Particle smoother state. Note that the model_inputs are set to dummy values.
 
     Raises:
         ValueError: If key is None.
@@ -96,7 +96,7 @@ def convert_filter_to_smoother_state(
     if model_inputs is None:
         model_inputs = filter_state.model_inputs
 
-    model_inputs_nan = jax.tree.map(lambda x: jnp.full_like(x, jnp.nan), model_inputs)
+    dummy_model_inputs = dummy_tree_like(model_inputs)
 
     key, resampling_key = random.split(key)
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
@@ -105,7 +105,7 @@ def convert_filter_to_smoother_state(
         key=cast(KeyArray, key),
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
-        model_inputs=model_inputs_nan,
+        model_inputs=dummy_model_inputs,
         log_weights=-jnp.log(n_smoother_particles) * jnp.ones(n_smoother_particles),
     )
 
