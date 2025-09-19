@@ -2,7 +2,7 @@
 Parallel-in-time Bayesian smoother for discrete hidden Markov models.
 
 References:
-    https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
+    https://ieeexplore.ieee.org/document/9512397
     https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
 """
 

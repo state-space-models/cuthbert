@@ -2,7 +2,7 @@
 Parallel-in-time Bayesian filter for discrete hidden Markov models.
 
 References:
-    https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9512397
+    https://ieeexplore.ieee.org/document/9512397
     https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
     https://github.com/probml/dynamax/blob/main/dynamax/hidden_markov_model/parallel_inference.py
 """
