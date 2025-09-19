@@ -16,6 +16,7 @@ from cuthbert.discrete.filter import DiscreteFilterState
 from cuthbert.discrete.types import GetTransitionMatrix
 from cuthbert.inference import Smoother
 from cuthbert.utils import dummy_tree_like
+from cuthbertlib.discrete.smoothing import get_reverse_kernel, smoothing_operator
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -64,9 +65,7 @@ def smoother_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     trans_matrix = get_trans_matrix(model_inputs)
-    filter_dist = filter_state.dist
-    pred = jnp.dot(trans_matrix.T, filter_dist)
-    a = trans_matrix.T * filter_dist[None, :] / pred[:, None]
+    a = get_reverse_kernel(filter_state.dist, trans_matrix)
     return DiscreteSmootherState(a=a, model_inputs=model_inputs)
 
 
@@ -116,5 +115,5 @@ def smoother_combine(
     Returns:
         Combined smoother state.
     """
-    a = state_2.a @ state_1.a
+    a = smoothing_operator(state_1.a, state_2.a)
     return DiscreteSmootherState(a=a, model_inputs=state_1.model_inputs)
