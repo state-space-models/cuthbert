@@ -6,8 +6,7 @@ from absl.testing import parameterized
 from jax import random
 
 from cuthbert import filter, smoother
-from cuthbert.discrete.filter import build_filter
-from cuthbert.discrete.smoother import build_smoother
+from cuthbert.discrete import build_filter, build_smoother
 
 
 @pytest.fixture(scope="module", autouse=True)
