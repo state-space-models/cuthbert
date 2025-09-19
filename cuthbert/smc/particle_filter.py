@@ -7,6 +7,7 @@ from jax import Array, random, tree
 
 from cuthbert.inference import Filter
 from cuthbert.smc.types import InitSample, LogPotential, PropagateSample
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
@@ -152,6 +153,7 @@ def filter_prepare(
     particles = tree.map(
         lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
     )
+    particles = dummy_tree_like(particles)
     return ParticleFilterState(
         key=key,
         particles=particles,

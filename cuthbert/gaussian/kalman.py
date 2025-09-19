@@ -309,6 +309,6 @@ def convert_filter_to_smoother_state(
     )
     return KalmanSmootherState(
         elem=elem,
-        gain=jnp.full_like(filter_state.chol_cov, jnp.nan),
+        gain=dummy_tree_like(filter_state.chol_cov),
         model_inputs=dummy_model_inputs,
     )
