@@ -45,8 +45,14 @@ def build_hmm(seed, num_states, num_time_steps):
     return init_dist, trans_matrices, log_likelihoods
 
 
-def std_two_filter_smoother(init_dist, trans_matrix, log_likelihoods):
-    """The standard two-filter smoother for discrete HMMs."""
+def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
+    """The standard forward-backward algorithm for discrete HMMs.
+
+    Computes everything in the log space.
+
+    References:
+        https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm
+    """
     num_timesteps, N = trans_matrix.shape[:2]
 
     log_initial = jnp.log(init_dist)
@@ -136,7 +142,7 @@ class TestDiscrete(chex.TestCase):
         smooth_dists = smoothed_states.dist
 
         # Reference solution
-        des_filt_dists, des_smooth_dists, des_log_marginals = std_two_filter_smoother(
+        des_filt_dists, des_smooth_dists, des_log_marginals = std_forward_backward(
             init_dist, trans_matrices, log_likelihoods
         )
 
