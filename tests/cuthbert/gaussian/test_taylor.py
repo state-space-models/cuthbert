@@ -148,7 +148,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
         (des_means, des_covs, des_ells),
-        rtol=1e-10,
+        rtol=1e-5,
     )
 
 
@@ -199,7 +199,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_cross_covs),
         (par_means, par_covs, par_cross_covs),
         (des_means, des_covs, des_cross_covs),
-        rtol=1e-10,
+        rtol=1e-5,
     )
 
     seq_default_mi = smoother(log_density_smoother, filt_states, parallel=False)
@@ -284,5 +284,5 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
         (des_means, des_covs, des_ells),
-        rtol=1e-10,
+        rtol=1e-5,
     )

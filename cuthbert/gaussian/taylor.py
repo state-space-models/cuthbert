@@ -286,7 +286,7 @@ def filter_combine(
 def smoother_prepare(
     filter_state: LinearizedKalmanFilterState,
     get_dynamics_log_density: GetDynamicsLogDensity,
-    model_inputs: ArrayTreeLike | None = None,
+    model_inputs: ArrayTreeLike,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -297,17 +297,13 @@ def smoother_prepare(
             time point.
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
-        model_inputs: Model inputs at the next time point.
-            Optional, if None then filter_state.model_inputs are used.
+        model_inputs: Model inputs for the transition from t to t+1.
         key: JAX random key - not used.
 
     Returns:
         Prepared state for the Kalman smoother.
     """
-    if model_inputs is None:
-        model_inputs = filter_state.model_inputs
-    else:
-        model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
+    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
 
     filter_mean = filter_state.mean
     filter_chol_cov = filter_state.chol_cov
