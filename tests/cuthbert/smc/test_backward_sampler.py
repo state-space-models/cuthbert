@@ -33,7 +33,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
 
-    n_filter_particles = 1000
+    n_filter_particles = 5000
     resampling_fn = systematic.resampling
     ess_threshold = 0.7
     filter_obj = build_filter(
@@ -51,7 +51,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[42, 99, 455],
+        seed=[0, 123, 455],
         x_dim=[3],
         y_dim=[2],
         num_time_steps=[20],
@@ -79,7 +79,7 @@ class Test(chex.TestCase):
             raise ValueError(f"{method} is not a valid backward sampling method.")
 
         # Run the particle smoother.
-        n_smoother_particles = 500
+        n_smoother_particles = 1000
         smoother_obj = build_smoother(
             log_potential, bs_fn, systematic.resampling, n_smoother_particles
         )

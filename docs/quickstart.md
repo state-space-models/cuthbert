@@ -25,20 +25,20 @@ where the goal is to track a car's position and velocity in 2D space at discrete
 
 ### Setup and imports
 
-```python
-import jax.numpy as jnp
-import jax.random as random
+```{.python #imports}
+from jax import random, jit, numpy as jnp
 import matplotlib.pyplot as plt
 
 from cuthbert import filter
 from cuthbert.gaussian import kalman
 ```
 
+
 ### Generate sample data
 
 We first simulate the system to generate a sequence of observations. The state vector represents the car's position and velocity: $\textbf{x} = (x, y, \dot{x}, \dot{y})$ where $(x, y)$ is the car's position and $(\dot{x}, \dot{y})$ its velocity.
 
-```python
+```{.python #generate-data}
 def generate_car_tracking_data(key, num_steps=50):
     # Model specification follows Example 6.8 from Särkka and Svensson (2023).
     x_dim, y_dim, dt = 4, 2, 0.1
@@ -138,7 +138,7 @@ This pattern separates the model specification from the filtering algorithm, mak
 
 **Important indexing note**: The `get_dynamics_params` function uses `model_inputs - 1` because dynamics describe transitions from time $t-1$ to $t$, while `get_observation_params` uses `model_inputs` directly since observations occur at each time step.
 
-```python
+```{.python #build-filter}
 def build_car_tracking_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
 
     def get_init_params(model_inputs):
@@ -168,7 +168,7 @@ filter_obj, model_inputs = build_car_tracking_filter(
 With the filter built, running the Kalman filter is now as simple as calling the `cuthbert.filter`
 function with our constructed filter object and model inputs:
 
-```python
+```{.python #run-filter}
 # Run the filter
 filtered_states = filter(filter_obj, model_inputs, parallel=True)
 
@@ -191,9 +191,9 @@ log_likelihood = filtered_states.log_likelihood  # Log marginal likelihoods
     [`jax.jit`](https://docs.jax.dev/en/latest/_autosummary/jax.jit.html). All functions in `cuthbert` are
     pure and designed to work seamlessly with JAX function transformations.
 
-    ```python
-    jitted_filter = jax.jit(filter, static_argnames=['parallel'])
-    filtered_states = jitted_filter(kalman_filter, model_inputs, parallel=True)
+    ```{.python #jit-example}
+    jitted_filter = jit(filter, static_argnames=['filter_obj', 'parallel'])
+    filtered_states = jitted_filter(filter_obj, model_inputs, parallel=True)
     ```
 
 ### Visualize the results
@@ -204,7 +204,7 @@ applications), the noisy GPS measurements, and the filtered estimates of the
 car's position.
 
 ??? "Code to plot the results."
-    ```python
+    ```{.python #plot}
     true_pos = true_states[:, :2]
     filtered_pos = means[:, :2]
 
@@ -222,7 +222,7 @@ car's position.
     plt.grid(True, alpha=0.3)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
-    plt.show()
+    # plt.show()
     ```
 
 ![Car Tracking Results](assets/car_tracking.png)
@@ -230,21 +230,21 @@ car's position.
 ??? tip "Bonus: Handle missing observations"
     `cuthbert` automatically handles missing data when observations contain NaN values:
 
-    ```python
+    ```{.python #bonus-missing}
     # Create data with missing observations (simulate GPS outage)
     ys_missing = ys.at[20:30, :].set(jnp.nan)  # Missing position observations during turn
 
     # Rebuild filter with missing data
     filter_obj_missing, model_inputs_missing = build_car_tracking_filter(
-        m0, chol_P0, As, cs, chol_Qs, Hs, ds, chol_Rs, ys_missing
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys_missing
     )
 
     # Run filtering - cuthbert handles NaNs automatically
     filtered_states_missing = filter(filter_obj_missing, model_inputs_missing)
 
     print("Successfully handled missing observations!")
-    print(f"Missing observation period: steps 20-30 during the car's turn")
-    print(f"Filter uncertainty automatically increased during GPS outage")
+    print("Missing observation period: steps 20-30 during the car's turn")
+    print("Filter uncertainty automatically increased during GPS outage")
     ```
 
 ## Recap
@@ -266,3 +266,17 @@ This functional approach makes `cuthbert` naturally compatible with JAX's ecosys
 - **Sequential Monte Carlo**: Explore nonlinear and non-Gaussian filtering with `cuthbert.smc`.
 - **Advanced Models**: Check out extended and unscented Kalman filters for nonlinear state-space
 models.
+
+
+
+<!--- entangled-tangle-block
+```{.python file=examples_scripts/quickstart.py}
+<<imports>>
+<<generate-data>>
+<<build-filter>>
+<<run-filter>>
+<<jit-example>>
+<<plot>>
+<<bonus-missing>>
+```
+-->

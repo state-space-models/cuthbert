@@ -22,7 +22,7 @@ def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
     y0 = H0 @ x0 + d0 + obs_noise
 
     def body(_x, _key):
-        trans_model_key, trans_key, obs_model_key, obs_key = random.split(key, 4)
+        trans_model_key, trans_key, obs_model_key, obs_key = random.split(_key, 4)
 
         F, c, chol_Q = generate_trans_model(trans_model_key, x_dim)
         state_noise = chol_Q @ random.normal(trans_key, (x_dim,))

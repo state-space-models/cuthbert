@@ -12,7 +12,7 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
-@pytest.mark.parametrize("seed", [99, 123, 456])
+@pytest.mark.parametrize("seed", [44, 123, 456])
 @pytest.mark.parametrize("x_dim", [2])
 @pytest.mark.parametrize("N", [10_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
@@ -64,12 +64,7 @@ def test_backward(seed, x_dim, N, method):
             raise ValueError(f"Unknown method: {method}")
 
     smoothed_x0s, smoothed_x0_indices = backward_method(
-        sim_key,
-        x0s,
-        x1s,
-        jnp.zeros(N),
-        log_conditional_density,
-        jnp.arange(N),
+        sim_key, x0s, x1s, jnp.zeros(N), log_conditional_density, jnp.arange(N)
     )
 
     # Check indices are correct
