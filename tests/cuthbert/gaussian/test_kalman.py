@@ -93,7 +93,7 @@ def load_kalman_inference(
     return filter, smoother, model_inputs
 
 
-seeds = [0, 42, 99, 123, 456]
+seeds = [1, 43, 99, 123, 456]
 x_dims = [3]
 y_dims = [1, 2]
 num_time_steps = [1, 25]
@@ -146,7 +146,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_ells),
         (par_means, par_covs, par_ells),
         (des_means, des_covs, des_ells),
-        rtol=2e-10,
+        rtol=1e-10,
     )
 
 
@@ -197,7 +197,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         (seq_means, seq_covs, seq_cross_covs),
         (par_means, par_covs, par_cross_covs),
         (des_means, des_covs, des_cross_covs),
-        rtol=2e-10,
+        rtol=1e-10,
     )
 
     seq_default_mi = smoother(kalman_smoother, filt_states, parallel=False)

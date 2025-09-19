@@ -7,6 +7,7 @@ from jax import Array, random
 
 from cuthbert.inference import Smoother
 from cuthbert.smc.particle_filter import LogPotential, ParticleFilterState
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.resampling import Resampling
 from cuthbertlib.smc.smoothing.protocols import BackwardSampling
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
@@ -75,12 +76,16 @@ def convert_filter_to_smoother_state(
         filter_state: Particle filter state.
         resampling: Resampling algorithm to use (e.g., multinomial, systematic).
         n_smoother_particles: Number of smoother samples to draw.
-        model_inputs: Model inputs at the final time point.
-            Optional, if None then filter_state.model_inputs are used.
+        model_inputs: Only used to create an empty model_inputs tree
+            (the values are ignored).
+            Useful so that the final smoother state has the same structure as the rest.
+            By default, filter_state.model_inputs is used. So this
+            is only needed if the smoother model_inputs have a different tree
+            structure to filter_state.model_inputs.
         key: JAX random key.
 
     Returns:
-        Particle smoother state.
+        Particle smoother state. Note that the model_inputs are set to dummy values.
 
     Raises:
         ValueError: If key is None.
@@ -90,8 +95,8 @@ def convert_filter_to_smoother_state(
 
     if model_inputs is None:
         model_inputs = filter_state.model_inputs
-    else:
-        model_inputs = jax.tree.map(lambda x: jnp.asarray(x), model_inputs)
+
+    dummy_model_inputs = dummy_tree_like(model_inputs)
 
     key, resampling_key = random.split(key)
     indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
@@ -100,23 +105,26 @@ def convert_filter_to_smoother_state(
         key=cast(KeyArray, key),
         particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
         ancestor_indices=filter_state.ancestor_indices[indices],
-        model_inputs=model_inputs,
+        model_inputs=dummy_model_inputs,
         log_weights=-jnp.log(n_smoother_particles) * jnp.ones(n_smoother_particles),
     )
 
 
 def smoother_prepare(
     filter_state: ParticleFilterState,
-    model_inputs: ArrayTreeLike | None = None,
+    model_inputs: ArrayTreeLike,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """
     Prepare a state for a particle smoother step.
 
+    Note that the model_inputs here are different to filter_state.model_inputs.
+    The model_inputs required here are for the transition from t to t+1.
+    filter_state.model_inputs represents the transition from t-1 to t.
+
     Args:
-        filter_state: Particle filter state from the previous time step.
-        model_inputs: Model inputs for the current time step.
-            Optional, if None then filter_state.model_inputs are used.
+        filter_state: Particle filter state from time t.
+        model_inputs: Model inputs for the transition from t to t+1.
         key: JAX random key.
 
     Returns:
@@ -125,10 +133,7 @@ def smoother_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    if model_inputs is None:
-        model_inputs = filter_state.model_inputs
-    else:
-        model_inputs = jax.tree.map(lambda x: jnp.asarray(x), model_inputs)
+    model_inputs = jax.tree.map(lambda x: jnp.asarray(x), model_inputs)
 
     return ParticleSmootherState(
         key,
