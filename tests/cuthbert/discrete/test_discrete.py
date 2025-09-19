@@ -52,6 +52,7 @@ def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
 
     References:
         https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm
+        https://ieeexplore.ieee.org/abstract/document/9512397
     """
     num_timesteps, N = trans_matrix.shape[:2]
 
