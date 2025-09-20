@@ -121,8 +121,10 @@ def build_inference_object(init_dist, trans_matrices, log_likelihoods):
 
 class TestDiscrete(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
-    @parameterized.product(seed=[1, 123, 456], num_states=[5], num_time_steps=[25])
-    def test(self, seed, num_states, num_time_steps):
+    @parameterized.product(
+        seed=[1, 123, 456], num_states=[5], num_time_steps=[25], parallel=[True, False]
+    )
+    def test(self, seed, num_states, num_time_steps, parallel):
         init_dist, trans_matrices, log_likelihoods = build_hmm(
             seed, num_states, num_time_steps
         )
@@ -131,15 +133,14 @@ class TestDiscrete(chex.TestCase):
         )
 
         # Run the filter and smoother
-        # filtered_states = filter(filter_obj, model_inputs, parallel=True)
         filtered_states = self.variant(
             filter, static_argnames=("filter_obj", "parallel")
-        )(filter_obj, model_inputs, parallel=True)
+        )(filter_obj, model_inputs, parallel=parallel)
         filt_dists, log_marginals = filtered_states.dist, filtered_states.log_marginal
 
         smoothed_states = self.variant(
             smoother, static_argnames=("smoother_obj", "parallel")
-        )(smoother_obj, filtered_states, None, parallel=True)
+        )(smoother_obj, filtered_states, None, parallel=parallel)
         smooth_dists = smoothed_states.dist
 
         # Reference solution
