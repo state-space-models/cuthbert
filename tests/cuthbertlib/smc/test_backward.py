@@ -14,7 +14,7 @@ from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 @pytest.mark.parametrize("seed", [44, 123, 456])
 @pytest.mark.parametrize("x_dim", [2])
-@pytest.mark.parametrize("N", [10_000])
+@pytest.mark.parametrize("N", [5_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
 def test_backward(seed, x_dim, N, method):
     m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
@@ -75,7 +75,7 @@ def test_backward(seed, x_dim, N, method):
     sample_x0_cov = jnp.cov(smoothed_x0s, rowvar=False)
     chex.assert_trees_all_close(
         (sample_x0_mean, sample_x0_cov), (des_m0, des_P0), atol=1e-1, rtol=1e-1
-    )  # atol is quite large but it's Monte Carlo and N^2 cost, worth revisiting at some point
+    )  # atol is quite large but it's Monte Carlo and N^2 cost for exact sampling, worth revisiting at some point
 
     # Check cross-covariance is correct
     sample_x0_x1_cov = jnp.cov(smoothed_x0s, x1s, rowvar=False)[:x_dim, x_dim:]
