@@ -51,7 +51,7 @@ class GetDynamicsMoments(Protocol):
             function and linearization point.
 
         Args:
-            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
+            state: NamedTuple containing `mean` and `mean_prev` attributes.
             model_inputs: Model inputs.
 
         Returns:
@@ -70,7 +70,7 @@ class GetObservationMoments(Protocol):
             linearization point and the observation from model inputs.
 
         Args:
-            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
+            state: NamedTuple containing `mean` and `mean_prev` attributes.
             model_inputs: Model inputs.
 
         Returns:
@@ -105,7 +105,7 @@ class GetDynamicsLogDensity(Protocol):
         (for the previous and current time points)
 
         Args:
-            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
+            state: NamedTuple containing `mean` and `mean_prev` attributes.
             model_inputs: Model inputs.
 
         Returns:
@@ -127,7 +127,7 @@ class GetObservationFunc(Protocol):
         - Log potential function log G(x) and a linearization point x.
 
         Args:
-            state: Algorithmic NamedTuple containing `mean` and `mean_prev` attributes.
+            state: NamedTuple containing `mean` and `mean_prev` attributes.
                 Predicted state after applying the Kalman dynamics propagation.
             model_inputs: Model inputs.
 
