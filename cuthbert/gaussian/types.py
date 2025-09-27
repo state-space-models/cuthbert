@@ -43,7 +43,7 @@ class LinearizedKalmanFilterState(NamedTuple):
 class GetDynamicsMoments(Protocol):
     def __call__(
         self,
-        state: ArrayTreeLike,
+        state: LinearizedKalmanFilterState,
         model_inputs: ArrayTreeLike,
     ) -> tuple[MeanAndCholCovFunc, Array]:
         """
@@ -63,7 +63,7 @@ class GetDynamicsMoments(Protocol):
 
 class GetObservationMoments(Protocol):
     def __call__(
-        self, state: ArrayTreeLike, model_inputs: ArrayTreeLike
+        self, state: LinearizedKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[MeanAndCholCovFunc, Array, Array]:
         """
         Get observation conditional mean, (generalised) Cholesky covariance function,
@@ -99,7 +99,7 @@ class GetInitLogDensity(Protocol):
 
 class GetDynamicsLogDensity(Protocol):
     def __call__(
-        self, state: ArrayTreeLike, model_inputs: ArrayTreeLike
+        self, state: LinearizedKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[LogConditionalDensity, Array, Array]:
         """Get the dynamics log density and linearization points
         (for the previous and current time points)
@@ -116,7 +116,7 @@ class GetDynamicsLogDensity(Protocol):
 
 class GetObservationFunc(Protocol):
     def __call__(
-        self, state: ArrayTreeLike, model_inputs: ArrayTreeLike
+        self, state: LinearizedKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[LogConditionalDensity, Array, Array] | tuple[LogPotential, Array]:
         """Extract observation function, linearization point and optional observation.
         State is the predicted state after applying the Kalman dynamics propagation.
