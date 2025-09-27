@@ -1,4 +1,4 @@
-"""Linearized Kalman filter and smoother that uses automatic differentiation to extract
+"""Associative linearized Kalman filter that uses automatic differentiation to extract
 conditonally Gaussian parameters from log densities of the dynamics and observation
 distributions. This differs from gaussian/moments which requires mean and chol_cov
 functions as input rather than log densities.
@@ -14,103 +14,40 @@ log G(x) ≈ N(x | m, L L^T)
 where L is the cholesky factor of the covariance matrix.
 
 See `cuthbertlib.linearize` for more details.
-"""
 
-from functools import partial
+This variant assumes linearization points are predefined or can be extracted from model
+inputs, therefore is suitable for associative scan.
+"""
 
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
-from cuthbert.gaussian.kalman import (
-    KalmanSmootherState,
-    convert_filter_to_smoother_state,
-    smoother_combine,
-)
 from cuthbert.gaussian.types import (
+    LinearizedKalmanFilterState,
+)
+from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
     GetObservationFunc,
-    LinearizedKalmanFilterState,
 )
-from cuthbert.inference import Filter, Smoother
-from cuthbertlib.kalman import filtering, smoothing
+from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import (
     Array,
     ArrayTreeLike,
     KeyArray,
 )
-
-
-def build_filter(
-    get_init_log_density: GetInitLogDensity,
-    get_dynamics_log_density: GetDynamicsLogDensity,
-    get_observation_func: GetObservationFunc,
-) -> Filter:
-    """
-    Build linearized Taylor Kalman inference filter.
-
-    Args:
-        get_init_log_density: Function to get log density log p(x_0)
-            and linearization point.
-        get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
-            and linearization points (for the previous and current time points)
-        get_observation_func: Function to get observation function (either conditional
-            log density or log potential), linearization point and optional observation
-            (not required for log potential functions).
-
-    Returns:
-        Linearized Taylor Kalman filter object, not suitable for associative scan.
-    """
-    return Filter(
-        init_prepare=partial(
-            init_prepare,
-            get_init_log_density=get_init_log_density,
-            get_observation_func=get_observation_func,
-        ),
-        filter_prepare=partial(
-            filter_prepare,
-            get_init_log_density=get_init_log_density,
-        ),
-        filter_combine=partial(
-            filter_combine,
-            get_dynamics_log_density=get_dynamics_log_density,
-            get_observation_func=get_observation_func,
-        ),
-        associative=False,
-    )
-
-
-def build_smoother(
-    get_dynamics_log_density: GetDynamicsLogDensity,
-) -> Smoother:
-    """
-    Build linearized Taylor Kalman inference smoother.
-
-    Args:
-        get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
-            and linearization points (for the previous and current time points)
-
-    Returns:
-        Linearized Taylor Kalman smoother object, suitable for associative scan.
-    """
-    return Smoother(
-        smoother_prepare=partial(
-            smoother_prepare, get_dynamics_log_density=get_dynamics_log_density
-        ),
-        smoother_combine=smoother_combine,
-        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
-        associative=True,
-    )
+from cuthbert.gaussian.taylor.types import (
+    LogConditionalDensity,
+    LogPotential,
+)
 
 
 def process_observation(
-    state: LinearizedKalmanFilterState,
-    get_observation_func: GetObservationFunc,
-    model_inputs: ArrayTreeLike,
+    observation_output: tuple[LogConditionalDensity, Array, Array]
+    | tuple[LogPotential, Array],
 ) -> tuple[Array, Array, Array, Array]:
     """Process observation for linearized Taylor Kalman filter."""
-    observation_output = get_observation_func(state, model_inputs)
 
     if len(observation_output) == 3:
         observation_cond_log_density, linearization_point, observation = (
@@ -170,9 +107,9 @@ def init_prepare(
         mean_prev=jnp.full_like(m0, jnp.nan),
     )
 
-    H, d, chol_R, observation = process_observation(
-        predict_state, get_observation_func, model_inputs
-    )
+    observation_output = get_observation_func(predict_state, model_inputs)
+
+    H, d, chol_R, observation = process_observation(observation_output)
 
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
 
@@ -266,9 +203,9 @@ def filter_combine(
         mean_prev=state_1.mean,
     )
 
-    H, d, chol_R, observation = process_observation(
-        predict_state, get_observation_func, state_2.model_inputs
-    )
+    observation_output = get_observation_func(predict_state, state_2.model_inputs)
+
+    H, d, chol_R, observation = process_observation(observation_output)
 
     (update_mean, update_chol_cov), log_likelihood = filtering.update(
         predict_mean, predict_chol_cov, H, d, chol_R, observation
@@ -281,42 +218,3 @@ def filter_combine(
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )
-
-
-def smoother_prepare(
-    filter_state: LinearizedKalmanFilterState,
-    get_dynamics_log_density: GetDynamicsLogDensity,
-    model_inputs: ArrayTreeLike,
-    key: KeyArray | None = None,
-) -> KalmanSmootherState:
-    """
-    Prepare a state for a linearized Taylor Kalman smoother step.
-
-    Args:
-        filter_state: State generated by the linearized Taylor Kalman filter at the previous
-            time point.
-        get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
-            and linearization points (for the previous and current time points)
-        model_inputs: Model inputs for the transition from t to t+1.
-        key: JAX random key - not used.
-
-    Returns:
-        Prepared state for the Kalman smoother.
-    """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-
-    filter_mean = filter_state.mean
-    filter_chol_cov = filter_state.chol_cov
-
-    log_dynamics_density, linearization_point_prev, linearization_point_curr = (
-        get_dynamics_log_density(filter_state, model_inputs)
-    )
-
-    F, c, chol_Q = linearize_log_density(
-        log_dynamics_density, linearization_point_prev, linearization_point_curr
-    )
-
-    state = smoothing.associative_params_single(
-        filter_mean, filter_chol_cov, F, c, chol_Q
-    )
-    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
