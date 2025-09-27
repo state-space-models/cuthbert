@@ -1,4 +1,4 @@
-from typing import NamedTuple, Protocol
+from typing import NamedTuple, Protocol, TypeAlias
 
 from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 from cuthbertlib.types import (
@@ -81,7 +81,7 @@ class GetObservationMoments(Protocol):
 
 
 ### Taylor types
-LogPotential = LogDensity
+LogPotential: TypeAlias = LogDensity
 
 
 class GetInitLogDensity(Protocol):
