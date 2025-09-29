@@ -33,6 +33,7 @@ from cuthbert.gaussian.types import (
     LinearizedKalmanFilterState,
 )
 from cuthbert.inference import Filter, Smoother
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering, smoothing
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import (
@@ -49,6 +50,10 @@ def build_filter(
 ) -> Filter:
     """
     Build linearized Taylor Kalman inference filter.
+
+    Associative scan is supported. However, is only accurate in the case where the
+    `state` argument for `get_dynamics_log_density` and `get_observation_func` is
+    ignored.
 
     Args:
         get_init_log_density: Function to get log density log p(x_0)
@@ -77,7 +82,7 @@ def build_filter(
             get_dynamics_log_density=get_dynamics_log_density,
             get_observation_func=get_observation_func,
         ),
-        associative=False,
+        associative=True,
     )
 
 
@@ -162,12 +167,19 @@ def init_prepare(
         lambda _, x: init_log_density(x), linearization_point, linearization_point
     )
 
+    elem = filtering.FilterScanElement(
+        A=jnp.zeros_like(chol_P0),
+        b=m0,
+        U=chol_P0,
+        eta=jnp.zeros_like(m0),
+        Z=jnp.zeros_like(chol_P0),
+        ell=jnp.array(0.0),
+    )
+
     predict_state = LinearizedKalmanFilterState(
-        mean=m0,
-        chol_cov=chol_P0,
-        log_likelihood=jnp.array(0.0),
+        elem=elem,
         model_inputs=model_inputs,
-        mean_prev=jnp.full_like(m0, jnp.nan),
+        mean_prev=dummy_tree_like(m0),
     )
 
     H, d, chol_R, observation = process_observation(
@@ -176,12 +188,19 @@ def init_prepare(
 
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
 
+    elem = filtering.FilterScanElement(
+        A=jnp.zeros_like(chol_P),
+        b=m,
+        U=chol_P,
+        eta=jnp.zeros_like(m),
+        Z=jnp.zeros_like(chol_P),
+        ell=ell,
+    )
+
     return LinearizedKalmanFilterState(
-        mean=m,
-        chol_cov=chol_P,
-        log_likelihood=ell,
+        elem=elem,
         model_inputs=model_inputs,
-        mean_prev=jnp.empty_like(m),
+        mean_prev=dummy_tree_like(m),
     )
 
 
@@ -205,15 +224,19 @@ def filter_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     dummy_mean = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
-    mean = jnp.empty_like(dummy_mean)
-    chol_cov = jnp.empty_like(jnp.cov(mean[..., None]))
+    mean = dummy_tree_like(jnp.empty_like(dummy_mean))
+    chol_cov = dummy_tree_like(jnp.empty_like(jnp.cov(mean[..., None])))
 
+    elem = filtering.FilterScanElement(
+        A=jnp.zeros_like(chol_cov),
+        b=mean,
+        U=chol_cov,
+        eta=jnp.zeros_like(mean),
+        Z=jnp.zeros_like(chol_cov),
+        ell=jnp.array(0.0),
+    )
     return LinearizedKalmanFilterState(
-        mean=mean,
-        chol_cov=chol_cov,
-        log_likelihood=jnp.array(0.0),
-        model_inputs=model_inputs,
-        mean_prev=jnp.empty_like(mean),
+        elem=elem, model_inputs=model_inputs, mean_prev=dummy_tree_like(mean)
     )
 
 
@@ -229,7 +252,9 @@ def filter_combine(
 
     Applies linearized Taylor Kalman predict + filter update in covariance square
     root form.
-    Not suitable for associative scan.
+
+    Suitable for associative scan, although only accurate if the `state` argument
+    for `get_dynamics_log_density` and `get_observation_func` is ignored.
 
     Args:
         state_1: State from previous time step.
@@ -254,30 +279,41 @@ def filter_combine(
         log_dynamics_density, linearization_point_prev, linearization_point_curr
     )
 
-    predict_mean, predict_chol_cov = filtering.predict(
-        state_1.mean, state_1.chol_cov, F, c, chol_Q
-    )
+    # Need to calculate predict state as it could be used in get_observation_func
+    # to get a linearization point
+    no_op_H = jnp.eye(state_1.mean.shape[0])
+    no_op_d = jnp.zeros_like(state_1.mean)
+    no_op_chol_R = jnp.eye(state_1.mean.shape[0])
+    no_op_observation = jnp.full_like(
+        state_1.mean, jnp.nan
+    )  # nan indicates no observation
 
+    predict_only_elem = filtering.associative_params_single(
+        F, c, chol_Q, no_op_H, no_op_d, no_op_chol_R, no_op_observation
+    )
+    combined_predict_elem = filtering.filtering_operator(
+        state_1.elem,
+        predict_only_elem,
+    )
     predict_state = LinearizedKalmanFilterState(
-        mean=predict_mean,
-        chol_cov=predict_chol_cov,
-        log_likelihood=state_1.log_likelihood,
+        elem=combined_predict_elem,
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )
 
+    # Now we can use predict_state to get the observation
     H, d, chol_R, observation = process_observation(
         predict_state, get_observation_func, state_2.model_inputs
     )
 
-    (update_mean, update_chol_cov), log_likelihood = filtering.update(
-        predict_mean, predict_chol_cov, H, d, chol_R, observation
+    # Go back and do full filter update
+    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, observation)
+    combined_elem = filtering.filtering_operator(
+        state_1.elem,
+        elem,
     )
-
     return LinearizedKalmanFilterState(
-        mean=update_mean,
-        chol_cov=update_chol_cov,
-        log_likelihood=state_1.log_likelihood + log_likelihood,
+        elem=combined_elem,
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )

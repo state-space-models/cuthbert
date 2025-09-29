@@ -58,8 +58,8 @@ def _load_taylor_init_and_dynamics(
 
         return (
             dynamics_log_density,
-            jnp.zeros_like(state.mean),
-            jnp.zeros_like(state.mean),
+            jnp.zeros_like(m0),
+            jnp.zeros_like(m0),
         )
 
     return get_init_log_density, get_dynamics_log_density
@@ -136,6 +136,16 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         seq_states.log_likelihood,
     )
 
+    # Run parallel associative filter (this only works because
+    # `get_dynamics_log_density` and `get_observation_log_density`
+    # ignore the `state` argument)
+    par_states = filter(log_density_filter, model_inputs, parallel=True)
+    par_means, par_chol_covs, par_ells = (
+        par_states.mean,
+        par_states.chol_cov,
+        par_states.log_likelihood,
+    )
+
     # Run the standard Kalman filter.
     P0 = chol_P0 @ chol_P0.T
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
@@ -145,8 +155,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
+        (par_means, par_covs, par_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-5,
         atol=1e-8,
