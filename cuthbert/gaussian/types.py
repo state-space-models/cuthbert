@@ -1,7 +1,8 @@
-from typing import NamedTuple, Protocol, TypeAlias
+from typing import NamedTuple, Protocol
 
-from cuthbertlib.linearize.moments import MeanAndCholCovFunc
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
+from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 from cuthbertlib.types import (
     Array,
     ArrayTree,
@@ -30,16 +31,16 @@ class GetObservationParams(Protocol):
         ...
 
 
-### Shared types for linearized Kalman filters
+# class LinearizedKalmanFilterState(NamedTuple):
+#     mean: Array
+#     chol_cov: Array
+#     log_likelihood: Array
+#     model_inputs: ArrayTree
+#     mean_prev: Array
+
+
+### Shared state type for linearized Kalman filters
 class LinearizedKalmanFilterState(NamedTuple):
-    mean: Array
-    chol_cov: Array
-    log_likelihood: Array
-    model_inputs: ArrayTree
-    mean_prev: Array
-
-
-class AssociativeLinearizedKalmanFilterState(NamedTuple):
     elem: filtering.FilterScanElement
     model_inputs: ArrayTree
     mean_prev: Array
@@ -57,6 +58,28 @@ class AssociativeLinearizedKalmanFilterState(NamedTuple):
         return self.elem.ell
 
 
+def linearized_kalman_filter_state_dummy_elem(
+    mean: Array,
+    chol_cov: Array,
+    log_likelihood: Array,
+    model_inputs: ArrayTree,
+    mean_prev: Array,
+) -> LinearizedKalmanFilterState:
+    return LinearizedKalmanFilterState(
+        elem=filtering.FilterScanElement(
+            A=dummy_tree_like(chol_cov),
+            b=mean,
+            U=chol_cov,
+            eta=dummy_tree_like(mean),
+            Z=dummy_tree_like(chol_cov),
+            ell=log_likelihood,
+        ),
+        model_inputs=model_inputs,
+        mean_prev=mean_prev,
+    )
+
+
+### Moments types
 class GetDynamicsMoments(Protocol):
     def __call__(
         self,

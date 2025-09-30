@@ -8,13 +8,15 @@ from jax import Array
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import taylor
-from cuthbert.gaussian.types import (
+from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
-    LinearizedKalmanFilterState,
     LogConditionalDensity,
     LogDensity,
     LogPotential,
+)
+from cuthbert.gaussian.types import (
+    LinearizedKalmanFilterState,
 )
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.stats import multivariate_normal
@@ -58,8 +60,8 @@ def _load_taylor_init_and_dynamics(
 
         return (
             dynamics_log_density,
-            jnp.zeros_like(state.mean),
-            jnp.zeros_like(state.mean),
+            jnp.zeros_like(m0),
+            jnp.zeros_like(m0),
         )
 
     return get_init_log_density, get_dynamics_log_density
@@ -75,6 +77,7 @@ def load_taylor_inference(
     ds: Array,
     chol_Rs: Array,
     ys: Array,
+    associative_filter: bool = False,
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM."""
@@ -98,7 +101,10 @@ def load_taylor_inference(
         )
 
     filter = taylor.build_filter(
-        get_init_log_density, get_dynamics_log_density, get_observation_log_density
+        get_init_log_density,
+        get_dynamics_log_density,
+        get_observation_log_density,
+        associative=associative_filter,
     )
     smoother = taylor.build_smoother(get_dynamics_log_density)
     model_inputs = jnp.arange(len(ys))
@@ -124,16 +130,36 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         # Set an observation to nan
         ys = ys.at[1, 0].set(jnp.nan)
 
-    log_density_filter, _, model_inputs = load_taylor_inference(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+    taylor_filter, _, model_inputs = load_taylor_inference(
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=False
     )
 
     # Run sequential sqrt filter
-    seq_states = filter(log_density_filter, model_inputs, parallel=False)
+    seq_states = filter(taylor_filter, model_inputs, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
         seq_states.log_likelihood,
+    )
+
+    associative_taylor_filter, _, model_inputs = load_taylor_inference(
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=True
+    )
+
+    # Run associative filter with parallel=False§
+    seq_ass_states = filter(associative_taylor_filter, model_inputs, parallel=False)
+    seq_ass_means, seq_ass_chol_covs, seq_ass_ells = (
+        seq_ass_states.mean,
+        seq_ass_states.chol_cov,
+        seq_ass_states.log_likelihood,
+    )
+
+    # Run associative filter with parallel=True
+    par_ass_states = filter(associative_taylor_filter, model_inputs, parallel=True)
+    par_ass_means, par_ass_chol_covs, par_ass_ells = (
+        par_ass_states.mean,
+        par_ass_states.chol_cov,
+        par_ass_states.log_likelihood,
     )
 
     # Run the standard Kalman filter.
@@ -145,8 +171,12 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    seq_ass_covs = seq_ass_chol_covs @ seq_ass_chol_covs.transpose(0, 2, 1)
+    par_ass_covs = par_ass_chol_covs @ par_ass_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
+        (seq_ass_means, seq_ass_covs, seq_ass_ells),
+        (par_ass_means, par_ass_covs, par_ass_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-5,
         atol=1e-8,
@@ -219,6 +249,7 @@ def load_taylor_inference_potential(
     chol_Qs: Array,
     ms: Array,
     chol_Rs: Array,
+    associative_filter: bool = False,
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM.
@@ -243,7 +274,10 @@ def load_taylor_inference_potential(
         )
 
     filter = taylor.build_filter(
-        get_init_log_density, get_dynamics_log_density, get_observation_log_potential
+        get_init_log_density,
+        get_dynamics_log_density,
+        get_observation_log_potential,
+        associative=associative_filter,
     )
     smoother = taylor.build_smoother(get_dynamics_log_density)
     model_inputs = jnp.arange(len(ms))
@@ -260,16 +294,35 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         seed, x_dim, x_dim, num_time_steps
     )
 
-    log_density_filter, _, model_inputs = load_taylor_inference_potential(
-        m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs
+    taylor_filter, _, model_inputs = load_taylor_inference_potential(
+        m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs, associative_filter=False
     )
 
     # Run sequential sqrt filter
-    seq_states = filter(log_density_filter, model_inputs, parallel=False)
+    seq_states = filter(taylor_filter, model_inputs, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
         seq_states.log_likelihood,
+    )
+
+    associative_taylor_filter, _, model_inputs = load_taylor_inference_potential(
+        m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs, associative_filter=True
+    )
+
+    # Run associative filter with parallel=False
+    seq_ass_states = filter(associative_taylor_filter, model_inputs, parallel=False)
+    seq_ass_means, seq_ass_chol_covs, seq_ass_ells = (
+        seq_ass_states.mean,
+        seq_ass_states.chol_cov,
+        seq_ass_states.log_likelihood,
+    )
+
+    par_ass_states = filter(associative_taylor_filter, model_inputs, parallel=True)
+    par_ass_means, par_ass_chol_covs, par_ass_ells = (
+        par_ass_states.mean,
+        par_ass_states.chol_cov,
+        par_ass_states.log_likelihood,
     )
 
     # Run the standard Kalman filter.
@@ -283,8 +336,12 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
+    seq_ass_covs = seq_ass_chol_covs @ seq_ass_chol_covs.transpose(0, 2, 1)
+    par_ass_covs = par_ass_chol_covs @ par_ass_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
+        (seq_ass_means, seq_ass_covs, seq_ass_ells),
+        (par_ass_means, par_ass_covs, par_ass_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-5,
         atol=1e-8,

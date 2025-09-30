@@ -5,12 +5,19 @@ from cuthbert.utils import dummy_tree_like
 
 
 def test_dummy_tree_like():
+    # Create a ShapeDtypeStruct using jax.eval_shape
+    def dummy_func():
+        return jnp.ones((2, 3), dtype=jnp.float32)
+
+    shape_struct = jax.eval_shape(dummy_func)
+
     pytree = {
         "bool": True,
         "int": 3,
         "float": 1.3,
         "jax_array": jnp.ones(4),
         "nan": jnp.nan,
+        "shape_struct": shape_struct,
     }
     dummy_pytree = dummy_tree_like(pytree)
 
@@ -23,6 +30,7 @@ def test_dummy_tree_like():
     assert dummy_pytree["float"].dtype == jnp.float32
     assert dummy_pytree["jax_array"].dtype == jnp.float32
     assert dummy_pytree["nan"].dtype == jnp.float32
+    assert dummy_pytree["shape_struct"].dtype == jnp.float32
 
     # Check values are minimum values for their dtypes
     assert dummy_pytree["bool"].item() is False
@@ -30,3 +38,7 @@ def test_dummy_tree_like():
     assert dummy_pytree["float"].item() == jnp.finfo(jnp.float32).min
     assert jnp.all(dummy_pytree["jax_array"] == jnp.finfo(jnp.float32).min)
     assert dummy_pytree["nan"].item() == jnp.finfo(jnp.float32).min
+
+    # Check ShapeDtypeStruct handling
+    assert dummy_pytree["shape_struct"].shape == (2, 3)
+    assert jnp.all(dummy_pytree["shape_struct"] == jnp.finfo(jnp.float32).min)

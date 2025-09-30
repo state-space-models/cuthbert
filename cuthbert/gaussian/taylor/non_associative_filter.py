@@ -22,24 +22,24 @@ inputs, therefore is suitable for associative scan.
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
-from cuthbert.gaussian.types import (
-    LinearizedKalmanFilterState,
-)
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
     GetObservationFunc,
+    LogConditionalDensity,
+    LogPotential,
 )
+from cuthbert.gaussian.types import (
+    LinearizedKalmanFilterState,
+    linearized_kalman_filter_state_dummy_elem,
+)
+from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import (
     Array,
     ArrayTreeLike,
     KeyArray,
-)
-from cuthbert.gaussian.taylor.types import (
-    LogConditionalDensity,
-    LogPotential,
 )
 
 
@@ -99,12 +99,12 @@ def init_prepare(
         lambda _, x: init_log_density(x), linearization_point, linearization_point
     )
 
-    predict_state = LinearizedKalmanFilterState(
+    predict_state = linearized_kalman_filter_state_dummy_elem(
         mean=m0,
         chol_cov=chol_P0,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
-        mean_prev=jnp.full_like(m0, jnp.nan),
+        mean_prev=dummy_tree_like(m0),
     )
 
     observation_output = get_observation_func(predict_state, model_inputs)
@@ -113,12 +113,12 @@ def init_prepare(
 
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
 
-    return LinearizedKalmanFilterState(
+    return linearized_kalman_filter_state_dummy_elem(
         mean=m,
         chol_cov=chol_P,
         log_likelihood=ell,
         model_inputs=model_inputs,
-        mean_prev=jnp.empty_like(m),
+        mean_prev=dummy_tree_like(m),
     )
 
 
@@ -141,16 +141,16 @@ def filter_prepare(
         Prepared state for linearized Taylor Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
-    mean = jnp.empty_like(dummy_mean)
-    chol_cov = jnp.empty_like(jnp.cov(mean[..., None]))
+    dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
+    dummy_mean = dummy_tree_like(dummy_mean_struct)
+    dummy_chol_cov = dummy_tree_like(jnp.cov(dummy_mean[..., None]))
 
-    return LinearizedKalmanFilterState(
-        mean=mean,
-        chol_cov=chol_cov,
+    return linearized_kalman_filter_state_dummy_elem(
+        mean=dummy_mean,
+        chol_cov=dummy_chol_cov,
         log_likelihood=jnp.array(0.0),
         model_inputs=model_inputs,
-        mean_prev=jnp.empty_like(mean),
+        mean_prev=dummy_mean,
     )
 
 
@@ -195,7 +195,7 @@ def filter_combine(
         state_1.mean, state_1.chol_cov, F, c, chol_Q
     )
 
-    predict_state = LinearizedKalmanFilterState(
+    predict_state = linearized_kalman_filter_state_dummy_elem(
         mean=predict_mean,
         chol_cov=predict_chol_cov,
         log_likelihood=state_1.log_likelihood,
@@ -211,7 +211,7 @@ def filter_combine(
         predict_mean, predict_chol_cov, H, d, chol_R, observation
     )
 
-    return LinearizedKalmanFilterState(
+    return linearized_kalman_filter_state_dummy_elem(
         mean=update_mean,
         chol_cov=update_chol_cov,
         log_likelihood=state_1.log_likelihood + log_likelihood,
