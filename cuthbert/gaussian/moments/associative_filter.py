@@ -1,18 +1,14 @@
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
-from cuthbert.gaussian.taylor.non_associative_filter import process_observation
-from cuthbert.gaussian.taylor.types import (
-    GetDynamicsLogDensity,
-    GetInitLogDensity,
-    GetObservationFunc,
-)
+from cuthbert.gaussian.kalman import GetInitParams
+from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
 from cuthbert.gaussian.types import (
     LinearizedKalmanFilterState,
 )
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
-from cuthbertlib.linearize import linearize_log_density
+from cuthbertlib.linearize import linearize_moments
 from cuthbertlib.types import (
     ArrayTreeLike,
     KeyArray,
@@ -21,35 +17,28 @@ from cuthbertlib.types import (
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
-    get_observation_func: GetObservationFunc,
+    get_init_params: GetInitParams,
+    get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """
-    Prepare the initial state for the linearized Taylor Kalman filter.
+    Prepare the initial state for the linearized moments Kalman filter.
 
     Args:
         model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point.
-        get_observation_func: Function that returns either
-            - An observation log density
-                function log p(y_0 | x_0) as well as points x_0 and y_0
-                to linearize around.
-            - A log potential function log G(x_0) and a linearization point x_0.
+        get_init_params: Function to get m0, chol_P0 from model inputs.
+        get_observation_params: Function to get observation conditional mean,
+            (generalised) Cholesky covariance function, linearization point and
+            observation.
         key: JAX random key - not used.
 
     Returns:
-        State for the linearized Taylor Kalman filter.
+        State for the linearized moments Kalman filter.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    init_log_density, linearization_point = get_init_log_density(model_inputs)
-
-    _, m0, chol_P0 = linearize_log_density(
-        lambda _, x: init_log_density(x), linearization_point, linearization_point
-    )
+    m0, chol_P0 = get_init_params(model_inputs)
 
     prior_state = LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
@@ -64,10 +53,12 @@ def init_prepare(
         mean_prev=dummy_tree_like(m0),
     )
 
-    observation_output = get_observation_func(prior_state, model_inputs)
-    H, d, chol_R, observation = process_observation(observation_output)
+    mean_and_chol_cov_func, linearization_point, y = get_observation_params(
+        prior_state, model_inputs
+    )
 
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
+    H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
+    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
 
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P),
@@ -87,36 +78,36 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
-    get_dynamics_log_density: GetDynamicsLogDensity,
-    get_observation_func: GetObservationFunc,
+    get_init_params: GetInitParams,
+    get_dynamics_params: GetDynamicsMoments,
+    get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """
-    Prepare a state for a linearized Taylor Kalman filter step,
+    Prepare a state for a linearized moments Kalman filter step,
     just passes through model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored
-    in `get_dynamics_log_density` and `get_observation_func`.
+    in `get_dynamics_params` and `get_observation_params`.
 
     Args:
         model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point. Only used to infer shape of mean and chol_cov.
-        get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
-            and linearization points (for the previous and current time points)
+        get_init_params: Function to get m0, chol_P0 from model inputs.
+            Only used to infer shape of mean and chol_cov.
+        get_dynamics_params: Function to get dynamics conditional mean and
+            (generalised) Cholesky covariance from linearization point and model inputs.
             `associative_scan` only supported when `state` is ignored.
-        get_observation_func: Function to get observation function (either conditional
-            log density or log potential), linearization point and optional observation
-            (not required for log potential functions).
+        get_observation_params: Function to get observation conditional mean,
+            (generalised) Cholesky covariance and observation from linearization point
+            and model inputs.
             `associative_scan` only supported when `state` is ignored.
         key: JAX random key - not used.
 
     Returns:
-        Prepared state for linearized Taylor Kalman filter.
+        Prepared state for linearized moments Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
+    dummy_mean_struct = eval_shape(lambda mi: get_init_params(mi)[0], model_inputs)
     dummy_mean = dummy_tree_like(dummy_mean_struct)
     dummy_chol_cov = dummy_tree_like(jnp.cov(dummy_mean[..., None]))
 
@@ -133,18 +124,21 @@ def filter_prepare(
         mean_prev=dummy_mean,
     )
 
-    log_dynamics_density, linearization_point_prev, linearization_point_curr = (
-        get_dynamics_log_density(dummy_state, model_inputs)
+    dynamics_mean_and_chol_cov_func, dynamics_linearization_point = get_dynamics_params(
+        dummy_state, model_inputs
+    )
+    F, c, chol_Q = linearize_moments(
+        dynamics_mean_and_chol_cov_func, dynamics_linearization_point
     )
 
-    F, c, chol_Q = linearize_log_density(
-        log_dynamics_density, linearization_point_prev, linearization_point_curr
+    observation_mean_and_chol_cov_func, observation_linearization_point, y = (
+        get_observation_params(dummy_state, model_inputs)
+    )
+    H, d, chol_R = linearize_moments(
+        observation_mean_and_chol_cov_func, observation_linearization_point
     )
 
-    observation_output = get_observation_func(dummy_state, model_inputs)
-    H, d, chol_R, observation = process_observation(observation_output)
-
-    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, observation)
+    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
 
     return LinearizedKalmanFilterState(
         elem=elem,
@@ -162,7 +156,7 @@ def filter_combine(
     with latest model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored
-    in `get_dynamics_log_density` and `get_observation_func`.
+    in `get_dynamics_params` and `get_observation_params`.
 
     Applies standard associative Kalman filtering operator since dynamics and observation
     parameters are extracted in filter_prepare.
@@ -172,7 +166,7 @@ def filter_combine(
         state_2: State prepared (only access model_inputs attribute).
 
     Returns:
-        Predicted and updated linearized Taylor Kalman filter state.
+        Predicted and updated linearized moments Kalman filter state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_likelihood.
     """

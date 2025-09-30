@@ -2,7 +2,6 @@ from typing import NamedTuple, Protocol
 
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
-from cuthbertlib.linearize.moments import MeanAndCholCovFunc
 from cuthbertlib.types import (
     Array,
     ArrayTree,
@@ -31,14 +30,6 @@ class GetObservationParams(Protocol):
         ...
 
 
-# class LinearizedKalmanFilterState(NamedTuple):
-#     mean: Array
-#     chol_cov: Array
-#     log_likelihood: Array
-#     model_inputs: ArrayTree
-#     mean_prev: Array
-
-
 ### Shared state type for linearized Kalman filters
 class LinearizedKalmanFilterState(NamedTuple):
     elem: filtering.FilterScanElement
@@ -65,6 +56,19 @@ def linearized_kalman_filter_state_dummy_elem(
     model_inputs: ArrayTree,
     mean_prev: Array,
 ) -> LinearizedKalmanFilterState:
+    """Create a LinearizedKalmanFilterState with a dummy element
+    I.e. when associated scan is not used.
+
+    Args:
+        mean: Mean of the state.
+        chol_cov: Cholesky covariance of the state.
+        log_likelihood: Log likelihood of the state.
+        model_inputs: Model inputs.
+        mean_prev: Mean of the previous state.
+
+    Returns:
+        LinearizedKalmanFilterState with a dummy elem attribute.
+    """
     return LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
             A=dummy_tree_like(chol_cov),
@@ -77,44 +81,3 @@ def linearized_kalman_filter_state_dummy_elem(
         model_inputs=model_inputs,
         mean_prev=mean_prev,
     )
-
-
-### Moments types
-class GetDynamicsMoments(Protocol):
-    def __call__(
-        self,
-        state: LinearizedKalmanFilterState,
-        model_inputs: ArrayTreeLike,
-    ) -> tuple[MeanAndCholCovFunc, Array]:
-        """
-        Get dynamics conditional mean and (generalised) Cholesky covariance
-            function and linearization point.
-
-        Args:
-            state: NamedTuple containing `mean` and `mean_prev` attributes.
-            model_inputs: Model inputs.
-
-        Returns:
-            Tuple with dynamics conditional mean and (generalised) Cholesky covariance
-                function and linearization point.
-        """
-        ...
-
-
-class GetObservationMoments(Protocol):
-    def __call__(
-        self, state: LinearizedKalmanFilterState, model_inputs: ArrayTreeLike
-    ) -> tuple[MeanAndCholCovFunc, Array, Array]:
-        """
-        Get observation conditional mean, (generalised) Cholesky covariance function,
-            linearization point and the observation from model inputs.
-
-        Args:
-            state: NamedTuple containing `mean` and `mean_prev` attributes.
-            model_inputs: Model inputs.
-
-        Returns:
-            Tuple with conditional mean, (generalised) Cholesky covariance
-                and observation.
-        """
-        ...

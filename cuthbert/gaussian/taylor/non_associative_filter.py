@@ -78,7 +78,7 @@ def init_prepare(
         lambda _, x: init_log_density(x), linearization_point, linearization_point
     )
 
-    predict_state = linearized_kalman_filter_state_dummy_elem(
+    prior_state = linearized_kalman_filter_state_dummy_elem(
         mean=m0,
         chol_cov=chol_P0,
         log_likelihood=jnp.array(0.0),
@@ -86,7 +86,7 @@ def init_prepare(
         mean_prev=dummy_tree_like(m0),
     )
 
-    observation_output = get_observation_func(predict_state, model_inputs)
+    observation_output = get_observation_func(prior_state, model_inputs)
 
     H, d, chol_R, observation = process_observation(observation_output)
 
