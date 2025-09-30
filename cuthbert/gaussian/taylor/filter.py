@@ -14,6 +14,10 @@ log G(x) ≈ N(x | m, L L^T)
 where L is the cholesky factor of the covariance matrix.
 
 See `cuthbertlib.linearize` for more details.
+
+Parallelism via `associative_scan` is supported, but requires the `state` argument
+to be ignored in `get_dynamics_log_density` and `get_observation_func`.
+I.e. the linearization points are pre-defined or extracted from model inputs.
 """
 
 from functools import partial

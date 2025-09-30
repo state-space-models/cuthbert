@@ -1,24 +1,3 @@
-"""Associative linearized Kalman filter that uses automatic differentiation to extract
-conditonally Gaussian parameters from log densities of the dynamics and observation
-distributions. This differs from gaussian/moments which requires mean and chol_cov
-functions as input rather than log densities.
-
-I.e. we approximate conditional log densities as
-
-log p(y | x) ≈ N(y | H x + d, L L^T)
-
-and log potentials as
-
-log G(x) ≈ N(x | m, L L^T)
-
-where L is the cholesky factor of the covariance matrix.
-
-See `cuthbertlib.linearize` for more details.
-
-This variant assumes linearization points are predefined or can be extracted from model
-inputs, therefore is suitable for associative scan.
-"""
-
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
