@@ -14,8 +14,8 @@ I.e. the linearization points are pre-defined or extracted from model inputs.
 
 from functools import partial
 
-from cuthbert.gaussian.moments import associative_filter, non_associative_filter
 from cuthbert.gaussian.kalman import GetInitParams
+from cuthbert.gaussian.moments import associative_filter, non_associative_filter
 from cuthbert.gaussian.moments.types import (
     GetDynamicsMoments,
     GetObservationMoments,

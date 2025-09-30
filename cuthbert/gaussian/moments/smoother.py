@@ -13,16 +13,17 @@ I.e. the linearization points are pre-defined or extracted from model inputs.
 """
 
 from functools import partial
-from jax import tree
+
 from jax import numpy as jnp
+from jax import tree
 
 from cuthbert.gaussian.kalman import (
     KalmanSmootherState,
     convert_filter_to_smoother_state,
     smoother_combine,
 )
-from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.gaussian.moments.types import GetDynamicsMoments
+from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.inference import Smoother
 from cuthbertlib.kalman import smoothing
 from cuthbertlib.linearize import linearize_moments

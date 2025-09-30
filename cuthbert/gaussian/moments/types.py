@@ -1,8 +1,8 @@
 from typing import Protocol
 
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
-from cuthbertlib.types import Array, ArrayTreeLike
 from cuthbertlib.linearize.moments import MeanAndCholCovFunc
+from cuthbertlib.types import Array, ArrayTreeLike
 
 
 class GetDynamicsMoments(Protocol):
