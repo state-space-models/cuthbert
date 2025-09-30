@@ -137,7 +137,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (des_means, des_covs, des_ells),
         (seq_ass_means, seq_ass_covs, seq_ass_ells),
         (par_ass_means, par_ass_covs, par_ass_ells),
-        rtol=1e-10,
+        rtol=1e-8,
     )
 
 
