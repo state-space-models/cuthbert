@@ -52,6 +52,11 @@ def build_filter(
             (generalised) Cholesky covariance and observation from linearization point
             and model inputs.
             If `associative` is True, the `state` argument should be ignored.
+        associative: If True, then the filter is suitable for associative scan, but
+            assumes that the `state` is ignored in `get_dynamics_params` and
+            `get_observation_params`.
+            If False, then the filter is suitable for non-associative scan, but
+            the user is free to use the `state` to extract the linearization points.
 
     Returns:
         Linearized moments Kalman filter object.

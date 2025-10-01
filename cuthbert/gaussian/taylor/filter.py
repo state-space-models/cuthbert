@@ -59,6 +59,11 @@ def build_filter(
             log density or log potential), linearization point and optional observation
             (not required for log potential functions).
             If `associative` is True, the `state` argument should be ignored.
+        associative: If True, then the filter is suitable for associative scan, but
+            assumes that the `state` is ignored in `get_dynamics_log_density` and
+            `get_observation_func`.
+            If False, then the filter is suitable for non-associative scan, but
+            the user is free to use the `state` to extract the linearization points.
 
     Returns:
         Linearized Taylor Kalman filter object.
