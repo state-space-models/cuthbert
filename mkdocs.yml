@@ -27,7 +27,9 @@ theme:
 
 nav:
   - Home: index.md
-  - Quick Start: quickstart.md
+  - Examples:
+    - Quickstart: examples/quickstart.md
+    - Kalman Tracking: examples/kalman_tracking.md
   - Contributing: contributing.md
 
 plugins:

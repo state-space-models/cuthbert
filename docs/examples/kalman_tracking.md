@@ -1,24 +1,4 @@
-# Quick Start
-
-This guide will get you up and running with `cuthbert` for state-space model inference.
-We'll cover the installation procedure and walk through a Kalman filtering example.
-
-## Installation
-
-`cuthbert` depends on JAX, so you'll need to [install JAX](https://docs.jax.dev/en/latest/installation.html) for the available hardware (CPU, GPU, or TPU).
-For example, on computers with NVIDIA GPUs:
-
-```bash
-pip install -U "jax[cuda12]"
-```
-
-Now install `cuthbert` from PyPI:
-
-```bash
-pip install cuthbert
-```
-
-## Your First Kalman Filter
+## A simple Kalman filter
 
 Let's implement a Kalman filter with `cuthbert`. We'll use Example 6.8 from [Särkka and Svensson (2023)](https://users.aalto.fi/~ssarkka/pub/bfs_book_2023_online.pdf),
 where the goal is to track a car's position and velocity in 2D space at discrete time intervals from noisy measurements of its position.
@@ -270,7 +250,7 @@ models.
 
 
 <!--- entangled-tangle-block
-```{.python file=examples_scripts/quickstart.py}
+```{.python file=examples_scripts/kalman_tracking.py}
 <<imports>>
 <<generate-data>>
 <<build-filter>>
