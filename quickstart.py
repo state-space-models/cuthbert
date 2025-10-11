@@ -172,6 +172,7 @@ football_filter = taylor.build_filter(
 ########### Little test/debugging
 from jax import tree, hessian
 from cuthbertlib.linearize import linearize_taylor
+from cuthbertlib.linearize.utils import symmetric_inv_sqrt
 
 state = football_filter.init_prepare(tree.map(lambda x: x[0], match_data))
 print(state.mean)
@@ -204,6 +205,13 @@ def log_potential(x):
 
 d_mini, chol_R_mini = linearize_taylor(log_potential, jnp.array([0.0, 0.0]))
 prec_mini = -hessian(log_potential)(jnp.array([0.0, 0.0]))
+L_mini = symmetric_inv_sqrt(prec_mini, rtol=0.0)
+prec_full = -hessian(observation_log_potential)(linearization_point)
+L_full = symmetric_inv_sqrt(prec_full, rtol=0.0)
+
+
+# Ok this should be nans not zeros?
+L_zero = symmetric_inv_sqrt(jnp.zeros((2, 2)), rtol=0.0)
 
 
 ## Things to fix/check
