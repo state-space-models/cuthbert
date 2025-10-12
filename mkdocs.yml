@@ -24,15 +24,23 @@ theme:
   features:
     - navigation.instant
     - content.code.copy
+    - navigation.indexes
 
 nav:
   - Home: index.md
   - Quick Start: quickstart.md
   - Contributing: contributing.md
+  - API Reference:
+    - api/index.md
+    - api/filtering.md
 
 plugins:
   - include-markdown
-
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
 
 markdown_extensions:
   - admonition

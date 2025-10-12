@@ -29,7 +29,7 @@ test = [
     "pytest", "pytest-xdist",  # testing
     "entangled_cli", # convert .md examples to .py
 ]
-docs = ["mkdocs-material", "mkdocs-include-markdown-plugin"]
+docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
 examples = ["matplotlib"]
 
 [tool.ruff]
