@@ -1,11 +1,11 @@
 # Filtering
 
-::: cuthbert.filtering.filter
+::: cuthbert.filtering
 
-::: cuthbert.inference.Filter
-
-::: cuthbert.inference.InitPrepare
-
-::: cuthbert.inference.FilterPrepare
-
-::: cuthbert.inference.FilterCombine
+::: cuthbert.inference
+    options:
+      members:
+        - Filter
+        - InitPrepare
+        - FilterPrepare
+        - FilterCombine

@@ -2,9 +2,9 @@
 Parallel-in-time Bayesian filter for discrete hidden Markov models.
 
 References:
-    https://ieeexplore.ieee.org/document/9512397
-    https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
-    https://github.com/probml/dynamax/blob/main/dynamax/hidden_markov_model/parallel_inference.py
+    - https://ieeexplore.ieee.org/document/9512397
+    - https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
+    - https://github.com/probml/dynamax/blob/main/dynamax/hidden_markov_model/parallel_inference.py
 """
 
 from functools import partial
@@ -41,7 +41,7 @@ def build_filter(
     get_trans_matrix: GetTransitionMatrix,
     get_obs_lls: GetObsLogLikelihoods,
 ) -> Filter:
-    r"""Builds a [Filter object][cuthbert.inference.Filter] for discrete hidden Markov models.
+    r"""Builds a filter object for discrete hidden Markov models.
 
     Args:
         get_init_dist: Function to get initial state probabilities $m_i = p(x_0 = i)$.

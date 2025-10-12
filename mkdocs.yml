@@ -43,6 +43,9 @@ plugins:
         python:
           options:
             show_root_heading: true
+            show_symbol_type_heading: true
+            members_order: source
+            show_if_no_docstring: true
 
 markdown_extensions:
   - admonition

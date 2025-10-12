@@ -1,11 +1,11 @@
 # Smoothing
 
-::: cuthbert.smoothing.smoother
+::: cuthbert.smoothing
 
-::: cuthbert.inference.Smoother
-
-::: cuthbert.inference.SmootherPrepare
-
-::: cuthbert.inference.SmootherCombine
-
-::: cuthbert.inference.ConvertFilterToSmootherState
+::: cuthbert.inference
+    options:
+      members:
+        - Smoother
+        - SmootherPrepare
+        - SmootherCombine
+        - ConvertFilterToSmootherState

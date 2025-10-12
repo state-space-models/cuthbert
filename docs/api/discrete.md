@@ -1,11 +1,13 @@
 # Discrete Hidden Markov Models
 
-## Filtering
+::: cuthbert.discrete.filter
+    options:
+      members:
+        - build_filter
 
-::: cuthbert.discrete.build_filter
+::: cuthbert.discrete.smoother
+    options:
+      members:
+        - build_smoother
 
-## Smoothing
-
-::: cuthbert.discrete.build_smoother
-
-## ::: cuthbert.discrete.types
+::: cuthbert.discrete.types
