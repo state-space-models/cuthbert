@@ -1,3 +1,7 @@
+"""
+Implements the marginal particle filter from [Klaas et. al. (2005)](https://www.cs.ubc.ca/~arnaud/klass_defreitas_doucet_marginalparticlefilterUAI2005.pdf).
+"""
+
 from functools import partial
 from typing import NamedTuple
 

@@ -35,6 +35,12 @@ nav:
     - api/filtering.md
     - api/smoothing.md
     - Discrete HMMs: api/discrete.md
+    - Sequential Monte Carlo:
+      - api/smc/index.md
+      - api/smc/backward_sampler.md
+      - api/smc/marginal_particle_filter.md
+      - api/smc/particle_filter.md
+      - api/smc/types.md
 
 plugins:
   - include-markdown
