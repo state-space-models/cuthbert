@@ -33,6 +33,7 @@ nav:
   - API Reference:
     - api/index.md
     - api/filtering.md
+    - api/smoothing.md
 
 plugins:
   - include-markdown

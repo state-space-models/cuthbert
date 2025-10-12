@@ -181,6 +181,19 @@ class Filter(NamedTuple):
 
 
 class Smoother(NamedTuple):
+    """Smoother object.
+
+    Typically passed to [cuthbert.smoothing.smoother][].
+
+    Attributes:
+        convert_filter_to_smoother_state: Function to convert the final filter state to a smoother state.
+        smoother_prepare: Function to prepare intermediate states for the smoother.
+        smoother_combine: Function that combines two smoother states to produce another.
+        associative: Whether `smoother_combine` is an associative operator. Temporally
+            parallelized smoothers are guaranteed to produce correct results only if
+            `associative=True`.
+    """
+
     convert_filter_to_smoother_state: ConvertFilterToSmootherState
     smoother_prepare: SmootherPrepare
     smoother_combine: SmootherCombine
