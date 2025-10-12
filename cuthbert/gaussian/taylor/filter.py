@@ -1,17 +1,21 @@
-"""Linearized Kalman filter and smoother that uses automatic differentiation to extract
-conditonally Gaussian parameters from log densities of the dynamics and observation
-distributions. This differs from gaussian/moments which requires mean and chol_cov
+r"""Linearized Kalman filter and smoother that uses automatic differentiation to extract
+conditionally Gaussian parameters from log densities of the dynamics and observation
+distributions. This differs from `gaussian/moments`, which requires `mean` and `chol_cov`
 functions as input rather than log densities.
 
-I.e. we approximate conditional log densities as
+I.e., we approximate conditional densities as
 
-log p(y | x) ≈ N(y | H x + d, L L^T)
+$$
+p(y \mid x) \approx N(y \mid H x + d, L L^T),
+$$
 
-and log potentials as
+and potentials as
 
-log G(x) ≈ N(x | m, L L^T)
+$$
+G(x) \approx N(x \mid m, L L^T),
+$$
 
-where L is the cholesky factor of the covariance matrix.
+where $L$ is the Cholesky factor of the covariance matrix.
 
 See `cuthbertlib.linearize` for more details.
 

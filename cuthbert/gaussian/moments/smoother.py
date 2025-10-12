@@ -1,9 +1,11 @@
-"""Linearized Kalman smoother that takes a user provided conditional mean and
-chol_cov functions to define a conditionally linear Gaussian state space model.
+r"""Linearized Kalman smoother that takes a user provided conditional `mean` and
+`chol_cov` functions to define a conditionally linear Gaussian state space model.
 
-I.e. we approximate conditional log densities as
+I.e., we approximate conditional densities as
 
-log p(y | x) ≈ N(y | mean(x), chol_cov(x) @ chol_cov(x)^T)
+$$
+p(y \mid x) \approx N(y \mid \mathrm{mean}(x), \mathrm{chol\_cov}(x) @ \mathrm{chol\_cov}(x)^\top).
+$$
 
 See `cuthbertlib.linearize` for more details.
 

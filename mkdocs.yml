@@ -35,6 +35,9 @@ nav:
     - api/filtering.md
     - api/smoothing.md
     - Discrete HMMs: api/discrete.md
+    - Gaussian filters and smoothers:
+      - Exact Kalman: api/gaussian/kalman.md
+      - Extended Kalman: api/gaussian/extended_kalman.md
     - Sequential Monte Carlo:
       - api/smc/index.md
       - api/smc/backward_sampler.md
