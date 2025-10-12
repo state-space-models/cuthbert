@@ -34,6 +34,7 @@ nav:
     - api/index.md
     - api/filtering.md
     - api/smoothing.md
+    - Discrete HMMs: api/discrete.md
 
 plugins:
   - include-markdown

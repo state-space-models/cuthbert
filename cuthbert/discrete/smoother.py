@@ -30,10 +30,10 @@ class DiscreteSmootherState(NamedTuple):
 
 
 def build_smoother(get_trans_matrix: GetTransitionMatrix) -> Smoother:
-    """Builds a smoother object for discrete hidden Markov models.
+    r"""Builds a [Smoother object][cuthbert.inference.Smoother] for discrete hidden Markov models.
 
     Args:
-        get_trans_matrix: Function to get the transition matrix A_{ij} = p(x_t = j | x_{t-1} = i).
+        get_trans_matrix: Function to get the transition matrix $A_{ij} = p(x_t = j \mid x_{t-1} = i)$.
 
     Returns:
         Smoother object. Suitable for associative scan.

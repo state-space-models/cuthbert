@@ -41,12 +41,12 @@ def build_filter(
     get_trans_matrix: GetTransitionMatrix,
     get_obs_lls: GetObsLogLikelihoods,
 ) -> Filter:
-    """Builds a filter object for discrete hidden Markov models.
+    r"""Builds a [Filter object][cuthbert.inference.Filter] for discrete hidden Markov models.
 
     Args:
-        get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
-        get_trans_matrix: Function to get the transition matrix A_{ij} = p(x_t = j | x_{t-1} = i).
-        get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
+        get_init_dist: Function to get initial state probabilities $m_i = p(x_0 = i)$.
+        get_trans_matrix: Function to get the transition matrix $A_{ij} = p(x_t = j \mid x_{t-1} = i)$.
+        get_obs_lls: Function to get observation log likelihoods $b_i = \log p(y_t | x_t = i)$.
 
     Returns:
         Filter object. Suitable for associative scan.
