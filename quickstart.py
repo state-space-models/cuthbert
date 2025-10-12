@@ -174,46 +174,12 @@ from jax import tree, hessian
 from cuthbertlib.linearize import linearize_taylor
 from cuthbertlib.linearize.utils import symmetric_inv_sqrt
 
-state = football_filter.init_prepare(tree.map(lambda x: x[0], match_data))
+model_inputs = tree.map(lambda x: x[0], match_data)
+state = football_filter.init_prepare(model_inputs)
 print(state.mean)
 print(state.chol_cov @ state.chol_cov.T)
-# Not right, cov should not be zeros on the diagonal not touched by team_indices, it should still be init_sd**2
-model_inputs = tree.map(lambda x: x[0], match_data)
-observation_log_potential, linearization_point = get_observation_func(
-    state, model_inputs
+print(
+    (state.chol_cov @ state.chol_cov.T)[model_inputs.team_indices][
+        :, model_inputs.team_indices
+    ]
 )
-d, chol_R = linearize_taylor(observation_log_potential, linearization_point)
-print(d)
-print(chol_R)
-
-# These should be non-zero and the others should be nans ?
-print(d[model_inputs.team_indices])
-print(chol_R[model_inputs.team_indices, model_inputs.team_indices])
-
-
-# Mini log pot
-def log_potential(x):
-    x_home = x[0]
-    x_away = x[1]
-
-    prob_home_win = sigmoid(x_home - x_away - epsilon)
-    prob_away_win = 1 - sigmoid(x_home - x_away + epsilon)
-    prob_draw = 1 - prob_home_win - prob_away_win
-
-    return jnp.log(jnp.array([prob_draw, prob_home_win, prob_away_win])[0])
-
-
-d_mini, chol_R_mini = linearize_taylor(log_potential, jnp.array([0.0, 0.0]))
-prec_mini = -hessian(log_potential)(jnp.array([0.0, 0.0]))
-L_mini = symmetric_inv_sqrt(prec_mini, rtol=0.0)
-prec_full = -hessian(observation_log_potential)(linearization_point)
-L_full = symmetric_inv_sqrt(prec_full, rtol=0.0)
-
-
-# Ok this should be nans not zeros?
-L_zero = symmetric_inv_sqrt(jnp.zeros((2, 2)), rtol=0.0)
-
-
-## Things to fix/check
-# 1. linearize_taylor/symmetric_inv_sqrt can handle sparse (prec) matrices
-# 2. prec_mini/d_mini, chol_R_mini and the final state.chol_cov make sense

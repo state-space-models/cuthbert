@@ -42,7 +42,10 @@ def process_observation(
         # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
         # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
         H = -jnp.eye(d.shape[0])
-        observation = jnp.zeros_like(d)
+        # observation = jnp.zeros_like(d)
+        observation = jnp.where(
+            jnp.isnan(jnp.diag(chol_R)), jnp.nan, 0.0
+        )  # Tell the cuthbertlib.kalman to skip these dimensions
     return H, d, chol_R, observation
 
 
