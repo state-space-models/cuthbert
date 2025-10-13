@@ -47,7 +47,9 @@ nav:
   - cuthbertlib API:
     - api/cuthbertlib/types.md
     - api/cuthbertlib/resampling.md
+    - api/cuthbertlib/index.md
     - api/cuthbertlib/backward_sampling.md
+    - api/cuthbertlib/stats.md
 
 plugins:
   - include-markdown
