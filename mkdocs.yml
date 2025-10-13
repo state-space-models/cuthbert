@@ -30,24 +30,24 @@ nav:
   - Home: index.md
   - Quick Start: quickstart.md
   - Contributing: contributing.md
-  - API Reference:
-    - api/index.md
-    - api/filtering.md
-    - api/smoothing.md
-    - Discrete HMMs: api/discrete.md
+  - cuthbert API:
+    - api/cuthbert/index.md
+    - api/cuthbert/filtering.md
+    - api/cuthbert/smoothing.md
+    - Discrete HMMs: api/cuthbert/discrete.md
     - Gaussian filters and smoothers:
-      - Exact Kalman: api/gaussian/kalman.md
-      - Extended Kalman: api/gaussian/extended_kalman.md
+      - Exact Kalman: api/cuthbert/gaussian/kalman.md
+      - Extended Kalman: api/cuthbert/gaussian/extended_kalman.md
     - Sequential Monte Carlo:
-      - api/smc/index.md
-      - api/smc/backward_sampler.md
-      - api/smc/marginal_particle_filter.md
-      - api/smc/particle_filter.md
-      - api/smc/types.md
-    - cuthbertlib:
-      - api/cuthbertlib/types.md
-      - api/cuthbertlib/resampling.md
-      - api/cuthbertlib/backward_sampling.md
+      - api/cuthbert/smc/index.md
+      - api/cuthbert/smc/backward_sampler.md
+      - api/cuthbert/smc/marginal_particle_filter.md
+      - api/cuthbert/smc/particle_filter.md
+      - api/cuthbert/smc/types.md
+  - cuthbertlib API:
+    - api/cuthbertlib/types.md
+    - api/cuthbertlib/resampling.md
+    - api/cuthbertlib/backward_sampling.md
 
 plugins:
   - include-markdown
