@@ -44,6 +44,10 @@ nav:
       - api/smc/marginal_particle_filter.md
       - api/smc/particle_filter.md
       - api/smc/types.md
+    - cuthbertlib:
+      - api/cuthbertlib/types.md
+      - api/cuthbertlib/resampling.md
+      - api/cuthbertlib/backward_sampling.md
 
 plugins:
   - include-markdown

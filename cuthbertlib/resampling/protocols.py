@@ -9,7 +9,18 @@ from cuthbertlib.types import Array, ArrayLike, KeyArray
 class Resampling(Protocol):
     """Protocol for resampling operations."""
 
-    def __call__(self, key: KeyArray, logits: ArrayLike, n: int) -> Array: ...
+    def __call__(self, key: KeyArray, logits: ArrayLike, n: int) -> Array:
+        """Computes resampling indices according to given logits.
+
+        Args:
+            key: JAX PRNG key.
+            logits: Logits.
+            n: Number of indices to sample.
+
+        Returns:
+            Array of resampling indices.
+        """
+        ...
 
 
 @runtime_checkable
