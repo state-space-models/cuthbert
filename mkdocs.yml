@@ -45,11 +45,14 @@ nav:
       - api/cuthbert/smc/particle_filter.md
       - api/cuthbert/smc/types.md
   - cuthbertlib API:
-    - api/cuthbertlib/types.md
-    - api/cuthbertlib/resampling.md
     - api/cuthbertlib/index.md
     - api/cuthbertlib/backward_sampling.md
+    - api/cuthbertlib/kalman.md
+    - api/cuthbertlib/linearize.md
+    - Quadrature Methods: api/cuthbertlib/quadrature.md
+    - api/cuthbertlib/resampling.md
     - api/cuthbertlib/stats.md
+    - api/cuthbertlib/types.md
 
 plugins:
   - include-markdown
