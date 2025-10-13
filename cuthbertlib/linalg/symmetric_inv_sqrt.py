@@ -1,10 +1,14 @@
 import jax.numpy as jnp
 
-from cuthbertlib.linalg import tria
+from cuthbertlib.linalg.tria import tria
 from cuthbertlib.types import Array, ArrayLike
 
 
-def symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> Array:
+def symmetric_inv_sqrt(
+    A: ArrayLike,
+    rtol: float | ArrayLike | None = None,
+    ignore_nan_dims: bool = True,
+) -> Array:
     """Compute the inverse square root of a symmetric matrix.
 
     I.e. a lower triangular matrix L such that L @ L.T = A^{-1} (for positive definite
@@ -17,25 +21,24 @@ def symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> A
     In the case of singular or indefinite A, the output will be an approximation
     and L @ L.T = A^{-1} will not hold in general.
 
-    Dimensions with NaN or 0 on the diagonal are treated as "missing" and the inverse
-    square root is computed only on the valid dimensions, with the result padded with
-    NaNs or 0s in the appropriate places.
-
     Args:
         A: A symmetric matrix.
         rtol: The relative tolerance for the singular values.
             Cutoff for small singular values; singular values smaller than
             `rtol * largest_singular_value` are treated as zero.
             See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal as missing
+            and ignore all rows and columns associated with them (with result in those
+            dimensions being NaN on the diagonal and zero off-diagonal).
 
     Returns:
         A lower triangular matrix L such that L @ L.T = A^{-1} (for valid dimensions).
     """
     arr = jnp.asarray(A)
 
-    # Check for NaNs or zeros on the diagonal
+    # Check for NaNs on the diagonal (missing dimensions)
     diag_vals = jnp.diag(arr)
-    nan_mask = jnp.isnan(diag_vals) | (diag_vals == 0.0)
+    nan_mask = jnp.isnan(diag_vals) * ignore_nan_dims
 
     # Sort to group valid dimensions first (needed for SVD to work correctly)
     argsort = jnp.argsort(nan_mask, stable=True)
@@ -72,7 +75,10 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     u, s, _ = jnp.linalg.svd(A, full_matrices=False, hermitian=True)
     cutoff = rtol * s[0]
     # Use 0 for invalid singular values to avoid inf/NaN propagation in tria
-    inv_sqrt_s = jnp.where(s > cutoff, 1.0 / jnp.sqrt(s), 0.0).astype(u.dtype)
+    valid_mask = s > cutoff
+    inv_sqrt_s = jnp.where(valid_mask, 1.0 / jnp.sqrt(s), 0.0).astype(u.dtype)
     B = u * inv_sqrt_s  # Square root but not lower triangular
     L = tria(B)  # Make lower triangular
+    # Re-mark dimensions with invalid singular values as NaN
+    L = jnp.where(valid_mask[:, None], L, jnp.nan)
     return L

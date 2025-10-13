@@ -3,7 +3,7 @@ from typing import Callable, overload
 import jax
 from jax.typing import ArrayLike
 
-from cuthbertlib.linearize.utils import symmetric_inv_sqrt
+from cuthbertlib.linalg import symmetric_inv_sqrt
 from cuthbertlib.types import Array, ArrayTree
 
 

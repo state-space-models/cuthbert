@@ -3,7 +3,7 @@ from typing import overload
 import jax.numpy as jnp
 from jax import grad, hessian, jacobian
 
-from cuthbertlib.linearize.utils import symmetric_inv_sqrt
+from cuthbertlib.linalg import symmetric_inv_sqrt
 from cuthbertlib.types import (
     Array,
     ArrayLike,

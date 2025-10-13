@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from jax import numpy as jnp
 
-from cuthbertlib.linearize import symmetric_inv_sqrt
+from cuthbertlib.linalg import symmetric_inv_sqrt
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -48,50 +48,42 @@ def test_inv_sqrt_singular_indefinite(seed, x_dim) -> None:
 @pytest.mark.parametrize("x_dim", [3])
 def test_inv_sqrt_zeros(x_dim) -> None:
     A = jnp.zeros((x_dim, x_dim))
-    A = A @ A.T
 
     L = jax.jit(symmetric_inv_sqrt)(A)
 
-    # Expected: NaN on diagonal (dimensions with zero diagonal are treated as invalid),
-    # zeros elsewhere
+    # Expected: all zeros (singular matrix handled by pseudoinverse)
     assert L.shape == (x_dim, x_dim)
-    assert jnp.all(jnp.isnan(jnp.diag(L)))
-    assert jnp.all(
-        L[~jnp.eye(x_dim, dtype=bool)] == 0.0
-    )  # Check non-diagonal elements are zero
+    assert jnp.all(jnp.isnan(L))
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
-def test_inv_sqrt_partial_zeros(seed, x_dim) -> None:
+def test_inv_sqrt_partial_nans(seed, x_dim) -> None:
+    """Test that NaN dimensions are properly treated as missing."""
     rng = np.random.default_rng(seed)
 
     A = rng.normal(size=(x_dim, x_dim))
     A = A @ A.T
 
-    A_zeros = jnp.zeros((x_dim, x_dim))
-    A_zeros = A_zeros @ A_zeros.T
+    A_nans = jnp.full((x_dim, x_dim), jnp.nan)
 
-    A_partial_zeros = jnp.block(
+    A_partial_nans = jnp.block(
         [
-            [A_zeros, A_zeros, A_zeros],
-            [A_zeros, A, A_zeros],
-            [A_zeros, A_zeros, A_zeros],
+            [A_nans, A_nans, A_nans],
+            [A_nans, A, A_nans],
+            [A_nans, A_nans, A_nans],
         ]
     )
 
-    # # Change diag of A_partial_zeros to be nans where previously zeros
-    # A_partial_zeros = A_partial_zeros.at[jnp.diag_indices_from(A_partial_zeros)].set(
-    #     jnp.where(jnp.diag(A_partial_zeros) == 0.0, jnp.nan, jnp.diag(A_partial_zeros))
-    # )
-
-    L = symmetric_inv_sqrt(A_partial_zeros)
+    L = symmetric_inv_sqrt(A_partial_nans)
 
     # Extract the valid (non-NaN) dimensions from the output L
-    # (dimensions with zero diagonal in input become NaN in output)
+    # (dimensions with NaN diagonal in input remain NaN in output)
     valid_mask = ~jnp.isnan(jnp.diag(L))
     valid_indices = jnp.where(valid_mask)[0]
     L_valid = L[valid_indices[:, None], valid_indices]
+
+    assert valid_mask.sum() == x_dim
 
     # Test that extracting the valid block works
     chex.assert_trees_all_close(L_valid @ L_valid.T, jnp.linalg.inv(A))
@@ -114,3 +106,6 @@ def test_inv_sqrt_partial_zeros(seed, x_dim) -> None:
     lower_tri_mask = jnp.tril(jnp.ones_like(L, dtype=bool), k=-1)
     invalid_lower_tri = (invalid_row_mask | invalid_col_mask) & lower_tri_mask
     assert jnp.all(L[invalid_lower_tri] == 0.0)
+
+    L_ignore_nan_dims_false = symmetric_inv_sqrt(A_partial_nans, ignore_nan_dims=False)
+    assert jnp.all(jnp.isnan(L_ignore_nan_dims_false))
