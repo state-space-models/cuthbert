@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from jax import numpy as jnp
 
-from cuthbertlib.linalg import symmetric_inv_sqrt
+from cuthbertlib.linalg import symmetric_inv_sqrt, chol_cov_with_nans_to_cov
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -51,7 +51,7 @@ def test_inv_sqrt_zeros(x_dim) -> None:
 
     L = jax.jit(symmetric_inv_sqrt)(A)
 
-    # Expected: all zeros (singular matrix handled by pseudoinverse)
+    # Expected: all nans (inv of 0 is nan)
     assert L.shape == (x_dim, x_dim)
     assert jnp.all(jnp.isnan(L))
 
@@ -107,5 +107,39 @@ def test_inv_sqrt_partial_nans(seed, x_dim) -> None:
     invalid_lower_tri = (invalid_row_mask | invalid_col_mask) & lower_tri_mask
     assert jnp.all(L[invalid_lower_tri] == 0.0)
 
+    # With ignore_nan_dims=False, we should get all nans as they propagate through
+    # entire matrix
     L_ignore_nan_dims_false = symmetric_inv_sqrt(A_partial_nans, ignore_nan_dims=False)
     assert jnp.all(jnp.isnan(L_ignore_nan_dims_false))
+
+
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+def test_chol_cov_with_nans_to_cov(seed, x_dim) -> None:
+    """Test that chol_cov_with_nans_to_cov properly handles NaN dimensions."""
+    rng = np.random.default_rng(seed)
+
+    # Create a valid cholesky factor
+    A = rng.normal(size=(x_dim, x_dim))
+    chol = jnp.linalg.cholesky(A @ A.T)
+
+    # Create a version with NaN on some diagonals
+    chol_with_nans = chol.at[0, 0].set(jnp.nan)
+
+    # Convert to covariance
+    cov = chol_cov_with_nans_to_cov(chol_with_nans)
+
+    # Check that dimension 0 has NaN on diagonal
+    assert jnp.isnan(cov[0, 0])
+
+    # Check that dimension 0 has zero off-diagonal
+    assert jnp.all(cov[0, 1:] == 0.0)
+    assert jnp.all(cov[1:, 0] == 0.0)
+
+    # Check that valid dimensions match chol @ chol.T
+    expected_cov_valid_dims = chol[1:, 1:] @ chol[1:, 1:].T
+    chex.assert_trees_all_close(cov[1:, 1:], expected_cov_valid_dims)
+
+    # Check it works fine with no nans
+    cov_no_nans = chol_cov_with_nans_to_cov(chol)
+    chex.assert_trees_all_close(cov_no_nans, A @ A.T)

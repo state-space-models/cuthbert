@@ -3,7 +3,7 @@ from typing import overload
 import jax.numpy as jnp
 from jax import grad, hessian, jacobian
 
-from cuthbertlib.linalg import symmetric_inv_sqrt
+from cuthbertlib.linalg import symmetric_inv_sqrt, chol_cov_with_nans_to_cov
 from cuthbertlib.types import (
     Array,
     ArrayLike,
@@ -20,6 +20,7 @@ def linearize_log_density(
     y: ArrayLike,
     rtol: float | None = None,
     has_aux: bool = False,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array]: ...
 @overload
 def linearize_log_density(
@@ -28,6 +29,7 @@ def linearize_log_density(
     y: ArrayLike,
     rtol: float | None = None,
     has_aux: bool = True,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array, ArrayTree]: ...
 
 
@@ -37,6 +39,7 @@ def linearize_log_density(
     y: ArrayLike,
     rtol: float | None = None,
     has_aux: bool = False,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
@@ -63,6 +66,8 @@ def linearize_log_density(
             Passed to `linearize.utils.inv_sqrt` with default calculated based on
             singular values of the precision matrix.
         has_aux: Whether the log_density function returns an auxiliary value.
+        ignore_nan_dims: Whether when inverting the precision matrix to ignore
+            dimensions with NaN on the diagonal of the precision matrix or in y.
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
@@ -70,7 +75,14 @@ def linearize_log_density(
     """
     prec_and_maybe_aux = hessian(log_density, 1, has_aux=has_aux)(x, y)
     prec = -prec_and_maybe_aux[0] if has_aux else -prec_and_maybe_aux
-    chol_cov = symmetric_inv_sqrt(prec, rtol=rtol)
+    if ignore_nan_dims:
+        prec_diag = jnp.diag(prec)
+        nan_mask = jnp.isnan(y) | jnp.isnan(prec_diag)
+        prec = prec.at[jnp.diag_indices_from(prec)].set(
+            jnp.where(nan_mask, jnp.nan, prec_diag)
+        )
+
+    chol_cov = symmetric_inv_sqrt(prec, rtol=rtol, ignore_nan_dims=ignore_nan_dims)
     mat, shift, *extra = linearize_log_density_given_chol_cov(
         log_density, x, y, chol_cov, has_aux=has_aux
     )
@@ -84,6 +96,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = False,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array]: ...
 @overload
 def linearize_log_density_given_chol_cov(
@@ -92,6 +105,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = True,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, ArrayTree]: ...
 
 
@@ -101,6 +115,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = False,
+    ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
@@ -115,13 +130,21 @@ def linearize_log_density_given_chol_cov(
         x: The input points.
         y: The output points.
         chol_cov: The cholesky factor of the covariance matrix of the Gaussian.
+        has_aux: Whether the log_density function returns an auxiliary value.
+        ignore_nan_dims: Whether to ignore dimensions with NaN on the diagonal of the
+            precision matrix or in y.
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.
             As well as the auxiliary value if `has_aux` is True.
     """
     chol_cov = jnp.asarray(chol_cov)
-    cov = chol_cov @ chol_cov.T
+
+    cov = (
+        chol_cov_with_nans_to_cov(chol_cov)
+        if ignore_nan_dims
+        else chol_cov @ chol_cov.T
+    )
 
     if has_aux:
 

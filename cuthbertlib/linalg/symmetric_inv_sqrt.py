@@ -82,3 +82,35 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     # Re-mark dimensions with invalid singular values as NaN
     L = jnp.where(valid_mask[:, None], L, jnp.nan)
     return L
+
+
+def chol_cov_with_nans_to_cov(chol_cov: ArrayLike) -> Array:
+    """Convert a cholesky factor to a covariance matrix with NaNs on the diagonal
+    specifying dimensions to be ignored.
+
+    Args:
+        chol_cov: A cholesky factor of a covariance matrix with NaNs on the diagonal
+            specifying dimensions to be ignored.
+
+    Returns:
+        A covariance matrix equivalent to chol_cov @ chol_cov.T in dimensions where
+        the cholesky factor is valid and for invalid dimensions (ones with NaN on the
+        diagonal in chol_cov) with NaN on the diagonal and zero off-diagonal.
+    """
+    chol_cov = jnp.asarray(chol_cov)
+
+    nan_mask = jnp.isnan(jnp.diag(chol_cov))
+
+    # Set all rows and columns with invalid diagonal to zero
+    chol_cov = jnp.where(nan_mask[:, None], 0, chol_cov)
+    chol_cov = jnp.where(nan_mask[None, :], 0, chol_cov)
+
+    # Calculate the covariance matrix
+    cov = chol_cov @ chol_cov.T
+
+    # Set the diagonal to NaN
+    cov = cov.at[jnp.diag_indices_from(cov)].set(
+        jnp.where(nan_mask, jnp.nan, jnp.diag(cov))
+    )
+
+    return cov
