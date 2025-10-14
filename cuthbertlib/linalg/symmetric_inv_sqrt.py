@@ -7,7 +7,7 @@ from cuthbertlib.types import Array, ArrayLike
 def symmetric_inv_sqrt(
     A: ArrayLike,
     rtol: float | ArrayLike | None = None,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> Array:
     """Compute the inverse square root of a symmetric matrix.
 

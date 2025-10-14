@@ -18,8 +18,8 @@ def linearize_log_density(
     log_density: LogConditionalDensity,
     x: ArrayLike,
     y: ArrayLike,
+    has_aux: bool = True,
     rtol: float | None = None,
-    has_aux: bool = False,
     ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array]: ...
 @overload
@@ -27,8 +27,8 @@ def linearize_log_density(
     log_density: LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
-    rtol: float | None = None,
     has_aux: bool = True,
+    rtol: float | None = None,
     ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array, ArrayTree]: ...
 
@@ -37,8 +37,8 @@ def linearize_log_density(
     log_density: LogConditionalDensity | LogConditionalDensityAux,
     x: ArrayLike,
     y: ArrayLike,
-    rtol: float | None = None,
     has_aux: bool = False,
+    rtol: float | None = None,
     ignore_nan_dims: bool = True,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
@@ -62,12 +62,16 @@ def linearize_log_density(
         log_density: A conditional log density of y given x. Returns a scalar.
         x: The input points.
         y: The output points.
-        rtol: The relative tolerance for the singular values of the precision matrix.
-            Passed to `linearize.utils.inv_sqrt` with default calculated based on
-            singular values of the precision matrix.
         has_aux: Whether the log_density function returns an auxiliary value.
-        ignore_nan_dims: Whether when inverting the precision matrix to ignore
-            dimensions with NaN on the diagonal of the precision matrix or in y.
+        rtol: The relative tolerance for the singular values of the precision matrix
+            when passed to `symmetric_inv_sqrt`.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrix as missing and ignore all rows and columns associated with
+            them.
 
     Returns:
         Linearized matrix, shift, and cholesky factor of the covariance matrix.

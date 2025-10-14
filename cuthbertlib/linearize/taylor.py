@@ -12,12 +12,16 @@ def linearize_taylor(
     log_potential: Callable[[ArrayLike], Array],
     x: ArrayLike,
     has_aux: bool = False,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array]: ...
 @overload
 def linearize_taylor(
     log_potential: Callable[[ArrayLike], tuple[Array, ArrayTree]],
     x: ArrayLike,
     has_aux: bool = True,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, ArrayTree]: ...
 
 
@@ -26,6 +30,8 @@ def linearize_taylor(
     | Callable[[ArrayLike], tuple[Array, ArrayTree]],
     x: ArrayLike,
     has_aux: bool = False,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
     """Linearize a log potential function around a given point using Taylor expansion.
 
@@ -41,6 +47,15 @@ def linearize_taylor(
             to be a normalized probability density in its input.
         x: The point to linearize around.
         has_aux: Whether the log_potential function returns an auxiliary value.
+        rtol: The relative tolerance for the singular values of the precision matrix
+            when passed to `symmetric_inv_sqrt`.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrix as missing and ignore all rows and columns associated with
+            them.
 
     Returns:
         Linearized mean and cholesky factor of the covariance matrix.
@@ -53,6 +68,6 @@ def linearize_taylor(
     g, aux = g_and_maybe_aux if has_aux else (g_and_maybe_aux, None)
     prec = -prec_and_maybe_aux[0] if has_aux else -prec_and_maybe_aux
 
-    L = symmetric_inv_sqrt(prec)
+    L = symmetric_inv_sqrt(prec, rtol=rtol, ignore_nan_dims=ignore_nan_dims)
     m = x + L @ L.T @ g
     return (m, L, aux) if has_aux else (m, L)

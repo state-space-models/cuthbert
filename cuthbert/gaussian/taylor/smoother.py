@@ -43,6 +43,8 @@ from cuthbertlib.types import (
 
 def build_smoother(
     get_dynamics_log_density: GetDynamicsLogDensity,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
 ) -> Smoother:
     """
     Build linearized Taylor Kalman inference smoother.
@@ -50,13 +52,25 @@ def build_smoother(
     Args:
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
+        rtol: The relative tolerance for the singular values of precision matrices
+            when passed to `symmetric_inv_sqrt` during linearization.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrices (found via linearization) as missing and ignore all rows
+            and columns associated with them.
 
     Returns:
         Linearized Taylor Kalman smoother object, suitable for associative scan.
     """
     return Smoother(
         smoother_prepare=partial(
-            smoother_prepare, get_dynamics_log_density=get_dynamics_log_density
+            smoother_prepare,
+            get_dynamics_log_density=get_dynamics_log_density,
+            rtol=rtol,
+            ignore_nan_dims=ignore_nan_dims,
         ),
         smoother_combine=smoother_combine,
         convert_filter_to_smoother_state=convert_filter_to_smoother_state,
@@ -68,6 +82,8 @@ def smoother_prepare(
     filter_state: LinearizedKalmanFilterState,
     get_dynamics_log_density: GetDynamicsLogDensity,
     model_inputs: ArrayTreeLike,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -79,6 +95,15 @@ def smoother_prepare(
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
         model_inputs: Model inputs for the transition from t to t+1.
+        rtol: The relative tolerance for the singular values of precision matrices
+            when passed to `symmetric_inv_sqrt` during linearization.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrices (found via linearization) as missing and ignore all rows
+            and columns associated with them.
         key: JAX random key - not used.
 
     Returns:
@@ -94,7 +119,11 @@ def smoother_prepare(
     )
 
     F, c, chol_Q = linearize_log_density(
-        log_dynamics_density, linearization_point_prev, linearization_point_curr
+        log_dynamics_density,
+        linearization_point_prev,
+        linearization_point_curr,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
     )
 
     state = smoothing.associative_params_single(

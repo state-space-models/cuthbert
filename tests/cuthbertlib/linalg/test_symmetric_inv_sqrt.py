@@ -75,7 +75,7 @@ def test_inv_sqrt_partial_nans(seed, x_dim) -> None:
         ]
     )
 
-    L = symmetric_inv_sqrt(A_partial_nans)
+    L = symmetric_inv_sqrt(A_partial_nans, ignore_nan_dims=True)
 
     # Extract the valid (non-NaN) dimensions from the output L
     # (dimensions with NaN diagonal in input remain NaN in output)
