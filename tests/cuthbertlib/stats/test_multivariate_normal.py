@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 import pytest
-from jax import random, jit
+from jax import random
 from jax.scipy.stats import multivariate_normal as jax_mvn
 from jax.scipy.stats import norm as jax_norm
 
