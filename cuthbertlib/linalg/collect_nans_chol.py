@@ -81,7 +81,8 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
         diag_indices = jnp.diag_indices_from(chol)
         chol = chol.at[diag_indices].set(diag_chol)
 
-    rest = tree.map(lambda x: x[argsort], rest)
+    # Only reorder non-scalar arrays in rest
+    rest = tree.map(lambda x: x[argsort] if jnp.asarray(x).shape else x, rest)
     rest = tree.map(lambda x: set_to_zero(flag, x), rest)
 
     return flag, chol, *rest
