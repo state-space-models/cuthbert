@@ -12,3 +12,7 @@ for a given matrix `A` that is not necessarily square.
 specified subset of rows and columns to the start with remaining dimensions moved
 to the end and parameterized so that they are ignored in a Bayesian update or
 logpdf calculation.
+- `symmetric_inv_sqrt`, which computes the inverse square root of a symmetric matrix. It
+does so exactly in the case that the matrix is positive definite. In the case of zero
+or negative singular values, it supports approximate inverse square roots in a similar
+manner to (Moore-Penrose) pseudo-inversion.
