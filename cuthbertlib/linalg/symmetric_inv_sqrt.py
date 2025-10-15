@@ -51,14 +51,16 @@ def symmetric_inv_sqrt(
     nan_mask_sorted = nan_mask[argsort]
 
     # Zero out invalid dimensions before computation
-    valid_mask_2d = (~nan_mask_sorted[:, None]) & (~nan_mask_sorted[None, :])
-    arr_sorted = jnp.where(valid_mask_2d, arr_sorted, 0.0)
+    invalid_mask_2d = ((nan_mask_sorted[:, None]) | (nan_mask_sorted[None, :])) * (
+        ignore_nan_dims
+    )
+    arr_sorted = jnp.where(invalid_mask_2d, 0.0, arr_sorted)
 
     # Compute inverse square root on sorted, masked matrix
     L_sorted = _symmetric_inv_sqrt(arr_sorted, rtol)
 
     # Post-process: zero out invalid rows/cols, set NaN on invalid diagonal
-    L_sorted = jnp.where(valid_mask_2d, L_sorted, 0.0)
+    L_sorted = jnp.where(invalid_mask_2d, 0.0, L_sorted)
     diag_L = jnp.where(nan_mask_sorted, jnp.nan, jnp.diag(L_sorted))
     L_sorted = L_sorted.at[jnp.diag_indices_from(L_sorted)].set(diag_L)
 
@@ -77,7 +79,7 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     if rtol is None:
         max_rows_cols = max(arr.shape[-2:])
         rtol = jnp.asarray(10.0 * max_rows_cols * jnp.finfo(arr.dtype).eps)
-    u, s, _ = jnp.linalg.svd(A, full_matrices=False, hermitian=True)
+    u, s, _ = jnp.linalg.svd(arr, full_matrices=False, hermitian=True)
     cutoff = rtol * s[0]
     # Use 0 for invalid singular values to avoid inf/NaN propagation in tria
     valid_mask = s > cutoff
@@ -87,6 +89,7 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     # Mark dimensions with all 0 rows and columns as NaN
     zero_dims_mask = jnp.all(L == 0.0, axis=0) & jnp.all(L == 0.0, axis=1)
     L = jnp.where(zero_dims_mask[:, None], jnp.nan, L)
+    L = jnp.where(zero_dims_mask[None, :], jnp.nan, L)
     return L
 
 

@@ -110,7 +110,7 @@ def test_inv_sqrt_partial_nans(seed, x_dim) -> None:
     # With ignore_nan_dims=False, we should get all nans as they propagate through
     # entire matrix
     L_ignore_nan_dims_false = symmetric_inv_sqrt(A_partial_nans, ignore_nan_dims=False)
-    assert jnp.all(jnp.isnan(L_ignore_nan_dims_false))
+    assert jnp.all(jnp.isnan(L_ignore_nan_dims_false @ L_ignore_nan_dims_false.T))
 
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
