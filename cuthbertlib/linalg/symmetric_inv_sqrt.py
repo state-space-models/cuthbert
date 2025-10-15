@@ -38,7 +38,12 @@ def symmetric_inv_sqrt(
 
     # Check for NaNs on the diagonal (missing dimensions)
     diag_vals = jnp.diag(arr)
-    nan_mask = jnp.isnan(diag_vals) * ignore_nan_dims
+    nan_diag_mask = jnp.isnan(diag_vals) * ignore_nan_dims
+
+    # Check for dimensions whose row and column are all 0
+    zero_mask = jnp.all(arr == 0.0, axis=0) & jnp.all(arr == 0.0, axis=1)
+
+    nan_mask = nan_diag_mask | zero_mask
 
     # Sort to group valid dimensions first (needed for SVD to work correctly)
     argsort = jnp.argsort(nan_mask, stable=True)
@@ -79,8 +84,9 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     inv_sqrt_s = jnp.where(valid_mask, 1.0 / jnp.sqrt(s), 0.0).astype(u.dtype)
     B = u * inv_sqrt_s  # Square root but not lower triangular
     L = tria(B)  # Make lower triangular
-    # Re-mark dimensions with invalid singular values as NaN
-    L = jnp.where(valid_mask[:, None], L, jnp.nan)
+    # Mark dimensions with all 0 rows and columns as NaN
+    zero_dims_mask = jnp.all(L == 0.0, axis=0) & jnp.all(L == 0.0, axis=1)
+    L = jnp.where(zero_dims_mask[:, None], jnp.nan, L)
     return L
 
 

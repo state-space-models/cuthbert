@@ -1,6 +1,7 @@
 from typing import Callable, overload
 
 import jax
+from jax import numpy as jnp
 from jax.typing import ArrayLike
 
 from cuthbertlib.linalg import symmetric_inv_sqrt
@@ -69,5 +70,12 @@ def linearize_taylor(
     prec = -prec_and_maybe_aux[0] if has_aux else -prec_and_maybe_aux
 
     L = symmetric_inv_sqrt(prec, rtol=rtol, ignore_nan_dims=ignore_nan_dims)
-    m = x + L @ L.T @ g
+
+    # Change nans on diag to zeros for L @ L.T @ g, still retain nans on diag for L for bookkeeping
+    # If ignore_nan_dims, change all rows and columns with nans on the diagonal to 0
+    L_diag = jnp.diag(L)
+    nan_mask = jnp.isnan(L_diag) * ignore_nan_dims
+    L_temp = jnp.where(nan_mask[:, None], 0.0, L)
+    L_temp = jnp.where(nan_mask[None, :], 0.0, L_temp)
+    m = x + L_temp @ L_temp.T @ g
     return (m, L, aux) if has_aux else (m, L)
