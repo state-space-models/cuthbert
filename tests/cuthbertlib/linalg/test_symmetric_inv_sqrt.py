@@ -30,6 +30,20 @@ def test_inv_sqrt_positive_definite(seed, x_dim) -> None:
 
 @pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
 @pytest.mark.parametrize("x_dim", [3])
+def test_inv_sqrt_positive_definite_jit(seed, x_dim) -> None:
+    rng = np.random.default_rng(seed)
+
+    A = rng.normal(size=(x_dim, x_dim))
+    A = A @ A.T
+
+    L = jax.jit(symmetric_inv_sqrt)(A)
+
+    chex.assert_trees_all_close(L @ L.T, jnp.linalg.inv(A))
+    chex.assert_trees_all_close(jnp.linalg.inv(L @ L.T), A)
+
+
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
 def test_inv_sqrt_singular_indefinite(seed, x_dim) -> None:
     rng = np.random.default_rng(seed)
 
@@ -45,11 +59,28 @@ def test_inv_sqrt_singular_indefinite(seed, x_dim) -> None:
     assert jnp.array_equal(jnp.tril(L), L)
 
 
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+def test_inv_sqrt_singular_indefinite_jit(seed, x_dim) -> None:
+    rng = np.random.default_rng(seed)
+
+    A = rng.normal(size=(x_dim, x_dim))
+    A = A @ A.T
+
+    A[0, 0] = -1
+    A[1, 1] = 0.1
+
+    L = jax.jit(symmetric_inv_sqrt)(A)
+
+    assert L.shape == (x_dim, x_dim)
+    assert jnp.array_equal(jnp.tril(L), L)
+
+
 @pytest.mark.parametrize("x_dim", [3])
 def test_inv_sqrt_zeros(x_dim) -> None:
     A = jnp.zeros((x_dim, x_dim))
 
-    L = jax.jit(symmetric_inv_sqrt)(A)
+    L = symmetric_inv_sqrt(A)
 
     # Expected: all nans (inv of 0 is nan)
     assert L.shape == (x_dim, x_dim)
