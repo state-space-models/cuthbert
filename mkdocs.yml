@@ -49,6 +49,7 @@ nav:
     - api/cuthbertlib/backward_sampling.md
     - api/cuthbertlib/discrete.md
     - api/cuthbertlib/kalman.md
+    - api/cuthbertlib/linalg.md
     - api/cuthbertlib/linearize.md
     - Quadrature Methods: api/cuthbertlib/quadrature.md
     - api/cuthbertlib/resampling.md
