@@ -88,8 +88,7 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
     L = tria(B)  # Make lower triangular
     # Mark dimensions with all 0 rows and columns as NaN
     zero_dims_mask = jnp.all(L == 0.0, axis=0) & jnp.all(L == 0.0, axis=1)
-    L = jnp.where(zero_dims_mask[:, None], jnp.nan, L)
-    L = jnp.where(zero_dims_mask[None, :], jnp.nan, L)
+    L = jnp.where(zero_dims_mask[:, None] | zero_dims_mask[None, :], jnp.nan, L)
     return L
 
 
