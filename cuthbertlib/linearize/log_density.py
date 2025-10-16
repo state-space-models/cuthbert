@@ -20,7 +20,7 @@ def linearize_log_density(
     y: ArrayLike,
     has_aux: bool = True,
     rtol: float | None = None,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, Array]: ...
 @overload
 def linearize_log_density(
@@ -29,7 +29,7 @@ def linearize_log_density(
     y: ArrayLike,
     has_aux: bool = True,
     rtol: float | None = None,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, Array, ArrayTree]: ...
 
 
@@ -39,7 +39,7 @@ def linearize_log_density(
     y: ArrayLike,
     has_aux: bool = False,
     rtol: float | None = None,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
@@ -100,7 +100,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = False,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array]: ...
 @overload
 def linearize_log_density_given_chol_cov(
@@ -109,7 +109,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = True,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, ArrayTree]: ...
 
 
@@ -119,7 +119,7 @@ def linearize_log_density_given_chol_cov(
     y: ArrayLike,
     chol_cov: ArrayLike,
     has_aux: bool = False,
-    ignore_nan_dims: bool = True,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
     """Linearize a conditional log density around given points.
 
