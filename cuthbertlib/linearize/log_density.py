@@ -88,7 +88,7 @@ def linearize_log_density(
 
     chol_cov = symmetric_inv_sqrt(prec, rtol=rtol, ignore_nan_dims=ignore_nan_dims)
     mat, shift, *extra = linearize_log_density_given_chol_cov(
-        log_density, x, y, chol_cov, has_aux=has_aux
+        log_density, x, y, chol_cov, has_aux=has_aux, ignore_nan_dims=ignore_nan_dims
     )
     return mat, shift, chol_cov, *extra
 
