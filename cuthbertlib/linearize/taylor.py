@@ -75,7 +75,6 @@ def linearize_taylor(
     # If ignore_nan_dims, change all rows and columns with nans on the diagonal to 0
     L_diag = jnp.diag(L)
     nan_mask = jnp.isnan(L_diag) * ignore_nan_dims
-    L_temp = jnp.where(nan_mask[:, None], 0.0, L)
-    L_temp = jnp.where(nan_mask[None, :], 0.0, L_temp)
+    L_temp = jnp.where(nan_mask[:, None] | nan_mask[None, :], 0.0, L)
     m = x + L_temp @ L_temp.T @ g
     return (m, L, aux) if has_aux else (m, L)
