@@ -23,6 +23,8 @@ def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_log_density: GetInitLogDensity,
     get_observation_func: GetObservationFunc,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """
@@ -37,6 +39,15 @@ def init_prepare(
                 function log p(y_0 | x_0) as well as points x_0 and y_0
                 to linearize around.
             - A log potential function log G(x_0) and a linearization point x_0.
+        rtol: The relative tolerance for the singular values of precision matrices
+            when passed to `symmetric_inv_sqrt` during linearization.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrices (found via linearization) as missing and ignore all rows
+            and columns associated with them.
         key: JAX random key - not used.
 
     Returns:
@@ -48,7 +59,11 @@ def init_prepare(
     init_log_density, linearization_point = get_init_log_density(model_inputs)
 
     _, m0, chol_P0 = linearize_log_density(
-        lambda _, x: init_log_density(x), linearization_point, linearization_point
+        lambda _, x: init_log_density(x),
+        linearization_point,
+        linearization_point,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
     )
 
     prior_state = LinearizedKalmanFilterState(
@@ -65,7 +80,11 @@ def init_prepare(
     )
 
     observation_output = get_observation_func(prior_state, model_inputs)
-    H, d, chol_R, observation = process_observation(observation_output)
+    H, d, chol_R, observation = process_observation(
+        observation_output,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
+    )
 
     (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
 
@@ -90,6 +109,8 @@ def filter_prepare(
     get_init_log_density: GetInitLogDensity,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """
@@ -110,6 +131,15 @@ def filter_prepare(
             log density or log potential), linearization point and optional observation
             (not required for log potential functions).
             `associative_scan` only supported when `state` is ignored.
+        rtol: The relative tolerance for the singular values of precision matrices
+            when passed to `symmetric_inv_sqrt` during linearization.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrices (found via linearization) as missing and ignore all rows
+            and columns associated with them.
         key: JAX random key - not used.
 
     Returns:
@@ -138,11 +168,19 @@ def filter_prepare(
     )
 
     F, c, chol_Q = linearize_log_density(
-        log_dynamics_density, linearization_point_prev, linearization_point_curr
+        log_dynamics_density,
+        linearization_point_prev,
+        linearization_point_curr,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
     )
 
     observation_output = get_observation_func(dummy_state, model_inputs)
-    H, d, chol_R, observation = process_observation(observation_output)
+    H, d, chol_R, observation = process_observation(
+        observation_output,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
+    )
 
     elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, observation)
 

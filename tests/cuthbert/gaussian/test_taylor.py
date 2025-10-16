@@ -78,6 +78,7 @@ def load_taylor_inference(
     chol_Rs: Array,
     ys: Array,
     associative_filter: bool = False,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM."""
@@ -105,8 +106,11 @@ def load_taylor_inference(
         get_dynamics_log_density,
         get_observation_log_density,
         associative=associative_filter,
+        ignore_nan_dims=ignore_nan_dims,
     )
-    smoother = taylor.build_smoother(get_dynamics_log_density)
+    smoother = taylor.build_smoother(
+        get_dynamics_log_density, ignore_nan_dims=ignore_nan_dims
+    )
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
@@ -131,7 +135,17 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         ys = ys.at[1, 0].set(jnp.nan)
 
     taylor_filter, _, model_inputs = load_taylor_inference(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=False
+        m0,
+        chol_P0,
+        Fs,
+        cs,
+        chol_Qs,
+        Hs,
+        ds,
+        chol_Rs,
+        ys,
+        associative_filter=False,
+        ignore_nan_dims=True,
     )
 
     # Run sequential sqrt filter
@@ -143,7 +157,17 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     associative_taylor_filter, _, model_inputs = load_taylor_inference(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=True
+        m0,
+        chol_P0,
+        Fs,
+        cs,
+        chol_Qs,
+        Hs,
+        ds,
+        chol_Rs,
+        ys,
+        associative_filter=True,
+        ignore_nan_dims=True,
     )
 
     # Run associative filter with parallel=False§
@@ -250,6 +274,7 @@ def load_taylor_inference_potential(
     ms: Array,
     chol_Rs: Array,
     associative_filter: bool = False,
+    ignore_nan_dims: bool = False,
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM.
@@ -278,8 +303,11 @@ def load_taylor_inference_potential(
         get_dynamics_log_density,
         get_observation_log_potential,
         associative=associative_filter,
+        ignore_nan_dims=ignore_nan_dims,
     )
-    smoother = taylor.build_smoother(get_dynamics_log_density)
+    smoother = taylor.build_smoother(
+        get_dynamics_log_density, ignore_nan_dims=ignore_nan_dims
+    )
     model_inputs = jnp.arange(len(ms))
     return filter, smoother, model_inputs
 

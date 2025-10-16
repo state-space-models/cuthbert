@@ -6,8 +6,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from cuthbertlib.linalg import tria
 from cuthbertlib.linearize import linearize_moments
-from cuthbertlib.linearize.utils import tria
 
 
 @pytest.fixture(scope="session", autouse=True)
