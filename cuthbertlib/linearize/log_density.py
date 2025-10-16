@@ -18,7 +18,7 @@ def linearize_log_density(
     log_density: LogConditionalDensity,
     x: ArrayLike,
     y: ArrayLike,
-    has_aux: bool = True,
+    has_aux: bool = False,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, Array]: ...
