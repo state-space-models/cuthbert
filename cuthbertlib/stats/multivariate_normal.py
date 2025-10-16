@@ -21,11 +21,12 @@ def logpdf(
     Args:
         x: Value at which to evaluate the PDF.
         mean: Mean of the distribution.
-        chol_cov: Generalized Cholesky factor of the covariance matrix.
-        nan_support: If True, ignores NaNs in x by projecting the distribution onto
-            the lower-dimensional subspace spanned by the non-NaN entries of x.
-            Note that `nan_support=True` uses tria (QR decomposition) and therefore
-            increases the internal complexity of the function from O(n^2) to O(n^3).
+        chol_cov: Generalized Cholesky factor of the covariance matrix of the distribution.
+        nan_support: If `True`, ignores NaNs in `x` by projecting the distribution onto the
+            lower-dimensional subspace spanned by the non-NaN entries of `x`. Note that
+            `nan_support=True` uses the [tria][cuthbertlib.linalg.tria] operation (QR
+            decomposition), and therefore increases the internal complexity of the function
+            from $O(n^2)$ to $O(n^3)$, where $n$ is the dimension of `x`.
 
     Returns:
         Array of logpdf values.
@@ -85,11 +86,12 @@ def pdf(
     Args:
         x: Value at which to evaluate the PDF.
         mean: Mean of the distribution.
-        chol_cov: Generalized Cholesky factor of the covariance matrix.
-        nan_support: If True, ignores NaNs in x by projecting the distribution onto
-            the lower-dimensional subspace spanned by the non-NaN entries of x.
-            Note that `nan_support=True` uses tria (QR decomposition) and therefore
-            increases the internal complexity of the function from O(n^2) to O(n^3).
+        chol_cov: Generalized Cholesky factor of the covariance matrix of the distribution.
+        nan_support: If `True`, ignores NaNs in `x` by projecting the distribution onto the
+            lower-dimensional subspace spanned by the non-NaN entries of `x`. Note that
+            `nan_support=True` uses the [tria][cuthbertlib.linalg.tria] operation (QR
+            decomposition), and therefore increases the internal complexity of the function
+            from $O(n^2)$ to $O(n^3)$, where $n$ is the dimension of `x`.
 
     Returns:
         Array of pdf values.
