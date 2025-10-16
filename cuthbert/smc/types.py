@@ -1,7 +1,7 @@
 r"""Provides types for representing generic Feynman--Kac models
 
 $$
-\mathbb{Q}(x_{0:T}) \propto M_0(x_0) \, G_0(x_0) \prod_{t=1}^{T} M_t(x_t \mid x_{t-1}) \, G_t(x_{t-1}, x_t).
+\mathbb{Q}_{t}(x_{0:t}) \propto \mathbb{M}_0(x_0) \, G_0(x_0) \prod_{s=1}^{t} M_s(x_s \mid x_{s-1}) \, G_s(x_{s-1}, x_s).
 $$
 """
 
