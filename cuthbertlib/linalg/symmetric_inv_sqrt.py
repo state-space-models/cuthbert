@@ -51,7 +51,7 @@ def symmetric_inv_sqrt(
     nan_mask_sorted = nan_mask[argsort]
 
     # Zero out invalid dimensions before computation
-    invalid_mask_2d = ((nan_mask_sorted[:, None]) | (nan_mask_sorted[None, :])) * (
+    invalid_mask_2d = ((nan_mask_sorted[:, None]) | (nan_mask_sorted[None, :])) & (
         ignore_nan_dims
     )
     arr_sorted = jnp.where(invalid_mask_2d, 0.0, arr_sorted)
