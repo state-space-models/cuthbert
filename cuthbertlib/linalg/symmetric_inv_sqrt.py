@@ -111,8 +111,7 @@ def chol_cov_with_nans_to_cov(chol_cov: ArrayLike) -> Array:
     nan_mask = jnp.isnan(jnp.diag(chol_cov))
 
     # Set all rows and columns with invalid diagonal to zero
-    chol_cov = jnp.where(nan_mask[:, None], 0, chol_cov)
-    chol_cov = jnp.where(nan_mask[None, :], 0, chol_cov)
+    chol_cov = jnp.where(nan_mask[:, None] | nan_mask[None, :], 0, chol_cov)
 
     # Calculate the covariance matrix
     cov = chol_cov @ chol_cov.T
