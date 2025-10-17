@@ -2,6 +2,9 @@ site_name: cuthbert
 site_url: https://state-space-models.github.io/cuthbert
 repo_url: https://github.com/state-space-models/cuthbert
 
+exclude_docs: |
+  README.md
+
 theme:
   name: material
   logo: assets/cuthbert.png
@@ -36,8 +39,10 @@ nav:
     - api/cuthbert/smoothing.md
     - Discrete HMMs: api/cuthbert/discrete.md
     - Gaussian filters and smoothers:
+      - api/cuthbert/gaussian/index.md
       - Exact Kalman: api/cuthbert/gaussian/kalman.md
-      - Extended Kalman: api/cuthbert/gaussian/extended_kalman.md
+      - Moments: api/cuthbert/gaussian/moments.md
+      - Taylor: api/cuthbert/gaussian/taylor.md
     - Sequential Monte Carlo:
       - api/cuthbert/smc/index.md
       - api/cuthbert/smc/backward_sampler.md

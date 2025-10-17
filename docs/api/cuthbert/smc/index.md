@@ -8,10 +8,9 @@ $$
 
 where $M_{s}$ are probability kernels and $G_{s}$ are positive and bounded functions.
 
-See [Types](types.md) for how to define a Feynman-Kac model. We provide
-algorithms to approximate the filtering distribution $\mathbb{Q}_{t}(x_{t})$ -
-see [Particle filter](particle_filter.md) and [Marginal particle
-filter](marginal_particle_filter.md).
+See [Types](types.md) for how to define a Feynman-Kac model in code.
 
-We also provide algorithms to approximate the pathwise smoothing distribution
-$\mathbb{Q}_{T}(x_{0:T})$ - see [Backward sampler](backward_sampler.md).
+- [Particle filter](particle_filter.md) - flexible particle filter for general Feynman-Kac models.
+- [Marginal particle filter](marginal_particle_filter.md) - $O(N^2)$ variant of the particle filter.
+- [Backward sampler](backward_sampler.md) - flexible backward smoothing using approaches in [`cuthbert.smc.smoothing`](../../cuthbertlib/backward_sampling.md).
+
