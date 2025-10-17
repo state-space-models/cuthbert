@@ -12,5 +12,5 @@ See [Types](types.md) for how to define a Feynman-Kac model in code.
 
 - [Particle filter](particle_filter.md) - flexible particle filter for general Feynman-Kac models.
 - [Marginal particle filter](marginal_particle_filter.md) - $O(N^2)$ variant of the particle filter.
-- [Backward sampler](backward_sampler.md) - flexible backward smoothing using approaches in [`cuthbert.smc.smoothing`](../../cuthbertlib/backward_sampling.md).
+- [Backward sampler](backward_sampler.md) - flexible backward smoothing using approaches in [`cuthbertlib.smc.smoothing`](../../cuthbertlib/backward_sampling.md).
 
