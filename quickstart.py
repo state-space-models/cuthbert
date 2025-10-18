@@ -157,12 +157,7 @@ def get_observation_func(
         prob_away_win = 1 - sigmoid(x_home - x_away + epsilon)
         prob_draw = 1 - prob_home_win - prob_away_win
 
-        # Prevent numerical issues (i.e. when probabilities are very small)
-        # by enforcing a minimum probability of 1%
         prob_array = jnp.array([prob_draw, prob_home_win, prob_away_win])
-        # prob_array = jnp.where(prob_array < 0.01, 0.01, prob_array)
-        # prob_array = prob_array / prob_array.sum()
-
         return jnp.log(prob_array[model_inputs.result])
 
     return log_potential, state.mean
