@@ -1,4 +1,6 @@
-# Backward Sampling
+{%
+    include-markdown "../../cuthbertlib/smc/README.md"
+%}
 
 ::: cuthbertlib.smc.smoothing.protocols
 

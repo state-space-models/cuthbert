@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../../cuthbertlib/linalg/README.md"
+    include-markdown "../../cuthbertlib/linalg/README.md"
 %}
 
 ::: cuthbertlib.linalg.tria

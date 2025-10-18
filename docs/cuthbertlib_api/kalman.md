@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../../cuthbertlib/kalman/README.md"
+    include-markdown "../../cuthbertlib/kalman/README.md"
 %}
 
 ::: cuthbertlib.kalman.filtering
