@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../../cuthbertlib/quadrature/README.md"
+    include-markdown "../../cuthbertlib/quadrature/README.md"
 %}
 
 ::: cuthbertlib.quadrature.cubature

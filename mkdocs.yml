@@ -34,32 +34,32 @@ nav:
   - Quick Start: quickstart.md
   - Contributing: contributing.md
   - cuthbert API:
-    - api/cuthbert/index.md
-    - api/cuthbert/filtering.md
-    - api/cuthbert/smoothing.md
-    - Discrete HMMs: api/cuthbert/discrete.md
+    - cuthbert_api/index.md
+    - cuthbert_api/filtering.md
+    - cuthbert_api/smoothing.md
+    - Discrete HMMs: cuthbert_api/discrete.md
     - Gaussian filters and smoothers:
-      - api/cuthbert/gaussian/index.md
-      - Exact Kalman: api/cuthbert/gaussian/kalman.md
-      - Moments: api/cuthbert/gaussian/moments.md
-      - Taylor: api/cuthbert/gaussian/taylor.md
+      - cuthbert_api/gaussian/index.md
+      - Exact Kalman: cuthbert_api/gaussian/kalman.md
+      - Moments: cuthbert_api/gaussian/moments.md
+      - Taylor: cuthbert_api/gaussian/taylor.md
     - Sequential Monte Carlo:
-      - api/cuthbert/smc/index.md
-      - api/cuthbert/smc/backward_sampler.md
-      - api/cuthbert/smc/marginal_particle_filter.md
-      - api/cuthbert/smc/particle_filter.md
-      - api/cuthbert/smc/types.md
+      - cuthbert_api/smc/index.md
+      - cuthbert_api/smc/backward_sampler.md
+      - cuthbert_api/smc/marginal_particle_filter.md
+      - cuthbert_api/smc/particle_filter.md
+      - cuthbert_api/smc/types.md
   - cuthbertlib API:
-    - api/cuthbertlib/index.md
-    - api/cuthbertlib/backward_sampling.md
-    - api/cuthbertlib/discrete.md
-    - api/cuthbertlib/kalman.md
-    - api/cuthbertlib/linalg.md
-    - api/cuthbertlib/linearize.md
-    - Quadrature Methods: api/cuthbertlib/quadrature.md
-    - api/cuthbertlib/resampling.md
-    - api/cuthbertlib/stats.md
-    - api/cuthbertlib/types.md
+    - cuthbertlib_api/index.md
+    - cuthbertlib_api/discrete.md
+    - cuthbertlib_api/kalman.md
+    - cuthbertlib_api/linalg.md
+    - cuthbertlib_api/linearize.md
+    - Quadrature Methods: cuthbertlib_api/quadrature.md
+    - cuthbertlib_api/resampling.md
+    - cuthbertlib_api/smc.md
+    - cuthbertlib_api/stats.md
+    - cuthbertlib_api/types.md
 
 plugins:
   - include-markdown

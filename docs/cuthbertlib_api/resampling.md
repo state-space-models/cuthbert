@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../../cuthbertlib/resampling/README.md"
+    include-markdown "../../cuthbertlib/resampling/README.md"
 %}
 
 ::: cuthbertlib.resampling.protocols

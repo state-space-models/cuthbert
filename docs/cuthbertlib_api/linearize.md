@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../../cuthbertlib/linearize/README.md"
+    include-markdown "../../cuthbertlib/linearize/README.md"
 %}
 
 ::: cuthbertlib.linearize.log_density
