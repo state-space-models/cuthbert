@@ -40,6 +40,8 @@ def build_filter(
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
     associative: bool = False,
+    rtol: float | None = None,
+    ignore_nan_dims: bool = False,
 ) -> Filter:
     """
     Build linearized Taylor Kalman inference filter.
@@ -68,6 +70,15 @@ def build_filter(
             `get_observation_func`.
             If False, then the filter is suitable for non-associative scan, but
             the user is free to use the `state` to extract the linearization points.
+        rtol: The relative tolerance for the singular values of precision matrices
+            when passed to `symmetric_inv_sqrt` during linearization.
+            Cutoff for small singular values; singular values smaller than
+            `rtol * largest_singular_value` are treated as zero.
+            The default is determined based on the floating point precision of the dtype.
+            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
+        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
+            precision matrices (found via linearization) as missing and ignore all rows
+            and columns associated with them.
 
     Returns:
         Linearized Taylor Kalman filter object.
@@ -79,12 +90,16 @@ def build_filter(
                 associative_filter.init_prepare,
                 get_init_log_density=get_init_log_density,
                 get_observation_func=get_observation_func,
+                rtol=rtol,
+                ignore_nan_dims=ignore_nan_dims,
             ),
             filter_prepare=partial(
                 associative_filter.filter_prepare,
                 get_init_log_density=get_init_log_density,
                 get_dynamics_log_density=get_dynamics_log_density,
                 get_observation_func=get_observation_func,
+                rtol=rtol,
+                ignore_nan_dims=ignore_nan_dims,
             ),
             filter_combine=associative_filter.filter_combine,
             associative=True,
@@ -95,6 +110,8 @@ def build_filter(
                 non_associative_filter.init_prepare,
                 get_init_log_density=get_init_log_density,
                 get_observation_func=get_observation_func,
+                rtol=rtol,
+                ignore_nan_dims=ignore_nan_dims,
             ),
             filter_prepare=partial(
                 non_associative_filter.filter_prepare,
@@ -104,6 +121,8 @@ def build_filter(
                 non_associative_filter.filter_combine,
                 get_dynamics_log_density=get_dynamics_log_density,
                 get_observation_func=get_observation_func,
+                rtol=rtol,
+                ignore_nan_dims=ignore_nan_dims,
             ),
             associative=False,
         )
