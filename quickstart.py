@@ -1,13 +1,15 @@
 from typing import NamedTuple
-from jax import numpy as jnp, Array, vmap
-from jax.scipy.stats import norm
-from jax.nn import sigmoid
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
+from jax import Array, vmap
+from jax import numpy as jnp
+from jax.nn import sigmoid
+from jax.scipy.stats import norm
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import taylor
-from cuthbertlib.types import LogDensity, LogConditionalDensity
+from cuthbertlib.types import LogConditionalDensity, LogDensity
 
 
 ### Load data
