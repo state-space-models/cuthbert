@@ -12,23 +12,24 @@ from cuthbertlib.linalg import collect_nans_chol
 def logpdf(
     x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
 ) -> Array:
-    """Multivariate normal log probability distribution function
-    with (generalized) Cholesky factor of covariance input.
+    """Multivariate normal log probability distribution function that takes
+    the (generalized) Cholesky factor of the covariance matrix as input.
 
     Modified version of `jax.scipy.stats.multivariate_normal.logpdf` which takes
-    full covariance matrix as input.
+    the full covariance matrix as input.
 
     Args:
-      x: arraylike, value at which to evaluate the PDF
-      mean: arraylike, centroid of distribution
-      chol_cov: arraylike, (generalized) Cholesky factor of the covariance matrix
-      nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
-        the lower-dimensional subspace spanned by the non-NaN entries of x
-        Note that `nan_support=True` uses tria (QR decomposition) and therefore
-        increases the internal complexity of the function from O(n^2) to O(n^3).
+        x: Value at which to evaluate the PDF.
+        mean: Mean of the distribution.
+        chol_cov: Generalized Cholesky factor of the covariance matrix of the distribution.
+        nan_support: If `True`, ignores NaNs in `x` by projecting the distribution onto the
+            lower-dimensional subspace spanned by the non-NaN entries of `x`. Note that
+            `nan_support=True` uses the [tria][cuthbertlib.linalg.tria] operation (QR
+            decomposition), and therefore increases the internal complexity of the function
+            from $O(n^2)$ to $O(n^3)$, where $n$ is the dimension of `x`.
 
     Returns:
-      array of logpdf values.
+        Array of logpdf values.
     """
     x, mean, chol_cov = promote_dtypes_inexact(x, mean, chol_cov)
 
@@ -76,22 +77,23 @@ def logpdf(
 def pdf(
     x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
 ) -> Array:
-    """Multivariate normal probability distribution function
-    with (generalized) Cholesky factor of covariance input.
+    """Multivariate normal probability distribution function that takes
+    the (generalized) Cholesky factor of the covariance matrix as input.
 
     Modified version of `jax.scipy.stats.multivariate_normal.pdf` which takes
-    full covariance matrix as input.
+    the full covariance matrix as input.
 
     Args:
-      x: arraylike, value at which to evaluate the PDF
-      mean: arraylike, centroid of distribution
-      chol_cov: arraylike, (generalized) Cholesky factor of the covariance matrix
-      nan_support: bool, if True, ignores NaNs in x by projecting the distribution onto
-        the lower-dimensional subspace spanned by the non-NaN entries of x
-        Note that `nan_support=True` uses tria (QR decomposition) and therefore
-        increases the internal complexity of the function from O(n^2) to O(n^3).
+        x: Value at which to evaluate the PDF.
+        mean: Mean of the distribution.
+        chol_cov: Generalized Cholesky factor of the covariance matrix of the distribution.
+        nan_support: If `True`, ignores NaNs in `x` by projecting the distribution onto the
+            lower-dimensional subspace spanned by the non-NaN entries of `x`. Note that
+            `nan_support=True` uses the [tria][cuthbertlib.linalg.tria] operation (QR
+            decomposition), and therefore increases the internal complexity of the function
+            from $O(n^2)$ to $O(n^3)$, where $n$ is the dimension of `x`.
 
     Returns:
-      array of pdf values.
+        Array of pdf values.
     """
     return lax.exp(logpdf(x, mean, chol_cov, nan_support))

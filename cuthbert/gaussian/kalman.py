@@ -1,3 +1,8 @@
+"""
+Implements the square-root, parallel-in-time Kalman filter for linear Gaussian
+SSMs from [Yaghoobi et. al. (2025)](https://doi.org/10.1137/23M156121X).
+"""
+
 from functools import partial
 from typing import NamedTuple
 
@@ -52,7 +57,7 @@ def build_filter(
     get_observation_params: GetObservationParams,
 ) -> Filter:
     """
-    Build exact Kalman filter object for linear Gaussian SSMs.
+    Builds an exact Kalman filter object for linear Gaussian SSMs.
 
     Args:
         get_init_params: Function to get m0, chol_P0 to initialize filter state,
@@ -87,7 +92,7 @@ def build_smoother(
     get_dynamics_params: GetDynamicsParams,
 ) -> Smoother:
     """
-    Build exact Kalman smoother object for linear Gaussian SSMs.
+    Builds an exact Kalman smoother object for linear Gaussian SSMs.
 
     Args:
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q

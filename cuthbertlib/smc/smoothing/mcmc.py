@@ -24,19 +24,19 @@ def simulate(
     n_steps: int,
 ) -> tuple[ArrayTree, Array]:
     """
-    An implementation of the IMH algorithm for smoothing in SMC.
+    Implements the IMH algorithm for smoothing in SMC.
 
     Args:
-        key: A JAX random key.
-        x0_all: Collection of previous states.
-        x1_all: Collection of current states.
-        log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density function of x1 given x0.
-        x1_ancestor_indices: The ancestor indices of x1.
-        n_steps: number of MCMC steps
+        key: JAX PRNG key.
+        x0_all: A collection of previous states $x_0$.
+        x1_all: A collection of current states $x_1$.
+        log_weight_x0_all: The log weights of $x_0$.
+        log_density: The log density function of $x_1$ given $x_0$.
+        x1_ancestor_indices: The ancestor indices of $x_1$.
+        n_steps: Number of MCMC steps to perform.
 
     Returns:
-        A collection of x0 and their sampled indices.
+        A collection of samples $x_0$ and their sampled indices.
 
     References:
         https://arxiv.org/abs/2207.00976

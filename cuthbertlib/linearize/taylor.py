@@ -34,17 +34,19 @@ def linearize_taylor(
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
-    """Linearize a log potential function around a given point using Taylor expansion.
+    r"""Linearize a log potential function around a given point using Taylor expansion.
 
-    Unlike the other linearisation methods, this applies to a potential function
+    Unlike the other linearization methods, this applies to a potential function
     with no required notion of observation $y$ or conditional dependence.
 
-    Instead we have the linearisation
+    Instead we have the linearization
 
-    log G(x) = -0.5 (x - m)^T (L L^T)^{-1} (x - m)
+    $$
+    \log G(x) = -0.5 (x - m)^\top (L L^\top)^{-1} (x - m).
+    $$
 
     Args:
-        log_likelihood: A callable that returns a non-negative scalar. Does not need
+        log_potential: A callable that returns a non-negative scalar. Does not need
             to be a normalized probability density in its input.
         x: The point to linearize around.
         has_aux: Whether the log_potential function returns an auxiliary value.

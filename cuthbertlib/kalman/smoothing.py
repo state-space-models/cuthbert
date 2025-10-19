@@ -90,7 +90,8 @@ def smoothing_operator(
     """Binary associative operator for the square root Kalman smoother.
 
     Args:
-        elem_i, elem_j: Smoother scan elements.
+        elem_i: Smoother scan element.
+        elem_j: Smoother scan element.
 
     Returns:
         SmootherScanElement: The output of the associative operator applied to the input elements.

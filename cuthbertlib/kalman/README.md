@@ -1,8 +1,6 @@
 # Kalman
 
-
 This sub-repository provides modular functions for Kalman filtering and smoothing.
-
 
 The core functions are:
 

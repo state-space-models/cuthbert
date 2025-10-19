@@ -6,17 +6,18 @@ from cuthbertlib.types import Array
 
 
 class FilterScanElement(NamedTuple):
+    """Elements carried through the discrete HMM filtering scan."""
+
     f: Array
     log_g: Array
 
 
 def condition_on_obs(state_probs: Array, log_likelihoods: Array) -> tuple[Array, Array]:
-    """Condition a state on an observation.
+    r"""Conditions a state distribution on an observation.
 
     Args:
-        state_probs: Can either be the state transition probabilities or the
-            initial distribution.
-        log_likelihoods: Vector of log p(y_t | x_t) for each possible state x_t.
+        state_probs: Either the state transition probabilities or the initial distribution.
+        log_likelihoods: Vector of $\log p(y_t \mid x_t)$ for each possible state $x_t$.
 
     Returns:
         The conditioned state and the log normalizing constant.
@@ -31,14 +32,14 @@ def condition_on_obs(state_probs: Array, log_likelihoods: Array) -> tuple[Array,
 def filtering_operator(
     elem_ij: FilterScanElement, elem_jk: FilterScanElement
 ) -> FilterScanElement:
-    """Binary associative operator for HMMs.
+    """Binary associative operator for filtering in discrete HMMs.
 
     Args:
-        elem_ij: Filter scan element for the previous step.
-        elem_jk: Filter scan element for the current step.
+        elem_ij: Filter scan element.
+        elem_jk: Filter scan element.
 
     Returns:
-        FilterScanElement: The output of the associative operator applied to the input elements.
+        The output of the associative operator applied to the input elements.
     """
     f, lognorm = condition_on_obs(elem_ij.f, elem_jk.log_g)
     f = f @ elem_jk.f

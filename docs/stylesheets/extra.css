@@ -2,3 +2,8 @@
 .katex-display {
   margin: -1em 0 !important;
 }
+
+/* Reduce default font size - default is 0.8rem */
+.md-typeset {
+  font-size: 0.7rem !important;
+}

@@ -1,3 +1,12 @@
+"""Implements backward sampling for particle filters.
+
+Supports 3 different algorithms for backward sampling:
+
+- [`cuthbertlib.smc.smoothing.tracing.simulate`][].
+- [`cuthbertlib.smc.smoothing.exact_sampling.simulate`][].
+- [`cuthbertlib.smc.smoothing.mcmc.simulate`][].
+"""
+
 from functools import partial
 from typing import NamedTuple, cast
 
@@ -32,14 +41,13 @@ def build_smoother(
     resampling_fn: Resampling,
     n_smoother_particles: int,
 ) -> Smoother:
-    """
-    Build a particle smoother object.
+    r"""Build a particle smoother object.
 
     Args:
-        log_potential: Function to compute the JOINT log potential log G_t(x_{t-1}, x_t) + log M_t(x_t | x_{t-1}).
+        log_potential: Function to compute the JOINT log potential $\log G_t(x_{t-1}, x_t) + \log M_t(x_t \mid x_{t-1})$.
         backward_sampling_fn: Backward sampling algorithm to use (e.g., genealogy tracing, exact backward sampling).
-            This choice specifies how to sample x_{t-1} ~ p(x_{t-1} | x_t, y_{0:t-1}) given
-            samples x_{t} ~ p(x_t | y_{0:T}). See `cuthbertlib/smc/smoothing/` for possible choices.
+            This choice specifies how to sample $x_{t-1} \sim p(x_{t-1} \mid x_t, y_{0:t-1})$ given
+            samples $x_{t} \sim p(x_t \mid y_{0:T})$. See `cuthbertlib/smc/smoothing/` for possible choices.
         resampling_fn: Resampling algorithm to use (e.g., multinomial, systematic).
         n_smoother_particles: Number of samples to draw from the backward sampling algorithm.
 

@@ -91,21 +91,20 @@ def simulate(
     x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
     """
-    An implementation of the exact backward sampling algorithm for smoothing in SMC.
+    Implements the exact backward sampling algorithm for smoothing in SMC.
 
-    Samples a collection of x0 that combine with the provided x1 to give a collection of
-    pairs (x0, x1) from the smoothing distribution.
+    Some arguments are only included for protocol compatibility and not used in this implementation.
 
     Args:
-        key: A JAX random key.
-        x0_all: Collection of previous states.
-        x1_all: Collection of current states.
-        log_weight_x0_all: Collection of log weights of the previous state.
-        log_density: The log density function of x1 given x0.
-        x1_ancestor_indices: The ancestor indices of x1. Not used.
+        key: JAX PRNG key.
+        x0_all: A collection of previous states $x_0$.
+        x1_all: A collection of current states $x_1$.
+        log_weight_x0_all: The log weights of $x_0$.
+        log_density: The log density function of $x_1$ given $x_0$.
+        x1_ancestor_indices: The ancestor indices of $x_1$. Not used.
 
     Returns:
-        A collection of x0 and their sampled indices.
+        A collection of samples $x_0$ and their sampled indices.
     """
     log_weight_x0_all = jnp.asarray(log_weight_x0_all)
     n_smoother_particles = jax.tree.leaves(x1_all)[0].shape[0]
