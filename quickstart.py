@@ -191,7 +191,7 @@ last_match_date = football_data["date"].max().strftime("%Y-%m-%d")
 plt.xlabel(f"Skill Rating {last_match_date}")
 plt.show()
 plt.tight_layout()
-plt.savefig("docs/assets/international_football_latest_skill_rating.png")
+plt.savefig("docs/assets/international_football_latest_skill_rating.png", dpi=300)
 
 
 ### Build and run the smoother (historical skill ratings) - this takes about 60 seconds on my laptop
@@ -248,7 +248,7 @@ plt.legend(top_team_names_over_time, loc="lower right", fontsize=9)
 plt.ylabel("Skill Rating")
 plt.show()
 plt.tight_layout()
-plt.savefig("docs/assets/international_football_historical_skill_rating.png")
+plt.savefig("docs/assets/international_football_historical_skill_rating.png", dpi=300)
 
 
 ### TODO: Can the figures be updated in the docs automatically on every-re-run?
