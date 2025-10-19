@@ -50,7 +50,7 @@ python -m pytest --cov=cuthbert --cov-report term-missing
 
 ## Adding an example
 
-Examples in `cuthbert` are written in Markdown and tangled into Python scripts using [entangled](https://github.com/entangled-lang/entangled) so they can be run as tests.
+Examples in `cuthbert` are written in Markdown and tangled into Python scripts using [entangled](https://github.com/entangled/entangled.py) so they can be run as tests.
 
 To add an example, you can use the following steps:
 

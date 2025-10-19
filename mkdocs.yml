@@ -33,6 +33,9 @@ nav:
   - Home: index.md
   - Quick Start: quickstart.md
   - Contributing: contributing.md
+  - Examples:
+    - examples/index.md
+    - Kalman Tracking: examples/kalman_tracking.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md

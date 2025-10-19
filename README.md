@@ -34,7 +34,22 @@ But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=re
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 <!--goals-end-->
 
+<!--installation-start-->
+## Installation
 
+`cuthbert` depends on JAX, so you'll need to [install JAX](https://docs.jax.dev/en/latest/installation.html) for the available hardware (CPU, GPU, or TPU).
+For example, on computers with NVIDIA GPUs:
+
+```bash
+pip install -U "jax[cuda12]"
+```
+
+Now install `cuthbert` from PyPI:
+
+```bash
+pip install -U cuthbert
+```
+<!--installation-end-->
 
 ## Repository structure
 
