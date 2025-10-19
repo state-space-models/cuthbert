@@ -294,6 +294,7 @@ filtered distribution which we can get from `filter_states.mean` and
     plt.show()
     plt.tight_layout()
     plt.savefig("docs/assets/international_football_latest_skill_rating.png", dpi=300)
+    plt.close()
     ```
 
 ![Best teams right now](../assets/international_football_latest_skill_rating.png)
@@ -367,6 +368,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
     plt.show()
     plt.tight_layout()
     plt.savefig("docs/assets/international_football_historical_skill_rating.png", dpi=300)
+    plt.close()
     ```
 
 ![Best teams historically](../assets/international_football_historical_skill_rating.png)

@@ -1,4 +1,4 @@
-from cuthbert import gaussian
+from cuthbert import discrete, gaussian, smc
 from cuthbert.filtering import filter
 from cuthbert.inference import (
     Filter,
