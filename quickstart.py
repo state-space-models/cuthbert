@@ -1,5 +1,5 @@
 from typing import NamedTuple
-from jax import random, jit, numpy as jnp, Array, vmap
+from jax import numpy as jnp, Array, vmap
 from jax.scipy.stats import norm
 from jax.nn import sigmoid
 import pandas as pd
@@ -119,6 +119,7 @@ match_data = MatchData(match_times, match_times_prev, match_team_indices, match_
 
 ### Define (taylor) model
 num_teams = len(teams_id_to_name_dict)
+
 # Params from https://doi.org/10.1093/jrsssc/qlae035
 init_sd = 0.5**0.5
 tau = 0.05
@@ -183,9 +184,9 @@ top_team_means = mean[top_team_inds]
 cov = filter_states.chol_cov[-1] @ filter_states.chol_cov[-1].T
 top_team_stds = jnp.sqrt(jnp.diag(cov) ** 2)[top_team_inds]
 
-plt.barh(top_team_names, top_team_means, xerr=top_team_stds)
-today = pd.Timestamp.today().strftime("%Y-%m-%d")
-plt.xlabel(f"Skill Rating - {today}")
+plt.barh(top_team_names, top_team_means, xerr=top_team_stds, color="limegreen")
+last_match_date = football_data["date"].max().strftime("%Y-%m-%d")
+plt.xlabel(f"Skill Rating {last_match_date}")
 plt.show()
 plt.tight_layout()
 plt.savefig("docs/assets/international_football_latest_skill_rating.png")
@@ -203,7 +204,7 @@ top_teams_over_time_inds = jnp.argsort(mean)[-10:][::-1]
 top_team_names_over_time = [
     teams_id_to_name_dict[int(i)] for i in top_teams_over_time_inds
 ]
-match_times_over_time = match_times[time_ind_start:]
+match_dates_over_time = football_data["date"][time_ind_start:]
 top_team_means_over_time = smoother_states.mean[
     time_ind_start:, top_teams_over_time_inds
 ]
@@ -212,17 +213,40 @@ all_covs_diag = vmap(lambda x: jnp.diag(x @ x.T))(
 )
 top_team_stds_over_time = jnp.sqrt(all_covs_diag[:, top_teams_over_time_inds])
 
+interesting_dates = {
+    "Spain 1\nNetherlands 0": "2010-07-11",
+    "Germany 1\nArgentina 0": "2014-07-13",
+    "France 4\nCroatia 2": "2018-07-15",
+    "Argentina 3(pens)\nFrance 3": "2022-12-18",
+}
+
+
 plt.plot(
-    match_times_over_time,
+    match_dates_over_time,
     top_team_means_over_time[:],
     label=top_team_names_over_time,
+    alpha=0.6,
 )
-plt.legend(top_team_names_over_time)
+
+for name, date in interesting_dates.items():
+    date = pd.to_datetime(date)
+    # Add name as little annotation at the date, vertical orientation
+    ylim_top = plt.ylim()[1]
+    plt.annotate(
+        name,
+        (date, ylim_top - 0.01),  # type: ignore
+        rotation=90,
+        fontsize=6,
+        fontweight="bold",
+        va="top",
+        ha="right",
+    )
+
+plt.legend(top_team_names_over_time, loc="lower right", fontsize=9)
 plt.ylabel("Skill Rating")
 plt.show()
 plt.tight_layout()
 plt.savefig("docs/assets/international_football_historical_skill_rating.png")
 
 
-### TODO: Change x-axis to be dates/years
 ### TODO: Can the figures be updated in the docs automatically on every-re-run?
