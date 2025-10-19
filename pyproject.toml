@@ -41,5 +41,5 @@ examples = ["matplotlib", "pandas", "pandas-stubs"]
 markers = "examples: Run tangled example scripts as tests"
 
 [tool.entangled]
-version = "2.1.13"
+version = "2.3.0"
 ignore_list = ["CONTRIBUTING.md"]

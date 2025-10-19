@@ -5,7 +5,7 @@ where the goal is to track a car's position and velocity in 2D space at discrete
 
 ### Setup and imports
 
-```{.python #imports}
+```{.python #kalman-imports}
 from jax import random, jit, numpy as jnp
 import matplotlib.pyplot as plt
 
@@ -18,7 +18,7 @@ from cuthbert.gaussian import kalman
 
 We first simulate the system to generate a sequence of observations. The state vector represents the car's position and velocity: $\textbf{x} = (x, y, \dot{x}, \dot{y})$ where $(x, y)$ is the car's position and $(\dot{x}, \dot{y})$ its velocity.
 
-```{.python #generate-data}
+```{.python #kalman-generate-data}
 def generate_car_tracking_data(key, num_steps=50):
     # Model specification follows Example 6.8 from Särkka and Svensson (2023).
     x_dim, y_dim, dt = 4, 2, 0.1
@@ -118,7 +118,7 @@ This pattern separates the model specification from the filtering algorithm, mak
 
 **Important indexing note**: The `get_dynamics_params` function uses `model_inputs - 1` because dynamics describe transitions from time $t-1$ to $t$, while `get_observation_params` uses `model_inputs` directly since observations occur at each time step.
 
-```{.python #build-filter}
+```{.python #kalman-build-filter}
 def build_car_tracking_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
 
     def get_init_params(model_inputs):
@@ -148,7 +148,7 @@ filter_obj, model_inputs = build_car_tracking_filter(
 With the filter built, running the Kalman filter is now as simple as calling the `cuthbert.filter`
 function with our constructed filter object and model inputs:
 
-```{.python #run-filter}
+```{.python #kalman-run-filter}
 # Run the filter
 filtered_states = filter(filter_obj, model_inputs, parallel=True)
 
@@ -171,7 +171,7 @@ log_likelihood = filtered_states.log_likelihood  # Log marginal likelihoods
     [`jax.jit`](https://docs.jax.dev/en/latest/_autosummary/jax.jit.html). All functions in `cuthbert` are
     pure and designed to work seamlessly with JAX function transformations.
 
-    ```{.python #jit-example}
+    ```{.python #kalman-jit-example}
     jitted_filter = jit(filter, static_argnames=['filter_obj', 'parallel'])
     filtered_states = jitted_filter(filter_obj, model_inputs, parallel=True)
     ```
@@ -184,7 +184,7 @@ applications), the noisy GPS measurements, and the filtered estimates of the
 car's position.
 
 ??? "Code to plot the results."
-    ```{.python #plot}
+    ```{.python #kalman-plot}
     true_pos = true_states[:, :2]
     filtered_pos = means[:, :2]
 
@@ -210,7 +210,7 @@ car's position.
 ??? tip "Bonus: Handle missing observations"
     `cuthbert` automatically handles missing data when observations contain NaN values:
 
-    ```{.python #bonus-missing}
+    ```{.python #kalman-bonus-missing}
     # Create data with missing observations (simulate GPS outage)
     ys_missing = ys.at[20:30, :].set(jnp.nan)  # Missing position observations during turn
 
@@ -251,12 +251,12 @@ models.
 
 <!--- entangled-tangle-block
 ```{.python file=examples_scripts/kalman_tracking.py}
-<<imports>>
-<<generate-data>>
-<<build-filter>>
-<<run-filter>>
-<<jit-example>>
-<<plot>>
-<<bonus-missing>>
+<<kalman-imports>>
+<<kalman-generate-data>>
+<<kalman-build-filter>>
+<<kalman-run-filter>>
+<<kalman-jit-example>>
+<<kalman-plot>>
+<<kalman-bonus-missing>>
 ```
 -->

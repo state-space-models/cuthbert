@@ -6,7 +6,7 @@ time using a linearized Kalman filter.
 
 ## Imports
 
-```{.python #imports}
+```{.python #quickstart-imports}
 from typing import NamedTuple
 
 import matplotlib.pyplot as plt
@@ -36,7 +36,7 @@ Luckily, there's a very handy dataset of international football match results av
 Collapse the code block below to see the data loading code (or just trust me on it).
 
 ??? quote "Code to download international football data into a `pandas` DataFrame"
-    ```{.python #load-data}
+    ```{.python #quickstart-load-data}
     def load_international_football_data(
         start_date: str = "1872-11-30",
         end_date: str | None = None,
@@ -112,10 +112,14 @@ Collapse the code block below to see the data loading code (or just trust me on 
 We'll now load the data and convert it into JAX arrays - the format expected by
 `cuthbert`.
 
-```{.python #load-data-jax}
+```{.python #quickstart-load-data-jax}
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
     load_international_football_data()
 )
+
+print(football_data.tail())
+print("Num teams:", len(teams_id_to_name_dict))
+print("Num matches:", len(football_data))
 
 # Extract data needed for filtering into JAX arrays
 match_times = jnp.array(football_data["timestamp_days"])
@@ -137,7 +141,7 @@ to store all the information we'll need at each filtering step. Note that this i
 the time of the current match but also the time of the previous match.
 
 
-```{.python #model-inputs}
+```{.python #quickstart-model-inputs}
 # Model inputs
 class MatchData(NamedTuple):
     time: Array  # float with shape (,) at each time step
@@ -164,7 +168,7 @@ Here we'll just fix the static hyperparameters to the values from the paper
 (although these could also be learnt from the data - see [next steps](#next-steps)).
 
 
-```{.python #state-space-model}
+```{.python #quickstart-state-space-model}
 
 num_teams = len(teams_id_to_name_dict)
 
@@ -227,7 +231,7 @@ non-Gaussian so we tell `cuthbert` to linearize around the current mean).
 
 Now that we've defined the model, we can construct the `cuthbert` filter object.
 
-```{.python #build-filter}
+```{.python #quickstart-build-filter}
 football_filter = taylor.build_filter(
     get_init_log_density,
     get_dynamics_log_density,
@@ -248,7 +252,7 @@ football_filter = taylor.build_filter(
 
 We'll use `cuthbert.filter` to easily run offline filtering on our data.
 
-```{.python #run-filter}
+```{.python #quickstart-run-filter}
 filter_states = filter(football_filter, match_data)
 ```
 
@@ -276,14 +280,7 @@ filtered distribution which we can get from `filter_states.mean` and
 
 
 ??? quote "Code to extract and plot the latest filtered distribution"
-    ```{.python #extract-filtered-distribution}
-    mean = filter_states.mean[-1]
-    top_team_inds = jnp.argsort(mean)[-20:]
-    top_team_names = [teams_id_to_name_dict[int(i)] for i in top_team_inds]
-    top_team_means = mean[top_team_inds]
-    cov = filter_states.chol_cov[-1] @ filter_states.chol_cov[-1].T
-    top_team_stds = jnp.sqrt(jnp.diag(cov) ** 2)[top_team_inds]
-
+    ```{.python #quickstart-extract-filtered-distribution}
     mean = filter_states.mean[-1]
     top_team_inds = jnp.argsort(mean)[-20:]
     top_team_names = [teams_id_to_name_dict[int(i)] for i in top_team_inds]
@@ -296,7 +293,7 @@ filtered distribution which we can get from `filter_states.mean` and
     plt.xlabel(f"Skill Rating {last_match_date}")
     plt.show()
     plt.tight_layout()
-    plt.savefig("docs/assets/international_football_latest_skill_rating.png")
+    plt.savefig("docs/assets/international_football_latest_skill_rating.png", dpi=300)
     ```
 
 ![Best teams right now](../assets/international_football_latest_skill_rating.png)
@@ -309,7 +306,7 @@ backwards too.
 
 With `cuthbert` this is just as easy as filtering.
 
-```{.python #build-smoother}
+```{.python #quickstart-build-smoother}
 football_smoother = taylor.build_smoother(
     get_dynamics_log_density,
 )
@@ -321,7 +318,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 
 ??? quote "Code to extract and plot the historical filtered distribution"
 
-    ```{.python #extract-historical-distribution}
+    ```{.python #quickstart-extract-historical-distribution}
     time_ind_start = -10000
     top_teams_over_time_inds = jnp.argsort(mean)[-10:][::-1]
     top_team_names_over_time = [
@@ -369,7 +366,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
     plt.ylabel("Skill Rating")
     plt.show()
     plt.tight_layout()
-    plt.savefig("docs/assets/international_football_historical_skill_rating.png")
+    plt.savefig("docs/assets/international_football_historical_skill_rating.png", dpi=300)
     ```
 
 ![Best teams historically](../assets/international_football_historical_skill_rating.png)
@@ -389,3 +386,19 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 - **More examples!**: Check out the other [examples](examples/index.md) for more
     techniques including exact Kalman inference, sequential Monte Carlo, interfacing
     with probabilistic programming languages, and more.
+
+
+<!--- entangled-tangle-block
+```{.python file=examples_scripts/quickstart.py}
+<<quickstart-imports>>
+<<quickstart-load-data>>
+<<quickstart-load-data-jax>>
+<<quickstart-model-inputs>>
+<<quickstart-state-space-model>>
+<<quickstart-build-filter>>
+<<quickstart-run-filter>>
+<<quickstart-extract-filtered-distribution>>
+<<quickstart-build-smoother>>
+<<quickstart-extract-historical-distribution>>
+```
+-->
