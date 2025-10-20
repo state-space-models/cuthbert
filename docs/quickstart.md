@@ -131,10 +131,10 @@ match_results = jnp.where(
 )  # 0 for draw, 1 for home win, 2 for away win
 ```
 
-I said `cuthbert` expects JAX arrays, but more specifically and more generally, it
-expects an [`ArrayTree`](https://docs.jax.dev/en/latest/working-with-pytrees.html).
-Basically this allows us to use clearer Python structures as long as the underlying
-data is a JAX array.
+I said `cuthbert` expects JAX arrays, but more specifically and more generally,
+it expects [`pytrees`](https://docs.jax.dev/en/latest/working-with-pytrees.html) with
+`jax.Array` leaves (we call this an `ArrayTree`). Basically this allows us to
+use clearer Python structures as long as the underlying data is a JAX array.
 
 Here we'll use a [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
 to store all the information we'll need at each filtering step. Note that this includes
