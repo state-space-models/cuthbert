@@ -308,9 +308,7 @@ backwards too.
 With `cuthbert` this is just as easy as filtering.
 
 ```{.python #quickstart-build-smoother}
-football_smoother = taylor.build_smoother(
-    get_dynamics_log_density,
-)
+football_smoother = taylor.build_smoother(get_dynamics_log_density)
 smoother_states = smoother(football_smoother, filter_states, match_data)
 ```
 
