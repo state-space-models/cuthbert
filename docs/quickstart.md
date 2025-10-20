@@ -33,7 +33,7 @@ the dates of the matches, which teams played, and the result (draw, home win, aw
 Luckily, there's a very handy dataset of international football match results available on GitHub:
 [github.com/martj42/international_results](https://github.com/martj42/international_results).
 
-Collapse the code block below to see the data loading code (or just trust me on it).
+Expand the code block below to see the data loading code (or just trust me on it).
 
 ??? quote "Code to download international football data into a `pandas` DataFrame"
     ```{.python #quickstart-load-data}
