@@ -315,7 +315,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 
 ## Ok so who are the best teams historically?
 
-??? quote "Code to extract and plot the historical filtered distribution"
+??? quote "Code to extract and plot the historical smoothed distribution"
 
     ```{.python #quickstart-extract-historical-distribution}
     time_ind_start = -10000
