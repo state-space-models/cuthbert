@@ -250,7 +250,7 @@ football_filter = taylor.build_filter(
 
 ## Run the filter
 
-We'll use `cuthbert.filter` to easily run offline filtering on our data.
+We'll use [`cuthbert.filter`][cuthbert.filtering.filter] to easily run offline filtering on our data.
 
 ```{.python #quickstart-run-filter}
 filter_states = filter(football_filter, match_data)
