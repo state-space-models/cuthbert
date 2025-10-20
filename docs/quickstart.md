@@ -219,12 +219,14 @@ def get_observation_func(
 So what have we done here? We've defined the initial distribution, the dynamics, and the observation model
 by simply writing their log densities as JAX functions.
 
-Since the `taylor` method
-uses automatic differentiation to convert these into conditional Gaussian parameters,
-we also needed to specify the linearization point to use (the initial and dynamics
-distributions are Gaussian so we can actually use any linearization point we like
-and `taylor` will exactly recover the Gaussian parameters, the observation model is
-non-Gaussian so we tell `cuthbert` to linearize around the current mean).
+Since the `taylor` method uses automatic differentiation to convert these into
+conditional Gaussian parameters, we also needed to specify the linearization point to
+use (the initial and dynamics distributions are Gaussian so we can actually use any
+linearization point we like and `taylor` will exactly recover the Gaussian parameters,
+the observation model is non-Gaussian so we tell `cuthbert` to linearize around the
+current mean). The linearization point is specified in the additional output of the
+`get_` functions - see the [`taylor` documentation](cuthbert_api/gaussian/taylor.md)
+for more details.
 
 
 ## Build the filter
