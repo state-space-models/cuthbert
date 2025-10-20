@@ -229,7 +229,7 @@ non-Gaussian so we tell `cuthbert` to linearize around the current mean).
 
 ## Build the filter
 
-Now that we've defined the model, we can construct the `cuthbert` filter object.
+Now that we've defined the model, we can construct the `cuthbert` [filter object][cuthbert.inference.Filter].
 
 ```{.python #quickstart-build-filter}
 football_filter = taylor.build_filter(
