@@ -2,6 +2,7 @@ import itertools
 
 import chex
 import jax
+import pytest
 from absl.testing import parameterized
 
 from cuthbertlib.resampling import killing, multinomial, systematic
