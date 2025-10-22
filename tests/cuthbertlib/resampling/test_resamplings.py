@@ -2,6 +2,7 @@ import itertools
 
 import chex
 import jax
+import pytest
 from absl.testing import parameterized
 
 from cuthbertlib.resampling import killing, multinomial, systematic
@@ -71,6 +72,7 @@ class TestResamplings(chex.TestCase):
         self.K = 1_000
 
     @chex.all_variants(with_pmap=False, without_jit=False)
+    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @parameterized.parameters(itertools.product([0, 42], resampling_test_cases))
     def test_resampling(self, seed, test_case):
         key = jax.random.key(seed)
@@ -89,6 +91,7 @@ class TestResamplings(chex.TestCase):
             resampling_tester(key_test, log_weights, resampling, M, self.K)
 
     @chex.all_variants(with_pmap=False, without_jit=False)
+    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @parameterized.parameters(
         itertools.product([0, 42], conditional_resampling_test_cases)
     )
