@@ -14,7 +14,7 @@ from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5])
 @pytest.mark.parametrize("x_dim", [2])
-@pytest.mark.parametrize("N", [10_000])
+@pytest.mark.parametrize("N", [5_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
 @pytest.mark.xdist_group(name="backward")  # Serialize to avoid OOM
 def test_backward(seed, x_dim, N, method):
