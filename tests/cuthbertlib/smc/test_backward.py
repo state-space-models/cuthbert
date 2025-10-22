@@ -7,6 +7,8 @@ import pytest
 
 from cuthbertlib.kalman.filtering import (
     predict as kalman_predict,
+)
+from cuthbertlib.kalman.filtering import (
     update as kalman_update,
 )
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
