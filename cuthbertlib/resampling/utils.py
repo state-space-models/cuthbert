@@ -2,9 +2,9 @@ import jax
 import jax.numpy as jnp
 import numba as nb
 import numpy as np
+from jax.experimental import io_callback
 from jax.lax import platform_dependent
 from jax.scipy.special import logsumexp
-from jax.experimental import io_callback
 
 from cuthbertlib.types import Array, ArrayLike
 
