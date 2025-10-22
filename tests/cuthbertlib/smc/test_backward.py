@@ -28,7 +28,6 @@ def config():
 @pytest.mark.parametrize("y_dim", [2])
 @pytest.mark.parametrize("N", [5_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
-@pytest.mark.xdist_group(name="backward")  # Serialize to avoid OOM
 def test_backward(seed, x_dim, y_dim, N, method):
     """
     Test SMC backward simulation methods on a two-step linear Gaussian system.
