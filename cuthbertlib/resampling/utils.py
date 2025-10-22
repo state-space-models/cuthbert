@@ -4,6 +4,7 @@ import numba as nb
 import numpy as np
 from jax.lax import platform_dependent
 from jax.scipy.special import logsumexp
+from jax.experimental import io_callback
 
 from cuthbertlib.types import Array, ArrayLike
 
@@ -53,9 +54,15 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
         inverse_cdf_numba(su, w, idx_)
         return idx_
 
-    idx = jax.pure_callback(
-        callback, idx, (sorted_uniforms, weights, idx), vmap_method="sequential"
+    # callback is not pure (it modifies idx in place) so we use io_callback instead of jax.pure_callback
+    idx = io_callback(
+        callback,
+        idx,
+        (sorted_uniforms, weights, idx),
     )
+    # idx = jax.pure_callback(
+    #     callback, idx, (sorted_uniforms, weights, idx), vmap_method="sequential"
+    # )
     return jnp.clip(idx, 0, M - 1)
 
 
