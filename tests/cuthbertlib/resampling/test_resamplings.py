@@ -71,8 +71,8 @@ class TestResamplings(chex.TestCase):
         super().setUp()
         self.K = 1_000
 
-    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @chex.all_variants(with_pmap=False, without_jit=False)
+    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @parameterized.parameters(itertools.product([0, 42], resampling_test_cases))
     def test_resampling(self, seed, test_case):
         key = jax.random.key(seed)
@@ -90,8 +90,8 @@ class TestResamplings(chex.TestCase):
             log_weights = jax.random.uniform(key_weights, (N,))
             resampling_tester(key_test, log_weights, resampling, M, self.K)
 
-    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @chex.all_variants(with_pmap=False, without_jit=False)
+    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
     @parameterized.parameters(
         itertools.product([0, 42], conditional_resampling_test_cases)
     )
