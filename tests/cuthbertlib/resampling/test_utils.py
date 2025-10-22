@@ -21,6 +21,7 @@ class TestInverseCdf(chex.TestCase):
         self.Ns = [10, 100]
 
     @chex.all_variants(with_pmap=False, without_jit=False)
+    @pytest.mark.xdist_group(name="inverse_cdf")  # Serialize to avoid OOM
     @parameterized.parameters([0, 1, 2, 3, 4])
     def test_inverse_cdf(self, seed):
         key = jax.random.key(seed)
@@ -45,6 +46,7 @@ class TestInverseCdf(chex.TestCase):
 
     @chex.all_variants(with_pmap=False)
     @parameterized.parameters([0, 1, 2, 3, 4])
+    @pytest.mark.xdist_group(name="inverse_cdf")  # Serialize to avoid OOM
     def test_cpu_default_match(self, seed):
         key = jax.random.key(seed)
         for M, N in itertools.product(self.Ms, self.Ns):
