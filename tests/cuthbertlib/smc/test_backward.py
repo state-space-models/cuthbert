@@ -18,7 +18,7 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
-@pytest.mark.parametrize("seed", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
 @pytest.mark.parametrize("x_dim", [2])
 @pytest.mark.parametrize("y_dim", [2])
 @pytest.mark.parametrize("N", [5_000])
