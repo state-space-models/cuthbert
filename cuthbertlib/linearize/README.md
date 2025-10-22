@@ -28,8 +28,7 @@ around a given point.
 - `linearize_taylor`: Linearize a log potential function around a given point using
 Taylor expansion.
 
-Linearization with sigma points can also be found in the [`quadrature`](/quadrature)
-sub-repository.
+Linearization with sigma points can also be found in the [`quadrature`] sub-repository.
 
 ### Example usage
 

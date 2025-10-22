@@ -11,3 +11,4 @@ from cuthbert.gaussian.taylor.types import (
     GetObservationFunc,
     LogPotential,
 )
+from cuthbert.gaussian.types import LinearizedKalmanFilterState

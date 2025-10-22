@@ -19,7 +19,7 @@ def conditional_moments(
     cov: ArrayLike,
     quadrature: Quadrature,
     mode: str = "covariance",
-):
+) -> tuple[Array, Array, Array]:
     """
     Linearize the conditional mean and covariance of a Gaussian distribution.
 
@@ -78,7 +78,7 @@ def functional(
     cov: ArrayLike,
     quadrature: Quadrature,
     mode: str = "covariance",
-):
+) -> tuple[Array, Array, Array]:
     """
     Linearize a non-linear function of a Gaussian distribution.
 

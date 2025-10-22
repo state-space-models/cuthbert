@@ -1,3 +1,7 @@
+"""
+Implements the generic particle filter (Algorithm 10.1, [Chopin and Papaspiliopoulos, 2020](https://doi.org/10.1007/978-3-030-47845-2)).
+"""
+
 from functools import partial
 from typing import NamedTuple
 

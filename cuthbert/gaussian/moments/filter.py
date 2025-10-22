@@ -1,9 +1,11 @@
-"""Linearized Kalman filter that takes a user provided conditional mean and
-chol_cov functions to define a conditionally linear Gaussian state space model.
+r"""Linearized Kalman filter that takes a user provided conditional `mean` and
+`chol_cov` functions to define a conditionally linear Gaussian state space model.
 
-I.e. we approximate conditional log densities as
+I.e., we approximate conditional densities as
 
-log p(y | x) ≈ N(y | mean(x), chol_cov(x) @ chol_cov(x)^T)
+$$
+p(y \mid x) \approx N(y \mid \mathrm{mean}(x), \mathrm{chol\_cov}(x) @ \mathrm{chol\_cov}(x)^\top).
+$$
 
 See `cuthbertlib.linearize` for more details.
 
@@ -14,12 +16,9 @@ I.e. the linearization points are pre-defined or extracted from model inputs.
 
 from functools import partial
 
-from cuthbert.gaussian.kalman import GetInitParams
 from cuthbert.gaussian.moments import associative_filter, non_associative_filter
-from cuthbert.gaussian.moments.types import (
-    GetDynamicsMoments,
-    GetObservationMoments,
-)
+from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
+from cuthbert.gaussian.types import GetInitParams
 from cuthbert.inference import Filter
 
 
@@ -41,9 +40,7 @@ def build_filter(
     observation parameters.
 
     Args:
-        get_init_log_density: Function to get log density log p(x_0)
-            and linearization point.
-            Only takes `model_inputs` as input.
+        get_init_params: Function to get m0, chol_P0 from model inputs.
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
             and linearization points (for the previous and current time points)

@@ -2,6 +2,9 @@ site_name: cuthbert
 site_url: https://state-space-models.github.io/cuthbert
 repo_url: https://github.com/state-space-models/cuthbert
 
+exclude_docs: |
+  README.md
+
 theme:
   name: material
   logo: assets/cuthbert.png
@@ -24,15 +27,50 @@ theme:
   features:
     - navigation.instant
     - content.code.copy
+    - navigation.indexes
 
 nav:
   - Home: index.md
   - Quick Start: quickstart.md
   - Contributing: contributing.md
+  - cuthbert API:
+    - cuthbert_api/index.md
+    - cuthbert_api/filtering.md
+    - cuthbert_api/smoothing.md
+    - Discrete HMMs: cuthbert_api/discrete.md
+    - Gaussian filters and smoothers:
+      - cuthbert_api/gaussian/index.md
+      - Exact Kalman: cuthbert_api/gaussian/kalman.md
+      - Moments: cuthbert_api/gaussian/moments.md
+      - Taylor: cuthbert_api/gaussian/taylor.md
+    - Sequential Monte Carlo:
+      - cuthbert_api/smc/index.md
+      - cuthbert_api/smc/backward_sampler.md
+      - cuthbert_api/smc/marginal_particle_filter.md
+      - cuthbert_api/smc/particle_filter.md
+      - cuthbert_api/smc/types.md
+  - cuthbertlib API:
+    - cuthbertlib_api/index.md
+    - cuthbertlib_api/discrete.md
+    - cuthbertlib_api/kalman.md
+    - cuthbertlib_api/linalg.md
+    - cuthbertlib_api/linearize.md
+    - Quadrature Methods: cuthbertlib_api/quadrature.md
+    - cuthbertlib_api/resampling.md
+    - cuthbertlib_api/smc.md
+    - cuthbertlib_api/stats.md
+    - cuthbertlib_api/types.md
 
 plugins:
   - include-markdown
-
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_symbol_type_heading: true
+            members_order: source
+            show_if_no_docstring: true
 
 markdown_extensions:
   - admonition

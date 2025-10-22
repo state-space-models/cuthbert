@@ -2,27 +2,29 @@ from typing import NamedTuple, Protocol
 
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
-from cuthbertlib.types import (
-    Array,
-    ArrayTree,
-    ArrayTreeLike,
-)
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike
 
 
 ### Kalman types
 class GetInitParams(Protocol):
+    """Protocol for defining the initial distribution of a linear Gaussian SSM."""
+
     def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array]:
         """Get initial parameters (m0, chol_P0) from model inputs."""
         ...
 
 
 class GetDynamicsParams(Protocol):
+    """Protocol for defining the dynamics model of a linear Gaussian SSM."""
+
     def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array, Array]:
         """Get dynamics parameters (F, c, chol_Q) from model inputs."""
         ...
 
 
 class GetObservationParams(Protocol):
+    """Protocol for defining the observation model of a linear Gaussian SSM."""
+
     def __call__(
         self, model_inputs: ArrayTreeLike
     ) -> tuple[Array, Array, Array, Array]:

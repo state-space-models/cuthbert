@@ -2,8 +2,8 @@
 Parallel-in-time Bayesian smoother for discrete hidden Markov models.
 
 References:
-    https://ieeexplore.ieee.org/document/9512397
-    https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
+    - https://ieeexplore.ieee.org/document/9512397
+    - https://github.com/EEA-sensors/sequential-parallelization-examples/tree/main/python/temporal-parallelization-inference-in-HMMs
 """
 
 from functools import partial
@@ -30,10 +30,10 @@ class DiscreteSmootherState(NamedTuple):
 
 
 def build_smoother(get_trans_matrix: GetTransitionMatrix) -> Smoother:
-    """Builds a smoother object for discrete hidden Markov models.
+    r"""Builds a smoother object for discrete hidden Markov models.
 
     Args:
-        get_trans_matrix: Function to get the transition matrix A_{ij} = p(x_t = j | x_{t-1} = i).
+        get_trans_matrix: Function to get the transition matrix $A_{ij} = p(x_t = j \mid x_{t-1} = i)$.
 
     Returns:
         Smoother object. Suitable for associative scan.
