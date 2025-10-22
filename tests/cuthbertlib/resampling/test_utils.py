@@ -4,6 +4,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import numpy.testing as npt
+import pytest
 from absl.testing import parameterized
 from jax.scipy.special import logsumexp
 
