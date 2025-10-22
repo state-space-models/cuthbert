@@ -18,13 +18,6 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
-@pytest.fixture(scope="module", autouse=True)
-def config():
-    jax.config.update("jax_enable_x64", True)
-    yield
-    jax.config.update("jax_enable_x64", False)
-
-
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5])
 @pytest.mark.parametrize("x_dim", [2])
 @pytest.mark.parametrize("y_dim", [2])
@@ -101,8 +94,8 @@ def test_backward(seed, x_dim, y_dim, N, method):
     chex.assert_trees_all_equal(smoothed_x0s, x0s[smoothed_x0_indices])
 
     if method != "tracing":
-        # tracing here doesn't actually modify the initial particles so wouldn't test
-        # anything and is not expected to match statistics (we haven't done resampling)
+        # tracing here doesn't actually modify the initial particles (we haven't done resampling)
+        # so wouldn't test anything and is not expected to match statistics
 
         # Check marginal mean and covariance of samples are correct
         sample_x0_mean = jnp.mean(smoothed_x0s, axis=0)
