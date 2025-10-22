@@ -13,6 +13,14 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
     """
     Inverse CDF sampling for resampling algorithms.
 
+    The implementation branches depending on the platform being CPU or GPU (and other parallel envs)
+    1. The CPU implementation is a numba-compiled specialized searchsorted(arr, vals) for *sorted* uniforms
+        which is guaranteed to run in O(N + M) where N is the size of logits and M that of sorted_uniforms.
+        This could be replaced mutatis mutandis by np.searchsorted (not jnp.searchsorted!) but the latter
+        does not guarantee this execution time.
+    2. On GPU, we use searchsorted with a sorting strategy: this proceeds by merge (arg) sorting,
+        which works in log(N+M) and is efficient for large arrays of sorted uniforms, typically our setting.
+
     Args:
         sorted_uniforms: Sorted uniforms.
         logits: Log-weights, possibly un-normalized.
