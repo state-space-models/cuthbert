@@ -5,6 +5,10 @@ import jax
 import jax.numpy as jnp
 import pytest
 
+from cuthbertlib.kalman.filtering import (
+    predict as kalman_predict,
+    update as kalman_update,
+)
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
 from cuthbertlib.smc.smoothing.tracing import simulate as tracing
@@ -12,25 +16,55 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
+@pytest.fixture(scope="module", autouse=True)
+def config():
+    jax.config.update("jax_enable_x64", True)
+    yield
+    jax.config.update("jax_enable_x64", False)
+
+
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5])
 @pytest.mark.parametrize("x_dim", [2])
+@pytest.mark.parametrize("y_dim", [2])
 @pytest.mark.parametrize("N", [5_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
 @pytest.mark.xdist_group(name="backward")  # Serialize to avoid OOM
-def test_backward(seed, x_dim, N, method):
-    m0, chol_P0, Fs, cs, chol_Qs = generate_lgssm(seed, x_dim, 0, 1)[:5]
-    m1, chol_P1 = generate_lgssm(seed + 1, x_dim, 0, 0)[:2]
+def test_backward(seed, x_dim, y_dim, N, method):
+    """
+    Test SMC backward simulation methods on a two-step linear Gaussian system.
 
-    # Backward simulation fails unless there is overlap between
-    # filter distribution p(x0, y0) and smoother distribution p(x0 | y0, y1).
-    # To encourage this we increase the variance of the smoother distribution,
-    # therefore decreasing influence of y1 on p(x0 | y0, y1).
-    # Although you couldn't do this in practice.
-    chol_Qs *= 3.0
+    Setup:
+    - x0s ~ p(x0 | y0): filter particles at time 0
+    - x1s ~ p(x1 | y0, y1): filter particles at time 1 after observing y1
+    - Backward simulation should recover p(x0 | y0, y1): smoothed distribution
+
+    The observation y1 provides information that makes smoothing meaningful.
+    """
+    # Generate LGSSM with observations
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, 1
+    )
 
     F, c, chol_Q = Fs[0], cs[0], chol_Qs[0]
+    H1, d1, chol_R1 = Hs[1], ds[1], chol_Rs[1]  # Observation model at time 1
+    y1 = ys[1]  # Observation at time 1
+    # We ignore/discard the observation at time 0 for this test
 
-    # Run standard Kalman smoother for one step
+    # Sample filter particles at time 0 from p(x0 | y0)
+    key = jax.random.key(seed)
+    x0_key, x1_key, sim_key = jax.random.split(key, 3)
+    x0s = jax.vmap(lambda z: m0 + chol_P0 @ z)(jax.random.normal(x0_key, (N, x_dim)))
+
+    # Compute predicted distribution at time 1: p(x1 | y0)
+    m1_pred, chol_P1_pred = kalman_predict(m0, chol_P0, F, c, chol_Q)
+
+    # Update with observation y1 to get filtered distribution: p(x1 | y0, y1)
+    (m1, chol_P1), _ = kalman_update(m1_pred, chol_P1_pred, H1, d1, chol_R1, y1)
+
+    # Sample filter particles at time 1 from p(x1 | y0, y1)
+    x1s = jax.vmap(lambda z: m1 + chol_P1 @ z)(jax.random.normal(x1_key, (N, x_dim)))
+
+    # Run standard Kalman smoother for one step to get ground truth
     ms = jax.numpy.vstack([m0, m1])
     chol_Ps = jax.numpy.vstack([chol_P0[None], chol_P1[None]])
     Ps = chol_Ps @ chol_Ps.transpose(0, 2, 1)
@@ -39,12 +73,6 @@ def test_backward(seed, x_dim, N, method):
         ms, Ps, Fs, cs, Qs
     )
     des_m0, des_P0 = des_smooth_ms[0], des_smooth_Ps[0]
-
-    # Sample filter particles
-    key = jax.random.key(seed)
-    x0_key, x1_key, sim_key = jax.random.split(key, 3)
-    x0s = jax.vmap(lambda z: m0 + chol_P0 @ z)(jax.random.normal(x0_key, (N, x_dim)))
-    x1s = jax.vmap(lambda z: m1 + chol_P1 @ z)(jax.random.normal(x1_key, (N, x_dim)))
 
     # Run smoothing simulation
     prec_Q = jnp.linalg.inv(chol_Q @ chol_Q.T)
@@ -56,7 +84,7 @@ def test_backward(seed, x_dim, N, method):
     # We may want to make this configuration more professional in the future, when we add more methods.
     match method:
         case "tracing":
-            backward_method = tracing  # bit of a weird test.
+            backward_method = tracing
         case "exact":
             backward_method = exact
         case "mcmc":
@@ -71,9 +99,10 @@ def test_backward(seed, x_dim, N, method):
     # Check indices are correct
     chex.assert_trees_all_equal(smoothed_x0s, x0s[smoothed_x0_indices])
 
-    if (
-        method != "tracing"
-    ):  # tracing suffers severe path degeneracy so it's not really expected to match statistics
+    if method != "tracing":
+        # tracing here doesn't actually modify the initial particles so wouldn't test
+        # anything and is not expected to match statistics (we haven't done resampling)
+
         # Check marginal mean and covariance of samples are correct
         sample_x0_mean = jnp.mean(smoothed_x0s, axis=0)
         sample_x0_cov = jnp.cov(smoothed_x0s, rowvar=False)
