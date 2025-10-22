@@ -35,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install '.[test, examples]'
       - name: Precompile JAX/Numba JIT functions
-        run: python tests/warmup_jit.py
+        run: python scripts/warmup_jit.py
       - name: Run the tests with pytest
         run: |
           python -m pytest -n auto -vv -m "not examples"
