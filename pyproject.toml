@@ -27,10 +27,10 @@ test = [
     "chex",  # test additional dependencies
     "pre-commit", "ruff", "pyright",  # linting etc
     "pytest", "pytest-xdist",  # testing
-    "entangled_cli", # convert .md examples to .py
+    "entangled-cli", # convert .md examples to .py
 ]
 docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
-examples = ["matplotlib"]
+examples = ["matplotlib", "pandas", "pandas-stubs"]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
@@ -41,5 +41,5 @@ examples = ["matplotlib"]
 markers = "examples: Run tangled example scripts as tests"
 
 [tool.entangled]
-version = "2.1.13"
+version = "2.3.0"
 ignore_list = ["CONTRIBUTING.md"]

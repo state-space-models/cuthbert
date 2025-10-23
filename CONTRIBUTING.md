@@ -50,17 +50,17 @@ python -m pytest --cov=cuthbert --cov-report term-missing
 
 ## Adding an example
 
-Examples in `cuthbert` are written in Markdown and tangled into Python scripts using [entangled](https://github.com/entangled-lang/entangled) so they can be run as tests.
+Examples in `cuthbert` are written in Markdown and tangled into Python scripts using [entangled](https://github.com/entangled/entangled.py) so they can be run as tests.
 
 To add an example, you can use the following steps:
 
 1. Write the example in Markdown in the `docs` directory.
-2. Make sure to start each code block with `{.python #code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
+2. Make sure to start each code block with `{.python #example_name-code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference. (Note that it's important to include the example name here as code block names must be unique across all examples.)
 3. Add a hidden code block at the end of the file with the following content:
 ```
 ```{.python file=examples_scripts/example_name.py}
-<<code_block_name_1>>
-<<code_block_name_2>>
+<<example_name-code_block_name_1>>
+<<example_name-code_block_name_2>>
 ...
 ```
 Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
