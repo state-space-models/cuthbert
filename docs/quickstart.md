@@ -299,7 +299,7 @@ filtered distribution which we can get from `filter_states.mean` and
     plt.close()
     ```
 
-![Best teams right now](../assets/international_football_latest_skill_rating.png)
+![Best teams right now](assets/international_football_latest_skill_rating.png)
 
 ## Build and run the smoother
 
@@ -370,7 +370,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
     plt.close()
     ```
 
-![Best teams historically](../assets/international_football_historical_skill_rating.png)
+![Best teams historically](assets/international_football_historical_skill_rating.png)
 
 
 ## Next steps
