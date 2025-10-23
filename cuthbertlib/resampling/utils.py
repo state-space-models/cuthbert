@@ -67,14 +67,15 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
     return jnp.clip(idx, 0, M - 1)
 
 
-@nb.njit(cache=True)
+@nb.njit
 def inverse_cdf_numba(su, ws, idx):
     j = 0
     s = ws[0]
     M = su.shape[0]
+    N = ws.shape[0]
 
     for n in range(M):
-        while su[n] > s:
+        while su[n] > s and j < N - 1:
             j += 1
             s += ws[j]
         idx[n] = j
