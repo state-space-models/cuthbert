@@ -203,6 +203,7 @@ car's position.
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
     # plt.show()
+    plt.close()
     ```
 
 ![Car Tracking Results](../assets/car_tracking.png)

@@ -290,6 +290,7 @@ filtered distribution which we can get from `filter_states.mean` and
     cov = filter_states.chol_cov[-1] @ filter_states.chol_cov[-1].T
     top_team_stds = jnp.sqrt(jnp.diag(cov) ** 2)[top_team_inds]
 
+    plt.figure()
     plt.barh(top_team_names, top_team_means, xerr=top_team_stds, color="limegreen")
     last_match_date = football_data["date"].max().strftime("%Y-%m-%d")
     plt.xlabel(f"Skill Rating {last_match_date}")
@@ -340,7 +341,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
         "Argentina 3(pens)\nFrance 3": "2022-12-18",
     }
 
-
+    plt.figure()
     plt.plot(
         match_dates_over_time,
         top_team_means_over_time[:],
