@@ -41,7 +41,7 @@ Expand the code block below to see the data loading code (or just trust me on it
         start_date: str = "1872-11-30",
         end_date: str | None = None,
         origin_date: str | None = None,
-        min_matches: int = 300,
+        min_matches: int = 0,
     ) -> tuple[pd.DataFrame, dict[int, str], dict[str, int]]:
         """
         Load international football match result data.
@@ -60,7 +60,6 @@ Expand the code block below to see the data loading code (or just trust me on it
             origin_date: The date to use as the zero point the output timestamps. Defaults
                 to start_date. Required in "YYYY-MM-DD" format.
             min_matches: The minimum number of matches a team must have to be included.
-                Defaults to 300.
 
         Returns:
             A tuple of match times, match team indices,
@@ -110,11 +109,12 @@ Expand the code block below to see the data loading code (or just trust me on it
     ```
 
 We'll now load the data and convert it into JAX arrays - the format expected by
-`cuthbert`.
+`cuthbert` (we'll filter out very old matches and teams who play infrequently
+to make the example run faster).
 
 ```{.python #quickstart-load-data-jax}
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
-    load_international_football_data()
+    load_international_football_data(start_date="1980-01-01", min_matches=300)
 )
 
 print(football_data.tail())
