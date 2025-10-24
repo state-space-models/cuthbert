@@ -10,8 +10,9 @@ from the root folder.
 
 Example output as of commit f20c6ff:
 1. AMD Ryzen 7 PRO 7840U CPU
-    Compile time: 5.215s
-    Runtime: 0.074 pm 0.00290s
+    Compile time: 5.239s
+    Runtime (min): 0.072s
+    Runtime (median): 0.076s
 2. NVIDIA A100-SXM4-80GB GPU
     Compile time: 16.241s
     Runtime (min): 0.022s
