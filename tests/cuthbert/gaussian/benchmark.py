@@ -8,9 +8,13 @@ python -m tests.cuthbert.gaussian.benchmark
 
 from the root folder.
 
+Example output as of commit f20c6ff:
 1. AMD Ryzen 7 PRO 7840U CPU
     Compile time: 5.215s
     Runtime: 0.074 pm 0.00290s
+2. NVIDIA A100-SXM4-80GB GPU
+    Compile time: 16.229s
+    Runtime: 0.022 pm 0.00010s
 """
 
 import time
