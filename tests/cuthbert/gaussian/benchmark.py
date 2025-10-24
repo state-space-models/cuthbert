@@ -1,4 +1,4 @@
-"""Benchmark compile time and run time for the Kalman filter.
+"""Benchmark compilation time and run time for the Kalman filter.
 
 Run with
 
@@ -13,11 +13,12 @@ Example output as of commit f20c6ff:
     Compile time: 5.215s
     Runtime: 0.074 pm 0.00290s
 2. NVIDIA A100-SXM4-80GB GPU
-    Compile time: 16.229s
-    Runtime: 0.022 pm 0.00010s
+    Compile time: 16.241s
+    Runtime (min): 0.022s
+    Runtime (median): 0.022s
 """
 
-import time
+import timeit
 
 import jax
 import jax.numpy as jnp
@@ -56,17 +57,26 @@ model_inputs = jnp.arange(num_time_steps + 1)
 
 jitted_filter = jax.jit(filter, static_argnames=("filter_obj", "parallel"))
 
-num_runs = 10
-runtimes = []
-for _ in range(num_runs):
-    start_time = time.time()
-    filt_states = jitted_filter(filter_obj, model_inputs, parallel=True)
-    jax.block_until_ready(filt_states)
-    runtimes.append(time.time() - start_time)
+# Check compilation time
+compile_timer = timeit.Timer(
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=True)
+    )
+)
+compile_time = compile_timer.timeit(number=1)
 
-compile_time = runtimes[0]
-mean_runtime = np.mean(runtimes[1:]).item()
-std_runtime = np.std(runtimes[1:]).item()
+# Check run time
+num_runs = 10
+runtime_timer = timeit.Timer(
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=True)
+    )
+)
+runtimes = runtime_timer.repeat(repeat=num_runs, number=1)
+
+min_runtime = np.min(runtimes).item()
+median_runtime = np.median(runtimes).item()
 
 print(f"Compile time: {compile_time:.3f}s")
-print(f"Runtime: {mean_runtime:.3f} pm {std_runtime:.5f}s")
+print(f"Runtime (min): {min_runtime:.3f}s")
+print(f"Runtime (median): {median_runtime:.3f}s")
