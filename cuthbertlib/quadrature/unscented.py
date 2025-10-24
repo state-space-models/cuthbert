@@ -32,7 +32,7 @@ def weights(
     The number of sigma-points is 2 * n_dim.
     This method is also known as the Unscented Transform, and generalizes the
     `cubature.py` weights: the cubature method is a special case of the unscented
-    for the parameters alpha=1.0, beta=0.0, kappa=0.0.
+    for the parameters `alpha=1.0`, `beta=0.0`, `kappa=0.0`.
 
     Args:
         n_dim: Dimension of the space.

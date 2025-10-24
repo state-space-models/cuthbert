@@ -34,7 +34,7 @@ def linearize_taylor(
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
-    r"""Linearize a log potential function around a given point using Taylor expansion.
+    r"""Linearizes a log potential function around a given point using Taylor expansion.
 
     Unlike the other linearization methods, this applies to a potential function
     with no required notion of observation $y$ or conditional dependence.
@@ -42,14 +42,14 @@ def linearize_taylor(
     Instead we have the linearization
 
     $$
-    \log G(x) = -0.5 (x - m)^\top (L L^\top)^{-1} (x - m).
+    \log G(x) = -\frac{1}{2} (x - m)^\top (L L^\top)^{-1} (x - m).
     $$
 
     Args:
         log_potential: A callable that returns a non-negative scalar. Does not need
             to be a normalized probability density in its input.
         x: The point to linearize around.
-        has_aux: Whether the log_potential function returns an auxiliary value.
+        has_aux: Whether `log_potential` returns an auxiliary value.
         rtol: The relative tolerance for the singular values of the precision matrix
             when passed to `symmetric_inv_sqrt`.
             Cutoff for small singular values; singular values smaller than
@@ -61,8 +61,8 @@ def linearize_taylor(
             them.
 
     Returns:
-        Linearized mean and cholesky factor of the covariance matrix.
-            As well as the auxiliary value if `has_aux` is True.
+        Linearized mean and Cholesky factor of the covariance matrix.
+            The auxiliary value is also returned if `has_aux` is `True`.
     """
 
     g_and_maybe_aux = jax.grad(log_potential, has_aux=has_aux)(x)

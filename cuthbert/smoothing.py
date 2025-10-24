@@ -17,30 +17,28 @@ def smoother(
     parallel: bool = False,
     key: KeyArray | None = None,
 ) -> ArrayTree:
-    """
-    Applies offline smoothing given a smoother object, output from filter, and model
-    inputs.
+    """Applies offline smoothing given a smoother object, output from filter, and model inputs.
 
-    The filter_states should have leading temporal dimension of len T + 1, where
+    `filter_states` should have leading temporal dimension of length T + 1, where
     T is the number of time steps excluding the initial state.
 
-    Each element of model_inputs refers to the transition from t to t+1, except for the
-    first element which refers to the initial state. The initial state model_inputs
-    are not used for smoothing. Thus the model_inputs used here have length T.
-    By default, filter_states.model_inputs[1:] are used (i.e. the model_inputs
+    Each element of `model_inputs` refers to the transition from t to t+1, except for the
+    first element which refers to the initial state. The initial state `model_inputs`
+    are not used for smoothing. Thus the `model_inputs` used here have length T.
+    By default, `filter_states.model_inputs[1:]` are used (i.e. the `model_inputs`
     used for the initial state is ignored).
 
     Args:
         smoother_obj: The smoother inference object.
-        filter_states: The filtered states (with leading temporal dimension of len T + 1).
-        model_inputs: The model inputs (with leading temporal dimension of len T).
-            Optional, if None then filter_states.model_inputs[1:] are used.
+        filter_states: The filtered states (with leading temporal dimension of length T + 1).
+        model_inputs: The model inputs (with leading temporal dimension of length T).
+            Optional, if None then `filter_states.model_inputs[1:]` are used.
         parallel: Whether to run the smoother in parallel.
-            Requires inference.associative_smoother to be True.
+            Requires `smoother_obj.associative_smoother` to be `True`.
         key: The key for the random number generator.
 
     Returns:
-        The smoothed states (NamedTuple with leading temporal dimension of len T + 1).
+        The smoothed states (NamedTuple with leading temporal dimension of length T + 1).
     """
     if parallel and not smoother_obj.associative:
         warnings.warn(
