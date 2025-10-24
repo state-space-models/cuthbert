@@ -1,71 +1,68 @@
+"""Benchmark compile time and run time for the Kalman filter.
+
+Run with
+
+```python
+python -m tests.cuthbert.gaussian.benchmark
+```
+
+from the root folder.
+
+1. AMD Ryzen 7 PRO 7840U CPU
+    Compile time: 5.215s
+    Runtime: 0.074 pm 0.00290s
+"""
+
 import time
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-from cuthbert.generalised_kalman.kalman import filter
-
-PLATFORM_NAME = "cuda"
-jax.config.update("jax_platform_name", PLATFORM_NAME)
-
-
-def generate_cholesky_factor(rng, dim):
-    chol_A = rng.random((dim, dim))
-    chol_A[np.triu_indices(dim, 1)] = 0.0
-    return chol_A
-
-
-def generate_trans_model(rng, x_dim):
-    F = rng.random((x_dim, x_dim))
-    b = rng.random(x_dim)
-    chol_Q = generate_cholesky_factor(rng, x_dim)
-    return F, b, chol_Q
-
-
-def generate_obs_model(rng, x_dim, y_dim):
-    H = rng.random((y_dim, x_dim))
-    c = rng.random(y_dim)
-    chol_R = generate_cholesky_factor(rng, y_dim)
-    y = rng.random(y_dim)
-    return H, c, chol_R, y
-
+from cuthbert import filter
+from cuthbert.gaussian import kalman
+from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 seed = 0
 x_dim = 20
 y_dim = 10
 num_time_steps = 1000
 
-offline_filter = jax.jit(filter, static_argnames="parallel")
-
-rng = np.random.default_rng(seed)
-m0 = rng.normal(size=x_dim)
-chol_P0 = generate_cholesky_factor(rng, x_dim)
-F, c, chol_Q = generate_trans_model(rng, x_dim)
-H, d, chol_R, y = generate_obs_model(rng, x_dim, y_dim)
-
-
-def batch_arrays(t, *args):
-    out = []
-    for arg in args:
-        out.append(jnp.repeat(arg[None, ...], t, axis=0))
-    return out
-
-
-# Make copies for T time steps.
-Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = batch_arrays(
-    num_time_steps, F, c, chol_Q, H, d, chol_R, y
+m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+    seed, x_dim, y_dim, num_time_steps
 )
+
+
+def get_init_params(model_inputs):
+    return m0, chol_P0
+
+
+def get_dynamics_params(model_inputs):
+    return Fs[model_inputs - 1], cs[model_inputs - 1], chol_Qs[model_inputs - 1]
+
+
+def get_observation_params(model_inputs):
+    return Hs[model_inputs], ds[model_inputs], chol_Rs[model_inputs], ys[model_inputs]
+
+
+filter_obj = kalman.build_filter(
+    get_init_params, get_dynamics_params, get_observation_params
+)
+model_inputs = jnp.arange(num_time_steps + 1)
+
+jitted_filter = jax.jit(filter, static_argnames=("filter_obj", "parallel"))
 
 num_runs = 10
 runtimes = []
 for _ in range(num_runs):
     start_time = time.time()
-    filt_states, ell = filter(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, parallel=True
-    )
+    filt_states = jitted_filter(filter_obj, model_inputs, parallel=True)
     jax.block_until_ready(filt_states)
     runtimes.append(time.time() - start_time)
 
-print(f"Compile time: {runtimes[0]:.3f}s")
-print(f"Runtime: {np.mean(runtimes[1:]):.3f} pm {np.std(runtimes[1:]):5f}s")
+compile_time = runtimes[0]
+mean_runtime = np.mean(runtimes[1:]).item()
+std_runtime = np.std(runtimes[1:]).item()
+
+print(f"Compile time: {compile_time:.3f}s")
+print(f"Runtime: {mean_runtime:.3f} pm {std_runtime:.5f}s")
