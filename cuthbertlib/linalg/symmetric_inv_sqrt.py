@@ -9,17 +9,17 @@ def symmetric_inv_sqrt(
     rtol: float | ArrayLike | None = None,
     ignore_nan_dims: bool = False,
 ) -> Array:
-    """Compute the inverse square root of a symmetric matrix.
+    r"""Computes the inverse square root of a symmetric matrix.
 
-    I.e. a lower triangular matrix L such that L @ L.T = A^{-1} (for positive definite
-    A), note that this is not unique and will generally not match the Cholesky factor
-    of A^{-1}.
+    I.e., a lower triangular matrix $L$ such that $L L^{\top} = A^{-1}$ (for positive definite
+    $A$). Note that this is not unique and will generally not match the Cholesky factor
+    of $A^{-1}$.
 
     For singular matrices, small singular values will be cut off reminiscent of
     the Moore-Penrose pseudoinverse - https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
 
-    In the case of singular or indefinite A, the output will be an approximation
-    and L @ L.T = A^{-1} will not hold in general.
+    In the case of singular or indefinite $A$, the output will be an approximation
+    and $L L^{\top} = A^{-1}$ will not hold in general.
 
     Args:
         A: A symmetric matrix.
@@ -32,7 +32,7 @@ def symmetric_inv_sqrt(
             dimensions being NaN on the diagonal and zero off-diagonal).
 
     Returns:
-        A lower triangular matrix L such that L @ L.T = A^{-1} (for valid dimensions).
+        A lower triangular matrix $L$ such that $L L^{\top} = A^{-1}$ (for valid dimensions).
     """
     arr = jnp.asarray(A)
 
@@ -93,17 +93,18 @@ def _symmetric_inv_sqrt(A: ArrayLike, rtol: float | ArrayLike | None = None) -> 
 
 
 def chol_cov_with_nans_to_cov(chol_cov: ArrayLike) -> Array:
-    """Convert a cholesky factor to a covariance matrix with NaNs on the diagonal
-    specifying dimensions to be ignored.
+    """Converts a Cholesky factor to a covariance matrix.
+
+    NaNs on the diagonal specify dimensions to be ignored.
 
     Args:
-        chol_cov: A cholesky factor of a covariance matrix with NaNs on the diagonal
+        chol_cov: A Cholesky factor of a covariance matrix with NaNs on the diagonal
             specifying dimensions to be ignored.
 
     Returns:
         A covariance matrix equivalent to chol_cov @ chol_cov.T in dimensions where
-        the cholesky factor is valid and for invalid dimensions (ones with NaN on the
-        diagonal in chol_cov) with NaN on the diagonal and zero off-diagonal.
+            the Cholesky factor is valid and for invalid dimensions (ones with NaN on the
+            diagonal in chol_cov) with NaN on the diagonal and zero off-diagonal.
     """
     chol_cov = jnp.asarray(chol_cov)
 

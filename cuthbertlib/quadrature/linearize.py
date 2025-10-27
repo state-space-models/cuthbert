@@ -20,12 +20,11 @@ def conditional_moments(
     quadrature: Quadrature,
     mode: str = "covariance",
 ) -> tuple[Array, Array, Array]:
-    """
-    Linearize the conditional mean and covariance of a Gaussian distribution.
+    r"""Linearizes the conditional mean and covariance of a Gaussian distribution.
 
     Args:
-        mean_fn: The mean function E[Y|x] = mean_fn(x).
-        cov_fn: The covariance function C[Y|x] = cov_fn(x).
+        mean_fn: The mean function $\mathbb{E}[Y \mid x] =$ `mean_fn(x)`.
+        cov_fn: The covariance function $\mathbb{C}[Y \mid x] =$ `cov_fn(x)`.
         m: The mean of the Gaussian distribution.
         cov: The covariance of the Gaussian distribution.
         quadrature: The quadrature object with the weights and sigma-points.
@@ -79,16 +78,15 @@ def functional(
     quadrature: Quadrature,
     mode: str = "covariance",
 ) -> tuple[Array, Array, Array]:
-    """
-    Linearize a non-linear function of a Gaussian distribution.
+    r"""Linearizes a nonlinear function of a Gaussian distribution.
 
-    For a given Gaussian distribution p(x) = N(x | m, P),
-    and Y = f(X) + epsilon, where epsilon is a zero-mean Gaussian noise with covariance S,
-    this function computes approximations to the following quantities:
-    Y = A X + b + epsilon using the sigma points method given by get_sigma_points.
+    For a given Gaussian distribution $p(x) = N(x \mid m, P)$,
+    and $Y = f(X) + \epsilon$, where $\epsilon$ is a zero-mean Gaussian noise
+    with covariance S, this function computes an approximation $Y = A X + b + \epsilon$
+    using the sigma points method given by get_sigma_points.
 
     Args:
-        fn: The function Y = f(X) + N(0, S).
+        fn: The function $Y = f(X) + N(0, S)$.
             Because the function is linearized, the function should be vectorized.
         S: The covariance of the noise.
         m: The mean of the Gaussian distribution.
@@ -99,7 +97,7 @@ def functional(
             of the covariances are given.
 
     Returns:
-        A, b, Q: The linearized model parameters Y = A X + b + N(0, Q).
+        A, b, Q: The linearized model parameters $Y = A X + b + N(0, Q)$.
             Q is either given as a full covariance matrix or as a square root factor depending on the `mode`.
 
     Notes:
@@ -107,10 +105,11 @@ def functional(
         If you have a non-additive noise, you should use the `conditional_moments` or
         the Taylor linearization method.
         Another solution is to form the covariance function using the quadrature method
-        itself. For example, if you have a function `f(x, q)`, where `q` is a 0 mean
+        itself. For example, if you have a function $f(x, q)$, where $q$ is a zero-mean
         random variable with covariance `S`,
         you can form the mean and covariance function as follows:
-        ```
+
+        ```python
         def linearize_q_part(x):
             n_dim = S.shape[0]
             m_q = jnp.zeros(n_dim)

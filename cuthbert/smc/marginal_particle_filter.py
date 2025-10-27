@@ -34,13 +34,12 @@ def build_filter(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> Filter:
-    """
-    Build a marginal particle filter object.
+    r"""Builds a marginal particle filter object.
 
     Args:
-        init_sample: Function to sample from the initial distribution M_0(x_0).
-        propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
-        log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
+        init_sample: Function to sample from the initial distribution $M_0(x_0)$.
+        propagate_sample: Function to sample from the Markov kernel $M_t(x_t \mid x_{t-1})$.
+        log_potential: Function to compute the log potential $\log G_t(x_{t-1}, x_t)$.
         n_filter_particles: Number of particles for the filter.
         resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
         ess_threshold: Fraction of particle count specifying when to resample.

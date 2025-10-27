@@ -28,15 +28,15 @@ def linearize_moments(
     x: ArrayLike,
     has_aux: bool = False,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
-    """Linearize conditional mean and cholesky factor of the covariance matrix
-    functions into a linear Gaussian form.
+    r"""Linearizes conditional mean and Cholesky factor of the covariance matrix
+    functions into a linear-Gaussian form.
 
-    Takes a function mean_and_chol_cov_function(x) that returns the
-    conditional mean and cholesky factor of the covariance matrix of the distribution
-    p(y | x) for a given input x.
+    Takes a function `mean_and_chol_cov_function(x)` that returns the
+    conditional mean and Cholesky factor of the covariance matrix of the distribution
+    $p(y \mid x)$ for a given input `x`.
 
-    Returns (H, d, L) defining a linear Gaussian approximation to the conditional
-    distribution p(y | x) ≈ N(y | H x + d, L L^T).
+    Returns $(H, d, L)$ defining a linear-Gaussian approximation to the conditional
+    distribution $p(y \mid x) \approx N(y \mid H x + d, L L^\top)$.
 
     `mean_and_chol_cov_function` has the following signature with `has_aux` = False:
     ```
@@ -49,17 +49,17 @@ def linearize_moments(
 
     Args:
         mean_and_chol_cov_function: A callable that returns the conditional mean and
-            cholesky factor of the covariance matrix of the distribution for a given
+            Cholesky factor of the covariance matrix of the distribution for a given
             input.
-        x: Point to linearize around.
-        has_aux: Whether the mean_and_chol_cov_function returns an auxiliary value.
+        x: The point to linearize around.
+        has_aux: Whether `mean_and_chol_cov_function` returns an auxiliary value.
 
     Returns:
-        Linearized matrix, shift, and cholesky factor of the covariance matrix.
-            As well as the auxiliary value if `has_aux` is True.
+        Linearized matrix, shift, and Cholesky factor of the covariance matrix.
+            The auxiliary value is also returned if `has_aux` is `True`.
 
     References:
-        Code: https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py
+        - [sqrt-parallel-smoothers](https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py)
     """
 
     if has_aux:

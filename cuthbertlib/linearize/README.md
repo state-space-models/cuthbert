@@ -1,7 +1,7 @@
 # Linearize
 
 This sub-repository provides functions for linearizing conditional distributions
-with automatic differentiation into a linear Gaussian form. That is form an approximate
+with automatic differentiation into a linear-Gaussian form. That is, form an approximate
 Gaussian defined by the tuple $(H, d, L)$ such that
 
 $$

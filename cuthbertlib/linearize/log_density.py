@@ -41,28 +41,29 @@ def linearize_log_density(
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
-    """Linearize a conditional log density around given points.
+    r"""Linearizes a conditional log density around given points.
 
-    Is exact in the case of a linear Gaussian log_density that is returns
-    :math:`H, d, L` in the case that the log_density is of the form
+    The linearization is exact in the case of a linear-Gaussian `log_density`, i.e., it returns
+    $(H, d, L)$ if `log_density` is of the form
 
-    .. math::
-        \\log p(y \\mid x) = -\\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + const
+    $$
+    \log p(y \mid x) = -\frac{1}{2}(y - H x - d)^\top (LL^\top)^{-1} (y - H x - d) + \textrm{const}.
+    $$
 
-    The cholesky factor of the covariance is calculated using the negative hessian
-    of the log_density with respect to y as the precision matrix.
+    The Cholesky factor of the covariance is calculated using the negative Hessian
+    of `log_density` with respect to `y` as the precision matrix.
     `symmetric_inv_sqrt` is used to calculate the inverse square root by
     ignoring any singular values that are sufficiently close to zero
-    (this is an projection in the case the hessian is not positive definite).
+    (this is a projection in the case the Hessian is not positive definite).
 
-    Alternatively, the cholesky factor can be provided directly
+    Alternatively, the Cholesky factor can be provided directly
     in `linearize_log_density_given_chol_cov`.
 
     Args:
         log_density: A conditional log density of y given x. Returns a scalar.
         x: The input points.
         y: The output points.
-        has_aux: Whether the log_density function returns an auxiliary value.
+        has_aux: Whether `log_density` returns an auxiliary value.
         rtol: The relative tolerance for the singular values of the precision matrix
             when passed to `symmetric_inv_sqrt`.
             Cutoff for small singular values; singular values smaller than
@@ -74,8 +75,8 @@ def linearize_log_density(
             them.
 
     Returns:
-        Linearized matrix, shift, and cholesky factor of the covariance matrix.
-            As well as the auxiliary value if `has_aux` is True.
+        Linearized matrix, shift, and Cholesky factor of the covariance matrix.
+            The auxiliary value is also returned if `has_aux` is `True`.
     """
     prec_and_maybe_aux = hessian(log_density, 1, has_aux=has_aux)(x, y)
     prec = -prec_and_maybe_aux[0] if has_aux else -prec_and_maybe_aux
@@ -121,26 +122,28 @@ def linearize_log_density_given_chol_cov(
     has_aux: bool = False,
     ignore_nan_dims: bool = False,
 ) -> tuple[Array, Array] | tuple[Array, Array, ArrayTree]:
-    """Linearize a conditional log density around given points.
+    r"""Linearizes a conditional log density around given points.
 
-    Is exact in the case of a linear Gaussian log_density that is returns
-    :math:`H, d, L` in the case that the log_density is of the form
+    The linearization is exact in the case of a linear-Gaussian `log_density`, i.e., it returns
+    $(H, d)$ if `log_density` is of the form
 
-    .. math::
-        \\log p(y \\mid x) = -\\frac{1}{2}(y - H x - d)^T (LL^T)^{-1} (y - H x - d) + const
+    $$
+    \log p(y \mid x) = -\frac{1}{2}(y - H x - d)^\top (LL^\top)^{-1} (y - H x - d) + \textrm{const},
+    $$
+
+    where $L$ is the argument `chol_cov`.
 
     Args:
         log_density: A conditional log density of y given x. Returns a scalar.
         x: The input points.
         y: The output points.
-        chol_cov: The cholesky factor of the covariance matrix of the Gaussian.
-        has_aux: Whether the log_density function returns an auxiliary value.
+        chol_cov: The Cholesky factor of the covariance matrix of the Gaussian.
+        has_aux: Whether `log_density` returns an auxiliary value.
         ignore_nan_dims: Whether to ignore dimensions with NaN on the diagonal of the
             precision matrix or in y.
 
     Returns:
-        Linearized matrix, shift, and cholesky factor of the covariance matrix.
-            As well as the auxiliary value if `has_aux` is True.
+        Linearized matrix and shift. The auxiliary value is also returned if `has_aux` is `True`.
     """
     chol_cov = jnp.asarray(chol_cov)
 

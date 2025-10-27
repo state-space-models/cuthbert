@@ -15,20 +15,20 @@ def filter(
     parallel: bool = False,
     key: KeyArray | None = None,
 ) -> ArrayTree:
-    """
-    Applies offlines filtering given a filter object and model inputs
-    (with leading temporal dimension of len T + 1, where T is the number of time steps
-    excluding the initial state).
+    """Applies offline filtering given a filter object and model inputs.
+
+    `model_inputs` should have leading temporal dimension of length T + 1,
+    where T is the number of time steps excluding the initial state.
 
     Args:
         filter_obj: The filter inference object.
-        model_inputs: The model inputs (with leading temporal dimension of len T + 1).
+        model_inputs: The model inputs (with leading temporal dimension of length T + 1).
         parallel: Whether to run the filter in parallel.
-            Requires inference.associative_filter to be True.
+            Requires `filter.associative_filter` to be `True`.
         key: The key for the random number generator.
 
     Returns:
-        The filtered states (NamedTuple with leading temporal dimension of len T + 1).
+        The filtered states (NamedTuple with leading temporal dimension of length T + 1).
     """
 
     if parallel and not filter_obj.associative:
