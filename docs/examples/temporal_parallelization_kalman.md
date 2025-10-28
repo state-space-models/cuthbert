@@ -104,9 +104,9 @@ datasets.
 Running the benchmark on AMD Ryzen 7 PRO 7840U CPU yields:
 
 ```bash
-Compile times: Sequential - 0.468s, Parallel - 5.538s
-Min runtimes: Sequential - 0.047s, Parallel - 0.074s
-Median runtimes: Sequential - 0.049s, Parallel - 0.078s
+Compile times: Sequential - 0.422s, Parallel - 4.932s
+Min runtimes: Sequential - 0.042s, Parallel - 0.071s
+Median runtimes: Sequential - 0.043s, Parallel - 0.076s
 ```
 
 Since the CPU only has 16 threads, it's not surprising that the parallel version
