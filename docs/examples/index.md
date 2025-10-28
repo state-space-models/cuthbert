@@ -5,4 +5,4 @@ highlighting the flexibility of the library and the utility of the underlying me
 
 - [Quick start with ranking international football teams](../quickstart.md)
 - [Exact Kalman tracking of a car in 2D space](kalman_tracking.md)
-- [Temporal parallelization of Kalman filtering](temporal_parallelization_kalman.md)
+- [Parallel-in-time Kalman filter](temporal_parallelization_kalman.md)

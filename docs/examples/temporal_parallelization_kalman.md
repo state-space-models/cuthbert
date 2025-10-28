@@ -2,12 +2,12 @@
 
 In `cuthbert`, we provide an implementation of the Kalman filter that can be
 executed in parallel across time steps. For a problem with $T$ time steps, if
-there are $T$ available threads, the parallel Kalman filter achieves logarithmic
-time complexity $\mathcal{O}\log(T)$ as opposed to the standard linear time
-complexity. Users can decide whether to run the filter in parallel via the
-`parallel` argument to the [`filter`][cuthbert.filtering.filter] function. In
-this example, we demonstrate the performance of the temporally-parallelized
-Kalman filter.
+there are $T$ available parallel workers, this implementation achieves
+logarithmic time complexity $\mathcal{O}(\log(T))$ as opposed to the standard
+linear time complexity. Users can decide whether to run the filter in parallel
+via the `parallel` argument to the [`filter`][cuthbert.filtering.filter]
+function. In this example, we demonstrate the usage and performance of the
+temporally-parallelized Kalman filter.
 
 ## Setup and imports
 
@@ -94,15 +94,9 @@ print(f"Min runtime   : {np.min(seq_runtimes): >7.3f}s | {np.min(par_runtimes): 
 print(f"Median runtime: {np.median(seq_runtimes): >7.3f}s | {np.median(par_runtimes): >7.3f}s")
 ```
 
-That's it! You should observe a significant speedup in runtime compared to the
-standard sequential Kalman filter implementation, especially as the number of
-time steps increases. The compile time may be higher due to the complexity of
-the parallel implementation, but the runtime benefits are substantial for large
-datasets.
-
 ## Example Results
 
-Running the benchmark on AMD Ryzen 7 PRO 7840U CPU yields:
+Running the above code on an AMD Ryzen 7 PRO 7840U CPU yields:
 
 ```txt
               Sequential | Parallel
@@ -112,8 +106,15 @@ Min runtime   :   0.042s |    0.071s
 Median runtime:   0.043s |    0.076s
 ```
 
-Since the CPU only has 16 threads, it's not surprising that the parallel version
-is slower. However, on an NVIDIA A100-SXM4-80GB GPU, we get:
+We highlight two things. First, the compile time for the parallel version is
+higher, and this is because the parallel implementation is more complex and has
+more operations (thus more work for the compiler). Second, since this CPU
+only has 16 threads, there's not enough opportunity for parallelism, and hence
+the parallel version ends up being slower due to the higher computational
+complexity.
+
+The benefit of the parallel version becomes clear when we run it on a GPU, in
+this case on an NVIDIA A100-SXM4-80GB:
 
 ```txt
                Sequential | Parallel
@@ -122,6 +123,12 @@ Compile time  :    2.541s |   15.345s
 Min runtime   :    0.597s |    0.022s
 Median runtime:    0.598s |    0.022s
 ```
+
+The parallel implementation is now about 27 times faster than the sequential
+one, and this difference will only increase with increasing $T$. So if you have
+a problem where you have to run the Kalman filter (or smoother) repeatedly for
+the same model, and you have a GPU available, it might be beneficial to pay the
+higher compilation cost and use the parallel implementation.
 
 <!--- entangled-tangle-block
 ```{.python file=examples_scripts/temporal_parallelization_kalman.py}
