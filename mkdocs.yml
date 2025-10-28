@@ -36,6 +36,7 @@ nav:
   - Examples:
     - examples/index.md
     - Kalman Tracking: examples/kalman_tracking.md
+    - examples/temporal_parallelization_kalman.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md
