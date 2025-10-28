@@ -67,10 +67,14 @@ sequential and parallel implementations.
 jitted_filter = jax.jit(filter, static_argnames=("filter_obj", "parallel"))
 
 seq_compile_time = timeit.Timer(
-    lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=False))
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=False)
+    )
 ).timeit(number=1)
 par_compile_time = timeit.Timer(
-    lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=True))
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=True)
+    )
 ).timeit(number=1)
 ```
 
@@ -81,10 +85,14 @@ report the minimum and median runtimes.
 num_runs = 10
 
 seq_runtimes = timeit.Timer(
-    lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=False))
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=False)
+    )
 ).repeat(repeat=num_runs, number=1)
 par_runtimes = timeit.Timer(
-    lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=True))
+    lambda: jax.block_until_ready(
+        jitted_filter(filter_obj, model_inputs, parallel=True)
+    )
 ).repeat(repeat=num_runs, number=1)
 
 print("             Sequential | Parallel")
