@@ -72,8 +72,6 @@ seq_compile_time = timeit.Timer(
 par_compile_time = timeit.Timer(
     lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=True))
 ).timeit(number=1)
-
-print(f"Compile times: Sequential - {seq_compile_time:.3f}s, Parallel - {par_compile_time:.3f}s")
 ```
 
 Let's do the same for the runtimes. We run each implementation 10 times and
@@ -89,8 +87,11 @@ par_runtimes = timeit.Timer(
     lambda: jax.block_until_ready(jitted_filter(filter_obj, model_inputs, parallel=True))
 ).repeat(repeat=num_runs, number=1)
 
-print(f"Min runtimes: Sequential - {np.min(seq_runtimes):.3f}s, Parallel - {np.min(par_runtimes):.3f}s")
-print(f"Median runtimes: Sequential - {np.median(seq_runtimes):.3f}s, Parallel - {np.median(par_runtimes):.3f}s")
+print("             Sequential | Parallel")
+print("-" * 35)
+print(f"Compile time  : {seq_compile_time: >7.3f}s | {par_compile_time: >7.3f}s")
+print(f"Min runtime   : {np.min(seq_runtimes): >7.3f}s | {np.min(par_runtimes): >7.3f}s")
+print(f"Median runtime: {np.median(seq_runtimes): >7.3f}s | {np.median(par_runtimes): >7.3f}s")
 ```
 
 That's it! You should observe a significant speedup in runtime compared to the
@@ -103,19 +104,23 @@ datasets.
 
 Running the benchmark on AMD Ryzen 7 PRO 7840U CPU yields:
 
-```bash
-Compile times: Sequential - 0.422s, Parallel - 4.932s
-Min runtimes: Sequential - 0.042s, Parallel - 0.071s
-Median runtimes: Sequential - 0.043s, Parallel - 0.076s
+```txt
+              Sequential | Parallel
+------------------------------------
+Compile time  :   0.422s |    4.932s
+Min runtime   :   0.042s |    0.071s
+Median runtime:   0.043s |    0.076s
 ```
 
 Since the CPU only has 16 threads, it's not surprising that the parallel version
 is slower. However, on an NVIDIA A100-SXM4-80GB GPU, we get:
 
-```bash
-Compile times: Sequential - 16.241s, Parallel - 5.239s
-Min runtimes: Sequential - 0.022s, Parallel - 0.072s
-Median runtimes: Sequential - 0.022s, Parallel - 0.076s
+```txt
+               Sequential | Parallel
+--------------------------------------
+Compile time  :    2.541s |   15.345s
+Min runtime   :    0.597s |    0.022s
+Median runtime:    0.598s |    0.022s
 ```
 
 <!--- entangled-tangle-block
