@@ -10,10 +10,10 @@ from jax import random
 from cuthbert import filter
 from cuthbert.inference import Filter
 from cuthbert.smc import marginal_particle_filter, particle_filter
+from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.resampling import systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.fixture(scope="module", autouse=True)

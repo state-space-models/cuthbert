@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 
 from cuthbertlib.kalman.filtering import predict, update
-from tests.cuthbertlib.kalman.utils import generate_lgssm
+from cuthbertlib.kalman.generate import generate_lgssm
 
 
 @pytest.fixture(scope="module", autouse=True)

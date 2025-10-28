@@ -25,7 +25,7 @@ import numpy as np
 
 from cuthbert import filter
 from cuthbert.gaussian import kalman
-from tests.cuthbertlib.kalman.utils import generate_lgssm
+from cuthbertlib.kalman.generate import generate_lgssm
 
 seed = 0
 x_dim = 20

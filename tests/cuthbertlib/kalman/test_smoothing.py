@@ -2,9 +2,9 @@ import chex
 import jax
 import pytest
 
+from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.kalman.smoothing import update
 from cuthbertlib.kalman.utils import append_tree
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.fixture(scope="module", autouse=True)

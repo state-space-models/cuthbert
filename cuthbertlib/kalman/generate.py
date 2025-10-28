@@ -1,3 +1,5 @@
+"""Utilities to generate linear-Gaussian state-space models (LGSSMs)."""
+
 from functools import partial
 
 import jax
@@ -9,7 +11,7 @@ from cuthbertlib.types import KeyArray
 
 @partial(jax.jit, static_argnames=("x_dim", "y_dim", "num_time_steps"))
 def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
-    """Generate a linear-Gaussian state-space model with a set of observations."""
+    """Generates an LGSSM along with a set of observations."""
     key = random.key(seed)
 
     key, init_key, sample_key, obs_model_key, obs_key = random.split(key, 5)
@@ -48,12 +50,14 @@ def generate_lgssm(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
 
 
 def generate_cholesky_factor(key: KeyArray, dim: int) -> Array:
+    """Generates a random Cholesky factor (lower-triangular matrix)."""
     chol_A = random.uniform(key, (dim, dim))
     chol_A = chol_A.at[jnp.triu_indices(dim, 1)].set(0.0)
     return chol_A
 
 
 def generate_init_model(key: KeyArray, x_dim: int) -> tuple[Array, Array]:
+    """Generates a random initial state for an LGSSM."""
     keys = random.split(key)
     m0 = random.normal(keys[0], (x_dim,))
     chol_P0 = generate_cholesky_factor(keys[1], x_dim)
@@ -61,6 +65,7 @@ def generate_init_model(key: KeyArray, x_dim: int) -> tuple[Array, Array]:
 
 
 def generate_trans_model(key: KeyArray, x_dim: int) -> tuple[Array, Array, Array]:
+    """Generates a random transition model for an LGSSM."""
     keys = random.split(key, 3)
     exp_eig_max = 0.75  # Chosen less than one to stop exploding states (in expectation)
     F = exp_eig_max * random.normal(keys[0], (x_dim, x_dim)) / jnp.sqrt(x_dim)
@@ -72,6 +77,7 @@ def generate_trans_model(key: KeyArray, x_dim: int) -> tuple[Array, Array, Array
 def generate_obs_model(
     key: KeyArray, x_dim: int, y_dim: int
 ) -> tuple[Array, Array, Array]:
+    """Generates a random observation model for an LGSSM."""
     keys = random.split(key, 3)
     H = random.normal(keys[0], (y_dim, x_dim))
     d = random.normal(keys[1], (y_dim,))

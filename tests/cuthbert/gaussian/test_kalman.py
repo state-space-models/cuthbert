@@ -9,9 +9,9 @@ from jax import Array
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
+from cuthbertlib.kalman.generate import generate_lgssm
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.fixture(scope="module", autouse=True)

@@ -4,13 +4,10 @@ import pytest
 from jax import numpy as jnp
 from jax.scipy.stats import multivariate_normal
 
+from cuthbertlib.kalman.generate import generate_init_model, generate_obs_model
 from cuthbertlib.linearize import (
     linearize_log_density,
     linearize_log_density_given_chol_cov,
-)
-from tests.cuthbertlib.kalman.utils import (
-    generate_init_model,
-    generate_obs_model,
 )
 
 

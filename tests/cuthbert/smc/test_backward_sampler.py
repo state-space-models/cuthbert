@@ -8,6 +8,7 @@ from jax import random
 from cuthbert import filter, smoother
 from cuthbert.smc.backward_sampler import build_smoother
 from cuthbert.smc.particle_filter import build_filter
+from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.resampling import systematic
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
@@ -15,7 +16,6 @@ from cuthbertlib.smc.smoothing.tracing import simulate as tracing
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):

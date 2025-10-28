@@ -11,11 +11,11 @@ from cuthbertlib.kalman.filtering import (
 from cuthbertlib.kalman.filtering import (
     update as kalman_update,
 )
+from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
 from cuthbertlib.smc.smoothing.tracing import simulate as tracing
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
-from tests.cuthbertlib.kalman.utils import generate_lgssm
 
 
 @pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
