@@ -4,7 +4,7 @@ In `cuthbert`, we provide an implementation of the Kalman filter that can be
 executed in parallel across time steps. For a problem with $T$ time steps, if
 there are $T$ available parallel workers, this implementation achieves
 logarithmic time complexity $\mathcal{O}(\log(T))$ as opposed to the standard
-linear time complexity. Users can decide whether to run the filter in parallel
+linear time complexity, as shown in [Särkka and Garcia-Fernández](https://doi.org/10.1109/TAC.2020.2976316). Users can decide whether to run the filter in parallel
 via the `parallel` argument to the [`filter`][cuthbert.filtering.filter]
 function. In this example, we demonstrate the usage and performance of the
 temporally-parallelized Kalman filter.
