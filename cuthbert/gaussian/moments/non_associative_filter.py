@@ -2,11 +2,8 @@ from jax import eval_shape, tree
 from jax import numpy as jnp
 
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
-from cuthbert.gaussian.types import (
-    GetInitParams,
-    LinearizedKalmanFilterState,
-    linearized_kalman_filter_state_dummy_elem,
-)
+from cuthbert.gaussian.types import GetInitParams, LinearizedKalmanFilterState
+from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_moments

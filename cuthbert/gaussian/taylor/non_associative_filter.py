@@ -8,10 +8,8 @@ from cuthbert.gaussian.taylor.types import (
     LogConditionalDensity,
     LogPotential,
 )
-from cuthbert.gaussian.types import (
-    LinearizedKalmanFilterState,
-    linearized_kalman_filter_state_dummy_elem,
-)
+from cuthbert.gaussian.types import LinearizedKalmanFilterState
+from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
