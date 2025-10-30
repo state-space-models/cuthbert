@@ -42,12 +42,13 @@ def logpdf(
         x = jnp.asarray(x)
         chol_cov = jnp.asarray(chol_cov)
 
-    if not mean.shape:
+    if not mean.shape and not np.shape(x):
+        # Both mean and x are scalars
         return -1 / 2 * jnp.square(x - mean) / chol_cov**2 - 1 / 2 * (
             jnp.log(2 * np.pi) + 2 * jnp.log(chol_cov)
         )
     else:
-        n = mean.shape[-1]
+        n = mean.shape[-1] if mean.shape else x.shape[-1]
         if not np.shape(chol_cov):
             y = x - mean
             return -1 / 2 * jnp.einsum("...i,...i->...", y, y) / chol_cov**2 - n / 2 * (
