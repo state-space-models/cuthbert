@@ -62,6 +62,7 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
 
 - [Sam Duffield](mailto:s@mduffield.com)
+- [Sahel Iqbal](mailto:sahel13miqbal@proton.me)
 - [Adrien Corenflos](mailto:adrien.corenflos.stats@gmail.com)
 
 All complaints will be reviewed and investigated promptly and fairly.
