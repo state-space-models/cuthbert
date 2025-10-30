@@ -6,7 +6,6 @@ from jax.lax import associative_scan, scan
 
 from cuthbert.inference import Smoother
 from cuthbert.utils import dummy_tree_like
-from cuthbertlib.kalman.utils import append_tree
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -89,7 +88,11 @@ def smoother(
                 fs, model_inputs=inp, key=k
             )
         )(other_filter_states, model_inputs, prepare_keys[1:])
-        prep_states = append_tree(prep_states, final_smoother_state)
+        prep_states = tree.map(
+            lambda x, y: jnp.concatenate([x, y[None]]),
+            prep_states,
+            final_smoother_state,
+        )
 
         states = associative_scan(
             vmap(lambda current, next: smoother_obj.smoother_combine(next, current)),
@@ -114,6 +117,10 @@ def smoother(
             reverse=True,
         )
 
-        states = append_tree(states, final_smoother_state)
+        states = tree.map(
+            lambda x, y: jnp.concatenate([x, y[None]]),
+            states,
+            final_smoother_state,
+        )
 
     return states

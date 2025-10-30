@@ -1,10 +1,10 @@
 import chex
 import jax
+import jax.numpy as jnp
 import pytest
 
 from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.kalman.smoothing import update
-from cuthbertlib.kalman.utils import append_tree
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -33,7 +33,9 @@ def std_kalman_smoother(ms, Ps, Fs, cs, Qs):
     _, (smoothed_states, cross_covs) = jax.lax.scan(
         body, final_state, (ms[:-1], Ps[:-1], Fs, cs, Qs), reverse=True
     )
-    smoothed_states = append_tree(smoothed_states, final_state)
+    smoothed_states = jax.tree.map(
+        lambda x, y: jnp.concatenate([x, y[None]]), smoothed_states, final_state
+    )
     return smoothed_states, cross_covs
 
 

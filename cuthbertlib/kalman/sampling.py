@@ -4,7 +4,6 @@ import jax
 import jax.numpy as jnp
 
 from cuthbertlib.kalman.smoothing import associative_params_single
-from cuthbertlib.kalman.utils import append_tree
 from cuthbertlib.types import Array, ArrayLike
 
 
@@ -29,7 +28,9 @@ def sqrt_associative_params(
         ms[:-1], chol_Ps[:-1], Fs, cs, chol_Qs, eps[:-1]
     )
     last_elem = _sqrt_associative_params_final(ms[-1], chol_Ps[-1], eps[-1])
-    return append_tree(interm_elems, last_elem)
+    return jax.tree.map(
+        lambda x, y: jnp.concatenate([x, y[None]]), interm_elems, last_elem
+    )
 
 
 def _sqrt_associative_params_interm(

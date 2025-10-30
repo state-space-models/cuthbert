@@ -5,7 +5,6 @@ from jax import random, tree, vmap
 from jax.lax import associative_scan, scan
 
 from cuthbert.inference import Filter
-from cuthbertlib.kalman.utils import append_tree
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -54,7 +53,9 @@ def filter(
         other_prep_states = vmap(lambda inp, k: filter_obj.filter_prepare(inp, key=k))(
             prep_model_inputs, prepare_keys[1:]
         )
-        prep_states = append_tree(other_prep_states, init_state, prepend=True)
+        prep_states = tree.map(
+            lambda x, y: jnp.concatenate([x[None], y]), init_state, other_prep_states
+        )
         states = associative_scan(
             vmap(filter_obj.filter_combine),
             prep_states,
@@ -72,6 +73,8 @@ def filter(
             init_state,
             (prep_model_inputs, prepare_keys[1:]),
         )
-        states = append_tree(states, init_state, prepend=True)
+        states = tree.map(
+            lambda x, y: jnp.concatenate([x[None], y]), init_state, states
+        )
 
     return states
