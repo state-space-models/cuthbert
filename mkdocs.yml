@@ -89,6 +89,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - toc:
+      toc_depth: 3
 
 extra_javascript:
   - javascripts/katex.js
