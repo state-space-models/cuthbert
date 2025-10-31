@@ -1,3 +1,11 @@
+/* Import Comfortaa font */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap');
+
+/* Set Comfortaa as the default font */
+body {
+  font-family: 'Comfortaa', sans-serif !important;
+}
+
 /* Reduce whitespace around KaTeX block equations */
 .katex-display {
   margin: -1em 0 !important;
