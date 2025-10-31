@@ -10,6 +10,8 @@ from cuthbertlib.types import Array, ArrayLike, ScalarArray
 
 
 class FilterScanElement(NamedTuple):
+    """Arrays carried through the Kalman filter scan."""
+
     A: Array
     b: Array
     U: Array

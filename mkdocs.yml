@@ -75,6 +75,7 @@ plugins:
             show_symbol_type_heading: true
             members_order: source
             show_if_no_docstring: true
+            merge_init_into_class: true
 
 markdown_extensions:
   - admonition

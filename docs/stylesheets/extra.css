@@ -15,3 +15,9 @@ body {
 .md-typeset {
   font-size: 0.7rem !important;
 }
+
+/* Left padding for functions/classes */
+div.doc-contents:not(.first) {
+  padding-left: 25px;
+  border-left: 3px solid rgba(230, 230, 230);
+}
