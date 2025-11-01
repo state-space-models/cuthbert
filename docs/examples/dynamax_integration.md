@@ -255,7 +255,7 @@ plt.close()
 - **Parallel computation**: Cuthbert's Kalman filter uses associative scan for parallel-in-time computation, which can be much faster for long sequences
 - **Consistent results**: Cuthbert and Dynamax produce identical filtering distributions (up to numerical precision)
 
-This integration pattern works for any Linear Gaussian State Space Model in Dynamax. For nonlinear models, you could similarly integrate Dynamax's extended or unscented Kalman filters with Cuthbert's corresponding implementations.
+This integration pattern works for any Linear Gaussian State Space Model in Dynamax. For nonlinear models, you could similarly integrate Dynamax's representation with, e.g., Cuthbert's particle filters or extended Kalman filters.
 
 
 
