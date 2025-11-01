@@ -80,8 +80,6 @@ plugins:
 
 markdown_extensions:
   - admonition
-  - markdown_include.include:
-      base_path: docs
   - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
