@@ -39,6 +39,7 @@ nav:
     - examples/temporal_parallelization_kalman.md
     - examples/online_stoch_vol.md
     - examples/parameter_estimation_em.md
+    - Dynamax Integration: examples/dynamax_integration.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md
@@ -81,6 +82,8 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - markdown_include.include:
+      base_path: docs
   - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
