@@ -37,6 +37,7 @@ nav:
     - examples/index.md
     - Kalman Tracking: examples/kalman_tracking.md
     - examples/temporal_parallelization_kalman.md
+    - Dynamax Integration: examples/dynamax_integration.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md
@@ -79,6 +80,8 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - markdown_include.include:
+      base_path: docs
   - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
