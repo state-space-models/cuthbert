@@ -10,12 +10,14 @@ applied to M&S stock price data. The model uses:
 """
 
 from typing import NamedTuple
+
 import matplotlib.pyplot as plt
-import pandas as pd
-from jax import Array, random, numpy as jnp, tree
-from jax.scipy.stats import norm
 import numpy as np
+import pandas as pd
 import yfinance as yf
+from jax import Array, nn, random, tree
+from jax import numpy as jnp
+from jax.scipy.stats import norm
 
 from cuthbert import filter
 from cuthbert.smc import particle_filter
@@ -68,38 +70,18 @@ def download_stock_data(
     return data
 
 
-def create_model_inputs(
-    data: pd.DataFrame,
-) -> ObservationData:
-    """
-    Create model inputs from stock data.
-
-    Args:
-        data: DataFrame with columns: days_since_origin, log_return
-
-    Returns:
-        ObservationData
-    """
-    times = jnp.array(data["days_since_origin"].values)
-    log_returns = jnp.array(data["log_return"].values)
-
-    # Create previous times (first observation has no previous)
-    times_prev = jnp.concatenate([jnp.array([0]), times[:-1]])
-
-    obs_data = ObservationData(
-        time=times,
-        time_prev=times_prev,
-        log_return=log_returns,
-    )
-
-    return obs_data
-
-
 # Download stock price data
 data = download_stock_data(ticker="MKS.L", start_date="2020-01-01")
 
 # Create model inputs
-obs_data = create_model_inputs(data)
+times = jnp.array(data["days_since_origin"].values)
+log_returns = jnp.array(data["log_return"].values)
+times_prev = jnp.concatenate([jnp.array([0]), times[:-1]])
+obs_data = ObservationData(
+    time=times,
+    time_prev=times_prev,
+    log_return=log_returns,
+)
 
 previous_data = tree.map(lambda x: x[:-1], obs_data)
 new_data = tree.map(lambda x: x[-1], obs_data)
@@ -163,7 +145,6 @@ def log_potential(
 
 
 # Build particle filter
-print("\nBuilding stochastic volatility filter...")
 pf = particle_filter.build_filter(
     init_sample=init_sample,
     propagate_sample=propagate_sample,
@@ -179,27 +160,71 @@ key, previous_key = random.split(random.key(0))
 previous_states = filter(pf, previous_data, key=key)
 filter_state = tree.map(lambda x: x[-1], previous_states)
 
-# Predict
+# Online predict
 predict_model_inputs = ObservationData(
     time=new_data.time,
     time_prev=new_data.time_prev,
     log_return=jnp.array(jnp.nan),
 )
-key, predict_key, predict_ys_key = random.split(key)
+key, predict_key, predict_ys_key = random.split(key, 3)
 predict_state = pf.filter_combine(
     filter_state, pf.filter_prepare(predict_model_inputs, key=predict_key)
 )
 predict_ys = jnp.exp(predict_state.particles / 2) * random.normal(
     predict_ys_key, (n_particles,)
 )
+predict_weights = jnp.exp(
+    predict_state.log_weights - nn.logsumexp(predict_state.log_weights)
+)
 
+# Plot predicted xs and ys distributions
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+axs[0].hist(
+    predict_state.particles,
+    bins=50,
+    density=True,
+    weights=predict_weights,
+    label="Predicted latent log-volatility",
+    color="#b6d7a8",
+    edgecolor="black",
+)
+axs[0].set_xlabel("Latent log-volatility")
+axs[0].legend()
+axs[1].hist(
+    predict_ys,
+    bins=50,
+    density=True,
+    weights=predict_weights,
+    label="Predicted log-return",
+    color="#eeeeee",
+    edgecolor="black",
+)
+axs[1].axvline(new_data.log_return, color="red", label="True log-return (unseen)")
+axs[1].set_xlabel("Log-return")
+axs[1].legend()
+fig.tight_layout()
+fig.savefig("docs/assets/online_stoch_vol_predict.png", dpi=300)
 
-## TODO: plot predicted xs and ys distributions
-
-
+# Online filter
 key, filter_key = random.split(key)
 new_filter_state = pf.filter_combine(
     filter_state, pf.filter_prepare(new_data, key=filter_key)
 )
-
+new_filter_weights = jnp.exp(
+    new_filter_state.log_weights - nn.logsumexp(new_filter_state.log_weights)
+)
 # TODO: plot new filter state distribution
+fig, axs = plt.subplots(figsize=(5, 3))
+axs.hist(
+    new_filter_state.particles,
+    bins=50,
+    density=True,
+    weights=new_filter_weights,
+    label="Filtered latent log-volatility",
+    color="#b6d7a8",
+    edgecolor="black",
+)
+axs.set_xlabel("Latent log-volatility")
+axs.legend()
+fig.tight_layout()
+fig.savefig("docs/assets/online_stoch_vol_filter.png", dpi=300)
