@@ -1,6 +1,6 @@
 # Online Filtering and Prediction
 
-A few feature of inference in state-space models is that approximations can be update
+A key feature of inference in state-space models is that estimates can be updated
 online as new data arrives. In this example, we'll use `cuthbert` to infer the
 volatility of the Marks & Spencer stock price data and then use it to predict
 a future volatility and stock price before updating the approximation with new data.
@@ -8,9 +8,11 @@ a future volatility and stock price before updating the approximation with new d
 The model we'll use is a simple stochastic volatility model adapted from section 2.4.3
 in [Chopin and Papaspiliopoulos (2023)](https://doi.org/10.1007/978-3-030-47845-2).
 
-Of independent interest, we'll define the state-space model dynamics in continuous-time
+Of additional interest, we'll define the state-space model dynamics in continuous-time
 so that we easily handle the irregular observation times (which occur here as stock
-prices aren't available on weekends).
+prices aren't available on weekends). We'll also define the observation model in a
+convenient way to handle missing data and predict future values using the same
+filtering framework.
 
 ## Setup and imports
 
@@ -18,7 +20,7 @@ prices aren't available on weekends).
 from typing import NamedTuple
 import matplotlib.pyplot as plt
 import pandas as pd
-from jax import Array, random, numpy as jnp, tree
+from jax import Array, random, numpy as jnp, tree, nn
 from jax.scipy.stats import norm
 import numpy as np
 import yfinance as yf
@@ -29,13 +31,13 @@ from cuthbertlib.resampling import systematic
 ```
 
 We'll use a simple bootstrap particle filter for inference since our model is
-non-linear and non-Gaussian and univariate (so we don't need to worry about the
+non-linear, non-Gaussian and low-dimensional (so we don't need to worry about the
 particle filter curse of dimensionality).
 
 ## Load data
 
-We'll use the `yfinance` library to easily download the Marks & Spencer stock price
-data for the past 3 years.
+We can use the [`yfinance`](https://github.com/ranaroussi/yfinance) library to easily
+download the Marks & Spencer stock price data for the past 3 years.
 
 ??? quote "Code to download Marks & Spencer stock price data"
     ```{.python #online-stoch-vol-load-data-func}
@@ -266,7 +268,7 @@ Now we'll plot the distributions over our predicted values.
     fig.savefig("docs/assets/online_stoch_vol_predict.png", dpi=300)
     ```
 
-![Predicted distributions](assets/online_stoch_vol_predict.png)
+![Predicted distributions](../assets/online_stoch_vol_predict.png)
 
 We've also highlighted for reference the true log-return (which is unseen) in red, which
 the particle filter has not seen (yet).
@@ -304,7 +306,7 @@ This time the filter sees the actual log-return rather than `jnp.nan`.
     fig.savefig("docs/assets/online_stoch_vol_filter.png", dpi=300)
     ```
 
-![Filtered distribution](assets/online_stoch_vol_filter.png)
+![Filtered distribution](../assets/online_stoch_vol_filter.png)
 
 
 ## Key Takeaways
@@ -326,8 +328,10 @@ This time the filter sees the actual log-return rather than `jnp.nan`.
 <!--- entangled-tangle-block
 ```{.python file=examples_scripts/online_stoch_vol.py}
 <<online-stoch-vol-setup>>
+<<online-stoch-vol-load-data-func>>
 <<online-stoch-vol-load-data>>
 <<online-stoch-vol-model-inputs>>
+<<online-stoch-vol-model-params>>
 <<online-stoch-vol-model-func>>
 <<online-stoch-vol-particle-filter-setup>>
 <<online-stoch-vol-particle-filter-run-previous>>
