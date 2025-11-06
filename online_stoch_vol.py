@@ -24,29 +24,9 @@ from cuthbert.smc import particle_filter
 from cuthbertlib.resampling import systematic
 
 
-class ObservationData(NamedTuple):
-    """Model inputs for stochastic volatility filtering."""
-
-    time: Array  # Current observation time (days since origin)
-    time_prev: Array  # Previous observation time (days since origin)
-    log_return: Array  # Log return Y_t = log(p_t / p_{t-1})
-
-
 def download_stock_data(
-    ticker: str = "MKS.L", start_date: str | None = None, end_date: str | None = None
+    ticker: str, start_date: str | None = None, end_date: str | None = None
 ) -> pd.DataFrame:
-    """
-    Download stock price data from Yahoo Finance.
-
-    Args:
-        ticker: Stock ticker symbol (default: "MKS.L" for Marks & Spencer)
-        start_date: Start date in "YYYY-MM-DD" format
-            (defaults to 3 years before end date)
-        end_date: End date in "YYYY-MM-DD" format (defaults to today)
-
-    Returns:
-        DataFrame with columns: Date, Close, and computed log_returns
-    """
     if end_date is None:
         end_date = pd.Timestamp.today().strftime("%Y-%m-%d")
 
@@ -71,9 +51,18 @@ def download_stock_data(
 
 
 # Download stock price data
-data = download_stock_data(ticker="MKS.L", start_date="2020-01-01")
+data = download_stock_data(ticker="MKS.L")
+
 
 # Create model inputs
+class ObservationData(NamedTuple):
+    """Model inputs for stochastic volatility filtering."""
+
+    time: Array  # Current observation time (days since origin)
+    time_prev: Array  # Previous observation time (days since origin)
+    log_return: Array  # Log return Y_t = log(p_t / p_{t-1})
+
+
 times = jnp.array(data["days_since_origin"].values)
 log_returns = jnp.array(data["log_return"].values)
 times_prev = jnp.concatenate([jnp.array([0]), times[:-1]])
@@ -93,9 +82,6 @@ sigma = 0.3  # Volatility of volatility
 init_mean = 0.0  # Initial mean
 init_std = 1.0  # Initial std
 
-# Particle filter parameters
-n_particles = 1000
-ess_threshold = 0.5
 
 # Convert discrete AR parameter to continuous OU mean reversion speed
 # For discrete: X_t = μ + ρ(X_{t-1} - μ) + U_t
@@ -145,6 +131,9 @@ def log_potential(
 
 
 # Build particle filter
+n_particles = 1000
+ess_threshold = 0.5
+
 pf = particle_filter.build_filter(
     init_sample=init_sample,
     propagate_sample=propagate_sample,
@@ -213,9 +202,9 @@ new_filter_state = pf.filter_combine(
 new_filter_weights = jnp.exp(
     new_filter_state.log_weights - nn.logsumexp(new_filter_state.log_weights)
 )
-# TODO: plot new filter state distribution
-fig, axs = plt.subplots(figsize=(5, 3))
-axs.hist(
+
+fig, ax = plt.subplots(figsize=(5, 3))
+ax.hist(
     new_filter_state.particles,
     bins=50,
     density=True,
@@ -224,7 +213,7 @@ axs.hist(
     color="#b6d7a8",
     edgecolor="black",
 )
-axs.set_xlabel("Latent log-volatility")
-axs.legend()
+ax.set_xlabel("Latent log-volatility")
+ax.legend()
 fig.tight_layout()
 fig.savefig("docs/assets/online_stoch_vol_filter.png", dpi=300)
