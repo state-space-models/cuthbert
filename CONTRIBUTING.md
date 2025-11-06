@@ -65,7 +65,8 @@ To add an example, you can use the following steps:
 ```
 Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
 
-4. Add the example to the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`mkdocs.yml`](https://github.com/state-space-models/cuthbert/blob/main/mkdocs.yml) file.
+4. Add a reference to your new example in the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`mkdocs.yml`](https://github.com/state-space-models/cuthbert/blob/main/mkdocs.yml) file.
+
 You may need to add any additional dependencies to the [`pyproject.toml`](https://github.com/state-space-models/cuthbert/blob/main/pyproject.toml) file under `examples`.
 5. That's it!
 If you want to generate the python script and run it locally to check it works, you can run:
