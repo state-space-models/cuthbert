@@ -6,4 +6,4 @@ highlighting the flexibility of the library and the utility of the underlying me
 - [Quick start with ranking international football teams](../quickstart.md)
 - [Exact Kalman tracking of a car in 2D space](kalman_tracking.md)
 - [Parallel-in-time Kalman filter](temporal_parallelization_kalman.md)
-- [Using cuthbert with Dynamax](dynamax_integration.md)
+- [Online filtering and prediction for a stochastic volatility model](online_stoch_vol.md)

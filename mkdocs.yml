@@ -37,7 +37,7 @@ nav:
     - examples/index.md
     - Kalman Tracking: examples/kalman_tracking.md
     - examples/temporal_parallelization_kalman.md
-    - Dynamax Integration: examples/dynamax_integration.md
+    - examples/online_stoch_vol.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md
