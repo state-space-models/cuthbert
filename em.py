@@ -3,7 +3,9 @@ from typing import NamedTuple
 import jax.numpy as jnp
 from jax import random
 
-from cuthbertlib.types import Array, ArrayTree
+from cuthbert import filter, smoother
+from cuthbert.gaussian import moments
+from cuthbertlib.types import Array
 
 
 class ParamStruct(NamedTuple):
@@ -14,8 +16,8 @@ class ParamStruct(NamedTuple):
 ##### Hyperparameters #####
 X_DIM = 6
 Y_DIM = 78
-SIGMA = 1.0
-DELTA = 0.1
+SIGMA = 0.3
+DELTA = 0.01
 T = 25
 
 
@@ -28,7 +30,7 @@ def get_dynamics_params():
     return A, chol_Q
 
 
-def get_observation_rate(params: ParamStruct, state: Array):
+def get_observation_rate(params: ParamStruct, state: Array) -> Array:
     rate = params.a + params.b @ state
     return rate
 
@@ -37,21 +39,29 @@ def model_factory(params: ParamStruct, ys: Array):
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return jnp.zeros(X_DIM), jnp.ones((X_DIM, X_DIM)) * 1e-8
 
-    def get_dynamics_moments(state: ArrayTree, model_inputs: int):
+    def get_dynamics_moments(state, model_inputs: int):
         def dynamics_mean_and_chol_cov_func(x):
             A, chol_Q = get_dynamics_params()
-            return A @ x, jnp.zeros(X_DIM), chol_Q
+            return A @ x, chol_Q
 
-        return dynamics_mean_and_chol_cov_func, state
+        return dynamics_mean_and_chol_cov_func, state.mean
 
-    def get_observation_moments(state: ArrayTree, model_inputs: int):
+    def get_observation_moments(state, model_inputs: int):
         def observation_mean_and_chol_cov_func(x):
             rate = get_observation_rate(params, x)
             return rate, jnp.diag(jnp.sqrt(rate))
 
-        return (observation_mean_and_chol_cov_func, state, ys[model_inputs])
+        return (observation_mean_and_chol_cov_func, state.mean, ys[model_inputs])
 
-    return get_init_params, get_dynamics_moments, get_observation_moments
+    filter_obj = moments.build_filter(
+        get_init_params,
+        get_dynamics_moments,
+        get_observation_moments,
+        associative=False,
+    )
+    smoother_obj = moments.build_smoother(get_dynamics_moments)
+
+    return filter_obj, smoother_obj
 
 
 def sim_data(num_time_steps: int):
@@ -75,14 +85,30 @@ def sim_data(num_time_steps: int):
         state = A @ state + chol_Q @ random.normal(dyn_key, (X_DIM,))
 
         rate = get_observation_rate(true_params, state)
+
+        if jnp.any(rate < 0):
+            raise ValueError("Observation rate must be positive.")
+
         y = random.poisson(obs_key, rate)
         ys.append(y)
 
-    ys = jnp.array(ys)
+    ys = jnp.array(ys).astype(float)
     # No observation at time 0
     ys = jnp.concatenate([jnp.full((1, Y_DIM), jnp.nan), ys], axis=0)
 
     return ys, true_params
 
 
-out = sim_data(T)
+ys, true_params = sim_data(T)
+model_inputs = jnp.arange(T + 1)
+
+# Initialize the parameters
+key = random.key(99)
+key, a_key, b_key = random.split(key, 3)
+init_a = random.normal(a_key, (Y_DIM,))
+init_b = random.normal(b_key, (Y_DIM, X_DIM))
+params = ParamStruct(init_a, init_b)
+
+filter_obj, smoother_obj = model_factory(params, ys)
+filt_states = filter(filter_obj, model_inputs)
+smooth_states = smoother(smoother_obj, filt_states)
