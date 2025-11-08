@@ -55,7 +55,8 @@ Examples in `cuthbert` are written in Markdown and tangled into Python scripts u
 To add an example, you can use the following steps:
 
 1. Write the example in Markdown in the `docs` directory.
-2. Make sure to start each code block with `{.python #example_name-code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference. (Note that it's important to include the example name here as code block names must be unique across all examples.)
+2. Make sure to start each code block with `{.python #example_name-code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.  
+(Note that it's important to include the example name here as code block names must be unique across all examples.)
 3. Add a hidden code block at the end of the file with the following content:
 ```
 ```{.python file=examples_scripts/example_name.py}
@@ -65,7 +66,10 @@ To add an example, you can use the following steps:
 ```
 Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
 
-4. That's it!
+4. Add a reference to your new example in the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`mkdocs.yml`](https://github.com/state-space-models/cuthbert/blob/main/mkdocs.yml) file.  
+You may need to add any new dependencies to the [`pyproject.toml`](https://github.com/state-space-models/cuthbert/blob/main/pyproject.toml) file under `examples`.
+
+5. That's it!
 If you want to generate the python script and run it locally to check it works, you can run:
 ```bash
 entangled tangle

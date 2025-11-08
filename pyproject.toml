@@ -31,7 +31,7 @@ test = [
     "entangled-cli", # convert .md examples to .py
 ]
 docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
-examples = ["matplotlib", "pandas", "pandas-stubs"]
+examples = ["matplotlib", "pandas", "pandas-stubs", "yfinance"]
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
