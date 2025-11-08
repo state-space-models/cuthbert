@@ -148,7 +148,7 @@ def train_step(params, opt_state, ys, smooth_states):
     def obj_fn(p):
         return loss_fn(p, ys, smooth_states)
 
-    value, grad = jax.value_and_grad(obj_fn)(params)
+    value, grad = optax.value_and_grad_from_state(obj_fn)(params, state=opt_state)
     updates, opt_state = solver.update(
         grad, opt_state, params, value=value, grad=grad, value_fn=obj_fn
     )
