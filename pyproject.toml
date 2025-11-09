@@ -24,7 +24,7 @@ dependencies = [
 include = ["cuthbert", "cuthbertlib"]
 
 [project.optional-dependencies]
-test = [
+tests = [
     "chex",  # test additional dependencies
     "pre-commit", "ruff", "pyright",  # linting etc
     "pytest", "pytest-xdist",  # testing
