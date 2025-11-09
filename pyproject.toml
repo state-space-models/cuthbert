@@ -24,11 +24,11 @@ dependencies = [
 include = ["cuthbert", "cuthbertlib"]
 
 [project.optional-dependencies]
-test = [
+tests = [
     "chex",  # test additional dependencies
     "pre-commit", "ruff", "pyright",  # linting etc
     "pytest", "pytest-xdist",  # testing
-    "entangled-cli", # convert .md examples to .py
+    "entangled-cli; python_version >= '3.12'", # convert .md examples to .py, requires Python 3.12+
 ]
 docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
 examples = ["matplotlib", "pandas", "pandas-stubs", "yfinance"]
