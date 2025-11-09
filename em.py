@@ -122,12 +122,13 @@ def loss_fn(params: ParamStruct, ys: Array, smooth_dist):
 
         @jax.vmap
         def fn_to_integrate(x):
-            return jnp.log(get_observation_rate(params, x))
+            return get_observation_rate(params, x)
 
         expected_log_rate = jnp.dot(
-            sigma_points.wm, fn_to_integrate(sigma_points.points)
+            sigma_points.wm, jnp.log(fn_to_integrate(sigma_points.points))
         )
-        loss = -1.0 * jnp.sum(y * expected_log_rate - params.a - params.b @ m)
+        expected_rate = jnp.dot(sigma_points.wm, fn_to_integrate(sigma_points.points))
+        loss = -1.0 * jnp.sum(y * expected_log_rate - expected_rate)
         return loss
 
     total_loss = jnp.sum(
@@ -157,19 +158,19 @@ def train_step(params, opt_state, ys, smooth_states):
 
 
 # EM loop
-for epoch in range(10):
+for epoch in range(25):
     # E-step: run filter and smoother
     filter_obj, smoother_obj = model_factory(params, ys)
     filt_states = filter(filter_obj, model_inputs)
     smooth_states = smoother(smoother_obj, filt_states)
 
     # M-step: optimize parameters
-    for _ in range(2):
+    for _ in range(5):
         params, opt_state = train_step(params, opt_state, ys, smooth_states)
 
     current_loss = loss_fn(params, ys, smooth_states)
     a_diff = jnp.linalg.norm(params.a - true_params.a)
     b_diff = jnp.linalg.norm(params.b - true_params.b)
     print(
-        f"Epoch {epoch + 1}, loss: {current_loss:10.3f} ||a - a_true||: {a_diff:8.3f}, ||b - b_true||: {b_diff:8.3f}"
+        f"Epoch {epoch + 1:3d}, loss: {current_loss:10.3f} ||a - a_true||: {a_diff:8.3f}, ||b - b_true||: {b_diff:8.3f}"
     )
