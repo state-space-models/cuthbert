@@ -2,6 +2,15 @@
 .entangled/
 examples_scripts/
 
+# uv.lock file
+# seems like it is a hot topic whether to push the lock file or not
+# https://blog.rust-lang.org/2023/08/29/committing-lockfiles/
+# https://github.com/astral-sh/uv/issues/10730
+# I think here it doesn't provide any useful info beyond pyproject.toml
+# and there is no other uv files pushed to the repo meaning the project doesn't
+# require editor to use uv so I think it's safe to ignore it.
+uv.lock
+
 # macOS
 .DS_Store
 
