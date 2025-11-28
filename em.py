@@ -20,7 +20,7 @@ from typing import NamedTuple
 
 import jax.numpy as jnp
 import pandas as pd
-from jax import Array
+from jax import Array, vmap
 from jax.scipy.stats import binom
 
 from cuthbert.gaussian import moments
@@ -146,3 +146,9 @@ def loss_fn(unconstrained_params: UnconstrainedParams, ys: Array, smooth_dist):
             sigma_points.wm,
             binom.logpmf(y, 50, logit_inv(sigma_points.points)),
         )
+
+    joint_means = vmap(
+        jnp.concatenate, smooth_dist.mean[:-1], smooth_dist.mean[1:]
+    )  # TODO: I dont think this stacks properly
+
+    # TODO: calculate joint_chol_covs, will need to use smooth_dist.gain
