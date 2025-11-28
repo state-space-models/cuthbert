@@ -21,13 +21,19 @@ from typing import NamedTuple
 import jax.numpy as jnp
 import pandas as pd
 from jax import Array
+from jax.scipy.stats import binom
 
 from cuthbert.gaussian import moments
+from cuthbertlib.quadrature.gauss_hermite import weights
+from cuthbertlib.stats import multivariate_normal
 
 # Load data from csv hosted on particles GitHub repository
 csv_url = "https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv"
 data = pd.read_csv(csv_url, header=None).to_numpy()[0]
 data = jnp.array(data)
+data = jnp.concatenate(
+    [jnp.array([-1]), data]
+)  # Add null observation for t=0 (use -1 )
 
 
 class Params(NamedTuple):
@@ -35,8 +41,33 @@ class Params(NamedTuple):
     sigma: Array
 
 
+class UnconstrainedParams(NamedTuple):
+    logit_rho: Array
+    log_sigma: Array
+
+
+def logit(p: Array) -> Array:
+    # Converts [0, 1] to [-inf, inf]
+    return jnp.log(p / (1 - p))
+
+
 def logit_inv(x: Array) -> Array:
+    # Converts [-inf, inf] to [0, 1]
     return 1 / (1 + jnp.exp(-x))
+
+
+def constrain_params(params: UnconstrainedParams) -> Params:
+    return Params(
+        rho=logit_inv(params.logit_rho),
+        sigma=jnp.exp(params.log_sigma),
+    )
+
+
+def unconstrain_params(params: Params) -> UnconstrainedParams:
+    return UnconstrainedParams(
+        logit_rho=logit(params.rho),
+        log_sigma=jnp.log(params.sigma),
+    )
 
 
 def model_factory(params: Params):
@@ -84,3 +115,34 @@ model_inputs = jnp.arange(T + 1)
 rho_init = 0.1
 sig_init = 0.5**0.5
 params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([sig_init]))
+
+gauss_hermite_order = 3
+
+
+def loss_fn(unconstrained_params: UnconstrainedParams, ys: Array, smooth_dist):
+    params = constrain_params(unconstrained_params)
+
+    def loss_initial(m, chol_cov):
+        # E_{p(x_0 | m, chol_cov)} [log N(x_0 | 0, params.sigma^2)]
+        quadrature = weights(1, order=gauss_hermite_order)
+        sigma_points = quadrature.get_sigma_points(m, chol_cov)
+        # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 1)
+        return jnp.dot(
+            sigma_points.wm,
+            multivariate_normal.logpdf(sigma_points.points, 0.0, params.sigma),
+        )
+
+    def loss_dynamics(m_joint, chol_cov_joint):
+        # E_{p(x_{t-1}, x_t | m_joint, chol_cov_joint)} [log N(x_t | rho * x_{t-1}, params.sigma^2)]
+        quadrature = weights(2, order=gauss_hermite_order)
+        sigma_points = quadrature.get_sigma_points(m_joint, chol_cov_joint)
+        # TODO: complete this
+
+    def loss_observation(m, chol_cov, y):
+        # E_{x_t | m, chol_cov)} [log Bin(y_t | 50, logit_inv(x_t))]
+        quadrature = weights(1, order=gauss_hermite_order)
+        sigma_points = quadrature.get_sigma_points(m, chol_cov)
+        return jnp.dot(
+            sigma_points.wm,
+            binom.logpmf(y, 50, logit_inv(sigma_points.points)),
+        )
