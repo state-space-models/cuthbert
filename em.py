@@ -20,7 +20,7 @@ from typing import NamedTuple
 
 import jax.numpy as jnp
 import pandas as pd
-from jax import Array, vmap
+from jax import Array, tree, vmap
 from jax.scipy.stats import binom
 
 from cuthbert.gaussian import moments
@@ -119,8 +119,17 @@ params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([sig_init]))
 gauss_hermite_order = 3
 
 
-def loss_fn(unconstrained_params: UnconstrainedParams, ys: Array, smooth_dist):
+def loss_fn(
+    unconstrained_params: UnconstrainedParams,
+    ys: Array,
+    smooth_dist: moments.KalmanSmootherState,
+):
     params = constrain_params(unconstrained_params)
+
+    # TODO: Can used vectorized call to multivariate_normal to avoid calling
+    # quadrature.get_sigma_points so often inside loss_dynamics and loss_observation
+    # I.e. use univariate normal logpdf or vmap multivariate_normal.logpdf rather than
+    # vmapping loss_dynamics and loss_observation
 
     def loss_initial(m, chol_cov):
         # E_{p(x_0 | m, chol_cov)} [log N(x_0 | 0, params.sigma^2)]
@@ -136,7 +145,16 @@ def loss_fn(unconstrained_params: UnconstrainedParams, ys: Array, smooth_dist):
         # E_{p(x_{t-1}, x_t | m_joint, chol_cov_joint)} [log N(x_t | rho * x_{t-1}, params.sigma^2)]
         quadrature = weights(2, order=gauss_hermite_order)
         sigma_points = quadrature.get_sigma_points(m_joint, chol_cov_joint)
-        # TODO: complete this
+        # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 2)
+        # TODO: check this
+        return jnp.dot(
+            sigma_points.wm,
+            multivariate_normal.logpdf(
+                sigma_points.points[:, 0],
+                sigma_points.points[:, 1] * params.rho,
+                params.sigma,
+            ),
+        )
 
     def loss_observation(m, chol_cov, y):
         # E_{x_t | m, chol_cov)} [log Bin(y_t | 50, logit_inv(x_t))]
@@ -147,8 +165,39 @@ def loss_fn(unconstrained_params: UnconstrainedParams, ys: Array, smooth_dist):
             binom.logpmf(y, 50, logit_inv(sigma_points.points)),
         )
 
+    # TODO: check joint calculations
     joint_means = vmap(
-        jnp.concatenate, smooth_dist.mean[:-1], smooth_dist.mean[1:]
+        jnp.concatenate, smooth_dist.mean[1:], smooth_dist.mean[:-1]
     )  # TODO: I dont think this stacks properly
 
-    # TODO: calculate joint_chol_covs, will need to use smooth_dist.gain
+    # cross_covs = (
+    #     smooth_dist.gain[:-1]
+    #     @ smooth_dist.chol_cov[1:]
+    #     @ smooth_dist.chol_cov[1:].transpose(0, 2, 1)
+    # )
+
+    def construct_joint_chol_cov(smooth_state_t_plus_1, smooth_state_t):
+        # From https://github.com/state-space-models/cuthbert/discussions/18
+        # TODO: document this or even modify the kalman code to have this more easily accessible
+        chol_P_t_plus_1 = smooth_state_t_plus_1.chol_cov
+        G_t = smooth_state_t.gain
+        chol_omega_t = smooth_state_t.elem.D  ### TODO: ALERT THIS IS NOT CORRECT we need the D term from associative_params_single not smoothing_operator which I don't think is currently available
+        return jnp.block(
+            [
+                [chol_P_t_plus_1, jnp.zeros_like(chol_P_t_plus_1)],
+                [G_t @ chol_omega_t, chol_omega_t],
+            ]
+        )
+
+    joint_chol_covs = vmap(
+        construct_joint_chol_cov,
+        tree.map(lambda x: x[1:], smooth_dist),
+        tree.map(lambda x: x[:-1], smooth_dist),
+    )
+
+    total_loss = (
+        loss_initial(smooth_dist.mean[0], smooth_dist.chol_cov[0])
+        + vmap(loss_dynamics, joint_means, joint_chol_covs)
+        + vmap(loss_observation, smooth_dist.mean[1:], smooth_dist.chol_cov[1:], ys[1:])
+    )
+    return total_loss
