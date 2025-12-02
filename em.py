@@ -20,7 +20,7 @@ from typing import NamedTuple
 
 import jax.numpy as jnp
 import pandas as pd
-from jax import Array, tree, vmap
+from jax import Array, vmap
 from jax.scipy.stats import binom
 
 from cuthbert.gaussian import moments
@@ -116,7 +116,7 @@ rho_init = 0.1
 sig_init = 0.5**0.5
 params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([sig_init]))
 
-gauss_hermite_order = 3
+gauss_hermite_order = 10
 
 
 def loss_fn(
@@ -165,34 +165,20 @@ def loss_fn(
             binom.logpmf(y, 50, logit_inv(sigma_points.points)),
         )
 
-    # TODO: check joint calculations
-    joint_means = vmap(
-        jnp.concatenate, smooth_dist.mean[1:], smooth_dist.mean[:-1]
-    )  # TODO: I dont think this stacks properly
+    joint_means = jnp.stack([smooth_dist.mean[:-1], smooth_dist.mean[1:]], axis=1)
 
-    # cross_covs = (
-    #     smooth_dist.gain[:-1]
-    #     @ smooth_dist.chol_cov[1:]
-    #     @ smooth_dist.chol_cov[1:].transpose(0, 2, 1)
-    # )
-
-    def construct_joint_chol_cov(smooth_state_t_plus_1, smooth_state_t):
+    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_omega_t):
         # From https://github.com/state-space-models/cuthbert/discussions/18
         # TODO: document this or even modify the kalman code to have this more easily accessible
-        chol_P_t_plus_1 = smooth_state_t_plus_1.chol_cov
-        G_t = smooth_state_t.gain
-        chol_omega_t = smooth_state_t.chol_omega
         return jnp.block(
             [
-                [chol_P_t_plus_1, jnp.zeros_like(chol_P_t_plus_1)],
-                [G_t @ chol_P_t_plus_1, chol_omega_t],
+                [chol_cov_t_plus_1, jnp.zeros_like(chol_cov_t_plus_1)],
+                [gain_t @ chol_cov_t_plus_1, chol_omega_t],
             ]
         )
 
-    joint_chol_covs = vmap(
-        construct_joint_chol_cov,
-        tree.map(lambda x: x[1:], smooth_dist),
-        tree.map(lambda x: x[:-1], smooth_dist),
+    joint_chol_covs = vmap(construct_joint_chol_cov)(
+        smooth_dist.chol_cov[1:], smooth_dist.gain[:-1], smooth_dist.chol_omega[:-1]
     )
 
     total_loss = (
