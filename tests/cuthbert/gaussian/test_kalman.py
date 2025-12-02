@@ -4,7 +4,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array
+from jax import Array, vmap
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
@@ -174,19 +174,21 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     seq_smoother_states = smoother(
         kalman_smoother, filt_states, model_inputs, parallel=False
     )
-    seq_means, seq_chol_covs, seq_gains = (
+    seq_means, seq_chol_covs, seq_gains, seq_chol_omega = (
         seq_smoother_states.mean,
         seq_smoother_states.chol_cov,
         seq_smoother_states.gain,
+        seq_smoother_states.chol_omega,
     )
 
     par_smoother_states = smoother(
         kalman_smoother, filt_states, model_inputs, parallel=True
     )
-    par_means, par_chol_covs, par_gains = (
+    par_means, par_chol_covs, par_gains, par_chol_omega = (
         par_smoother_states.mean,
         par_smoother_states.chol_cov,
         par_smoother_states.gain,
+        par_smoother_states.chol_omega,
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
@@ -205,6 +207,45 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
 
     par_default_mi = smoother(kalman_smoother, filt_states, parallel=True)
     chex.assert_trees_all_close(par_default_mi, par_smoother_states, rtol=1e-10)
+
+    def construct_joint_cov(cov_t_plus_1, cov_t, cross_cov_t):
+        return jnp.block(
+            [
+                [cov_t_plus_1, cross_cov_t.T],
+                [cross_cov_t, cov_t],
+            ]
+        )
+
+    des_joint_covs = vmap(construct_joint_cov)(
+        seq_covs[1:],
+        seq_covs[:-1],
+        seq_cross_covs,
+    )
+
+    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_omega_t):
+        return jnp.block(
+            [
+                [chol_cov_t_plus_1, jnp.zeros_like(chol_cov_t_plus_1)],
+                [gain_t @ chol_cov_t_plus_1, chol_omega_t],
+            ]
+        )
+
+    seq_joint_chol_covs = vmap(construct_joint_chol_cov)(
+        seq_chol_covs[1:],
+        seq_gains[:-1],
+        seq_chol_omega[:-1],
+    )
+    par_joint_chol_covs = vmap(construct_joint_chol_cov)(
+        par_chol_covs[1:],
+        par_gains[:-1],
+        par_chol_omega[:-1],
+    )
+
+    seq_joint_covs = seq_joint_chol_covs @ seq_joint_chol_covs.transpose(0, 2, 1)
+    par_joint_covs = par_joint_chol_covs @ par_joint_chol_covs.transpose(0, 2, 1)
+    chex.assert_trees_all_close(
+        des_joint_covs, seq_joint_covs, par_joint_covs, rtol=1e-10
+    )
 
 
 # @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
