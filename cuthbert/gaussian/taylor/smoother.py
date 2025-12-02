@@ -133,4 +133,6 @@ def smoother_prepare(
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
-    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
+    return KalmanSmootherState(
+        elem=state, gain=state.E, chol_omega=state.D, model_inputs=model_inputs
+    )

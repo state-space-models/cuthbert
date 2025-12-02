@@ -35,7 +35,7 @@ from cuthbertlib.stats import multivariate_normal
 csv_url = "https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv"
 data = pd.read_csv(csv_url, header=None).to_numpy()[0]
 data = jnp.array(data)
-data = jnp.concatenate([jnp.array([jnp.nan]), data])
+data = jnp.concatenate([jnp.array([jnp.nan]), data])[..., None]
 
 
 class Params(NamedTuple):
@@ -76,7 +76,7 @@ def unconstrain_params(params: Params) -> UnconstrainedParams:
 # Build model objects - this is where the model definition is encapsulated
 def model_factory(params: Params):
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        return jnp.array([0.0]), jnp.array([params.sigma])
+        return jnp.array([0.0]), params.sigma
 
     def get_dynamics_moments(state, model_inputs: int):
         def dynamics_mean_and_chol_cov_func(x):
@@ -92,9 +92,7 @@ def model_factory(params: Params):
             mean = n * p
             var = n * p * (1 - p)
             sd = jnp.sqrt(var)
-            return mean.reshape(
-                1,
-            ), sd.reshape(1, 1)
+            return mean, sd
 
         return (
             observation_mean_and_chol_cov_func,
@@ -115,13 +113,13 @@ def model_factory(params: Params):
 
 # Define model inputs
 T = len(data)
-model_inputs = jnp.arange(T + 1)
+model_inputs = jnp.arange(T)
 
 
 # Initialize parameters
 rho_init = 0.1
 sig_init = 0.5**0.5
-params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([sig_init]))
+params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
 
 
 # Define loss function for M-step
