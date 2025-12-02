@@ -181,7 +181,7 @@ def loss_fn(
         # TODO: document this or even modify the kalman code to have this more easily accessible
         chol_P_t_plus_1 = smooth_state_t_plus_1.chol_cov
         G_t = smooth_state_t.gain
-        chol_omega_t = smooth_state_t.elem.D  ### TODO: ALERT THIS IS NOT CORRECT we need the D term from associative_params_single not smoothing_operator which I don't think is currently available
+        chol_omega_t = smooth_state_t.omega
         return jnp.block(
             [
                 [chol_P_t_plus_1, jnp.zeros_like(chol_P_t_plus_1)],

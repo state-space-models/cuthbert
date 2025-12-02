@@ -41,6 +41,7 @@ class KalmanSmootherState(NamedTuple):
     elem: smoothing.SmootherScanElement
     model_inputs: ArrayTree
     gain: Array | None = None
+    omega: Array | None = None
 
     @property
     def mean(self) -> Array:
@@ -229,7 +230,9 @@ def smoother_prepare(
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
-    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
+    return KalmanSmootherState(
+        elem=state, gain=state.E, omega=state.D, model_inputs=model_inputs
+    )
 
 
 def smoother_combine(
@@ -259,7 +262,10 @@ def smoother_combine(
         state_1.elem,
     )
     return KalmanSmootherState(
-        elem=state_elem, gain=state_1.gain, model_inputs=state_1.model_inputs
+        elem=state_elem,
+        gain=state_1.gain,
+        omega=state_1.omega,
+        model_inputs=state_1.model_inputs,
     )
 
 
@@ -300,5 +306,6 @@ def convert_filter_to_smoother_state(
     return KalmanSmootherState(
         elem=elem,
         gain=dummy_tree_like(filter_state.chol_cov),
+        omega=dummy_tree_like(filter_state.chol_cov),
         model_inputs=dummy_model_inputs,
     )
