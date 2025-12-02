@@ -20,10 +20,14 @@ from typing import NamedTuple
 
 import jax.numpy as jnp
 import pandas as pd
-from jax import Array, vmap
+from jax import Array, tree, vmap
 from jax.scipy.stats import binom
 
+from cuthbert import filter, smoother
+
+# from jax.scipy.minimize import minimize
 from cuthbert.gaussian import moments
+from cuthbert.gaussian.kalman import KalmanSmootherState
 from cuthbertlib.quadrature.gauss_hermite import weights
 from cuthbertlib.stats import multivariate_normal
 
@@ -31,9 +35,7 @@ from cuthbertlib.stats import multivariate_normal
 csv_url = "https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv"
 data = pd.read_csv(csv_url, header=None).to_numpy()[0]
 data = jnp.array(data)
-data = jnp.concatenate(
-    [jnp.array([-1]), data]
-)  # Add null observation for t=0 (use -1 )
+data = jnp.concatenate([jnp.array([jnp.nan]), data])
 
 
 class Params(NamedTuple):
@@ -41,6 +43,7 @@ class Params(NamedTuple):
     sigma: Array
 
 
+# Utilities for constraining and unconstraining parameters
 class UnconstrainedParams(NamedTuple):
     logit_rho: Array
     log_sigma: Array
@@ -70,6 +73,7 @@ def unconstrain_params(params: Params) -> UnconstrainedParams:
     )
 
 
+# Build model objects - this is where the model definition is encapsulated
 def model_factory(params: Params):
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return jnp.array([0.0]), jnp.array([params.sigma])
@@ -88,7 +92,9 @@ def model_factory(params: Params):
             mean = n * p
             var = n * p * (1 - p)
             sd = jnp.sqrt(var)
-            return mean, sd
+            return mean.reshape(
+                1,
+            ), sd.reshape(1, 1)
 
         return (
             observation_mean_and_chol_cov_func,
@@ -107,6 +113,7 @@ def model_factory(params: Params):
     return filter_obj, smoother_obj
 
 
+# Define model inputs
 T = len(data)
 model_inputs = jnp.arange(T + 1)
 
@@ -116,13 +123,16 @@ rho_init = 0.1
 sig_init = 0.5**0.5
 params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([sig_init]))
 
+
+# Define loss function for M-step
+# Use Gauss-Hermite quadrature to approximate the expectation
 gauss_hermite_order = 10
 
 
 def loss_fn(
     unconstrained_params: UnconstrainedParams,
     ys: Array,
-    smooth_dist: moments.KalmanSmootherState,
+    smooth_dist: KalmanSmootherState,
 ):
     params = constrain_params(unconstrained_params)
 
@@ -186,4 +196,13 @@ def loss_fn(
         + vmap(loss_dynamics, joint_means, joint_chol_covs)
         + vmap(loss_observation, smooth_dist.mean[1:], smooth_dist.chol_cov[1:], ys[1:])
     )
-    return total_loss
+    return -total_loss
+
+
+# Run EM!
+params_track = tree.map(lambda x: x[None], params)
+
+for epoch in range(10):
+    filter_obj, smoother_obj = model_factory(params)
+    filtered_states = filter(filter_obj, model_inputs)
+    smoother_states = smoother(smoother_obj, filtered_states)
