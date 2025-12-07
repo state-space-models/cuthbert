@@ -22,6 +22,8 @@ import jax.numpy as jnp
 import pandas as pd
 from jax import Array, tree, vmap
 from jax.scipy.stats import binom, norm
+from jax.scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 from cuthbert import filter, smoother
 
@@ -42,12 +44,6 @@ class Params(NamedTuple):
     sigma: Array
 
 
-# Utilities for constraining and unconstraining parameters
-class UnconstrainedParams(NamedTuple):
-    logit_rho: Array
-    log_sigma: Array
-
-
 def logit(p: Array) -> Array:
     # Converts [0, 1] to [-inf, inf]
     return jnp.log(p / (1 - p))
@@ -58,18 +54,17 @@ def logit_inv(x: Array) -> Array:
     return 1 / (1 + jnp.exp(-x))
 
 
-def constrain_params(params: UnconstrainedParams) -> Params:
+def constrain_params(params: Array) -> Params:
     return Params(
-        rho=logit_inv(params.logit_rho),
-        sigma=jnp.exp(params.log_sigma),
+        rho=logit_inv(params[0]).reshape(
+            1,
+        ),
+        sigma=jnp.exp(params[1]).reshape(1, 1),
     )
 
 
-def unconstrain_params(params: Params) -> UnconstrainedParams:
-    return UnconstrainedParams(
-        logit_rho=logit(params.rho),
-        log_sigma=jnp.log(params.sigma),
-    )
+def unconstrain_params(params: Params) -> Array:
+    return jnp.array([logit(params.rho.squeeze()), jnp.log(params.sigma.squeeze())])
 
 
 # Build model objects - this is where the model definition is encapsulated
@@ -123,7 +118,7 @@ quadrature_2d = weights(2, order=gauss_hermite_order)
 
 
 def loss_fn(
-    unconstrained_params: UnconstrainedParams,
+    unconstrained_params: Array,
     ys: Array,
     smooth_dist: KalmanSmootherState,
 ):
@@ -180,7 +175,7 @@ def loss_fn(
     )
 
     total_loss = (
-        loss_initial(smooth_dist.mean[0], smooth_dist.chol_cov[0])
+        loss_initial(smooth_dist.mean[0], smooth_dist.chol_cov[0]).squeeze()
         + vmap(loss_dynamics)(joint_means, joint_chol_covs).sum()
         + vmap(loss_observation)(
             smooth_dist.mean[1:], smooth_dist.chol_cov[1:], ys[1:]
@@ -195,8 +190,51 @@ rho_init = 0.1
 sig_init = 0.5**0.5
 params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
 params_track = tree.map(lambda x: x[None], params)
+log_likelihood_track = []
+n_epochs = 30
 
-for epoch in range(10):
+for epoch in range(n_epochs):
     filter_obj, smoother_obj = model_factory(params)
     filtered_states = filter(filter_obj, model_inputs)
+    log_likelihood_track.append(filtered_states.log_likelihood[-1])
     smoother_states = smoother(smoother_obj, filtered_states)
+
+    optim_result = minimize(
+        loss_fn,
+        unconstrain_params(params),
+        args=(data, smoother_states),
+        method="BFGS",
+    )
+    params = constrain_params(optim_result.x)
+    params_track = tree.map(
+        lambda x, y: jnp.concatenate([x, y[None]], axis=0), params_track, params
+    )
+    print(f"Epoch {epoch + 1}/{n_epochs}: log likelihood = {log_likelihood_track[-1]}")
+
+
+# Plot log likelihood
+plt.figure(figsize=(10, 8))
+plt.plot(log_likelihood_track, label="Log likelihood")
+plt.xlabel("Epoch")
+plt.ylabel("Log likelihood")
+plt.legend()
+plt.savefig("em_log_likelihood.png", dpi=300)
+
+# Plot parameters
+true_mle = (0.9981, 0.1089**0.5)
+plt.figure(figsize=(10, 8))
+plt.plot(
+    params_track.rho.squeeze(),
+    params_track.sigma.squeeze(),
+    marker="o",
+    linestyle="-",
+    label="EM",
+    zorder=0,
+)
+plt.scatter(
+    true_mle[0], true_mle[1], color="red", marker="x", label="True MLE", zorder=1
+)
+plt.xlabel("rho")
+plt.ylabel("sigma")
+plt.legend()
+plt.savefig("em_parameters.png", dpi=300)
