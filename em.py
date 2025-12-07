@@ -19,11 +19,11 @@ MLE is (rho, sigma2) = (0.9981, 0.1089)
 from typing import NamedTuple
 
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import pandas as pd
 from jax import Array, tree, vmap
-from jax.scipy.stats import binom, norm
 from jax.scipy.optimize import minimize
-import matplotlib.pyplot as plt
+from jax.scipy.stats import binom, norm
 
 from cuthbert import filter, smoother
 
