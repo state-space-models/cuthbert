@@ -125,6 +125,8 @@ params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
 # Define loss function for M-step
 # Use Gauss-Hermite quadrature to approximate the expectation
 gauss_hermite_order = 10
+quadrature_1d = weights(1, order=gauss_hermite_order)
+quadrature_2d = weights(2, order=gauss_hermite_order)
 
 
 def loss_fn(
@@ -134,15 +136,9 @@ def loss_fn(
 ):
     params = constrain_params(unconstrained_params)
 
-    # TODO: Can used vectorized call to multivariate_normal to avoid calling
-    # quadrature.get_sigma_points so often inside loss_dynamics and loss_observation
-    # I.e. use univariate normal logpdf or vmap multivariate_normal.logpdf rather than
-    # vmapping loss_dynamics and loss_observation
-
     def loss_initial(m, chol_cov):
         # E_{p(x_0 | m, chol_cov)} [log N(x_0 | 0, params.sigma^2)]
-        quadrature = weights(1, order=gauss_hermite_order)
-        sigma_points = quadrature.get_sigma_points(m, chol_cov)
+        sigma_points = quadrature_1d.get_sigma_points(m, chol_cov)
         # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 1)
         return jnp.dot(
             sigma_points.wm,
@@ -151,8 +147,7 @@ def loss_fn(
 
     def loss_dynamics(m_joint, chol_cov_joint):
         # E_{p(x_{t-1}, x_t | m_joint, chol_cov_joint)} [log N(x_t | rho * x_{t-1}, params.sigma^2)]
-        quadrature = weights(2, order=gauss_hermite_order)
-        sigma_points = quadrature.get_sigma_points(m_joint, chol_cov_joint)
+        sigma_points = quadrature_2d.get_sigma_points(m_joint, chol_cov_joint)
         # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 2)
         # TODO: check this
         return jnp.dot(
@@ -166,8 +161,7 @@ def loss_fn(
 
     def loss_observation(m, chol_cov, y):
         # E_{x_t | m, chol_cov)} [log Bin(y_t | 50, logit_inv(x_t))]
-        quadrature = weights(1, order=gauss_hermite_order)
-        sigma_points = quadrature.get_sigma_points(m, chol_cov)
+        sigma_points = quadrature_1d.get_sigma_points(m, chol_cov)
         return jnp.dot(
             sigma_points.wm,
             binom.logpmf(y, 50, logit_inv(sigma_points.points)),
