@@ -21,7 +21,7 @@ from typing import NamedTuple
 import jax.numpy as jnp
 import pandas as pd
 from jax import Array, tree, vmap
-from jax.scipy.stats import binom
+from jax.scipy.stats import binom, norm
 
 from cuthbert import filter, smoother
 
@@ -29,7 +29,6 @@ from cuthbert import filter, smoother
 from cuthbert.gaussian import moments
 from cuthbert.gaussian.kalman import KalmanSmootherState
 from cuthbertlib.quadrature.gauss_hermite import weights
-from cuthbertlib.stats import multivariate_normal
 
 # Load data from csv hosted on particles GitHub repository
 csv_url = "https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv"
@@ -116,12 +115,6 @@ T = len(data)
 model_inputs = jnp.arange(T)
 
 
-# Initialize parameters
-rho_init = 0.1
-sig_init = 0.5**0.5
-params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
-
-
 # Define loss function for M-step
 # Use Gauss-Hermite quadrature to approximate the expectation
 gauss_hermite_order = 10
@@ -142,20 +135,23 @@ def loss_fn(
         # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 1)
         return jnp.dot(
             sigma_points.wm,
-            multivariate_normal.logpdf(sigma_points.points, 0.0, params.sigma),
+            norm.logpdf(
+                sigma_points.points,
+                0.0,
+                params.sigma,
+            ),
         )
 
     def loss_dynamics(m_joint, chol_cov_joint):
         # E_{p(x_{t-1}, x_t | m_joint, chol_cov_joint)} [log N(x_t | rho * x_{t-1}, params.sigma^2)]
         sigma_points = quadrature_2d.get_sigma_points(m_joint, chol_cov_joint)
         # points.shape=wm.shape=wc.shape=(gauss_hermite_order, 2)
-        # TODO: check this
         return jnp.dot(
             sigma_points.wm,
-            multivariate_normal.logpdf(
+            norm.logpdf(
                 sigma_points.points[:, 0],
                 sigma_points.points[:, 1] * params.rho,
-                params.sigma,
+                params.sigma.squeeze(),
             ),
         )
 
@@ -167,7 +163,7 @@ def loss_fn(
             binom.logpmf(y, 50, logit_inv(sigma_points.points)),
         )
 
-    joint_means = jnp.stack([smooth_dist.mean[:-1], smooth_dist.mean[1:]], axis=1)
+    joint_means = jnp.concatenate([smooth_dist.mean[:-1], smooth_dist.mean[1:]], axis=1)
 
     def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_omega_t):
         # From https://github.com/state-space-models/cuthbert/discussions/18
@@ -185,13 +181,19 @@ def loss_fn(
 
     total_loss = (
         loss_initial(smooth_dist.mean[0], smooth_dist.chol_cov[0])
-        + vmap(loss_dynamics, joint_means, joint_chol_covs)
-        + vmap(loss_observation, smooth_dist.mean[1:], smooth_dist.chol_cov[1:], ys[1:])
+        + vmap(loss_dynamics)(joint_means, joint_chol_covs).sum()
+        + vmap(loss_observation)(
+            smooth_dist.mean[1:], smooth_dist.chol_cov[1:], ys[1:]
+        ).sum()
     )
     return -total_loss
 
 
 # Run EM!
+# Initialize parameters
+rho_init = 0.1
+sig_init = 0.5**0.5
+params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
 params_track = tree.map(lambda x: x[None], params)
 
 for epoch in range(10):
