@@ -94,5 +94,5 @@ def smoother_prepare(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
     return KalmanSmootherState(
-        elem=state, gain=state.E, chol_omega=state.D, model_inputs=model_inputs
+        elem=state, gain=state.E, chol_cov_given_next=state.D, model_inputs=model_inputs
     )

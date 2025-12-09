@@ -160,18 +160,20 @@ def loss_fn(
 
     joint_means = jnp.concatenate([smooth_dist.mean[:-1], smooth_dist.mean[1:]], axis=1)
 
-    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_omega_t):
+    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_cov_t_given_t_plus_1):
         # From https://github.com/state-space-models/cuthbert/discussions/18
         # TODO: document this or even modify the kalman code to have this more easily accessible
         return jnp.block(
             [
                 [chol_cov_t_plus_1, jnp.zeros_like(chol_cov_t_plus_1)],
-                [gain_t @ chol_cov_t_plus_1, chol_omega_t],
+                [gain_t @ chol_cov_t_plus_1, chol_cov_t_given_t_plus_1],
             ]
         )
 
     joint_chol_covs = vmap(construct_joint_chol_cov)(
-        smooth_dist.chol_cov[1:], smooth_dist.gain[:-1], smooth_dist.chol_omega[:-1]
+        smooth_dist.chol_cov[1:],
+        smooth_dist.gain[:-1],
+        smooth_dist.chol_cov_given_next[:-1],
     )
 
     total_loss = (

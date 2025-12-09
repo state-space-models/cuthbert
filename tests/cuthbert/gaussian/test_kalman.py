@@ -174,21 +174,21 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     seq_smoother_states = smoother(
         kalman_smoother, filt_states, model_inputs, parallel=False
     )
-    seq_means, seq_chol_covs, seq_gains, seq_chol_omega = (
+    seq_means, seq_chol_covs, seq_gains, seq_chol_cov_given_next = (
         seq_smoother_states.mean,
         seq_smoother_states.chol_cov,
         seq_smoother_states.gain,
-        seq_smoother_states.chol_omega,
+        seq_smoother_states.chol_cov_given_next,
     )
 
     par_smoother_states = smoother(
         kalman_smoother, filt_states, model_inputs, parallel=True
     )
-    par_means, par_chol_covs, par_gains, par_chol_omega = (
+    par_means, par_chol_covs, par_gains, par_chol_cov_given_next = (
         par_smoother_states.mean,
         par_smoother_states.chol_cov,
         par_smoother_states.gain,
-        par_smoother_states.chol_omega,
+        par_smoother_states.chol_cov_given_next,
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
@@ -222,23 +222,23 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
         seq_cross_covs,
     )
 
-    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_omega_t):
+    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_cov_given_next_t):
         return jnp.block(
             [
                 [chol_cov_t_plus_1, jnp.zeros_like(chol_cov_t_plus_1)],
-                [gain_t @ chol_cov_t_plus_1, chol_omega_t],
+                [gain_t @ chol_cov_t_plus_1, chol_cov_given_next_t],
             ]
         )
 
     seq_joint_chol_covs = vmap(construct_joint_chol_cov)(
         seq_chol_covs[1:],
         seq_gains[:-1],
-        seq_chol_omega[:-1],
+        seq_chol_cov_given_next[:-1],
     )
     par_joint_chol_covs = vmap(construct_joint_chol_cov)(
         par_chol_covs[1:],
         par_gains[:-1],
-        par_chol_omega[:-1],
+        par_chol_cov_given_next[:-1],
     )
 
     seq_joint_covs = seq_joint_chol_covs @ seq_joint_chol_covs.transpose(0, 2, 1)
