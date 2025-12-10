@@ -26,8 +26,6 @@ from jax.scipy.optimize import minimize
 from jax.scipy.stats import binom, norm
 
 from cuthbert import filter, smoother
-
-# from jax.scipy.minimize import minimize
 from cuthbert.gaussian import moments
 from cuthbert.gaussian.kalman import KalmanSmootherState
 from cuthbertlib.quadrature.gauss_hermite import weights
@@ -56,9 +54,7 @@ def logit_inv(x: Array) -> Array:
 
 def constrain_params(params: Array) -> Params:
     return Params(
-        rho=logit_inv(params[0]).reshape(
-            1,
-        ),
+        rho=logit_inv(params[0]).reshape(1),
         sigma=jnp.exp(params[1]).reshape(1, 1),
     )
 
@@ -117,11 +113,7 @@ quadrature_1d = weights(1, order=gauss_hermite_order)
 quadrature_2d = weights(2, order=gauss_hermite_order)
 
 
-def loss_fn(
-    unconstrained_params: Array,
-    ys: Array,
-    smooth_dist: KalmanSmootherState,
-):
+def loss_fn(unconstrained_params: Array, ys: Array, smooth_dist: KalmanSmootherState):
     params = constrain_params(unconstrained_params)
 
     def loss_initial(m, chol_cov):
@@ -216,27 +208,29 @@ for epoch in range(n_epochs):
 
 # Plot log likelihood
 plt.figure(figsize=(10, 8))
+plt.title("How the marginal likelihood improves over iterations")
 plt.plot(log_likelihood_track, label="Log likelihood")
 plt.xlabel("Epoch")
-plt.ylabel("Log likelihood")
+plt.ylabel("Log marginal likelihood")
 plt.legend()
 plt.savefig("em_log_likelihood.png", dpi=300)
 
 # Plot parameters
 true_mle = (0.9981, 0.1089**0.5)
 plt.figure(figsize=(10, 8))
+plt.title("EM iterates compared to the true MLE")
 plt.plot(
     params_track.rho.squeeze(),
     params_track.sigma.squeeze(),
     marker="o",
     linestyle="-",
-    label="EM",
+    label="EM iterates",
     zorder=0,
 )
 plt.scatter(
     true_mle[0], true_mle[1], color="red", marker="x", label="True MLE", zorder=1
 )
-plt.xlabel("rho")
-plt.ylabel("sigma")
+plt.xlabel(r"$\rho$")
+plt.ylabel(r"$\sigma$")
 plt.legend()
 plt.savefig("em_parameters.png", dpi=300)
