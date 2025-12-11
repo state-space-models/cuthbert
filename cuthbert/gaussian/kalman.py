@@ -91,6 +91,8 @@ def build_filter(
 
 def build_smoother(
     get_dynamics_params: GetDynamicsParams,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
 ) -> Smoother:
     """
     Builds an exact Kalman smoother object for linear Gaussian SSMs.
@@ -99,14 +101,24 @@ def build_smoother(
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q
             given model inputs sufficient to define
             p(x_t | x_{t-1}) = N(F @ x_{t-1} + c, chol_Q @ chol_Q^T).
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
 
     Returns:
         Smoother object for exact Kalman smoother. Suitable for associative scan.
     """
     return Smoother(
-        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
+        convert_filter_to_smoother_state=partial(
+            convert_filter_to_smoother_state,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
+        ),
         smoother_prepare=partial(
-            smoother_prepare, get_dynamics_params=get_dynamics_params
+            smoother_prepare,
+            get_dynamics_params=get_dynamics_params,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
         ),
         smoother_combine=smoother_combine,
         associative=True,
@@ -204,6 +216,8 @@ def smoother_prepare(
     filter_state: KalmanFilterState,
     get_dynamics_params: GetDynamicsParams,
     model_inputs: ArrayTreeLike,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -218,6 +232,9 @@ def smoother_prepare(
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q,
             from model inputs.
         model_inputs: Model inputs for the transition from t to t+1.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
         key: JAX random key - not used.
 
     Returns:
@@ -231,7 +248,10 @@ def smoother_prepare(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
     return KalmanSmootherState(
-        elem=state, gain=state.E, chol_cov_given_next=state.D, model_inputs=model_inputs
+        elem=state,
+        gain=state.E if store_gain else None,
+        chol_cov_given_next=state.D if store_chol_cov_given_next else None,
+        model_inputs=model_inputs,
     )
 
 
@@ -272,6 +292,8 @@ def smoother_combine(
 def convert_filter_to_smoother_state(
     filter_state: ArrayTreeLike,
     model_inputs: ArrayTreeLike | None = None,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -287,6 +309,9 @@ def convert_filter_to_smoother_state(
             By default, filter_state.model_inputs is used. So this
             is only needed if the smoother model_inputs have a different tree
             structure to filter_state.model_inputs.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
         key: JAX random key - not used.
 
     Returns:
@@ -305,7 +330,9 @@ def convert_filter_to_smoother_state(
     )
     return KalmanSmootherState(
         elem=elem,
-        gain=dummy_tree_like(filter_state.chol_cov),
-        chol_cov_given_next=dummy_tree_like(filter_state.chol_cov),
+        gain=dummy_tree_like(filter_state.chol_cov) if store_gain else None,
+        chol_cov_given_next=dummy_tree_like(filter_state.chol_cov)
+        if store_chol_cov_given_next
+        else None,
         model_inputs=dummy_model_inputs,
     )

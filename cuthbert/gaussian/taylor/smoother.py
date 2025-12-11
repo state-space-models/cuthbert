@@ -49,6 +49,8 @@ def build_smoother(
     get_dynamics_log_density: GetDynamicsLogDensity,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
 ) -> Smoother:
     """
     Build linearized Taylor Kalman inference smoother.
@@ -65,6 +67,9 @@ def build_smoother(
         ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
             precision matrices (found via linearization) as missing and ignore all rows
             and columns associated with them.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
 
     Returns:
         Linearized Taylor Kalman smoother object, suitable for associative scan.
@@ -75,9 +80,15 @@ def build_smoother(
             get_dynamics_log_density=get_dynamics_log_density,
             rtol=rtol,
             ignore_nan_dims=ignore_nan_dims,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
         ),
         smoother_combine=smoother_combine,
-        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
+        convert_filter_to_smoother_state=partial(
+            convert_filter_to_smoother_state,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
+        ),
         associative=True,
     )
 
@@ -88,6 +99,8 @@ def smoother_prepare(
     model_inputs: ArrayTreeLike,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -108,6 +121,9 @@ def smoother_prepare(
         ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
             precision matrices (found via linearization) as missing and ignore all rows
             and columns associated with them.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
         key: JAX random key - not used.
 
     Returns:
@@ -134,5 +150,8 @@ def smoother_prepare(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
     return KalmanSmootherState(
-        elem=state, gain=state.E, chol_cov_given_next=state.D, model_inputs=model_inputs
+        elem=state,
+        gain=state.E if store_gain else None,
+        chol_cov_given_next=state.D if store_chol_cov_given_next else None,
+        model_inputs=model_inputs,
     )

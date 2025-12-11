@@ -88,7 +88,9 @@ def load_kalman_inference(
     filter = kalman.build_filter(
         get_init_params, get_dynamics_params, get_observation_params
     )
-    smoother = kalman.build_smoother(get_dynamics_params)
+    smoother = kalman.build_smoother(
+        get_dynamics_params, store_gain=True, store_chol_cov_given_next=True
+    )
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 
