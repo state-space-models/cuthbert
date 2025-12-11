@@ -169,7 +169,9 @@ def model_factory(params: Params):
         get_observation_moments,
         associative=False,
     )
-    smoother_obj = moments.build_smoother(get_dynamics_moments)
+    smoother_obj = moments.build_smoother(
+        get_dynamics_moments, store_gain=True, store_chol_cov_given_next=True
+    )
 
     return filter_obj, smoother_obj
 
@@ -178,6 +180,13 @@ def model_factory(params: Params):
 T = len(data)
 model_inputs = jnp.arange(T)
 ```
+Note that for the smoother we had to specify that we want to store the smoothing
+gain and chol_cov_given_next matrices in the smoother state. We'll need these later
+to compute integrals with respect to the joint smoothing distributions
+$p(x_{t-1}, x_t | y_{0:T})$ (by default `cuthbert.gaussian.moments` calculates them
+but doesn't store them).
+
+
 
 ## Numerial integration for the M-step
 
