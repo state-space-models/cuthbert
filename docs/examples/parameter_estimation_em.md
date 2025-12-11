@@ -344,8 +344,9 @@ All done! We can now visualize the learning curve with some plots.
 We know the true MLE in this example (marked in red in the above figure). Note
 that EM converges to the vicinity of the true value but not exactly, because
 both our E and M-steps are approximated. Both these approximations can be
-improved, say by replacing the Gaussian-approximated filter and smoother with unbiased
-particle approximations (see [`cuthbert.smc`](../cuthbert_api/smc/index.md)), or by
+improved, say by replacing the Gaussian-approximated filter and smoother with
+asymptotically unbiased particle approximations (see
+[`cuthbert.smc`](../cuthbert_api/smc/index.md)), or by
 increasing the order of the Gauss-Hermite quadrature.
 
 <!--- entangled-tangle-block
