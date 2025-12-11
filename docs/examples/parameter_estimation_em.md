@@ -181,9 +181,9 @@ T = len(data)
 model_inputs = jnp.arange(T)
 ```
 Note that for the smoother we had to specify that we want to store the smoothing
-gain and chol_cov_given_next matrices in the smoother state. We'll need these later
+`gain` and `chol_cov_given_next` matrices in the smoother state. We'll need these later
 to compute integrals with respect to the joint smoothing distributions
-$p(x_{t-1}, x_t | y_{0:T})$ (by default `cuthbert.gaussian.moments` calculates them
+$p(x_{t-1}, x_t | y_{1:T})$ (by default `cuthbert.gaussian.moments` calculates them
 but doesn't store them).
 
 
