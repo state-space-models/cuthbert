@@ -34,6 +34,8 @@ from cuthbertlib.types import ArrayTreeLike, KeyArray
 
 def build_smoother(
     get_dynamics_params: GetDynamicsMoments,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
 ) -> Smoother:
     """
     Build linearized moments Kalman inference smoother for conditionally Gaussian SSMs.
@@ -41,16 +43,26 @@ def build_smoother(
     Args:
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
 
     Returns:
         Linearized moments Kalman smoother object, suitable for associative scan.
     """
     return Smoother(
         smoother_prepare=partial(
-            smoother_prepare, get_dynamics_params=get_dynamics_params
+            smoother_prepare,
+            get_dynamics_params=get_dynamics_params,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
         ),
         smoother_combine=smoother_combine,
-        convert_filter_to_smoother_state=convert_filter_to_smoother_state,
+        convert_filter_to_smoother_state=partial(
+            convert_filter_to_smoother_state,
+            store_gain=store_gain,
+            store_chol_cov_given_next=store_chol_cov_given_next,
+        ),
         associative=True,
     )
 
@@ -59,6 +71,8 @@ def smoother_prepare(
     filter_state: LinearizedKalmanFilterState,
     get_dynamics_params: GetDynamicsMoments,
     model_inputs: ArrayTreeLike,
+    store_gain: bool = False,
+    store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
     """
@@ -73,6 +87,9 @@ def smoother_prepare(
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
         model_inputs: Model inputs for the transition from t to t+1.
+        store_gain: Whether to store the gain matrix in the smoother state.
+        store_chol_cov_given_next: Whether to store the chol_cov_given_next matrix
+            in the smoother state.
         key: JAX random key - not used.
 
     Returns:
@@ -93,4 +110,9 @@ def smoother_prepare(
     state = smoothing.associative_params_single(
         filter_mean, filter_chol_cov, F, c, chol_Q
     )
-    return KalmanSmootherState(elem=state, gain=state.E, model_inputs=model_inputs)
+    return KalmanSmootherState(
+        elem=state,
+        gain=state.E if store_gain else None,
+        chol_cov_given_next=state.D if store_chol_cov_given_next else None,
+        model_inputs=model_inputs,
+    )

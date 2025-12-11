@@ -42,4 +42,4 @@ jobs:
           entangled tangle
       - name: Run the examples scripts with pytest
         run: |
-          python -m pytest -n auto -vv -m examples
+          python -m pytest -n 1 -vv -m examples

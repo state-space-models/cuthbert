@@ -65,7 +65,7 @@ def load_moments_inference(
         observation_moments,
         associative=associative_filter,
     )
-    smoother = moments.build_smoother(dynamics_moments)
+    smoother = moments.build_smoother(dynamics_moments, store_gain=True)
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
 

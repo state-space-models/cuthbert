@@ -109,7 +109,9 @@ def load_taylor_inference(
         ignore_nan_dims=ignore_nan_dims,
     )
     smoother = taylor.build_smoother(
-        get_dynamics_log_density, ignore_nan_dims=ignore_nan_dims
+        get_dynamics_log_density,
+        ignore_nan_dims=ignore_nan_dims,
+        store_gain=True,
     )
     model_inputs = jnp.arange(len(ys))
     return filter, smoother, model_inputs
