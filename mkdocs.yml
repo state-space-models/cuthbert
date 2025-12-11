@@ -38,6 +38,7 @@ nav:
     - Kalman Tracking: examples/kalman_tracking.md
     - examples/temporal_parallelization_kalman.md
     - examples/online_stoch_vol.md
+    - examples/parameter_estimation_em.md
   - cuthbert API:
     - cuthbert_api/index.md
     - cuthbert_api/filtering.md
