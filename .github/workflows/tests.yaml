@@ -35,6 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install '.[tests, examples]'
           pip uninstall tensorflow-probability -y
+          pip install tfp-nightly[jax] -U
       - name: Run the tests with pytest
         run: |
           python -m pytest -n auto -vv -m "not examples"
