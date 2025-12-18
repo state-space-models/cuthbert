@@ -18,7 +18,7 @@ A JAX library for state-space model inference
 ### Goals
 - Simple, flexible and performant interface for state-space model inference.
 - Compose with [JAX ecosystem](#ecosystem) for extensive external tools.
-- Functional API: The only classes in `cuthbert` are `NamedTuple`s and [type hints](https://github.com/state-space-models/cuthbert/blob/main/cuthbertlib/types.py).
+- Functional API: The only classes in `cuthbert` are `NamedTuple`s and `Protocol`s.
 All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
 - Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
 - Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$ or $p(x_{t} \mid y_{0:T}, \theta)$.
@@ -29,7 +29,7 @@ Kalman filtering (+ extended/unscented/ensemble), expectation-maximization and m
 
 ### Non-goals
 - Tools for defining models and distributions. `cuthbert` is not a probabilistic programming language (PPL).
-But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
+But can easily compose with [`dynamax`](https://github.com/probml/dynamax), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
 - ["SMC Samplers"](https://www.stats.ox.ac.uk/~doucet/delmoral_doucet_jasra_sequentialmontecarlosamplersJRSSB.pdf) which sample from a posterior
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 <!--goals-end-->
@@ -62,6 +62,9 @@ Now install `cuthbert` from PyPI:
 ```bash
 pip install -U cuthbert
 ```
+
+Installing `cuthbert` will also install `cuthbertlib`.
+
 <!--installation-end-->
 
 <!--ecosystem-start-->
@@ -90,5 +93,5 @@ mentioned [above](#non-goals).
 ## Contributing
 
 We're always looking for contributions!
-Check out the [contributing guide](CONTRIBUTING.md) for more information.
+Check out the [contributing guide](https://github.com/state-space-models/cuthbert/tree/main?tab=contributing-ov-file) for more information.
 
