@@ -1,5 +1,7 @@
 # Sequential Monte Carlo Methods
 
+The core atomic functions can be found in [`cuthbertlib.smc`](../../cuthbertlib/smc).
+
 <!--feynman-kac-start-->
 Sequential Monte Carlo methods provide particle approximations to general Feynman-Kac models:
 
