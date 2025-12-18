@@ -17,6 +17,8 @@ A JAX library for state-space model inference
 <!--goals-start-->
 ### Goals
 - Simple, flexible and performant interface for state-space model inference.
+- Decoupling of model specification and inference. `cuthbert` is built to swap between
+different **inference** methods without be tied to a specific model specification.
 - Compose with [JAX ecosystem](#ecosystem) for extensive external tools.
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and `Protocol`s.
 All functions are pure and work seemingly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
@@ -74,13 +76,14 @@ easily with other JAX packages, e.g. [`optax`](https://github.com/google-deepmin
 for optimization, [`flax`](https://github.com/google/flax) for neural networks, and
 [`blackjax`](https://github.com/blackjax-devs/blackjax) for (SG)MCMC as well as the PPLs
 mentioned [above](#non-goals).
-- What about [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models)?
-    - [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models)
-    is a great library for state-space model specification and inference with
+- What about [`dynamax`](https://github.com/probml/dynamax)?
+    - `dynamax` is a great library for state-space model specification and inference with
     discrete or Gaussian state-space models. `cuthbert` is focused on inference
-    with arbitrary state-space models via  e.g. SMC that is not supported in [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models).
+    with arbitrary state-space models via  e.g. SMC that is not supported in `dynamax`.
+    `cuthbert` is designed to decouple inference rather than being tied to model
+    specification as in `dynamax`.
     However as they are both built on [`jax`](https://github.com/google/jax)
-    they can be used together! A [`dynamax`](https://github.com/probml/dynamax?tab=readme-ov-file#what-are-state-space-models)
+    they can be used together! A `dynamax`
     model can be passed to `cuthbert` for inference.
 - And [`particles`](https://github.com/nchopin/particles)?
     - [`particles`](https://github.com/nchopin/particles) and the accompanying book
