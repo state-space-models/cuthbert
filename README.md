@@ -93,5 +93,5 @@ mentioned [above](#non-goals).
 ## Contributing
 
 We're always looking for contributions!
-Check out the [contributing guide](https://github.com/state-space-models/cuthbert/tree/main?tab=contributing-ov-file) for more information.
+Check out the [contributing guide](CONTRIBUTING.md) for more information.
 
