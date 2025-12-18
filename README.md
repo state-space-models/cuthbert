@@ -34,6 +34,19 @@ But can easily compose with [`dynamax`](https://github.com/probml/dynamax?tab=re
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 <!--goals-end-->
 
+## Codebase structure
+<!--codebase-structure-start-->
+
+The codebase is structured as follows:
+
+- `cuthbert`: The main package with unified interface for filtering and smoothing.
+- `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference,
+that represent the building blocks that power the main `cuthbert` package.
+<!--codebase-structure-end-->
+- `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
+- `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
+
+
 <!--installation-start-->
 ## Installation
 
@@ -50,16 +63,6 @@ Now install `cuthbert` from PyPI:
 pip install -U cuthbert
 ```
 <!--installation-end-->
-
-## Repository structure
-
-The repository is structured as follows:
-
-- `cuthbert`: The main package with unified interface for filtering and smoothing.
-- `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference,
-that represent the building blocks that power the main `cuthbert` package.
-- `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
-- `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
 <!--ecosystem-start-->
 ## Ecosystem

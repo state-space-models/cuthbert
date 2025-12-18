@@ -1,5 +1,7 @@
 # Gaussian Filters and Smoothers
 
+The core atomic functions can be found in [`cuthbertlib.kalman`](../../cuthbertlib/kalman).
+
 <!--gaussian-filters-and-smoothers-start-->
 Gaussian filters in `cuthbert` provide filtering distributions of the form:
 

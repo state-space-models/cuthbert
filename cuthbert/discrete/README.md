@@ -10,4 +10,5 @@ stored as an array of log likelihoods $b_i = \log p(y_t \mid x_t = i)$ of size $
 
 <!--discrete-hidden-markov-models-end-->
 
-The computational atomic elements can be found in [`cuthbertlib.discrete`](../../cuthbertlib/discrete).
+The core atomic functions can be found in [`cuthbertlib.discrete`](../../cuthbertlib/discrete).
+
