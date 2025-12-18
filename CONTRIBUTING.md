@@ -20,7 +20,7 @@ cd cuthbert
 
 2. Install the package with the development dependencies and pre-commit hooks:
 ```bash
-pip install -e ".[test, docs]"
+pip install -e ".[tests, docs]"
 pre-commit install
 ```
 
