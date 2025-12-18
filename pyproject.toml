@@ -7,7 +7,7 @@ name = "cuthbert"
 version = "0.0.1"
 description = "State-space model inference with JAX"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [
     { name = "Sam Duffield", email = "s@mduffield.com" },
@@ -18,6 +18,14 @@ authors = [
 dependencies = [
     "jax>=0.4.35",
     "numba>=0.60.0",
+]
+
+[tool.uv]
+# The tensorflow-probability override forces installation on undefined platforms only
+# effectively disabling it for all normal platforms
+override-dependencies = [
+    "tensorflow-probability ; sys_platform == 'undefined'",
+    "tfp-nightly[jax]",
 ]
 
 [tool.setuptools.packages.find]
