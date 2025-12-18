@@ -20,6 +20,14 @@ dependencies = [
     "numba>=0.60.0",
 ]
 
+[tool.uv]
+# The tensorflow-probability override forces installation on undefined platforms only
+# effectively disabling it for all normal platforms
+override-dependencies = [
+    "tensorflow-probability ; sys_platform == 'undefined'",
+    "tfp-nightly[jax]",
+]
+
 [tool.setuptools.packages.find]
 include = ["cuthbert", "cuthbertlib"]
 
