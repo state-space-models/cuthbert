@@ -80,8 +80,6 @@ mentioned [above](#non-goals).
     - `dynamax` is a great library for state-space model specification and inference with
     discrete or Gaussian state-space models. `cuthbert` is focused on inference
     with arbitrary state-space models via  e.g. SMC that is not supported in `dynamax`.
-    `cuthbert` is designed to have a decoupled inference framework rather than being
-    tied to model specification as in `dynamax`.
     However as they are both built on [`jax`](https://github.com/google/jax)
     they can be used together! A `dynamax`
     model can be passed to `cuthbert` for inference.
