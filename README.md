@@ -56,7 +56,7 @@ that represent the building blocks that power the main `cuthbert` package.
 For example, on computers with NVIDIA GPUs:
 
 ```bash
-pip install -U "jax[cuda12]"
+pip install -U "jax[cuda13]"
 ```
 
 Now install `cuthbert` from PyPI:
