@@ -138,16 +138,18 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     P0 = chol_P0 @ chol_P0.T
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
     Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
-    des_means, des_covs, des_ells = std_kalman_filter(
+    des_means, des_covs, des_cumulative_ells = std_kalman_filter(
         m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
     )
 
     seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
     par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
+    seq_cumulative_ells = jnp.cumsum(seq_ells)
+    par_cumulative_ells = jnp.cumsum(par_ells)
     chex.assert_trees_all_close(
-        (seq_means, seq_covs, seq_ells),
-        (par_means, par_covs, par_ells),
-        (des_means, des_covs, des_ells),
+        (seq_means, seq_covs, seq_cumulative_ells),
+        (par_means, par_covs, par_cumulative_ells),
+        (des_means, des_covs, des_cumulative_ells),
         rtol=1e-10,
     )
 

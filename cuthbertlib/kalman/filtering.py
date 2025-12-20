@@ -194,6 +194,6 @@ def filtering_operator(
 
     mu = cho_solve((U1, True), b1)
     t1 = b1 @ mu - (eta2 + mu) @ tmp_2
-    ell = ell1 + ell2 - 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
+    ell = ell2 - 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
 
     return FilterScanElement(A, b, U, eta, Z, ell)
