@@ -19,7 +19,7 @@ A JAX library for state-space model inference
 - Simple, flexible and performant interface for state-space model inference.
 - Decoupling of model specification and inference. `cuthbert` is built to swap between
 different **inference** methods without be tied to a specific model specification.
-- Compose with [JAX ecosystem](#ecosystem) for extensive external tools.
+- Compose with the [JAX ecosystem](#ecosystem) for extensive external tools.
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and `Protocol`s.
 All functions are pure and work seamlessly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
 - Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
