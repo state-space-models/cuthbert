@@ -155,7 +155,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
-        seq_states.log_likelihood,
+        seq_states.log_normalizing_constant,
     )
 
     associative_taylor_filter, _, model_inputs = load_taylor_inference(
