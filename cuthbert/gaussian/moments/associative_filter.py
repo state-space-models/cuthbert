@@ -35,7 +35,7 @@ def init_prepare(
     Returns:
         State for the linearized moments Kalman filter.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
@@ -168,7 +168,7 @@ def filter_combine(
     Returns:
         Predicted and updated linearized moments Kalman filter state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     combined_elem = filtering.filtering_operator(
         state_1.elem,

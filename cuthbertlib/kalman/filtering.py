@@ -60,7 +60,7 @@ def update(
     d: ArrayLike,
     chol_R: ArrayLike,
     y: ArrayLike,
-    log_likelihood: ArrayLike = 0.0,
+    log_normalizing_constant: ArrayLike = 0.0,
 ) -> tuple[tuple[Array, Array], Array]:
     """
     Update the mean and square root covariance with a linear Gaussian observation.
@@ -72,8 +72,8 @@ def update(
         d: Observation shift.
         chol_R: Generalized Cholesky factor of the observation noise covariance.
         y: Observation.
-        log_likelihood: Optional input of log likelihood to be added to
-            log likelihood of the Bayesian update.
+        log_normalizing_constant: Optional input of log normalizing constant to be added to
+            log normalizing constant of the Bayesian update.
 
     Returns:
         Updated mean and square root covariance as well as the log marginal likelihood.
@@ -110,7 +110,7 @@ def update(
     my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
 
     ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=False)
-    return (my, chol_Py), jnp.asarray(ell + log_likelihood)
+    return (my, chol_Py), jnp.asarray(ell + log_normalizing_constant)
 
 
 def associative_params_single(

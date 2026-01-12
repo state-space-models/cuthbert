@@ -46,5 +46,5 @@ class LinearizedKalmanFilterState(NamedTuple):
         return self.elem.U
 
     @property
-    def log_likelihood(self) -> Array:
+    def log_normalizing_constant(self) -> Array:
         return self.elem.ell

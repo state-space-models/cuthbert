@@ -53,7 +53,7 @@ def init_prepare(
     Returns:
         State for the linearized Taylor Kalman filter.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_log_density, linearization_point = get_init_log_density(model_inputs)
@@ -212,7 +212,7 @@ def filter_combine(
     Returns:
         Predicted and updated linearized Taylor Kalman filter state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     combined_elem = filtering.filtering_operator(
         state_1.elem,

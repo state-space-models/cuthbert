@@ -32,7 +32,7 @@ class DiscreteFilterState(NamedTuple):
         return jnp.take(self.elem.f, 0, axis=-2)
 
     @property
-    def log_marginal(self) -> Array:
+    def log_normalizing_constant(self) -> Array:
         return jnp.take(self.elem.log_g, 0, axis=-1)
 
 
