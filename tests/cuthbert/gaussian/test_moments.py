@@ -98,7 +98,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
-        seq_states.log_likelihood,
+        seq_states.log_normalizing_constant,
     )
 
     associative_moments_filter, _, model_inputs = load_moments_inference(
@@ -110,7 +110,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_ass_means, seq_ass_chol_covs, seq_ass_ells = (
         seq_ass_states.mean,
         seq_ass_states.chol_cov,
-        seq_ass_states.log_likelihood,
+        seq_ass_states.log_normalizing_constant,
     )
 
     # Run associative filter with parallel=True
@@ -118,7 +118,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     par_ass_means, par_ass_chol_covs, par_ass_ells = (
         par_ass_states.mean,
         par_ass_states.chol_cov,
-        par_ass_states.log_likelihood,
+        par_ass_states.log_normalizing_constant,
     )
 
     # Run the standard Kalman filter.

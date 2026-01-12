@@ -296,7 +296,7 @@ n_epochs = 30
 for epoch in range(n_epochs):
     filter_obj, smoother_obj = model_factory(params)
     filtered_states = filter(filter_obj, model_inputs)
-    log_likelihood_track.append(filtered_states.log_likelihood[-1])
+    log_likelihood_track.append(filtered_states.log_normalizing_constant[-1])
     smoother_states = smoother(smoother_obj, filtered_states)
 
     optim_result = minimize(
