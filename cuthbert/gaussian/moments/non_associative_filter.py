@@ -156,7 +156,8 @@ def filter_combine(
     return linearized_kalman_filter_state_dummy_elem(
         mean=update_mean,
         chol_cov=update_chol_cov,
-        log_normalizing_constant=state_1.log_normalizing_constant + log_normalizing_constant,
+        log_normalizing_constant=state_1.log_normalizing_constant
+        + log_normalizing_constant,
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )

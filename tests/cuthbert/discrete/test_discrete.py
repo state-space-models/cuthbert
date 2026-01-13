@@ -136,7 +136,10 @@ class TestDiscrete(chex.TestCase):
         filtered_states = self.variant(
             filter, static_argnames=("filter_obj", "parallel")
         )(filter_obj, model_inputs, parallel=parallel)
-        filt_dists, log_normalizing_constants = filtered_states.dist, filtered_states.log_normalizing_constant
+        filt_dists, log_normalizing_constants = (
+            filtered_states.dist,
+            filtered_states.log_normalizing_constant,
+        )
 
         smoothed_states = self.variant(
             smoother, static_argnames=("smoother_obj", "parallel")

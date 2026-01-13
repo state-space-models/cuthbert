@@ -115,7 +115,9 @@ def init_prepare(
     )
 
     # Compute the log normalizing constant
-    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(n_filter_particles)
+    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(
+        n_filter_particles
+    )
 
     return ParticleFilterState(
         key=key,
@@ -219,7 +221,9 @@ def filter_combine(
     # Compute the log normalizing constant
     logsum_weights = jax.nn.logsumexp(next_log_weights)
     log_normalizing_constant_incr = logsum_weights - jax.nn.logsumexp(log_weights)
-    log_normalizing_constant = log_normalizing_constant_incr + state_1.log_normalizing_constant
+    log_normalizing_constant = (
+        log_normalizing_constant_incr + state_1.log_normalizing_constant
+    )
 
     return ParticleFilterState(
         state_2.key,
