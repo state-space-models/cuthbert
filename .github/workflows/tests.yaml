@@ -26,22 +26,19 @@ jobs:
         python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          version: "latest"
       - name: Install dev environment
         run: |
-          python -m pip install --upgrade pip
-          pip install '.[tests, examples]'
-          pip uninstall tensorflow-probability -y
-          pip install tfp-nightly[jax] -U
+          uv sync --extra tests --extra examples
       - name: Run the tests with pytest
         run: |
-          python -m pytest -n auto -vv -m "not examples"
+          uv run pytest -n auto -vv -m "not examples"
       - name: Generate examples scripts
         run: |
-          entangled tangle
+          uv run entangled tangle
       - name: Run the examples scripts with pytest
         run: |
-          python -m pytest -n auto -vv -m examples
+          uv run pytest -n auto -vv -m examples
