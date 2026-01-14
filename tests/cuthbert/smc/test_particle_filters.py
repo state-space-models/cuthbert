@@ -103,7 +103,7 @@ class Test(chex.TestCase):
         covs = jax.vmap(lambda particles, w: jnp.cov(particles.T, aweights=w))(
             states.particles, weights
         )
-        ells = states.log_likelihood
+        ells = states.log_normalizing_constant
 
         # Run the standard Kalman filter.
         P0 = chol_P0 @ chol_P0.T

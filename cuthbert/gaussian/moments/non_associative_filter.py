@@ -30,7 +30,7 @@ def init_prepare(
     Returns:
         State for the linearized moments Kalman filter.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
@@ -57,7 +57,7 @@ def init_prepare(
     return linearized_kalman_filter_state_dummy_elem(
         mean=m,
         chol_cov=chol_P,
-        log_likelihood=ell,
+        log_normalizing_constant=ell,
         model_inputs=model_inputs,
         mean_prev=dummy_tree_like(m),
     )
@@ -89,7 +89,7 @@ def filter_prepare(
     return linearized_kalman_filter_state_dummy_elem(
         mean=dummy_mean,
         chol_cov=dummy_chol_cov,
-        log_likelihood=jnp.array(0.0),
+        log_normalizing_constant=jnp.array(0.0),
         model_inputs=model_inputs,
         mean_prev=dummy_mean,
     )
@@ -121,7 +121,7 @@ def filter_combine(
     Returns:
         Predicted and updated linearized moments Kalman filter state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
 
     dynamics_mean_and_chol_cov_func, dynamics_linearization_point = get_dynamics_params(
@@ -137,7 +137,7 @@ def filter_combine(
     predict_state = linearized_kalman_filter_state_dummy_elem(
         mean=predict_mean,
         chol_cov=predict_chol_cov,
-        log_likelihood=state_1.log_likelihood,
+        log_normalizing_constant=state_1.log_normalizing_constant,
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )
@@ -149,14 +149,15 @@ def filter_combine(
         observation_mean_and_chol_cov_func, observation_linearization_point
     )
 
-    (update_mean, update_chol_cov), log_likelihood = filtering.update(
+    (update_mean, update_chol_cov), log_normalizing_constant = filtering.update(
         predict_mean, predict_chol_cov, H, d, chol_R, y
     )
 
     return linearized_kalman_filter_state_dummy_elem(
         mean=update_mean,
         chol_cov=update_chol_cov,
-        log_likelihood=state_1.log_likelihood + log_likelihood,
+        log_normalizing_constant=state_1.log_normalizing_constant
+        + log_normalizing_constant,
         model_inputs=state_2.model_inputs,
         mean_prev=state_1.mean,
     )

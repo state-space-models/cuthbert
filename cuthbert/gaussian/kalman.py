@@ -33,7 +33,7 @@ class KalmanFilterState(NamedTuple):
         return self.elem.U
 
     @property
-    def log_likelihood(self) -> Array:
+    def log_normalizing_constant(self) -> Array:
         return self.elem.ell
 
 
@@ -203,7 +203,7 @@ def filter_combine(
     Returns:
         Combined Kalman filter state.
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_likelihood.
+            and log_normalizing_constant.
     """
     combined_elem = filtering.filtering_operator(
         state_1.elem,

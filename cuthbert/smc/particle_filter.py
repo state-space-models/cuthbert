@@ -23,7 +23,7 @@ class ParticleFilterState(NamedTuple):
     log_weights: Array
     ancestor_indices: Array
     model_inputs: ArrayTree
-    log_likelihood: ScalarArray
+    log_normalizing_constant: ScalarArray
 
     @property
     def n_particles(self) -> int:
@@ -114,8 +114,10 @@ def init_prepare(
         None, particles, model_inputs
     )
 
-    # Compute the log likelihood
-    log_likelihood = jax.nn.logsumexp(log_weights) - jnp.log(n_filter_particles)
+    # Compute the log normalizing constant
+    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(
+        n_filter_particles
+    )
 
     return ParticleFilterState(
         key=key,
@@ -123,7 +125,7 @@ def init_prepare(
         log_weights=log_weights,
         ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
-        log_likelihood=log_likelihood,
+        log_normalizing_constant=log_normalizing_constant,
     )
 
 
@@ -163,7 +165,7 @@ def filter_prepare(
         log_weights=jnp.zeros(n_filter_particles),
         ancestor_indices=jnp.arange(n_filter_particles),
         model_inputs=model_inputs,
-        log_likelihood=jnp.array(0.0),
+        log_normalizing_constant=jnp.array(0.0),
     )
 
 
@@ -216,10 +218,12 @@ def filter_combine(
     )
     next_log_weights = log_potentials + log_weights
 
-    # Compute the log likelihood
+    # Compute the log normalizing constant
     logsum_weights = jax.nn.logsumexp(next_log_weights)
-    log_likelihood_incr = logsum_weights - jax.nn.logsumexp(log_weights)
-    log_likelihood = log_likelihood_incr + state_1.log_likelihood
+    log_normalizing_constant_incr = logsum_weights - jax.nn.logsumexp(log_weights)
+    log_normalizing_constant = (
+        log_normalizing_constant_incr + state_1.log_normalizing_constant
+    )
 
     return ParticleFilterState(
         state_2.key,
@@ -227,5 +231,5 @@ def filter_combine(
         next_log_weights,
         ancestor_indices,
         state_2.model_inputs,
-        log_likelihood,
+        log_normalizing_constant,
     )

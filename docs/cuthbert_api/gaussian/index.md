@@ -8,3 +8,13 @@ densities.
 
 Note that the moments and Taylor methods can be considered variants of the extended
 Kalman filter.
+
+The core atomic functions can be found in [`cuthbertlib.kalman`](../../cuthbertlib_api/kalman.md).
+
+## Gaussian Filters and Smoothers in `cuthbert`
+
+{%
+    include-markdown "../../../cuthbert/gaussian/README.md"
+    start="<!--gaussian-filters-and-smoothers-start-->"
+    end="<!--gaussian-filters-and-smoothers-end-->"
+%}

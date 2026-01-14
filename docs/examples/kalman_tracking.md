@@ -155,7 +155,7 @@ filtered_states = filter(filter_obj, model_inputs, parallel=True)
 # Extract results
 means = filtered_states.mean  # Posterior state means
 chol_covs = filtered_states.chol_cov  # Cholesky factors of posterior covariances
-log_likelihood = filtered_states.log_likelihood  # Log marginal likelihoods
+log_normalizing_constant = filtered_states.log_normalizing_constant  # Log marginal likelihoods
 ```
 
 !!! tip "Temporal parallelization of the filter"

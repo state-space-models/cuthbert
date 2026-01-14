@@ -23,7 +23,7 @@ class MarginalParticleFilterState(NamedTuple):
     particles: ArrayTree
     log_weights: Array
     model_inputs: ArrayTree
-    log_likelihood: ScalarArray
+    log_normalizing_constant: ScalarArray
 
 
 def build_filter(
@@ -109,15 +109,17 @@ def init_prepare(
         None, particles, model_inputs
     )
 
-    # Compute the log likelihood
-    log_likelihood = jax.nn.logsumexp(log_weights) - jnp.log(n_filter_particles)
+    # Compute the log normalizing constant
+    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(
+        n_filter_particles
+    )
 
     return MarginalParticleFilterState(
         key=key,
         particles=particles,
         log_weights=log_weights,
         model_inputs=model_inputs,
-        log_likelihood=log_likelihood,
+        log_normalizing_constant=log_normalizing_constant,
     )
 
 
@@ -156,7 +158,7 @@ def filter_prepare(
         particles=particles,
         log_weights=jnp.zeros(n_filter_particles),
         model_inputs=model_inputs,
-        log_likelihood=jnp.array(0.0),
+        log_normalizing_constant=jnp.array(0.0),
     )
 
 
@@ -220,15 +222,17 @@ def filter_combine(
     next_log_weights = log_potentials + prev_log_weights[None, :]
     next_log_weights = jax.nn.logsumexp(next_log_weights, axis=1)
 
-    # Compute the log likelihood
+    # Compute the log normalizing constant
     logsum_weights = jax.nn.logsumexp(next_log_weights)
-    log_likelihood_incr = logsum_weights - jax.nn.logsumexp(log_weights)
-    log_likelihood = log_likelihood_incr + state_1.log_likelihood
+    log_normalizing_constant_incr = logsum_weights - jax.nn.logsumexp(log_weights)
+    log_normalizing_constant = (
+        log_normalizing_constant_incr + state_1.log_normalizing_constant
+    )
 
     return MarginalParticleFilterState(
         key=state_2.key,
         particles=next_particles,
         log_weights=next_log_weights,
         model_inputs=state_2.model_inputs,
-        log_likelihood=log_likelihood,
+        log_normalizing_constant=log_normalizing_constant,
     )

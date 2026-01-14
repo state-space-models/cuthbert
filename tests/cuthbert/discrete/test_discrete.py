@@ -136,7 +136,10 @@ class TestDiscrete(chex.TestCase):
         filtered_states = self.variant(
             filter, static_argnames=("filter_obj", "parallel")
         )(filter_obj, model_inputs, parallel=parallel)
-        filt_dists, log_marginals = filtered_states.dist, filtered_states.log_marginal
+        filt_dists, log_normalizing_constants = (
+            filtered_states.dist,
+            filtered_states.log_normalizing_constant,
+        )
 
         smoothed_states = self.variant(
             smoother, static_argnames=("smoother_obj", "parallel")
@@ -150,12 +153,12 @@ class TestDiscrete(chex.TestCase):
 
         # Check shapes
         assert filt_dists.shape == (num_time_steps + 1, num_states)
-        assert log_marginals.shape == (num_time_steps + 1,)
+        assert log_normalizing_constants.shape == (num_time_steps + 1,)
         assert smooth_dists.shape == (num_time_steps + 1, num_states)
 
         # Check filtered and smoothed distributions and log marginal likelihoods
         chex.assert_trees_all_close(
-            (filt_dists, log_marginals, smooth_dists),
+            (filt_dists, log_normalizing_constants, smooth_dists),
             (des_filt_dists, des_log_marginals, des_smooth_dists),
             rtol=1e-10,
             atol=0.0,

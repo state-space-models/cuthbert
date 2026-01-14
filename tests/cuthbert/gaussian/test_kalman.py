@@ -123,7 +123,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
-        seq_states.log_likelihood,
+        seq_states.log_normalizing_constant,
     )
 
     # Run parallel sqrt filter
@@ -131,7 +131,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     par_means, par_chol_covs, par_ells = (
         par_states.mean,
         par_states.chol_cov,
-        par_states.log_likelihood,
+        par_states.log_normalizing_constant,
     )
 
     # Run the standard Kalman filter.

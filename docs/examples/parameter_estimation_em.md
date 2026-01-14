@@ -290,13 +290,13 @@ rho_init = 0.1
 sig_init = 0.5**0.5
 params = Params(rho=jnp.array([rho_init]), sigma=jnp.array([[sig_init]]))
 params_track = tree.map(lambda x: x[None], params)
-log_likelihood_track = []
+log_marginal_likelihood_track = []
 n_epochs = 30
 
 for epoch in range(n_epochs):
     filter_obj, smoother_obj = model_factory(params)
     filtered_states = filter(filter_obj, model_inputs)
-    log_likelihood_track.append(filtered_states.log_likelihood[-1])
+    log_marginal_likelihood_track.append(filtered_states.log_normalizing_constant[-1])
     smoother_states = smoother(smoother_obj, filtered_states)
 
     optim_result = minimize(
@@ -309,7 +309,7 @@ for epoch in range(n_epochs):
     params_track = tree.map(
         lambda x, y: jnp.concatenate([x, y[None]], axis=0), params_track, params
     )
-    print(f"Epoch {epoch + 1}/{n_epochs}: log likelihood = {log_likelihood_track[-1]}")
+    print(f"Epoch {epoch + 1}/{n_epochs}: log marginal likelihood = {log_marginal_likelihood_track[-1]}")
 ```
 
 All done! We can now visualize the learning curve with some plots.
@@ -318,7 +318,7 @@ All done! We can now visualize the learning curve with some plots.
     ```{.python #em-plots}
     # Plot log likelihood
     plt.figure(figsize=(10, 8))
-    plt.plot(log_likelihood_track, label="Log likelihood")
+    plt.plot(log_marginal_likelihood_track, label="Log likelihood")
     plt.xlabel("Epoch")
     plt.ylabel("Log likelihood")
     plt.legend()
