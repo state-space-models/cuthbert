@@ -183,7 +183,7 @@ filtered_covs = jnp.einsum('tij,tkj->tik', filtered_chol_covs, filtered_chol_cov
 Running the above code yields
 ```txt
 Filtered means shape: (50, 2)
-Total log likelihood: -1361.08
+Total log likelihood: -55.41
 First 5 filtered positions: [-0.0211225  -0.2383174  -0.23843466 -0.24582891 -0.13977882]
 ```
 
@@ -217,7 +217,7 @@ Running the above code yields
 ```txt
 Maximum difference in filtered means: 4.77e-07
 Maximum difference in filtered covariances: 1.19e-07
-cuthbert log likelihood: -1361.08
+cuthbert log likelihood: -55.41
 Dynamax log likelihood: -55.41
 Difference: 1.31e+03
 ```
