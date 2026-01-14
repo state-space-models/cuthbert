@@ -7,10 +7,10 @@ This example demonstrates how to use a [Dynamax](https://github.com/probml/dynam
 ```{.python #dynamax-imports}
 import jax.numpy as jnp
 import jax.random as jr
-from dynamax.linear_gaussian_ssm import LinearGaussianSSM
+from dynamax.linear_gaussian_ssm import LinearGaussianSSM, lgssm_filter
 import matplotlib.pyplot as plt
 
-from cuthbert import filter
+import cuthbert
 from cuthbert.gaussian import kalman
 ```
 
@@ -164,13 +164,13 @@ Now we can run the cuthbert Kalman filter to obtain the filtering distributions:
 
 ```{.python #dynamax-run-filter}
 # Run Kalman filtering
-filtered_states = filter(filter_obj, model_inputs)
+filtered_states = cuthbert.filter(filter_obj, model_inputs)
 
 # Extract filtering results
 filtered_means = filtered_states.mean
 filtered_chol_covs = filtered_states.chol_cov
-log_likelihoods = filtered_states.log_likelihood
-total_log_likelihood = jnp.sum(log_likelihoods)
+log_likelihoods = filtered_states.log_normalizing_constant
+total_log_likelihood = log_likelihoods[-1]
 
 print(f"Filtered means shape: {filtered_means.shape}")
 print(f"Total log likelihood: {total_log_likelihood:.2f}")
@@ -194,8 +194,6 @@ Let's verify our results match Dynamax's built-in Kalman filtering:
 
 ```{.python #dynamax-compare}
 # Run Dynamax's Kalman filter for comparison
-from dynamax.linear_gaussian_ssm import lgssm_filter
-
 dynamax_posterior = lgssm_filter(params, observations)
 dynamax_filtered_means = dynamax_posterior.filtered_means
 dynamax_filtered_covs = dynamax_posterior.filtered_covariances
