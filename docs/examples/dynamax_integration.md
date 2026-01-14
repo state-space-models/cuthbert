@@ -228,7 +228,7 @@ Finally, let's visualize the filtering results:
 
 ![Filtering Results](../assets/dynamax_integration.png)
 
-??? quote "Code plot the filtering results"
+??? quote "Code to plot the filtering results"
     ```{.python #dynamax-visualize}
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
     

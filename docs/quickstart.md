@@ -114,7 +114,7 @@ to make the example run faster).
 
 ```{.python #quickstart-load-data-jax}
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
-    load_international_football_data(start_date="1980-01-01", min_matches=300)
+    load_international_football_data(start_date="1990-01-01", min_matches=300)
 )
 
 print(football_data.tail())
