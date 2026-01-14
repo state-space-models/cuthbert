@@ -28,8 +28,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-        with:
-          version: "latest"
       - name: Install dev environment
         run: |
           uv sync --extra tests --extra examples
