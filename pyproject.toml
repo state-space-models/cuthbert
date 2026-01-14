@@ -25,7 +25,6 @@ dependencies = [
 # effectively disabling it for all normal platforms
 override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
-    "tfp-nightly[jax]",
 ]
 
 [tool.setuptools.packages.find]
@@ -39,8 +38,12 @@ tests = [
     "entangled-cli; python_version >= '3.12'", # convert .md examples to .py, requires Python 3.12+
 ]
 docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
-examples = ["matplotlib", "pandas", "pandas-stubs", "yfinance", "dynamax", "ipython"]
+examples = [
+    "matplotlib", "pandas", "pandas-stubs", "yfinance",
+    "dynamax", "ipython", "tfp-nightly[jax]",
+]
 # ipython just required for dynamax, can be removed when they do a new release
+# tfp-nightly[jax] provides tensorflow_probability module that dynamax needs
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
