@@ -100,7 +100,7 @@ First 5 observations: [-0.12673497 -1.9195632  -0.7634685  -0.7985211  -0.062200
 
 ## Build `cuthbert` Kalman filter from `dynamax` model
 
-The key to integrating `dynamax` with `cuthbert` is to extract the model matrices and wrap them in `cuthbert's parameter extraction functions.
+The key to integrating `dynamax` with `cuthbert` is to extract the model matrices and wrap them in `cuthbert`'s parameter extraction functions.
 
 ```{.python #dynamax-build-cuthbert-filter}
 def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observations):
