@@ -1,3 +1,5 @@
+"""Implements multinomial resampling."""
+
 from functools import partial
 
 import jax

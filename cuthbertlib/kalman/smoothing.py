@@ -1,3 +1,5 @@
+"""Implements the square root Rauch–Tung–Striebel (RTS) smoother and associative variant."""
+
 from typing import NamedTuple
 
 import jax
@@ -9,6 +11,8 @@ from cuthbertlib.types import Array, ArrayLike
 
 
 class SmootherScanElement(NamedTuple):
+    """Kalman smoother scan element."""
+
     g: Array
     E: Array
     D: Array
@@ -69,8 +73,19 @@ def associative_params_single(
     c: Array,
     chol_Q: Array,
 ) -> SmootherScanElement:
-    """Compute the smoother scan element for the square root parallel Kalman
-    smoother for a single time step."""
+    """Single time step for scan element for square root parallel Kalman smoother.
+
+    Args:
+        m: Mean of the smoother state.
+        chol_P: Generalized Cholesky factor of the smoothing covariance.
+        F: State transition matrix.
+        c: State transition shift vector.
+        chol_Q: Generalized Cholesky factor of the state transition noise covariance.
+
+    Returns:
+        SmootherScanElement: The output of the associative operator applied to the input
+            elements.
+    """
     nx = chol_Q.shape[0]
 
     Phi = jnp.block([[F @ chol_P, chol_Q], [chol_P, jnp.zeros_like(chol_Q)]])

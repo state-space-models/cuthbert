@@ -1,3 +1,5 @@
+"""Implements Taylor-like linearization."""
+
 from typing import Callable, overload
 
 import jax
@@ -64,7 +66,6 @@ def linearize_taylor(
         Linearized mean and Cholesky factor of the covariance matrix.
             The auxiliary value is also returned if `has_aux` is `True`.
     """
-
     g_and_maybe_aux = jax.grad(log_potential, has_aux=has_aux)(x)
     prec_and_maybe_aux = jax.hessian(log_potential, has_aux=has_aux)(x)
 

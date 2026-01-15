@@ -1,3 +1,5 @@
+"""Implements inverse square root of a symmetric matrix."""
+
 import jax.numpy as jnp
 
 from cuthbertlib.linalg.tria import tria

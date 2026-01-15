@@ -77,8 +77,7 @@ def convert_filter_to_smoother_state(
     model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
-    """
-    Convert a particle filter state to a particle smoother state.
+    """Convert a particle filter state to a particle smoother state.
 
     Args:
         filter_state: Particle filter state.
@@ -123,8 +122,7 @@ def smoother_prepare(
     model_inputs: ArrayTreeLike,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
-    """
-    Prepare a state for a particle smoother step.
+    """Prepare a state for a particle smoother step.
 
     Note that the model_inputs here are different to filter_state.model_inputs.
     The model_inputs required here are for the transition from t to t+1.
@@ -158,8 +156,7 @@ def smoother_combine(
     backward_sampling_fn: BackwardSampling,
     log_potential: LogPotential,
 ) -> ParticleSmootherState:
-    """
-    Combine smoother state from next time point with state prepared
+    """Combine smoother state from next time point with state prepared
     with latest model inputs.
 
     Remember smoothing iterates backwards in time.

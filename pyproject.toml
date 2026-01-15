@@ -47,7 +47,13 @@ examples = [
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F821", "E402"]
+"__init__.py" = ["F401", "F821", "E402", "D104"]
+"tests/**/*.py" = ["D"] # no docstring checking for tests
+"cuthbertlib/resampling/**/*.py" = ["D103"] # resampling uses decorator for docstrings
+[tool.ruff.lint]
+select = ["D"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.pytest]
 [tool.pytest.ini_options]

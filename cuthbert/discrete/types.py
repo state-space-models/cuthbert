@@ -27,7 +27,6 @@ class GetTransitionMatrix(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> Array:
         r"""Get the transition matrix.
 
-
         Args:
             model_inputs: Model inputs.
 

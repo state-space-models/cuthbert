@@ -1,3 +1,5 @@
+"""Implements unscented quadrature."""
+
 from typing import NamedTuple
 
 import jax.numpy as jnp
@@ -9,11 +11,28 @@ __all__ = ["weights", "UnscentedQuadrature"]
 
 
 class UnscentedQuadrature(NamedTuple):
+    """Unscented quadrature.
+
+    Attributes:
+        wm: The mean weights.
+        wc: The covariance weights.
+        lamda: The lambda parameter.
+    """
+
     wm: Array
     wc: Array
     lamda: float
 
     def get_sigma_points(self, m, chol) -> SigmaPoints:
+        """Get the sigma points.
+
+        Args:
+            m: The mean.
+            chol: The Cholesky factor of the covariance.
+
+        Returns:
+            SigmaPoints: The sigma points.
+        """
         n_dim = m.shape[0]
         scaled_chol = jnp.sqrt(n_dim + self.lamda) * chol
 
@@ -27,8 +46,8 @@ class UnscentedQuadrature(NamedTuple):
 def weights(
     n_dim: int, alpha: float = 0.5, beta: float = 2.0, kappa: float | None = None
 ) -> UnscentedQuadrature:
-    """
-    Computes the weights associated with the unscented cubature method.
+    """Computes the weights associated with the unscented cubature method.
+
     The number of sigma-points is 2 * n_dim.
     This method is also known as the Unscented Transform, and generalizes the
     `cubature.py` weights: the cubature method is a special case of the unscented

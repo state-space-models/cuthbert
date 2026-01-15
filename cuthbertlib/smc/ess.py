@@ -1,3 +1,5 @@
+"""Importance sampling effective sample size (ESS) computation."""
+
 import jax
 import jax.numpy as jnp
 from jax import Array

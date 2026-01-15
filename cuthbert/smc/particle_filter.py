@@ -1,5 +1,4 @@
-"""
-Implements the generic particle filter (Algorithm 10.1, [Chopin and Papaspiliopoulos, 2020](https://doi.org/10.1007/978-3-030-47845-2)).
+"""Implements the generic particle filter (Algorithm 10.1, [Chopin and Papaspiliopoulos, 2020](https://doi.org/10.1007/978-3-030-47845-2)).
 """
 
 from functools import partial
@@ -84,8 +83,7 @@ def init_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> ParticleFilterState:
-    """
-    Prepare the initial state for the particle filter.
+    """Prepare the initial state for the particle filter.
 
     Args:
         model_inputs: Model inputs.
@@ -135,8 +133,7 @@ def filter_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> ParticleFilterState:
-    """
-    Prepare a state for a particle filter step.
+    """Prepare a state for a particle filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -177,8 +174,7 @@ def filter_combine(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> ParticleFilterState:
-    """
-    Combine the filter state from the previous time step with the state prepared
+    """Combine the filter state from the previous time step with the state prepared
     for the current step.
 
     Implements the particle filter update: conditional resampling,

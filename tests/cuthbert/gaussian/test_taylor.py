@@ -40,7 +40,8 @@ def _load_taylor_init_and_dynamics(
     chol_Qs: Array,
 ) -> tuple[GetInitLogDensity, GetDynamicsLogDensity]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
-    for a linear-Gaussian SSM."""
+    for a linear-Gaussian SSM.
+    """
 
     def get_init_log_density(model_inputs: int) -> tuple[LogDensity, Array]:
         def init_log_density(x):
@@ -81,8 +82,8 @@ def load_taylor_inference(
     ignore_nan_dims: bool = False,
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
-    for a linear-Gaussian SSM."""
-
+    for a linear-Gaussian SSM.
+    """
     get_init_log_density, get_dynamics_log_density = _load_taylor_init_and_dynamics(
         m0, chol_P0, Fs, cs, chol_Qs
     )

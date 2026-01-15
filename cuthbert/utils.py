@@ -6,7 +6,6 @@ from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 def _dummy_array(leaf: ArrayLike | jax.ShapeDtypeStruct) -> Array:
     """Returns an array of the same shape and dtype filled with dummy values."""
-
     if isinstance(leaf, jax.ShapeDtypeStruct):
         leaf = jnp.empty_like(leaf)
 

@@ -1,3 +1,5 @@
+"""Implements triangularization operator a matrix via QR decomposition."""
+
 import jax
 
 from cuthbertlib.types import Array

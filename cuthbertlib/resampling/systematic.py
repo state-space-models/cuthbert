@@ -1,3 +1,5 @@
+"""Implements systematic resampling."""
+
 from functools import partial
 
 from jax import numpy as jnp

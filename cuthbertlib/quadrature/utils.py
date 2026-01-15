@@ -1,3 +1,5 @@
+"""Utility functions (Cholesky updating) for quadrature."""
+
 import jax
 import jax.numpy as jnp
 
@@ -9,8 +11,8 @@ __all__ = ["cholesky_update_many"]
 def cholesky_update_many(
     chol_init: ArrayLike, update_vectors: ArrayLike, multiplier: float
 ) -> Array:
-    r"""
-    Update the Cholesky decomposition of a matrix with multiple update vectors.
+    r"""Update the Cholesky decomposition of a matrix with multiple update vectors.
+
     In mathematical terms, we compute :math:`A + \sum_{i=1}^{n} \alpha v_i v_i^T`
     where :math:`A` is the original matrix, :math:`v_i` are the update vectors and
     :math:`\alpha` is the multiplier.

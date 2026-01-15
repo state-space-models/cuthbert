@@ -1,3 +1,5 @@
+"""Implements Gauss-Hermite quadrature."""
+
 from itertools import product
 from typing import NamedTuple
 
@@ -12,17 +14,34 @@ __all__ = ["weights", "GaussHermiteQuadrature"]
 
 
 class GaussHermiteQuadrature(NamedTuple):
+    """Gauss-Hermite quadrature.
+
+    Attributes:
+        wm: The mean weights.
+        wc: The covariance weights.
+        xi: The sigma points.
+    """
+
     wm: ArrayLike
     wc: ArrayLike
     xi: ArrayLike
 
     def get_sigma_points(self, m, chol) -> SigmaPoints:
+        """Get the sigma points.
+
+        Args:
+            m: The mean.
+            chol: The Cholesky factor of the covariance.
+
+        Returns:
+            SigmaPoints: The sigma points.
+        """
         return cubature.get_sigma_points(m, chol, self.xi, self.wm, self.wc)
 
 
 def weights(n_dim: int, order: int = 3) -> Quadrature:
-    """
-    Computes the weights associated with the Gauss-Hermite quadrature method.
+    """Computes the weights associated with the Gauss-Hermite quadrature method.
+
     The Hermite polynomial is in the probabilist's version.
 
     Args:

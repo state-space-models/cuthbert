@@ -1,3 +1,5 @@
+"""Utility functions (inverse CDF sampling) for resampling algorithms."""
+
 import jax
 import jax.numpy as jnp
 import numba as nb
@@ -10,8 +12,7 @@ from cuthbertlib.types import Array, ArrayLike
 
 @jax.jit
 def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
-    """
-    Inverse CDF sampling for resampling algorithms.
+    """Inverse CDF sampling for resampling algorithms.
 
     The implementation branches depending on the platform being CPU or GPU (and other parallel envs)
     1. The CPU implementation is a numba-compiled specialized searchsorted(arr, vals) for *sorted* uniforms
@@ -30,12 +31,12 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
     """
     weights = jnp.exp(logits - logsumexp(logits))
     return platform_dependent(
-        sorted_uniforms, weights, cpu=inverse_cdf_cpu, default=inverse_cdf_default
+        sorted_uniforms, weights, cpu=_inverse_cdf_cpu, default=_inverse_cdf_default
     )
 
 
 @jax.jit
-def inverse_cdf_default(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
+def _inverse_cdf_default(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
     weights = jnp.asarray(weights)
     M = weights.shape[0]
     cs = jnp.cumsum(weights)
@@ -46,7 +47,7 @@ def inverse_cdf_default(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array
 
 
 @jax.jit
-def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
+def _inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
     sorted_uniforms = jnp.asarray(sorted_uniforms)
     weights = jnp.asarray(weights)
     M = weights.shape[0]
@@ -58,7 +59,7 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
         idx_ = np.array(idx_, dtype=idx.dtype)
         su = np.asarray(su)
         w = np.asarray(w)
-        inverse_cdf_numba(su, w, idx_)
+        _inverse_cdf_numba(su, w, idx_)
         return idx_
 
     idx = jax.pure_callback(
@@ -68,7 +69,7 @@ def inverse_cdf_cpu(sorted_uniforms: ArrayLike, weights: ArrayLike) -> Array:
 
 
 @nb.njit
-def inverse_cdf_numba(su, ws, idx):
+def _inverse_cdf_numba(su, ws, idx):
     j = 0
     s = ws[0]
     M = su.shape[0]

@@ -27,8 +27,7 @@ def predict(
     c: ArrayLike,
     chol_Q: ArrayLike,
 ) -> tuple[Array, Array]:
-    """
-    Propagate the mean and square root covariance through linear Gaussian dynamics.
+    """Propagate the mean and square root covariance through linear Gaussian dynamics.
 
     Args:
         m: Mean of the state.
@@ -62,8 +61,7 @@ def update(
     y: ArrayLike,
     log_normalizing_constant: ArrayLike = 0.0,
 ) -> tuple[tuple[Array, Array], Array]:
-    """
-    Update the mean and square root covariance with a linear Gaussian observation.
+    """Update the mean and square root covariance with a linear Gaussian observation.
 
     Args:
         m: Mean of the state.
@@ -117,8 +115,8 @@ def associative_params_single(
     F: Array, c: Array, chol_Q: Array, H: Array, d: Array, chol_R: Array, y: Array
 ) -> FilterScanElement:
     """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step, with observation guaranteed not to be missing."""
-
+    filter for a single time step, with observation guaranteed not to be missing.
+    """
     # Handle case where there is no observation
     flag = jnp.isnan(y)
     flag, chol_R, H, d, y = collect_nans_chol(flag, chol_R, H, d, y)

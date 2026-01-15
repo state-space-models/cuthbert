@@ -1,3 +1,5 @@
+"""Implements exact backward sampling for smoothing in SMC."""
+
 import jax
 from jax import numpy as jnp
 from jax import random, vmap
@@ -19,9 +21,7 @@ def log_weights_single(
     log_weight_x0: ArrayLike,
     log_density: LogConditionalDensity,
 ) -> Array:
-    """
-    Compute smoothing weight given a single sample from x0 with accompanying
-    log weight, a single sample x1 and a log conditional density p(x1 | x0).
+    """Compute smoothing weight for a single sample x0 given a single sample x1.
 
     Args:
         x0: The previous state.
@@ -36,9 +36,7 @@ def log_weights_single(
 
 
 def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
-    """
-    Compute smoothing weights given a collection of samples from x0 with
-    accompanying log weights, a single sample x1 and a log conditional density p(x1 | x0).
+    """Compute log smoothing weights over a collection of x0 given a single x1.
 
     Args:
         x0_all: Collection of previous states.
@@ -63,9 +61,7 @@ def log_weights(x0_all, x1, log_weight_x0_all, log_density) -> Array:
 def simulate_single(
     key, x0_all, x1, log_weight_x0_all, log_density
 ) -> tuple[ArrayTree, Array]:
-    """
-    Sample a smoothed x0 given a collection of samples from x0 with accompanying
-    log weights, a single sample x1 and a log conditional density p(x1 | x0).
+    """Sample x0 from a collection given a single x1.
 
     Args:
         key: A JAX random key.
@@ -90,10 +86,10 @@ def simulate(
     log_density: LogConditionalDensity,
     x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
-    """
-    Implements the exact backward sampling algorithm for smoothing in SMC.
+    """Implements the exact backward sampling algorithm for smoothing in SMC.
 
-    Some arguments are only included for protocol compatibility and not used in this implementation.
+    Some arguments are only included for protocol compatibility and not used in this
+    implementation.
 
     Args:
         key: JAX PRNG key.

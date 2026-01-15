@@ -1,3 +1,5 @@
+"""Implements killing resampling."""
+
 from functools import partial
 
 from jax import numpy as jnp

@@ -1,3 +1,5 @@
+"""Implements collection of NaNs and reordering within a Cholesky factor."""
+
 from typing import Any
 
 from jax import numpy as jnp
@@ -7,16 +9,17 @@ from cuthbertlib.linalg.tria import tria
 from cuthbertlib.types import Array, ArrayLike
 
 
-def set_to_zero(flag: ArrayLike, x: ArrayLike) -> Array:
+def _set_to_zero(flag: ArrayLike, x: ArrayLike) -> Array:
     x = jnp.asarray(x)
     broadcast_flag = jnp.expand_dims(flag, list(range(1, x.ndim)))
     return jnp.where(broadcast_flag, 0.0, x)
 
 
 def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
-    """
-    Converts a generalized Cholesky factor of a covariance matrix with NaNs
-    into an ordered generalized Cholesky factor with NaNs rows and columns
+    """Converts chol into an order chol factor with NaNs moved to the bottom right.
+
+    Specifically, converts a generalized Cholesky factor of a covariance matrix wit
+    NaNs into an ordered generalized Cholesky factor with NaNs rows and columns
     moved to the end with diagonal elements set to 1.
 
     Also reorders the rest of the arguments in the same way along the first axis
@@ -39,7 +42,6 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
         flag, chol and rest reordered so that valid entries are first and NaNs are last.
             Diagonal elements of chol are set to 1/√2π so that normalization is correct
     """
-
     flag = jnp.asarray(flag)
     chol = jnp.asarray(chol)
 
@@ -52,8 +54,8 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
     if not flag.shape:
         return (
             flag,
-            set_to_zero(flag, chol),
-            *tree.map(lambda x: set_to_zero(flag, x), rest),
+            _set_to_zero(flag, chol),
+            *tree.map(lambda x: _set_to_zero(flag, x), rest),
         )
 
     if chol.size == 1:
@@ -83,6 +85,6 @@ def collect_nans_chol(flag: ArrayLike, chol: ArrayLike, *rest: Any) -> Any:
 
     # Only reorder non-scalar arrays in rest
     rest = tree.map(lambda x: x[argsort] if jnp.asarray(x).shape else x, rest)
-    rest = tree.map(lambda x: set_to_zero(flag, x), rest)
+    rest = tree.map(lambda x: _set_to_zero(flag, x), rest)
 
     return flag, chol, *rest

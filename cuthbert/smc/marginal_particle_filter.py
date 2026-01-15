@@ -1,5 +1,4 @@
-"""
-Implements the marginal particle filter from [Klaas et. al. (2005)](https://www.cs.ubc.ca/~arnaud/klass_defreitas_doucet_marginalparticlefilterUAI2005.pdf).
+"""Implements the marginal particle filter from [Klaas et. al. (2005)](https://www.cs.ubc.ca/~arnaud/klass_defreitas_doucet_marginalparticlefilterUAI2005.pdf).
 """
 
 from functools import partial
@@ -79,8 +78,7 @@ def init_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> MarginalParticleFilterState:
-    """
-    Prepare the initial state for the marginal particle filter.
+    """Prepare the initial state for the marginal particle filter.
 
     Args:
         model_inputs: Model inputs.
@@ -129,8 +127,7 @@ def filter_prepare(
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> MarginalParticleFilterState:
-    """
-    Prepare a state for a marginal particle filter step.
+    """Prepare a state for a marginal particle filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -170,8 +167,7 @@ def filter_combine(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> MarginalParticleFilterState:
-    """
-    Combine the marginal particle filter state from the previous time step with the
+    """Combine the marginal particle filter state from the previous time step with the
     state prepared for the current step.
 
     Implements the marginal particle filter update: conditional resampling,

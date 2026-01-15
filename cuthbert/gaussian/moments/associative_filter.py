@@ -21,8 +21,7 @@ def init_prepare(
     get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """
-    Prepare the initial state for the linearized moments Kalman filter.
+    """Prepare the initial state for the linearized moments Kalman filter.
 
     Args:
         model_inputs: Model inputs.
@@ -83,8 +82,7 @@ def filter_prepare(
     get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """
-    Prepare a state for a linearized moments Kalman filter step,
+    """Prepare a state for a linearized moments Kalman filter step,
     just passes through model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored
@@ -151,8 +149,7 @@ def filter_combine(
     state_1: LinearizedKalmanFilterState,
     state_2: LinearizedKalmanFilterState,
 ) -> LinearizedKalmanFilterState:
-    """
-    Combine filter state from previous time point with state prepared
+    """Combine filter state from previous time point with state prepared
     with latest model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored

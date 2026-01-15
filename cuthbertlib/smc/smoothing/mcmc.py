@@ -1,3 +1,5 @@
+"""Implements MCMC backward smoothing in SMC."""
+
 import jax
 from jax import numpy as jnp
 from jax import random
@@ -23,8 +25,7 @@ def simulate(
     x1_ancestor_indices: ArrayLike,
     n_steps: int,
 ) -> tuple[ArrayTree, Array]:
-    """
-    Implements the IMH algorithm for smoothing in SMC.
+    """Implements the IMH algorithm for smoothing in SMC.
 
     Args:
         key: JAX PRNG key.

@@ -1,3 +1,5 @@
+"""Implements cubature quadrature."""
+
 from typing import NamedTuple
 
 import jax.numpy as jnp
@@ -10,11 +12,28 @@ __all__ = ["weights", "CubatureQuadrature"]
 
 
 class CubatureQuadrature(NamedTuple):
+    """Cubature quadrature.
+
+    Attributes:
+        wm: The mean weights.
+        wc: The covariance weights.
+        xi: The sigma points.
+    """
+
     wm: ArrayLike
     wc: ArrayLike
     xi: ArrayLike
 
     def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints:
+        """Get the sigma points.
+
+        Args:
+            m: The mean.
+            chol: The Cholesky factor of the covariance.
+
+        Returns:
+            SigmaPoints: The sigma points.
+        """
         return get_sigma_points(m, chol, self.xi, self.wm, self.wc)
 
 
@@ -33,8 +52,8 @@ def get_sigma_points(
 
 
 def weights(n_dim: int) -> Quadrature:
-    """
-    Computes the weights associated with the spherical cubature method.
+    """Computes the weights associated with the spherical cubature method.
+
     The number of sigma-points is 2 * n_dim.
 
     Args:

@@ -24,8 +24,7 @@ from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 @pytest.mark.parametrize("N", [5_000])
 @pytest.mark.parametrize("method", ["mcmc", "exact", "tracing"])
 def test_backward(seed, x_dim, y_dim, N, method):
-    """
-    Test SMC backward simulation methods on a two-step linear Gaussian system.
+    """Test SMC backward simulation methods on a two-step linear Gaussian system.
 
     Setup:
     - x0s ~ p(x0 | y0): filter particles at time 0

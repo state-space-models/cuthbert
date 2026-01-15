@@ -1,3 +1,5 @@
+"""Implements moment-based linearization."""
+
 from typing import Callable, cast, overload
 
 import jax
@@ -28,8 +30,7 @@ def linearize_moments(
     x: ArrayLike,
     has_aux: bool = False,
 ) -> tuple[Array, Array, Array] | tuple[Array, Array, Array, ArrayTree]:
-    r"""Linearizes conditional mean and Cholesky factor of the covariance matrix
-    functions into a linear-Gaussian form.
+    r"""Linearizes conditional mean and chol_cov functions into a linear-Gaussian form.
 
     Takes a function `mean_and_chol_cov_function(x)` that returns the
     conditional mean and Cholesky factor of the covariance matrix of the distribution
@@ -61,7 +62,6 @@ def linearize_moments(
     References:
         - [sqrt-parallel-smoothers](https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py)
     """
-
     if has_aux:
         mean_and_chol_cov_function = cast(
             MeanAndCholCovFuncAux, mean_and_chol_cov_function

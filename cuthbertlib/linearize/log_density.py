@@ -1,3 +1,5 @@
+"""Implements linearization of conditional log densities."""
+
 from typing import overload
 
 import jax.numpy as jnp

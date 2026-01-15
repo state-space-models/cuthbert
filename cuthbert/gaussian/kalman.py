@@ -1,5 +1,4 @@
-"""
-Implements the square-root, parallel-in-time Kalman filter for linear Gaussian
+"""Implements the square-root, parallel-in-time Kalman filter for linear Gaussian
 SSMs from [Yaghoobi et. al. (2025)](https://doi.org/10.1137/23M156121X).
 """
 
@@ -57,8 +56,7 @@ def build_filter(
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
 ) -> Filter:
-    """
-    Builds an exact Kalman filter object for linear Gaussian SSMs.
+    """Builds an exact Kalman filter object for linear Gaussian SSMs.
 
     Args:
         get_init_params: Function to get m0, chol_P0 to initialize filter state,
@@ -94,8 +92,7 @@ def build_smoother(
     store_gain: bool = False,
     store_chol_cov_given_next: bool = False,
 ) -> Smoother:
-    """
-    Builds an exact Kalman smoother object for linear Gaussian SSMs.
+    """Builds an exact Kalman smoother object for linear Gaussian SSMs.
 
     Args:
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q
@@ -131,8 +128,7 @@ def init_prepare(
     get_observation_params: GetObservationParams,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
-    """
-    Prepare the initial state for the Kalman filter.
+    """Prepare the initial state for the Kalman filter.
 
     Args:
         model_inputs: Model inputs.
@@ -166,8 +162,7 @@ def filter_prepare(
     get_observation_params: GetObservationParams,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
-    """
-    Prepare a state for an exact Kalman filter step.
+    """Prepare a state for an exact Kalman filter step.
 
     Args:
         model_inputs: Model inputs.
@@ -189,8 +184,7 @@ def filter_combine(
     state_1: KalmanFilterState,
     state_2: KalmanFilterState,
 ) -> KalmanFilterState:
-    """
-    Combine filter state from previous time point with state prepared
+    """Combine filter state from previous time point with state prepared
     with latest model inputs.
 
     Applies exact Kalman predict + filter update in covariance square root form.
@@ -220,8 +214,7 @@ def smoother_prepare(
     store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
-    """
-    Prepare a state for an exact Kalman smoother step.
+    """Prepare a state for an exact Kalman smoother step.
 
     Note that the model_inputs here are different to filter_state.model_inputs.
     The model_inputs required here are for the transition from t to t+1.
@@ -259,8 +252,7 @@ def smoother_combine(
     state_1: KalmanSmootherState,
     state_2: KalmanSmootherState,
 ) -> KalmanSmootherState:
-    """
-    Combine smoother state from next time point with state prepared
+    """Combine smoother state from next time point with state prepared
     with latest model inputs.
 
     Remember smoothing iterates backwards in time.
@@ -296,8 +288,7 @@ def convert_filter_to_smoother_state(
     store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
-    """
-    Convert the filter state to a smoother state.
+    """Convert the filter state to a smoother state.
 
     Useful for the final filter state which is equivalent to the final smoother state.
 

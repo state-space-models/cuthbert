@@ -43,8 +43,7 @@ def build_filter(
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> Filter:
-    """
-    Build linearized Taylor Kalman inference filter.
+    """Build linearized Taylor Kalman inference filter.
 
     If `associative` is True all filtering linearization points are pre-defined or
     extracted from model inputs. The `state` argument should be ignored in
@@ -83,7 +82,6 @@ def build_filter(
     Returns:
         Linearized Taylor Kalman filter object.
     """
-
     if associative:
         return Filter(
             init_prepare=partial(

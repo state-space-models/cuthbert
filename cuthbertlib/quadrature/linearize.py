@@ -1,3 +1,5 @@
+"""Implements quadrature-based linearization of conditional moments and functional."""
+
 from typing import Callable
 
 import jax.numpy as jnp

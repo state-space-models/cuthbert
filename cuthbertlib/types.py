@@ -1,3 +1,5 @@
+"""Type aliases for common types used in the library."""
+
 from typing import Any, Callable, TypeAlias
 
 from jax import Array

@@ -28,8 +28,7 @@ def build_filter(
     get_observation_params: GetObservationMoments,
     associative: bool = False,
 ) -> Filter:
-    """
-    Build linearized moments Kalman inference filter.
+    """Build linearized moments Kalman inference filter.
 
     If `associative` is True all filtering linearization points are pre-defined or
     extracted from model inputs. The `state` argument should be ignored in
@@ -58,7 +57,6 @@ def build_filter(
     Returns:
         Linearized moments Kalman filter object.
     """
-
     if associative:
         return Filter(
             init_prepare=partial(

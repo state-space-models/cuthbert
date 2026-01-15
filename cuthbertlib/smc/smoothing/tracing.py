@@ -1,3 +1,5 @@
+"""Implements the ancestor/genealogy tracing algorithm for smoothing in SMC."""
+
 import jax
 from jax import numpy as jnp
 
@@ -19,10 +21,10 @@ def simulate(
     log_density: LogConditionalDensity,
     x1_ancestor_indices: ArrayLike,
 ) -> tuple[ArrayTree, Array]:
-    """
-    Implements the ancestor/genealogy tracing algorithm for smoothing in SMC.
+    """Implements the ancestor/genealogy tracing algorithm for smoothing in SMC.
 
-    Some arguments are only included for protocol compatibility and not used in this implementation.
+    Some arguments are only included for protocol compatibility and not used in this
+    implementation.
 
     Args:
         key: JAX PRNG key. Not used

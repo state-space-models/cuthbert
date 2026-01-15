@@ -1,3 +1,5 @@
+"""Common types and protocols for quadrature."""
+
 from typing import NamedTuple, Protocol, Self, runtime_checkable
 
 import jax.numpy as jnp
@@ -9,9 +11,9 @@ __all__ = ["SigmaPoints", "Quadrature"]
 
 
 class SigmaPoints(NamedTuple):
-    """
-    Represents integration (quadrature) sigma points as a collection of points in the space, weights corresponding to
-    mean and covariance calculations.
+    """Represents integration (quadrature) sigma points as a collection of points.
+
+    Weights correspond to mean and covariance calculations.
 
     Attributes:
         points: The sigma points.
@@ -20,7 +22,8 @@ class SigmaPoints(NamedTuple):
 
     Methods:
         mean: Computes the mean of the sigma points.
-        covariance: Computes the covariance between the sigma points and the other sigma points (or itself).
+        covariance: Computes the covariance between the sigma points and the other
+            sigma points (or itself).
         sqrt: Computes a square root of the covariance matrix of the sigma points.
 
     References:
@@ -34,8 +37,7 @@ class SigmaPoints(NamedTuple):
 
     @property
     def mean(self) -> Array:
-        """
-        Computes the mean of the sigma points.
+        """Computes the mean of the sigma points.
 
         Returns:
             The mean of the sigma points.
@@ -44,9 +46,7 @@ class SigmaPoints(NamedTuple):
 
     # Should this be property too?
     def covariance(self, other: Self | None = None) -> Array:
-        """
-        Computes the covariance between the sigma points and the other sigma points
-        Cov[self, other].
+        """Computes the covariance between the sigma points and the other sigma points.
 
         Args:
             other: The optional other sigma points.
@@ -63,8 +63,7 @@ class SigmaPoints(NamedTuple):
 
     @property
     def sqrt(self) -> Array:
-        """
-        Computes the square root of the covariance matrix of the sigma points.
+        """Computes the square root of the covariance matrix of the sigma points.
 
         Returns:
             The square root of the covariance matrix.
@@ -76,7 +75,19 @@ class SigmaPoints(NamedTuple):
 
 @runtime_checkable
 class Quadrature(Protocol):
-    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints: ...
+    """Protocol for quadrature methods."""
+
+    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints:
+        """Get the sigma points.
+
+        Args:
+            m: The mean.
+            chol: The Cholesky factor of the covariance.
+
+        Returns:
+            SigmaPoints: The sigma points.
+        """
+        ...
 
 
 def _cov(

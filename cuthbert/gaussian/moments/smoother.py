@@ -37,8 +37,7 @@ def build_smoother(
     store_gain: bool = False,
     store_chol_cov_given_next: bool = False,
 ) -> Smoother:
-    """
-    Build linearized moments Kalman inference smoother for conditionally Gaussian SSMs.
+    """Build linearized moments Kalman inference smoother for conditionally Gaussian SSMs.
 
     Args:
         get_dynamics_params: Function to get dynamics conditional mean and
@@ -75,8 +74,7 @@ def smoother_prepare(
     store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,
 ) -> KalmanSmootherState:
-    """
-    Prepare a state for an extended Kalman smoother step.
+    """Prepare a state for an extended Kalman smoother step.
 
     Note that the model_inputs here are different to filter_state.model_inputs.
     The model_inputs required here are for the transition from t to t+1.

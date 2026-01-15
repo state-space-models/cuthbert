@@ -16,8 +16,7 @@ def init_prepare(
     get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """
-    Prepare the initial state for the linearized moments Kalman filter.
+    """Prepare the initial state for the linearized moments Kalman filter.
 
     Args:
         model_inputs: Model inputs.
@@ -68,8 +67,7 @@ def filter_prepare(
     get_init_params: GetInitParams,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """
-    Prepare a state for a linearized moments Kalman filter step,
+    """Prepare a state for a linearized moments Kalman filter step,
     just passes through model inputs.
 
     Args:
@@ -101,8 +99,7 @@ def filter_combine(
     get_dynamics_params: GetDynamicsMoments,
     get_observation_params: GetObservationMoments,
 ) -> LinearizedKalmanFilterState:
-    """
-    Combine filter state from previous time point with state prepared
+    """Combine filter state from previous time point with state prepared
     with latest model inputs.
 
     Applies linearized moments Kalman predict + filter update in covariance square
@@ -123,7 +120,6 @@ def filter_combine(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_normalizing_constant.
     """
-
     dynamics_mean_and_chol_cov_func, dynamics_linearization_point = get_dynamics_params(
         state_1, state_2.model_inputs
     )

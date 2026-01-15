@@ -11,8 +11,7 @@ class GetDynamicsMoments(Protocol):
         state: LinearizedKalmanFilterState,
         model_inputs: ArrayTreeLike,
     ) -> tuple[MeanAndCholCovFunc, Array]:
-        """
-        Get dynamics conditional mean and (generalised) Cholesky covariance
+        """Get dynamics conditional mean and (generalised) Cholesky covariance
             function and linearization point.
 
         `associative_scan` only supported when `state` is ignored.
@@ -32,8 +31,7 @@ class GetObservationMoments(Protocol):
     def __call__(
         self, state: LinearizedKalmanFilterState, model_inputs: ArrayTreeLike
     ) -> tuple[MeanAndCholCovFunc, Array, Array]:
-        """
-        Get observation conditional mean, (generalised) Cholesky covariance function,
+        """Get observation conditional mean, (generalised) Cholesky covariance function,
             linearization point and the observation from model inputs.
 
         `associative_scan` only supported when `state` is ignored.

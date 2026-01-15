@@ -1,3 +1,5 @@
+"""Multivariate normal distribution functions with chol_cov input."""
+
 from functools import partial
 
 import numpy as np
@@ -12,9 +14,9 @@ from cuthbertlib.linalg import collect_nans_chol
 def logpdf(
     x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
 ) -> Array:
-    """Multivariate normal log probability distribution function that takes
-    the (generalized) Cholesky factor of the covariance matrix as input.
+    """Multivariate normal log probability distribution function with chol_cov input.
 
+    Here `chol_cov` is the (generalized) Cholesky factor of the covariance matrix.
     Modified version of `jax.scipy.stats.multivariate_normal.logpdf` which takes
     the full covariance matrix as input.
 
@@ -78,9 +80,9 @@ def logpdf(
 def pdf(
     x: ArrayLike, mean: ArrayLike, chol_cov: ArrayLike, nan_support: bool = True
 ) -> Array:
-    """Multivariate normal probability distribution function that takes
-    the (generalized) Cholesky factor of the covariance matrix as input.
+    """Multivariate normal probability distribution function with chol_cov input.
 
+    Here `chol_cov` is the (generalized) Cholesky factor of the covariance matrix.
     Modified version of `jax.scipy.stats.multivariate_normal.pdf` which takes
     the full covariance matrix as input.
 

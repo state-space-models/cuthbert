@@ -1,5 +1,4 @@
-"""
-Parallel-in-time Bayesian filter for discrete hidden Markov models.
+"""Parallel-in-time Bayesian filter for discrete hidden Markov models.
 
 References:
     - https://ieeexplore.ieee.org/document/9512397

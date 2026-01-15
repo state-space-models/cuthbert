@@ -1,3 +1,5 @@
+"""Shared protocols for backward smoothing functions in SMC."""
+
 from typing import Protocol, runtime_checkable
 
 from cuthbertlib.types import (
