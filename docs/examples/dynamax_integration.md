@@ -1,6 +1,6 @@
 # Dynamax Integration: Kalman Filtering with Linear Gaussian SSM
 
-This example demonstrates how to use a [Dynamax](https://github.com/probml/dynamax) Linear Gaussian State Space Model (LGSSM) with `cuthbert` to perform fast parallel-in-time Kalman filtering. Dynamax provides a rich ecosystem for defining state space models, while cuthbert offers efficient filtering algorithms.
+This example demonstrates how to use a [`dynamax`](https://github.com/probml/dynamax) Linear Gaussian State Space Model (LGSSM) with `cuthbert` to perform fast parallel-in-time Kalman filtering. `dynamax` provides a rich ecosystem for defining state space models, while `cuthbert` offers efficient filtering algorithms.
 
 ## Setup and imports
 
@@ -98,16 +98,16 @@ First 5 observations: [-0.12673497 -1.9195632  -0.7634685  -0.7985211  -0.062200
 ```
 
 
-## Build cuthbert Kalman filter from Dynamax model
+## Build `cuthbert` Kalman filter from `dynamax` model
 
-The key to integrating Dynamax with cuthbert is to extract the model matrices and wrap them in cuthbert's parameter extraction functions.
+The key to integrating `dynamax` with `cuthbert` is to extract the model matrices and wrap them in `cuthbert's parameter extraction functions.
 
 ```{.python #dynamax-build-cuthbert-filter}
 def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observations):
-    """Build a cuthbert Kalman filter from a Dynamax Linear Gaussian SSM.
+    """Build a cuthbert Kalman filter from a dynamax Linear Gaussian SSM.
     
     Args:
-        lgssm_model: The Dynamax LinearGaussianSSM model object
+        lgssm_model: The dynamax LinearGaussianSSM model object
         lgssm_params: The parameters of the LGSSM
         observations: The observation sequence
         
@@ -116,7 +116,7 @@ def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observa
         model_inputs: Time indices for filtering
     """
     
-    # Extract parameters from Dynamax model
+    # Extract parameters from dynamax model
     m0 = lgssm_params.initial.mean
     chol_P0 = jnp.linalg.cholesky(lgssm_params.initial.cov)
     
@@ -160,7 +160,7 @@ filter_obj, model_inputs = build_cuthbert_kalman_filter_from_dynamax(lgssm, para
 
 ## Run the Kalman filter
 
-Now we can run the cuthbert Kalman filter to obtain the filtering distributions:
+Now we can run the `cuthbert` Kalman filter to obtain the filtering distributions:
 
 ```{.python #dynamax-run-filter}
 # Run Kalman filtering
@@ -188,12 +188,12 @@ First 5 filtered positions: [-0.0211225  -0.2383174  -0.23843466 -0.24582891 -0.
 ```
 
 
-## Compare with Dynamax filtering
+## Compare with `dynamax` filtering
 
-Let's verify our results match Dynamax's built-in Kalman filtering:
+Let's verify our results match `dynamax`'s built-in Kalman filtering:
 
 ```{.python #dynamax-compare}
-# Run Dynamax's Kalman filter for comparison
+# Run dynamax's Kalman filter for comparison
 dynamax_posterior = lgssm_filter(params, observations)
 dynamax_filtered_means = dynamax_posterior.filtered_means
 dynamax_filtered_covs = dynamax_posterior.filtered_covariances
@@ -209,7 +209,7 @@ print(f"Maximum difference in filtered covariances: {cov_max_diff:.2e}")
 # Compare log likelihoods
 dynamax_log_likelihood = dynamax_posterior.marginal_loglik
 print(f"cuthbert log likelihood: {total_log_likelihood:.2f}")
-print(f"Dynamax log likelihood: {dynamax_log_likelihood:.2f}")
+print(f"dynamax log likelihood: {dynamax_log_likelihood:.2f}")
 print(f"Difference: {abs(total_log_likelihood - dynamax_log_likelihood):.2e}")
 ```
 
@@ -218,7 +218,7 @@ Running the above code yields
 Maximum difference in filtered means: 4.77e-07
 Maximum difference in filtered covariances: 1.19e-07
 cuthbert log likelihood: -55.41
-Dynamax log likelihood: -55.41
+dynamax log likelihood: -55.41
 Difference: 2.29e-05
 ```
 
@@ -282,12 +282,12 @@ Finally, let's visualize the filtering results:
 
 ## Key takeaways
 
-- **Seamless integration**: Dynamax Linear Gaussian SSMs can be easily used with cuthbert's efficient Kalman filtering algorithms
-- **Parameter extraction pattern**: The key is extracting Dynamax model parameters (F, Q, H, R, etc.) and wrapping them in cuthbert's parameter extraction functions
-- **Square-root filtering**: cuthbert uses Cholesky factors for numerical stability, which we compute from Dynamax's covariance matrices
-- **Consistent results**: cuthbert and Dynamax produce identical filtering distributions (up to numerical precision)
+- **Seamless integration**: `dynamax` Linear Gaussian SSMs can be easily used with `cuthbert`'s efficient Kalman filtering algorithms
+- **Parameter extraction pattern**: The key is extracting `dynamax` model parameters (F, Q, H, R, etc.) and wrapping them in `cuthbert`'s parameter extraction functions
+- **Square-root filtering**: `cuthbert` uses Cholesky factors for numerical stability, which we compute from `dynamax`'s covariance matrices
+- **Consistent results**: `cuthbert` and `dynamax` produce identical filtering distributions (up to numerical precision)
 
-This integration pattern works for any Linear Gaussian State Space Model in Dynamax. For nonlinear models, you could similarly integrate Dynamax's representation with, e.g., cuthbert's particle filters or extended Kalman filters.
+This integration pattern works for any Linear Gaussian State Space Model in `dynamax`. For nonlinear models, you could similarly integrate `dynamax`'s representation with, e.g., `cuthbert`'s particle filters or extended Kalman filters.
 
 
 
