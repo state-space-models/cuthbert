@@ -1,3 +1,5 @@
+"""Utility functions (dummy state generation) for the Gaussian inference."""
+
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
@@ -11,7 +13,8 @@ def linearized_kalman_filter_state_dummy_elem(
     model_inputs: ArrayTree,
     mean_prev: Array,
 ) -> LinearizedKalmanFilterState:
-    """Create a LinearizedKalmanFilterState with a dummy element
+    """Create a LinearizedKalmanFilterState with a dummy element.
+
     I.e. when associated scan is not used.
 
     Args:

@@ -1,5 +1,7 @@
-r"""Linearized Kalman filter that takes a user provided conditional `mean` and
-`chol_cov` functions to define a conditionally linear Gaussian state space model.
+r"""Linearized moments Kalman filter.
+
+Takes a user provided conditional `mean` and `chol_cov` functions to define a
+conditionally linear Gaussian state space model.
 
 I.e., we approximate conditional densities as
 

@@ -1,3 +1,5 @@
+"""Implements the square root parallel Kalman filter and associative variant."""
+
 from typing import NamedTuple
 
 import jax.numpy as jnp
@@ -114,8 +116,19 @@ def update(
 def associative_params_single(
     F: Array, c: Array, chol_Q: Array, H: Array, d: Array, chol_R: Array, y: Array
 ) -> FilterScanElement:
-    """Compute the filter scan element for the square root parallel Kalman
-    filter for a single time step, with observation guaranteed not to be missing.
+    """Single time step for scan element for square root parallel Kalman filter.
+
+    Args:
+        F: State transition matrix.
+        c: State transition shift vector.
+        chol_Q: Generalized Cholesky factor of the state transition noise covariance.
+        H: Observation matrix.
+        d: Observation shift.
+        chol_R: Generalized Cholesky factor of the observation noise covariance.
+        y: Observation.
+
+    Returns:
+        Prepared scan element for the square root parallel Kalman filter.
     """
     # Handle case where there is no observation
     flag = jnp.isnan(y)

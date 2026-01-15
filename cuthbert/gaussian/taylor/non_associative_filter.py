@@ -1,3 +1,5 @@
+"""Implements the non-associative linearized Taylor Kalman filter."""
+
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
@@ -134,8 +136,9 @@ def filter_prepare(
     get_init_log_density: GetInitLogDensity,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """Prepare a state for a linearized Taylor Kalman filter step,
-    just passes through model inputs.
+    """Prepare a state for a linearized Taylor Kalman filter step.
+
+    Just passes through model inputs.
 
     Args:
         model_inputs: Model inputs.
@@ -168,8 +171,7 @@ def filter_combine(
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
 ) -> LinearizedKalmanFilterState:
-    """Combine filter state from previous time point with state prepared
-    with latest model inputs.
+    """Combine previous filter state with state prepared from latest model inputs.
 
     Applies linearized Taylor Kalman predict + filter update in covariance square
     root form.

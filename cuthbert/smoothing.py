@@ -1,3 +1,5 @@
+"""Unified cuthbert smoothing interface."""
+
 import warnings
 
 from jax import numpy as jnp

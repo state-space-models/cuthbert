@@ -1,3 +1,5 @@
+"""Implements the discrete HMM smoothing associative operator."""
+
 import jax.numpy as jnp
 
 from cuthbertlib.types import Array, ArrayLike

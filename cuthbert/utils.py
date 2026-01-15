@@ -1,3 +1,5 @@
+"""Utility functions (filling dummy arrays and trees) for cuthbert."""
+
 import jax
 import jax.numpy as jnp
 

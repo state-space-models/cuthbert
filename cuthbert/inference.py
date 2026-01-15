@@ -1,9 +1,13 @@
+"""Provides protocols and types for representing unified inference objects."""
+
 from typing import NamedTuple, Protocol
 
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 class InitPrepare(Protocol):
+    """Protocol for preparing the initial state for the inference."""
+
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
@@ -25,6 +29,8 @@ class InitPrepare(Protocol):
 
 
 class FilterPrepare(Protocol):
+    """Protocol for preparing the state for the filter at the next time point."""
+
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
@@ -51,6 +57,8 @@ class FilterPrepare(Protocol):
 
 
 class FilterCombine(Protocol):
+    """Protocol for combining the previous state with the state from FilterPrepare."""
+
     def __call__(
         self,
         state_1: ArrayTreeLike,
@@ -73,6 +81,8 @@ class FilterCombine(Protocol):
 
 
 class SmootherPrepare(Protocol):
+    """Protocol for preparing the state for the smoother."""
+
     def __call__(
         self,
         filter_state: ArrayTreeLike,
@@ -111,6 +121,8 @@ class SmootherPrepare(Protocol):
 
 
 class SmootherCombine(Protocol):
+    """Protocol for combining the next smoother state with the state prepared with latest model inputs."""
+
     def __call__(
         self,
         state_1: ArrayTreeLike,
@@ -137,6 +149,8 @@ class SmootherCombine(Protocol):
 
 
 class ConvertFilterToSmootherState(Protocol):
+    """Protocol for converting a filter state to a smoother state."""
+
     def __call__(
         self,
         filter_state: ArrayTreeLike,

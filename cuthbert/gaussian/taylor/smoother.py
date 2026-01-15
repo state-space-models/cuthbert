@@ -1,6 +1,9 @@
-r"""Linearized Kalman smoother that uses automatic differentiation to extract
-conditionally Gaussian parameters from log densities of the dynamics and observation
-distributions. This differs from `gaussian/moments`, which requires `mean` and `chol_cov`
+r"""Linearized Taylor Kalman smoother.
+
+Uses automatic differentiation to extract conditionally Gaussian parameters from log
+densities of the dynamics and observation distributions.
+
+This differs from `gaussian/moments`, which requires `mean` and `chol_cov`
 functions as input rather than log densities.
 
 I.e., we approximate conditional densities as

@@ -1,3 +1,5 @@
+"""Provides shared types for Gaussian representations in state-space models."""
+
 from typing import NamedTuple, Protocol
 
 from cuthbertlib.kalman import filtering
@@ -33,18 +35,23 @@ class GetObservationParams(Protocol):
 
 ### Shared state type for linearized Kalman filters
 class LinearizedKalmanFilterState(NamedTuple):
+    """Linearized Kalman filter state."""
+
     elem: filtering.FilterScanElement
     model_inputs: ArrayTree
     mean_prev: Array
 
     @property
     def mean(self) -> Array:
+        """Fitlering mean."""
         return self.elem.b
 
     @property
     def chol_cov(self) -> Array:
+        """Filtering generalised Cholesky covariance."""
         return self.elem.U
 
     @property
     def log_normalizing_constant(self) -> Array:
+        """Log normalizing constant (cumulative)."""
         return self.elem.ell

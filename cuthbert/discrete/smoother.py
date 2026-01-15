@@ -20,11 +20,16 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
 class DiscreteSmootherState(NamedTuple):
+    """Discrete smoother state."""
+
+    # TODO: more informative docstrings here, describe attributes
+
     a: Array
     model_inputs: ArrayTree
 
     @property
     def dist(self):
+        """Discrete smoother distribution."""
         return jnp.take(self.a, 0, axis=-2)
 
 
@@ -102,8 +107,7 @@ def convert_filter_to_smoother_state(
 def smoother_combine(
     state_1: DiscreteSmootherState, state_2: DiscreteSmootherState
 ) -> DiscreteSmootherState:
-    """Combine the smoother state from the next time point with the state
-    prepared with the latest model inputs.
+    """Combine smoother state from next time point with state prepared with latest model inputs.
 
     Remember smoothing iterates backwards in time.
 

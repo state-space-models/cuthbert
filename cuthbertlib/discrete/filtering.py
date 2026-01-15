@@ -1,3 +1,5 @@
+"""Implements the discrete HMM filtering associative operator."""
+
 from typing import NamedTuple
 
 import jax.numpy as jnp

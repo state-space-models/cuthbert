@@ -1,3 +1,9 @@
+"""Implements the square root parallel Kalman associative operator for sampling.
+
+Samples from the smoothing distribution without doing the smoothing scan for means
+and (chol) covariances.
+"""
+
 from typing import NamedTuple, Sequence
 
 import jax
@@ -8,6 +14,8 @@ from cuthbertlib.types import Array, ArrayLike
 
 
 class SamplerScanElement(NamedTuple):
+    """Kalman sampling scan element."""
+
     gain: Array
     sample: Array
 

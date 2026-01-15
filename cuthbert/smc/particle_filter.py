@@ -1,4 +1,6 @@
-"""Implements the generic particle filter (Algorithm 10.1, [Chopin and Papaspiliopoulos, 2020](https://doi.org/10.1007/978-3-030-47845-2)).
+"""Implements the generic particle filter.
+
+See Algorithm 10.1, [Chopin and Papaspiliopoulos, 2020](https://doi.org/10.1007/978-3-030-47845-2).
 """
 
 from functools import partial
@@ -17,6 +19,8 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
 class ParticleFilterState(NamedTuple):
+    """Particle filter state."""
+
     key: KeyArray
     particles: ArrayTree
     log_weights: Array
@@ -174,8 +178,7 @@ def filter_combine(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> ParticleFilterState:
-    """Combine the filter state from the previous time step with the state prepared
-    for the current step.
+    """Combine previous filter state with the state prepared for the current step.
 
     Implements the particle filter update: conditional resampling,
     propagation through state dynamics, and reweighting based on the potential function.

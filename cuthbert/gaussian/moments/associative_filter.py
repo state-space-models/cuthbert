@@ -1,3 +1,5 @@
+"""Implements the associative linearized moments Kalman filter."""
+
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
@@ -82,8 +84,9 @@ def filter_prepare(
     get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
-    """Prepare a state for a linearized moments Kalman filter step,
-    just passes through model inputs.
+    """Prepare a state for a linearized moments Kalman filter step.
+
+    Just passes through model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored
     in `get_dynamics_params` and `get_observation_params`.
@@ -149,8 +152,7 @@ def filter_combine(
     state_1: LinearizedKalmanFilterState,
     state_2: LinearizedKalmanFilterState,
 ) -> LinearizedKalmanFilterState:
-    """Combine filter state from previous time point with state prepared
-    with latest model inputs.
+    """Combine previous filter state with state prepared with latest model inputs.
 
     `associative_scan` is supported but only accurate when `state` is ignored
     in `get_dynamics_params` and `get_observation_params`.

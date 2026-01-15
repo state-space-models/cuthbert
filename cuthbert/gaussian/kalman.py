@@ -1,5 +1,6 @@
-"""Implements the square-root, parallel-in-time Kalman filter for linear Gaussian
-SSMs from [Yaghoobi et. al. (2025)](https://doi.org/10.1137/23M156121X).
+"""Implements the square-root, parallel-in-time Kalman filter for linear Gaussian SSMs.
+
+See [Yaghoobi et. al. (2025)](https://doi.org/10.1137/23M156121X).
 """
 
 from functools import partial
@@ -20,23 +21,30 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 
 
 class KalmanFilterState(NamedTuple):
+    """Kalman filter state."""
+
     elem: filtering.FilterScanElement
     model_inputs: ArrayTree
 
     @property
     def mean(self) -> Array:
+        """Filtering mean."""
         return self.elem.b
 
     @property
     def chol_cov(self) -> Array:
+        """Filtering generalised Cholesky covariance."""
         return self.elem.U
 
     @property
     def log_normalizing_constant(self) -> Array:
+        """Log normalizing constant (cumulative)."""
         return self.elem.ell
 
 
 class KalmanSmootherState(NamedTuple):
+    """Kalman smoother state."""
+
     elem: smoothing.SmootherScanElement
     model_inputs: ArrayTree
     gain: Array | None = None
@@ -44,10 +52,12 @@ class KalmanSmootherState(NamedTuple):
 
     @property
     def mean(self) -> Array:
+        """Smoothing mean."""
         return self.elem.g
 
     @property
     def chol_cov(self) -> Array:
+        """Smoothing generalised Cholesky covariance."""
         return self.elem.D
 
 
@@ -184,8 +194,7 @@ def filter_combine(
     state_1: KalmanFilterState,
     state_2: KalmanFilterState,
 ) -> KalmanFilterState:
-    """Combine filter state from previous time point with state prepared
-    with latest model inputs.
+    """Combine previous filter state with state prepared with latest model inputs.
 
     Applies exact Kalman predict + filter update in covariance square root form.
     Suitable for associative scan (as well as sequential scan).
@@ -252,8 +261,7 @@ def smoother_combine(
     state_1: KalmanSmootherState,
     state_2: KalmanSmootherState,
 ) -> KalmanSmootherState:
-    """Combine smoother state from next time point with state prepared
-    with latest model inputs.
+    """Combine smoother state from next time point with state prepared with latest model inputs.
 
     Remember smoothing iterates backwards in time.
 

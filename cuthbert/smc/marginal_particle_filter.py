@@ -1,4 +1,6 @@
-"""Implements the marginal particle filter from [Klaas et. al. (2005)](https://www.cs.ubc.ca/~arnaud/klass_defreitas_doucet_marginalparticlefilterUAI2005.pdf).
+"""Implements the marginal particle filter.
+
+See [Klaas et. al. (2005)](https://www.cs.ubc.ca/~arnaud/klass_defreitas_doucet_marginalparticlefilterUAI2005.pdf)
 """
 
 from functools import partial
@@ -17,6 +19,8 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
 class MarginalParticleFilterState(NamedTuple):
+    """Marginal particle filter state."""
+
     # no ancestors, as it does not make sense for marginal particle filters
     key: KeyArray
     particles: ArrayTree
@@ -167,8 +171,7 @@ def filter_combine(
     resampling_fn: Resampling,
     ess_threshold: float,
 ) -> MarginalParticleFilterState:
-    """Combine the marginal particle filter state from the previous time step with the
-    state prepared for the current step.
+    """Combine previous filter state with the state prepared for the current step.
 
     Implements the marginal particle filter update: conditional resampling,
     propagation through state dynamics, and N^2 reweighting based on the

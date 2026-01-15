@@ -1,3 +1,5 @@
+"""Provides types for the Taylor-series linearization of Gaussian state-space models."""
+
 from typing import Protocol, TypeAlias
 
 from cuthbert.gaussian.types import (
@@ -14,6 +16,8 @@ LogPotential: TypeAlias = LogDensity
 
 
 class GetInitLogDensity(Protocol):
+    """Protocol for extracting the initial specifications."""
+
     def __call__(self, model_inputs: ArrayTreeLike) -> tuple[LogDensity, Array]:
         """Get the initial log density and initial linearization point.
 
@@ -27,13 +31,16 @@ class GetInitLogDensity(Protocol):
 
 
 class GetDynamicsLogDensity(Protocol):
+    """Protocol for extracting the dynamics specifications."""
+
     def __call__(
         self,
         state: LinearizedKalmanFilterState,
         model_inputs: ArrayTreeLike,
     ) -> tuple[LogConditionalDensity, Array, Array]:
-        """Get the dynamics log density and linearization points
-        (for the previous and current time points)
+        """Get the dynamics log density and linearization points.
+
+        Linearization points required for both the previous and current time points
 
         `associative_scan` only supported when `state` is ignored.
 
@@ -48,12 +55,15 @@ class GetDynamicsLogDensity(Protocol):
 
 
 class GetObservationFunc(Protocol):
+    """Protocol for extracting the required observation specifications."""
+
     def __call__(
         self,
         state: LinearizedKalmanFilterState,
         model_inputs: ArrayTreeLike,
     ) -> tuple[LogConditionalDensity, Array, Array] | tuple[LogPotential, Array]:
         """Extract observation function, linearization point and optional observation.
+
         State is the predicted state after applying the Kalman dynamics propagation.
 
         `associative_scan` only supported when `state` is ignored.

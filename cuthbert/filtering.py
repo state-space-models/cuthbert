@@ -1,3 +1,5 @@
+"""Unified cuthbert filtering interface."""
+
 import warnings
 
 from jax import numpy as jnp

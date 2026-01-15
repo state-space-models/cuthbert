@@ -23,6 +23,8 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
 class ParticleSmootherState(NamedTuple):
+    """Particle smoother state."""
+
     key: KeyArray
     particles: ArrayTree
     ancestor_indices: Array
@@ -156,8 +158,7 @@ def smoother_combine(
     backward_sampling_fn: BackwardSampling,
     log_potential: LogPotential,
 ) -> ParticleSmootherState:
-    """Combine smoother state from next time point with state prepared
-    with latest model inputs.
+    """Combine next smoother state with state prepared with latest model inputs.
 
     Remember smoothing iterates backwards in time.
 
