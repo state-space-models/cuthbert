@@ -219,7 +219,7 @@ Maximum difference in filtered means: 4.77e-07
 Maximum difference in filtered covariances: 1.19e-07
 cuthbert log likelihood: -55.41
 Dynamax log likelihood: -55.41
-Difference: 1.31e+03
+Difference: 2.29e-05
 ```
 
 ## Visualize results
