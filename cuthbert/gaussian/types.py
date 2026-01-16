@@ -43,7 +43,7 @@ class LinearizedKalmanFilterState(NamedTuple):
 
     @property
     def mean(self) -> Array:
-        """Fitlering mean."""
+        """Filtering mean."""
         return self.elem.b
 
     @property

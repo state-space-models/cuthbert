@@ -32,7 +32,7 @@ class DiscreteFilterState(NamedTuple):
 
     @property
     def dist(self) -> Array:
-        """Discrete filter distribution."""
+        """The filtered distribution."""
         return jnp.take(self.elem.f, 0, axis=-2)
 
     @property

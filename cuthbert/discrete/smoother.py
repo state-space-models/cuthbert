@@ -29,7 +29,7 @@ class DiscreteSmootherState(NamedTuple):
 
     @property
     def dist(self):
-        """Discrete smoother distribution."""
+        """The smoothed distribution."""
         return jnp.take(self.a, 0, axis=-2)
 
 
