@@ -22,14 +22,15 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 class DiscreteSmootherState(NamedTuple):
     """Discrete smoother state."""
 
-    # TODO: more informative docstrings here, describe attributes
-
     a: Array
     model_inputs: ArrayTree
 
     @property
     def dist(self):
-        """The smoothed distribution."""
+        """The smoothed distribution.
+
+        Has shape (K,) or (T+1, K) where K is the number of possible states.
+        """
         return jnp.take(self.a, 0, axis=-2)
 
 

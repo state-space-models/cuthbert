@@ -25,14 +25,15 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
 class DiscreteFilterState(NamedTuple):
     """Discrete filter state."""
 
-    # TODO: more informative docstrings here, describe attributes
-
     elem: filtering.FilterScanElement
     model_inputs: ArrayTree
 
     @property
     def dist(self) -> Array:
-        """The filtered distribution."""
+        """The filtered distribution.
+
+        Has shape (K,) or (T+1, K) where K is the number of possible states.
+        """
         return jnp.take(self.elem.f, 0, axis=-2)
 
     @property
