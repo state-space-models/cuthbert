@@ -9,9 +9,9 @@ from absl.testing import parameterized
 from jax.scipy.special import logsumexp
 
 from cuthbertlib.resampling.utils import (
+    _inverse_cdf_cpu,
+    _inverse_cdf_default,
     inverse_cdf,
-    inverse_cdf_cpu,
-    inverse_cdf_default,
 )
 
 
@@ -55,8 +55,8 @@ class TestInverseCdf(chex.TestCase):
             sorted_uniforms = jnp.sort(sorted_uniforms)
             log_weights = jnp.linspace(-3.0, 0.0, M)
 
-            indices = self.variant(inverse_cdf_cpu)(sorted_uniforms, log_weights)
-            indices_default = self.variant(inverse_cdf_default)(
+            indices = self.variant(_inverse_cdf_cpu)(sorted_uniforms, log_weights)
+            indices_default = self.variant(_inverse_cdf_default)(
                 sorted_uniforms, log_weights
             )
 
