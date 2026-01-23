@@ -5,7 +5,7 @@ from typing import NamedTuple
 import jax.numpy as jnp
 
 from cuthbertlib.quadrature.common import SigmaPoints
-from cuthbertlib.types import Array
+from cuthbertlib.types import Array, ArrayLike
 
 __all__ = ["weights", "UnscentedQuadrature"]
 
@@ -23,7 +23,7 @@ class UnscentedQuadrature(NamedTuple):
     wc: Array
     lamda: float
 
-    def get_sigma_points(self, m, chol) -> SigmaPoints:
+    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints:
         """Get the sigma points.
 
         Args:
@@ -33,6 +33,9 @@ class UnscentedQuadrature(NamedTuple):
         Returns:
             SigmaPoints: The sigma points.
         """
+        m = jnp.asarray(m)
+        chol = jnp.asarray(chol)
+
         n_dim = m.shape[0]
         scaled_chol = jnp.sqrt(n_dim + self.lamda) * chol
 
