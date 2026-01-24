@@ -26,7 +26,7 @@ class GaussHermiteQuadrature(NamedTuple):
     wc: ArrayLike
     xi: ArrayLike
 
-    def get_sigma_points(self, m, chol) -> SigmaPoints:
+    def get_sigma_points(self, m: ArrayLike, chol: ArrayLike) -> SigmaPoints:
         """Get the sigma points.
 
         Args:

@@ -242,7 +242,7 @@ This functional approach makes `cuthbert` naturally compatible with JAX's ecosys
 
 ## Next Steps
 
-- **Smoothing**: Use [`cuthbert.smoother`][] for backward pass smoothing.
+- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for backward pass smoothing.
 - **Parameter Learning**: Combine with optimization libraries like `optax`.
 - **Sequential Monte Carlo**: Explore nonlinear and non-Gaussian filtering with `cuthbert.smc`.
 - **Advanced Models**: Check out extended and unscented Kalman filters for nonlinear state-space
