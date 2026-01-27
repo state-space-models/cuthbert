@@ -13,8 +13,8 @@ A JAX library for state-space model inference
 > `cuthbert` is simply a fun name for this state-space model library and should not be interpreted as an
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
 
-Come chat state-space models with us on [![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/sBnr6JhT)
-Install `cuthbert` from [![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)
+Come chat state-space models with us on [![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/sBnr6JhT)  
+Install `cuthbert` from [![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)  
 Check out examples in the [![Docs](https://img.shields.io/badge/Docs-000000?logo=readthedocs&logoColor=white&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
 
 <!--intro-end-->
