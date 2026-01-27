@@ -14,10 +14,11 @@ A JAX library for state-space model inference
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/sBnr6JhT)
-[![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)
-[![Docs](https://img.shields.io/badge/Docs-000000?logo=readthedocs&logoColor=white&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/state-space-models/cuthbert)
+[![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/cuthbert/)
+[![Docs](https://img.shields.io/badge/Docs-000000?logo=materialformkdocs&logoColor=white&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
 
-Come chat state-space models with us on [Discord](https://discord.gg/sBnr6JhT)  
+Come chat state-space models with us on [Discord](https://discord.gg/sBnr6JhT)!
 <!--intro-end-->
 
 <!--goals-start-->
