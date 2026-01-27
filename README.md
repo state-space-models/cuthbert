@@ -14,6 +14,8 @@ A JAX library for state-space model inference
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
 
 Come chat state-space models with us on [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/sBnr6JhT)
+Install `cuthbert` from [![PyPI](https://img.shields.io/pypi/v/cuthbert)](https://pypi.org/project/cuthbert/)
+Check out examples in the [![Docs](https://img.shields.io/badge/Docs-1A2B3C?logo=readthedocs&logoColor=white)](https://state-space-models.github.io/cuthbert/)
 
 <!--intro-end-->
 
