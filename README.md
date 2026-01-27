@@ -12,6 +12,9 @@ A JAX library for state-space model inference
 > has no formal connection to Aldi, M&S, or any food products (notwithstanding the coffee drunk during its writeup).
 > `cuthbert` is simply a fun name for this state-space model library and should not be interpreted as an
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
+
+Come chat state-space models with us on [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/sBnr6JhT)
+
 <!--intro-end-->
 
 <!--goals-start-->
@@ -36,8 +39,8 @@ But can easily compose with [`dynamax`](https://github.com/probml/dynamax), [`di
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 <!--goals-end-->
 
-## Codebase structure
 <!--codebase-structure-start-->
+### Codebase structure
 
 The codebase is structured as follows:
 
