@@ -138,6 +138,34 @@ a problem where you have to run the Kalman filter (or smoother) repeatedly for
 the same model, and you have a GPU available, it might be beneficial to pay the
 higher compilation cost and use the parallel implementation.
 
+## Key Takeaways
+
+- **Temporal parallelization**: `cuthbert` provides parallel-in-time filtering
+  that reduces time complexity from $\mathcal{O}(T)$ to $\mathcal{O}(\log T)$
+  when sufficient parallel workers are available.
+- **Hardware-dependent performance**: The parallel implementation shows
+  significant speedups on GPUs/TPUs (27x faster in the example), but may be
+  slower on CPUs with limited parallelism due to higher computational overhead.
+- **Compilation trade-off**: The parallel version has higher compilation time,
+  but this cost is amortized when running the filter multiple times on the same
+  model.
+- **Simple API**: Parallelization is enabled with a single `parallel=True`
+  argument to the `filter` function, making it easy to experiment with both
+  implementations.
+- **JIT compilation**: Both sequential and parallel filters can be
+  JIT-compiled for optimal performance, with static arguments properly marked.
+
+## Next Steps
+
+- **Smoothing**: Apply temporal parallelization to smoothing with
+  [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for backward pass
+  efficiency.
+- **More examples**: Explore other [examples](index.md) including [Kalman
+  tracking](kalman_tracking.md) and [dynamax integration](dynamax_integration.md).
+- **Performance tuning**: Experiment with different time series lengths and
+  hardware configurations to find the optimal parallelization strategy for your
+  use case.
+
 <!--- entangled-tangle-block
 ```{.python file=examples_scripts/temporal_parallelization_kalman.py}
 <<parallel-kalman-setup>>

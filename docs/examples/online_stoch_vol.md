@@ -316,13 +316,16 @@ This time the filter sees the actual log-return rather than `jnp.nan`.
 - We can handle missing data in the observation model by setting the log-potential to 0.
 - Missing data also allows us to do prediction within the same filtering framework.
 
-## Next steps
+## Next Steps
 
-- **Smoothing**: We could use the `cuthbert.smoother` to perform backward smoothing to
-  get a more accurate approximation of the latent state history.
-- **Parameter learning**: We could learn the hyperparameters from the data using
-  gradient descent, expectation maximization or Bayesian sampling that all use
-  filtering and smoothing internally.
+- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) to
+  perform backward smoothing for more accurate historical state estimates.
+- **Parameter learning**: Learn the hyperparameters from the data using gradient
+  descent, expectation maximization (see the [parameter estimation
+  example](parameter_estimation_em.md)), or Bayesian sampling.
+- **More examples**: Explore other [examples](index.md) including [Kalman
+  filtering](kalman_tracking.md) and [temporal
+  parallelization](temporal_parallelization_kalman.md).
 
 
 <!--- entangled-tangle-block
