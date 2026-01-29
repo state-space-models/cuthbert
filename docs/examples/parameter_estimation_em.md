@@ -358,6 +358,36 @@ asymptotically unbiased particle approximations (see
 [`cuthbert.smc`](../cuthbert_api/smc/index.md)), or by
 increasing the order of the Gauss-Hermite quadrature.
 
+## Key Takeaways
+
+- **EM algorithm integration**: `cuthbert`'s filtering and smoothing capabilities
+  integrate seamlessly with the EM algorithm for parameter estimation in
+  state-space models.
+- **Gaussian approximation**: The moment-based extended Kalman filter provides
+  an efficient Gaussian approximation to the intractable posterior, enabling
+  tractable E-steps.
+- **Quadrature for M-step**: Gaussian quadrature methods from
+  `cuthbertlib.quadrature` enable efficient approximation of the M-step
+  integrals when using Gaussian approximations.
+- **Flexible parameter constraints**: The constraint/unconstraint pattern allows
+  optimization in unconstrained space while maintaining parameter bounds (e.g.,
+  $\rho \in [0,1]$, $\sigma \geq 0$).
+- **Approximate inference**: Both E and M-steps use approximations, but the
+  approximations can be improved by using particle filters/smoothers or
+  higher-order quadrature.
+
+## Next Steps
+
+- **Particle-based EM**: Replace the Gaussian approximation with particle filters
+  and smoothers from [`cuthbert.smc`](../cuthbert_api/smc/index.md) for
+  asymptotically unbiased parameter estimates.
+- **Other optimization methods**: Explore gradient-based optimization with
+  [`optax`](https://github.com/google-deepmind/optax) for the M-step, or use
+  stochastic gradient EM for large datasets.
+- **More examples**: Check out other [examples](index.md) including [online
+  particle filtering](online_stoch_vol.md) and [Kalman
+  tracking](kalman_tracking.md).
+
 <!--- entangled-tangle-block
 ```{.python file=examples_scripts/parameter_estimation_em.py}
 <<em-imports>>

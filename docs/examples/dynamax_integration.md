@@ -282,12 +282,30 @@ Finally, let's visualize the filtering results:
 
 ## Key takeaways
 
-- **Seamless integration**: `dynamax` Linear Gaussian SSMs can be easily used with `cuthbert`'s efficient Kalman filtering algorithms
-- **Parameter extraction pattern**: The key is extracting `dynamax` model parameters (F, Q, H, R, etc.) and wrapping them in `cuthbert`'s parameter extraction functions
-- **Square-root filtering**: `cuthbert` uses Cholesky factors for numerical stability, which we compute from `dynamax`'s covariance matrices
-- **Consistent results**: `cuthbert` and `dynamax` produce identical filtering distributions (up to numerical precision)
+- **Seamless integration**: `dynamax` Linear Gaussian SSMs can be easily used with
+  `cuthbert`'s efficient Kalman filtering algorithms
+- **Parameter extraction pattern**: The key is extracting `dynamax` model parameters
+  (F, Q, H, R, etc.) and wrapping them in `cuthbert`'s parameter extraction
+  functions
+- **Square-root filtering**: `cuthbert` uses Cholesky factors for numerical
+  stability, which we compute from `dynamax`'s covariance matrices
+- **Consistent results**: `cuthbert` and `dynamax` produce identical filtering
+  distributions (up to numerical precision)
 
-This integration pattern works for any Linear Gaussian State Space Model in `dynamax`. For nonlinear models, you could similarly integrate `dynamax`'s representation with, e.g., `cuthbert`'s particle filters or extended Kalman filters.
+This integration pattern works for any Linear Gaussian State Space Model in
+`dynamax`. For nonlinear models, you could similarly integrate `dynamax`'s
+representation with, e.g., `cuthbert`'s particle filters or extended Kalman
+filters.
+
+## Next Steps
+
+- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) to
+  perform backward smoothing for more accurate state estimates.
+- **Temporal parallelization**: Enable parallel-in-time filtering for faster
+  computation on longer time series - see the [temporal parallelization
+  example](temporal_parallelization_kalman.md).
+- **More examples**: Check out other [examples](index.md) including [Kalman
+  tracking](kalman_tracking.md) and [parameter estimation](parameter_estimation_em.md).
 
 
 
