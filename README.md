@@ -1,6 +1,6 @@
 <!--intro-start-->
 <div align="center">
-<img src="docs/assets/cuthbert.png" alt="logo"></img>
+<img src="https://raw.githubusercontent.com/state-space-models/cuthbert/main/docs/assets/cuthbert.png" alt="cuthbert logo"></img>
 </div>
 
 A JAX library for state-space model inference
