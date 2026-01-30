@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Duffield"
+  given-names: "Samuel"
+  orcid: "https://orcid.org/0000-0002-8656-8734"
+- family-names: "Iqbal"
+  given-names: "Sahel"
+  orcid: "https://orcid.org/0000-0001-5464-3632"
+- family-names: "Corenflos"
+  given-names: "Adrien"
+  orcid: "https://orcid.org/0000-0002-8374-4659"
+title: "cuthbert"
+date-released: 2026-01-30
+url: "https://github.com/state-space-models/cuthbert"
