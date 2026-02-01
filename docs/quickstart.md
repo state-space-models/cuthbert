@@ -373,11 +373,24 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 ![Best teams historically](assets/international_football_historical_skill_rating.png)
 
 
-## Next steps
+## Key Takeaways
+
+- **Flexible model specification**: `cuthbert.gaussian.taylor` allows you to define
+  state-space models using simple log-density functions, making it easy to work
+  with complex, non-linear models like the Elo-style ranking model used here.
+- **Filtering for online inference**: `cuthbert.filter` can be used to offline
+  filtering on a full dataset, `filter_prepare` and `filter_combine` can be used
+  to perform online filtering as new data arrives.
+- **Smoothing for historical analysis**: While filtering provides online estimates,
+  smoothing gives more accurate historical estimates by incorporating future
+  information.
+
+
+## Next Steps
 
 - **Parameter learning**: We could learn the hyperparameters from the data using
     gradient descent, expectation maximization or Bayesian sampling that all use
-    filtering and smoothing internally.
+    filtering and smoothing internally. Check out the [parameter estimation example](examples/parameter_estimation_em.md) for more details.
 - **Factorial state-space models**: The technique here is actually inefficient for this
     model because it treats all teams as a high-dimensional correlated state. A more
     efficient approach would be to use a factorial state-space model where each team's

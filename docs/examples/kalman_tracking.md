@@ -228,25 +228,36 @@ car's position.
     print("Filter uncertainty automatically increased during GPS outage")
     ```
 
-## Recap
+## Key Takeaways
 
-Congratulations! You've successfully implemented a complete Kalman filtering solution with `cuthbert`. The key steps were:
-
-1. **Model specification**: Specify the matrices and vectors that define the linear-Gaussian
-   state-space model, and collect/generate observations.
-2. **Filter construction**: Use the parameter extraction pattern with `kalman.build_filter()` to create a flexible filter object.
-3. **Filtering**: Execute the algorithm with `cuthbert.filter()` to obtain posterior state
-   estimates.
-
-This functional approach makes `cuthbert` naturally compatible with JAX's ecosystem, enabling automatic differentiation, JIT compilation, and vectorization for your state-space modeling needs.
+- **Parameter extraction pattern**: `cuthbert` uses a functional approach where
+  filters are built from parameter extraction functions, allowing flexible handling
+  of time-varying parameters and clean separation of model specification from
+  algorithm implementation.
+- **Cholesky-based filtering**: `cuthbert` works with Cholesky factors of covariance
+  matrices for improved numerical stability, avoiding direct covariance matrix
+  operations.
+- **Temporal parallelization**: The `parallel=True` option enables parallel-in-time
+  filtering, reducing complexity from $\mathcal{O}(T)$ to $\mathcal{O}(\log T)$ on
+  accelerators.
+- **Automatic missing data handling**: `cuthbert` automatically handles missing
+  observations (NaN values) without special configuration.
+- **JAX integration**: All `cuthbert` functions are pure and compatible with JAX
+  transformations like `jit`, `vmap`, and automatic differentiation.
 
 ## Next Steps
 
-- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for backward pass smoothing.
-- **Parameter Learning**: Combine with optimization libraries like `optax`.
-- **Sequential Monte Carlo**: Explore nonlinear and non-Gaussian filtering with `cuthbert.smc`.
-- **Advanced Models**: Check out extended and unscented Kalman filters for nonlinear state-space
-models.
+- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for
+  backward pass smoothing.
+- **Parameter Learning**: Combine with optimization libraries like
+  [`optax`](https://github.com/google-deepmind/optax). Check out the [parameter
+  estimation example](parameter_estimation_em.md) for more details.
+- **Sequential Monte Carlo**: Explore nonlinear and non-Gaussian filtering with
+  `cuthbert.smc`, check out the example on [online particle filtering and
+  prediction for a stochastic volatility model](online_stoch_vol.md).
+- **Advanced Models**: Check out an extended Kalman filter for a nonlinear
+  state-space model [inferring latent football team skill
+  ratings](../quickstart.md).
 
 
 

@@ -1,6 +1,6 @@
 <!--intro-start-->
 <div align="center">
-<img src="docs/assets/cuthbert.png" alt="logo"></img>
+<img src="https://raw.githubusercontent.com/state-space-models/cuthbert/main/docs/assets/cuthbert.png" alt="cuthbert logo"></img>
 </div>
 
 A JAX library for state-space model inference
@@ -12,6 +12,11 @@ A JAX library for state-space model inference
 > has no formal connection to Aldi, M&S, or any food products (notwithstanding the coffee drunk during its writeup).
 > `cuthbert` is simply a fun name for this state-space model library and should not be interpreted as an
 > endorsement, association, or affiliation with any brand or animal themed baked goods.
+
+[![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/sBnr6JhT)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/state-space-models/cuthbert)
+[![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)
+[![Docs](https://img.shields.io/badge/Docs-b6d7a8?logo=materialformkdocs&logoColor=black&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
 <!--intro-end-->
 
 <!--goals-start-->
@@ -36,8 +41,8 @@ But can easily compose with [`dynamax`](https://github.com/probml/dynamax), [`di
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
 <!--goals-end-->
 
-## Codebase structure
 <!--codebase-structure-start-->
+### Codebase structure
 
 The codebase is structured as follows:
 
