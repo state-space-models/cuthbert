@@ -1,4 +1,6 @@
 name: Publish docs 
+# from https://squidfunk.github.io/mkdocs-material/publishing-your-site/#with-github-actions
+
 on:
   push:
     branches:
