@@ -4,3 +4,4 @@ from cuthbertlib.linalg.symmetric_inv_sqrt import (
     symmetric_inv_sqrt,
 )
 from cuthbertlib.linalg.tria import tria
+from cuthbertlib.linalg.marginal_sqrt_cov import marginal_sqrt_cov
