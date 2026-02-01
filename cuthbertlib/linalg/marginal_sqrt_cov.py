@@ -4,7 +4,7 @@ from typing import Sequence
 
 from jax import numpy as jnp
 
-from cuthbertlib.linalg import tria
+from cuthbertlib.linalg.tria import tria
 from cuthbertlib.types import Array, ArrayLike
 
 
