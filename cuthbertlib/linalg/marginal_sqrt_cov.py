@@ -1,10 +1,11 @@
 """Extract marginal square root covariance from a joint square root covariance."""
 
 from typing import Sequence
+
 from jax import numpy as jnp
 
-from cuthbertlib.types import Array, ArrayLike
 from cuthbertlib.linalg import tria
+from cuthbertlib.types import Array, ArrayLike
 
 
 def marginal_sqrt_cov(chol_cov: ArrayLike, start: int, end: int) -> Array:
