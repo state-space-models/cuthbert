@@ -35,6 +35,7 @@ updated factors back into the factorial state.
 
 ```python
 from jax import tree
+import cuthbert
 
 # Define model_inputs
 model_inputs = ...
