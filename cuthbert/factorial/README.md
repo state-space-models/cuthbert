@@ -24,6 +24,12 @@ A tutorial on factorial state-space models can be found in [Duffield et al](http
 The factorial approximation allows us to exploit significant benefits in terms of
 memory, compute and parallelization.
 
+Note that although the dynamics are factorized, `cuthbert` does not differentiate
+between `predict` and `update` (instead favouring a unified filter operation
+via `filter_prepare` and `filter_combine`). Thus the dynamics and model inputs
+should be specified to act on the joint local state (i.e. block diagonal
+where appropriate).
+
 
 ## Factorial filtering with `cuthbert`
 
