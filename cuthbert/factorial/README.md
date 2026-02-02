@@ -28,7 +28,7 @@ memory, compute and parallelization.
 ## Factorial filtering with `cuthbert`
 
 Filtering in a factorial state-space model is similar to standard filtering, but with
-additional an additional step before the filtering operation to extract the relevant 
+an additional step before the filtering operation to extract the relevant 
 factors as well as an additional step after the filtering operation to insert the
 updated factors back into the factorial state.
 
@@ -69,7 +69,7 @@ for t in range(1, T):
 
 ## Factorial smoothing with `cuthbert`
 
-Smoothing in factorial state-space models can be performed embarassingly parallel
+Smoothing in factorial state-space models can be performed embarrassingly parallel
 along the factors since the dynamics and factorial approximation are independent
 across factors (the observations are fully absorbed in the filtering and
 are not accessed during smoothing).
