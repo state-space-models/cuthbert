@@ -4,8 +4,8 @@ from jax import numpy as jnp
 from jax import random, tree, vmap
 from jax.lax import associative_scan, scan
 
-from cuthbert.inference import Filter
 from cuthbert.factorial.types import ExtractAndJoin, MarginalizeAndInsert
+from cuthbert.inference import Filter
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
