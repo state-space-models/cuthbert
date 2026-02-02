@@ -27,8 +27,25 @@ override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
 ]
 
-[tool.setuptools.packages.find]
-include = ["cuthbert", "cuthbertlib"]
+[tool.setuptools]
+packages = [
+    "cuthbert",
+    "cuthbert.discrete",
+    "cuthbert.gaussian",
+    "cuthbert.gaussian.moments",
+    "cuthbert.gaussian.taylor",
+    "cuthbert.smc",
+    "cuthbertlib",
+    "cuthbertlib.discrete",
+    "cuthbertlib.kalman",
+    "cuthbertlib.linalg",
+    "cuthbertlib.linearize",
+    "cuthbertlib.quadrature",
+    "cuthbertlib.resampling",
+    "cuthbertlib.smc",
+    "cuthbertlib.smc.smoothing",
+    "cuthbertlib.stats",
+]
 
 [project.optional-dependencies]
 tests = [
