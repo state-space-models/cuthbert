@@ -46,14 +46,12 @@ import cuthbert
 # Define model_inputs
 model_inputs = ...
 
-# Define factorial function to extract relevant factors and combine into a joint local state
-def extract_and_join(state, model_inputs):
-    ....
+# Define function to extract the factorial indices from model inputs
+# Here we assume model_inputs is a NamedTuple with a field `factorial_inds`
+get_factorial_indices = lambda mi: mi.factorial_inds
 
-# Define factorial function to marginalize joint local state into a factored state
-# and insert into factorial state
-def marginalize_and_insert(state, local_state, model_inputs):
-    ....
+# Build factorializer for the inference method
+factorializer = cuthbert.factorial.gaussian.build_factorializer(get_factorial_indices)
 
 # Load inference method, with parameter extraction functions defined for factorial inference
 kalman_filter = cuthbert.gaussian.kalman.build_filter(
@@ -67,11 +65,12 @@ factorial_state = kalman_filter.init_prepare(tree.map(lambda x: x[0], model_inpu
 
 for t in range(1, T):
     model_inputs_t = tree.map(lambda x: x[t], model_inputs)
-    local_state = extract_and_join(factorial_state, model_inputs_t)
+    factorial_inds = get_factorial_indices(model_inputs_t)
+    local_state = factorializer.extract_and_join(factorial_state, factorial_inds)
     prepare_state = kalman_filter.filter_prepare(model_inputs_t)
     filtered_local_state = kalman_filter.filter_combine(local_state, prepare_state)
-    factorial_state = factorial_marginalize_and_insert(
-        factorial_state, filtered_local_state, model_inputs_t
+    factorial_state = factorializer.marginalize_and_insert(
+        filtered_local_state, factorial_state, factorial_inds
     )
 ```
 
@@ -79,8 +78,8 @@ You can also use `cuthbert.factorial.filter` for convenient offline filtering.
 Note that associative/parallel filtering is not supported for factorial filtering.
 
 ```python
-filter_states = cuthbert.factorial.filter(
-    kalman_filter, extract_and_join, marginalize_and_insert, model_inputs
+init_factorial_state, local_filter_states = cuthbert.factorial.filter(
+    kalman_filter, factorializer, model_inputs, output_factorial=False
 )
 ```
 
@@ -93,7 +92,7 @@ are not accessed during smoothing).
 
 The model inputs and filter states require some preprocessing to convert from being
 single sequence with each state containing all factors into a sequence or multiple
-sequences with each state corresponding to a single factor. This can be quite
+sequences with each state corresponding to a single factor. This can be
 fiddly but is left to the user for maximum freedom.
 
 TODO: Document some use cases in the examples.
