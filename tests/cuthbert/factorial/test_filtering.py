@@ -4,6 +4,8 @@ import jax
 import jax.numpy as jnp
 import pytest
 from jax import Array, vmap
+from jax.scipy.linalg import block_diag
+import chex
 
 from cuthbert import factorial
 from cuthbert.gaussian import kalman
@@ -75,6 +77,9 @@ common_params = list(
 )
 
 
+@pytest.mark.parametrize(
+    "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps", common_params
+)
 def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps):
     model_params = generate_factorial_kalman_model(
         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
@@ -83,6 +88,89 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
         load_kalman_pairwise_factorial_inference(*model_params)
     )
 
+    # True means, covs and log norm constants
+    fac_means = model_params[0]
+    fac_chol_covs = model_params[1]
+    fac_covs = fac_chol_covs @ fac_chol_covs.transpose(0, 2, 1)
+    ell = jnp.array(0.0)
+
+    local_means = []
+    local_covs = []
+    ells = []
+    fac_means_t_all = [fac_means]
+    fac_covs_t_all = [fac_covs]
+    for i in model_inputs[1:]:
+        F, c, chol_Q = (
+            model_params[2][i - 1],
+            model_params[3][i - 1],
+            model_params[4][i - 1],
+        )
+        H, d, chol_R, y = (
+            model_params[5][i],
+            model_params[6][i],
+            model_params[7][i],
+            model_params[8][i],
+        )
+        fac_inds = model_params[9][i - 1]
+
+        joint_mean = fac_means[fac_inds].reshape(-1)
+        joint_cov = block_diag(*fac_covs[fac_inds])
+        Q = chol_Q @ chol_Q.T
+        R = chol_R @ chol_R.T
+        pred_mean, pred_cov = std_predict(joint_mean, joint_cov, F, c, Q)
+        upd_mean, upd_cov, upd_ell = std_update(pred_mean, pred_cov, H, d, R, y)
+        marginal_means = upd_mean.reshape(len(fac_inds), -1)
+        marginal_covs = jnp.array(
+            [
+                upd_cov[i * x_dim : (i + 1) * x_dim, i * x_dim : (i + 1) * x_dim]
+                for i in range(len(fac_inds))
+            ]
+        )
+        ell += upd_ell
+        local_means.append(marginal_means)
+        local_covs.append(marginal_covs)
+        ells.append(ell)
+        fac_means = fac_means.at[fac_inds].set(marginal_means)
+        fac_covs = fac_covs.at[fac_inds].set(marginal_covs)
+        fac_means_t_all.append(fac_means)
+        fac_covs_t_all.append(fac_covs)
+
+    local_means = jnp.stack(local_means)
+    local_covs = jnp.stack(local_covs)
+    ells = jnp.stack(ells)
+    fac_means_t_all = jnp.stack(fac_means_t_all)
+    fac_covs_t_all = jnp.stack(fac_covs_t_all)
+
+    # Check output_factorial = False
     init_state, local_filter_states = factorial.filter(
         filter_obj, factorializer, model_inputs, output_factorial=False
+    )
+    local_filter_covs = (
+        local_filter_states.chol_cov @ local_filter_states.chol_cov.transpose(0, 2, 1)
+    )
+    chex.assert_trees_all_close(
+        (init_state.mean, init_state.chol_cov), (model_params[0], model_params[1])
+    )
+    chex.assert_trees_all_close(
+        (local_means, local_covs, ells),
+        (
+            local_filter_states.mean,
+            local_filter_covs,
+            local_filter_states.log_normalizing_constant,
+        ),
+    )
+
+    # Check output_factorial = False
+    factorial_filtering_states = factorial.filter(
+        filter_obj, factorializer, model_inputs, output_factorial=True
+    )
+    local_filter_covs = (
+        local_filter_states.chol_cov @ local_filter_states.chol_cov.transpose(0, 2, 1)
+    )
+    chex.assert_trees_all_close(
+        (fac_means_t_all, fac_covs_t_all),
+        (factorial_filtering_states.mean, factorial_filtering_states.chol_cov),
+    )
+    chex.assert_trees_all_close(
+        ells, factorial_filtering_states.log_normalizing_constant[1:]
     )
