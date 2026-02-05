@@ -154,7 +154,7 @@ def init_prepare(
     m0, chol_P0 = get_init_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
 
-    if jnp.isnan(y).any():
+    if jnp.isnan(y).all():
         m, chol_P = m0, chol_P0
         ell = jnp.array(0.0)
     else:
