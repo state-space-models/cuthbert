@@ -2,10 +2,10 @@
 
 from typing import TypeVar
 
-from jax import tree, numpy as jnp, vmap
+from jax import tree, numpy as jnp
 from jax.scipy.linalg import block_diag
 
-from cuthbertlib.linalg import marginal_sqrt_cov
+from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbert.gaussian.kalman import KalmanFilterState
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbertlib.types import Array, ArrayLike
@@ -65,14 +65,14 @@ def extract_and_join(
 
 
 def _extract_and_join_arr(arr: Array, factorial_inds: Array) -> Array:
-    if arr.ndim == 1:
+    if arr.ndim == 0 or arr.ndim == 1:
         return arr
     elif arr.ndim == 2:
         return _extract_and_join_means(arr, factorial_inds)
     elif arr.ndim == 3:
         return _extract_and_join_chol_covs(arr, factorial_inds)
     else:
-        raise ValueError(f"Array must be 1D, 2D or 3D, got {arr.ndim}D")
+        raise ValueError(f"Array must be 3D or lower, got {arr.ndim}D")
 
 
 def _extract_and_join_means(means: Array, factorial_inds: Array) -> Array:
@@ -129,16 +129,16 @@ def _marginalize_and_insert_arr(
     local_arr: Array, factorial_arr: Array, factorial_inds: ArrayLike
 ) -> Array:
     factorial_inds = jnp.asarray(factorial_inds)
-    if local_arr.ndim == 1:
+    if factorial_arr.ndim == 0 or factorial_arr.ndim == 1:
         return local_arr
-    elif local_arr.ndim == 2:
+    elif factorial_arr.ndim == 2:
         return _marginalize_and_insert_mean(local_arr, factorial_arr, factorial_inds)
-    elif local_arr.ndim == 3:
+    elif factorial_arr.ndim == 3:
         return _marginalize_and_insert_chol_cov(
             local_arr, factorial_arr, factorial_inds
         )
     else:
-        raise ValueError(f"Array must be 1D, 2D or 3D, got {local_arr.ndim}D")
+        raise ValueError(f"Array must be 3D or lower, got {local_arr.ndim}D")
 
 
 def _marginalize_and_insert_mean(
@@ -156,9 +156,5 @@ def _marginalize_and_insert_chol_cov(
     factorial_inds: Array,
 ) -> Array:
     d = factorial_chol_covs.shape[-1]
-    starts = jnp.arange(0, len(factorial_inds)) * d
-    ends = starts + d
-    marginal_chol_covs = vmap(lambda s, e: marginal_sqrt_cov(local_chol_cov, s, e))(
-        starts, ends
-    )
+    marginal_chol_covs = block_marginal_sqrt_cov(local_chol_cov, d)
     return factorial_chol_covs.at[factorial_inds].set(marginal_chol_covs)
