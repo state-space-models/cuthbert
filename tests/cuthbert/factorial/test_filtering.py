@@ -1,4 +1,5 @@
 import itertools
+from typing import cast
 
 import jax
 import jax.numpy as jnp
@@ -7,6 +8,7 @@ from jax import Array, vmap
 from jax.scipy.linalg import block_diag
 import chex
 
+from cuthbertlib.types import ArrayTree
 from cuthbert import factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
@@ -146,7 +148,8 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
         filter_obj, factorializer, model_inputs, output_factorial=False
     )
     local_filter_covs = (
-        local_filter_states.chol_cov @ local_filter_states.chol_cov.transpose(0, 2, 1)
+        local_filter_states.chol_cov
+        @ local_filter_states.chol_cov.transpose(0, 1, 3, 2)
     )
     chex.assert_trees_all_close(
         (init_state.mean, init_state.chol_cov), (model_params[0], model_params[1])
@@ -164,12 +167,15 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     factorial_filtering_states = factorial.filter(
         filter_obj, factorializer, model_inputs, output_factorial=True
     )
-    local_filter_covs = (
-        local_filter_states.chol_cov @ local_filter_states.chol_cov.transpose(0, 2, 1)
+
+    factorial_filtering_states = cast(ArrayTree, factorial_filtering_states)
+    factorial_filtering_covs = (
+        factorial_filtering_states.chol_cov
+        @ factorial_filtering_states.chol_cov.transpose(0, 1, 3, 2)
     )
     chex.assert_trees_all_close(
         (fac_means_t_all, fac_covs_t_all),
-        (factorial_filtering_states.mean, factorial_filtering_states.chol_cov),
+        (factorial_filtering_states.mean, factorial_filtering_covs),
     )
     chex.assert_trees_all_close(
         ells, factorial_filtering_states.log_normalizing_constant[1:]

@@ -15,7 +15,9 @@ def filter(
     model_inputs: ArrayTreeLike,
     output_factorial: bool = False,
     key: KeyArray | None = None,
-) -> ArrayTree | tuple[ArrayTree, ArrayTree]:
+) -> (
+    ArrayTree | tuple[ArrayTree, ArrayTree]
+):  # TODO: Can overload this function so the type checker knows that the output is a ArrayTree if output_factorial is True and a tuple[ArrayTree, ArrayTree] if output_factorial is False
     """Applies offline factorial filtering for given model inputs.
 
     `model_inputs` should have leading temporal dimension of length T + 1,
@@ -70,7 +72,15 @@ def filter(
         factorial_state = factorializer.marginalize_and_insert(
             filtered_joint_state, prev_factorial_state, factorial_inds
         )
-        return factorial_state, filtered_joint_state
+
+        def extract(arr):
+            if arr.ndim >= 2:
+                return arr[factorial_inds]
+            else:
+                return arr
+
+        factorial_state_fac_inds = tree.map(extract, factorial_state)
+        return factorial_state, factorial_state_fac_inds
 
     if output_factorial:
 
