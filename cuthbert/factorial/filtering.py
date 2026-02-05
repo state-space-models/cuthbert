@@ -79,8 +79,8 @@ def filter(
             else:
                 return arr
 
-        factorial_state_fac_inds = tree.map(extract, factorial_state)
-        return factorial_state, factorial_state_fac_inds
+        factorial_state_fac_inds_only = tree.map(extract, factorial_state)
+        return factorial_state, factorial_state_fac_inds_only
 
     if output_factorial:
 
