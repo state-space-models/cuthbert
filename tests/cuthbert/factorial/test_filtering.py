@@ -75,7 +75,9 @@ num_factors_local = [2]  # number of factors to interact at each time step
 num_time_steps = [1, 25]
 
 common_params = list(
-    itertools.product(seeds, x_dims, y_dims, num_factors, num_time_steps)
+    itertools.product(
+        seeds, x_dims, y_dims, num_factors, num_factors_local, num_time_steps
+    )
 )
 
 
