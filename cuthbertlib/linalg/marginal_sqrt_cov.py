@@ -2,8 +2,8 @@
 
 from functools import partial
 
-from jax import numpy as jnp
 from jax import jit, vmap
+from jax import numpy as jnp
 from jax.lax import dynamic_slice
 
 from cuthbertlib.linalg.tria import tria

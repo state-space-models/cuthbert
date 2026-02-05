@@ -2,15 +2,15 @@
 
 from typing import TypeVar
 
-from jax import tree, numpy as jnp
+from jax import numpy as jnp
+from jax import tree
 from jax.scipy.linalg import block_diag
 
-from cuthbertlib.linalg import block_marginal_sqrt_cov
+from cuthbert.factorial.types import Factorializer, GetFactorialIndices
 from cuthbert.gaussian.kalman import KalmanFilterState
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
+from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbertlib.types import Array, ArrayLike
-from cuthbert.factorial.types import Factorializer, GetFactorialIndices
-
 
 KalmanState = TypeVar("KalmanState", KalmanFilterState, LinearizedKalmanFilterState)
 

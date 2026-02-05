@@ -1,21 +1,21 @@
 import itertools
 from typing import cast
 
+import chex
 import jax
 import jax.numpy as jnp
 import pytest
 from jax import Array, vmap
 from jax.scipy.linalg import block_diag
-import chex
 
-from cuthbertlib.types import ArrayTree
 from cuthbert import factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.kalman.generate import generate_lgssm
+from cuthbertlib.types import ArrayTree
+from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
-from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 
 
 @pytest.fixture(scope="module", autouse=True)

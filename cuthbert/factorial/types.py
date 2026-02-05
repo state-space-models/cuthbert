@@ -1,8 +1,8 @@
 """Provides types for factorial state-space models."""
 
-from typing import Protocol, NamedTuple
+from typing import NamedTuple, Protocol
 
-from cuthbertlib.types import ArrayTree, ArrayTreeLike, ArrayLike
+from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
 
 class GetFactorialIndices(Protocol):
