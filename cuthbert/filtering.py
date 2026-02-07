@@ -14,6 +14,7 @@ def filter(
     filter_obj: Filter,
     model_inputs: ArrayTreeLike,
     parallel: bool = False,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> ArrayTree:
     """Applies offline filtering given a filter object and model inputs.
@@ -26,6 +27,8 @@ def filter(
         model_inputs: The model inputs (with leading temporal dimension of length T + 1).
         parallel: Whether to run the filter in parallel.
             Requires `filter.associative_filter` to be `True`.
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: The key for the random number generator.
 
     Returns:
@@ -46,7 +49,9 @@ def filter(
         prepare_keys = random.split(key, T + 1)
 
     init_model_input = tree.map(lambda x: x[0], model_inputs)
-    init_state = filter_obj.init_prepare(init_model_input, key=prepare_keys[0])
+    init_state = filter_obj.init_prepare(
+        init_model_input, init_likelihood=init_likelihood, key=prepare_keys[0]
+    )
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 

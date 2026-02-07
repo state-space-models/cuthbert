@@ -85,6 +85,7 @@ def init_prepare(
     init_sample: InitSample,
     log_potential: LogPotential,
     n_filter_particles: int,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> ParticleFilterState:
     """Prepare the initial state for the particle filter.
@@ -95,6 +96,8 @@ def init_prepare(
         log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
             x_{t-1} is None since there is no previous state at t=0.
         n_filter_particles: Number of particles to sample.
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: JAX random key.
 
     Returns:
@@ -112,9 +115,12 @@ def init_prepare(
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
     # Weight
-    log_weights = jax.vmap(log_potential, (None, 0, None))(
-        None, particles, model_inputs
-    )
+    if init_likelihood:
+        log_weights = jax.vmap(log_potential, (None, 0, None))(
+            None, particles, model_inputs
+        )
+    else:
+        log_weights = jnp.zeros(n_filter_particles)
 
     # Compute the log normalizing constant
     log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(

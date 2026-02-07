@@ -4,6 +4,7 @@ from jax import eval_shape, tree
 from jax import numpy as jnp
 
 from cuthbert.gaussian.kalman import GetInitParams
+from cuthbert.gaussian.moments import non_associative_filter
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
 from cuthbert.gaussian.types import (
     LinearizedKalmanFilterState,
@@ -16,65 +17,7 @@ from cuthbertlib.types import (
     KeyArray,
 )
 
-
-def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_params: GetInitParams,
-    get_observation_params: GetObservationMoments,
-    key: KeyArray | None = None,
-) -> LinearizedKalmanFilterState:
-    """Prepare the initial state for the linearized moments Kalman filter.
-
-    Args:
-        model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 from model inputs.
-        get_observation_params: Function to get observation conditional mean,
-            (generalised) Cholesky covariance function, linearization point and
-            observation.
-        key: JAX random key - not used.
-
-    Returns:
-        State for the linearized moments Kalman filter.
-            Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_normalizing_constant.
-    """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    m0, chol_P0 = get_init_params(model_inputs)
-
-    prior_state = LinearizedKalmanFilterState(
-        elem=filtering.FilterScanElement(
-            A=jnp.zeros_like(chol_P0),
-            b=m0,
-            U=chol_P0,
-            eta=jnp.zeros_like(m0),
-            Z=jnp.zeros_like(chol_P0),
-            ell=jnp.array(0.0),
-        ),
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m0),
-    )
-
-    mean_and_chol_cov_func, linearization_point, y = get_observation_params(
-        prior_state, model_inputs
-    )
-
-    H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
-
-    elem = filtering.FilterScanElement(
-        A=jnp.zeros_like(chol_P),
-        b=m,
-        U=chol_P,
-        eta=jnp.zeros_like(m),
-        Z=jnp.zeros_like(chol_P),
-        ell=ell,
-    )
-
-    return LinearizedKalmanFilterState(
-        elem=elem,
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m),
-    )
+init_prepare = non_associative_filter.init_prepare
 
 
 def filter_prepare(

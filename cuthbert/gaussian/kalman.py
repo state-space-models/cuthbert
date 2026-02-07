@@ -136,6 +136,7 @@ def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
     get_observation_params: GetObservationParams,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """Prepare the initial state for the Kalman filter.
@@ -144,6 +145,8 @@ def init_prepare(
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
         get_observation_params: Function to get observation parameters, H, d, chol_R, y.
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: JAX random key - not used.
 
     Returns:
@@ -151,10 +154,14 @@ def init_prepare(
             Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    m0, chol_P0 = get_init_params(model_inputs)
-    H, d, chol_R, y = get_observation_params(model_inputs)
+    m, chol_P = get_init_params(model_inputs)
+    ell = jnp.array(0.0)
 
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+    if init_likelihood:
+        H, d, chol_R, y = get_observation_params(model_inputs)
+
+        (m, chol_P), ell = filtering.update(m, chol_P, H, d, chol_R, y)
+
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P),
         b=m,

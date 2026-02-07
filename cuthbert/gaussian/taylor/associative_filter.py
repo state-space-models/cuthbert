@@ -3,6 +3,7 @@
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
+from cuthbert.gaussian.taylor import non_associative_filter
 from cuthbert.gaussian.taylor.non_associative_filter import process_observation
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
@@ -20,89 +21,7 @@ from cuthbertlib.types import (
     KeyArray,
 )
 
-
-def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
-    get_observation_func: GetObservationFunc,
-    rtol: float | None = None,
-    ignore_nan_dims: bool = False,
-    key: KeyArray | None = None,
-) -> LinearizedKalmanFilterState:
-    """Prepare the initial state for the linearized Taylor Kalman filter.
-
-    Args:
-        model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point.
-        get_observation_func: Function that returns either
-            - An observation log density
-                function log p(y_0 | x_0) as well as points x_0 and y_0
-                to linearize around.
-            - A log potential function log G(x_0) and a linearization point x_0.
-        rtol: The relative tolerance for the singular values of precision matrices
-            when passed to `symmetric_inv_sqrt` during linearization.
-            Cutoff for small singular values; singular values smaller than
-            `rtol * largest_singular_value` are treated as zero.
-            The default is determined based on the floating point precision of the dtype.
-            See https://docs.jax.dev/en/latest/_autosummary/jax.numpy.linalg.pinv.html.
-        ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
-            precision matrices (found via linearization) as missing and ignore all rows
-            and columns associated with them.
-        key: JAX random key - not used.
-
-    Returns:
-        State for the linearized Taylor Kalman filter.
-            Contains mean, chol_cov (generalised Cholesky factor of covariance)
-            and log_normalizing_constant.
-    """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    init_log_density, linearization_point = get_init_log_density(model_inputs)
-
-    _, m0, chol_P0 = linearize_log_density(
-        lambda _, x: init_log_density(x),
-        linearization_point,
-        linearization_point,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
-    )
-
-    prior_state = LinearizedKalmanFilterState(
-        elem=filtering.FilterScanElement(
-            A=jnp.zeros_like(chol_P0),
-            b=m0,
-            U=chol_P0,
-            eta=jnp.zeros_like(m0),
-            Z=jnp.zeros_like(chol_P0),
-            ell=jnp.array(0.0),
-        ),
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m0),
-    )
-
-    observation_output = get_observation_func(prior_state, model_inputs)
-    H, d, chol_R, observation = process_observation(
-        observation_output,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
-    )
-
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
-
-    elem = filtering.FilterScanElement(
-        A=jnp.zeros_like(chol_P),
-        b=m,
-        U=chol_P,
-        eta=jnp.zeros_like(m),
-        Z=jnp.zeros_like(chol_P),
-        ell=ell,
-    )
-
-    return LinearizedKalmanFilterState(
-        elem=elem,
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m),
-    )
+init_prepare = non_associative_filter.init_prepare
 
 
 def filter_prepare(
