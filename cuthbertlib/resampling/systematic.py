@@ -55,7 +55,7 @@ def conditional_resampling_0_to_0(
 
     N = logits.shape[0]
     weights = jnp.exp(logits - logsumexp(logits))
-    tmp = n * weights[0]
+    tmp = n * weights[0, 0]
     tmp_floor = jnp.floor(tmp)
 
     U, V, W = random.uniform(key, (3,))
