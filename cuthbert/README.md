@@ -7,6 +7,7 @@ All inference methods are implemented with the following unified interface:
 
 ```python
 from jax import tree
+import cuthbert
 
 # Define model_inputs
 model_inputs = ...

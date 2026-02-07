@@ -8,6 +8,7 @@ from typing import NamedTuple
 
 from jax import numpy as jnp
 from jax import tree
+from jax.lax import cond
 
 from cuthbert.gaussian.types import (
     GetDynamicsParams,
@@ -154,7 +155,11 @@ def init_prepare(
     m0, chol_P0 = get_init_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
 
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+    if jnp.isnan(y).all():
+        (m, chol_P), ell = ((m0, chol_P0), jnp.zeros((), dtype=m0.dtype))
+    else:
+        (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P),
         b=m,
