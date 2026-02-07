@@ -18,3 +18,5 @@ or negative singular values, it supports approximate inverse square roots in a s
 manner to (Moore-Penrose) pseudo-inversion.
 - `marginal_sqrt_cov`, which extracts a square root submatrix from a joint square root
 matrix.
+- `block_marginal_sqrt_cov`, which extracts all contiguous square root submatrices of
+specified size from a joint square root matrix.
