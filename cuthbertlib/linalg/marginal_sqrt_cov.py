@@ -1,6 +1,5 @@
 """Extract marginal square root covariance(s) from a joint square root covariance."""
 
-from jax import jit, vmap
 from jax import numpy as jnp
 from jax import vmap
 from jax.lax import dynamic_slice
