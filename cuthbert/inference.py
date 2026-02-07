@@ -11,6 +11,7 @@ class InitPrepare(Protocol):
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
+        init_likelihood: bool = True,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Prepare the initial state for the inference.
@@ -19,6 +20,8 @@ class InitPrepare(Protocol):
 
         Args:
             model_inputs: The model inputs at the first time point.
+            init_likelihood: Whether to do a Bayesian update on the initial state.
+                I.e. whether an observation is included at the first time point.
             key: The key for the random number generator.
                 Optional, as only used for stochastic inference methods
 

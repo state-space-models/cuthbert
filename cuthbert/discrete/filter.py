@@ -73,6 +73,7 @@ def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_dist: GetInitDist,
     get_obs_lls: GetObsLogLikelihoods,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> DiscreteFilterState:
     """Prepare the initial state for the filter.
@@ -81,6 +82,8 @@ def init_prepare(
         model_inputs: Model inputs.
         get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
         get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: JAX random key - not used.
 
     Returns:
@@ -88,11 +91,16 @@ def init_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_dist = get_init_dist(model_inputs)
-    obs_lls = get_obs_lls(model_inputs)
-    f, log_g = filtering.condition_on_obs(init_dist, obs_lls)
-    N = init_dist.shape[0]
-    f *= jnp.ones((N, N))
-    log_g *= jnp.ones(N)
+    if init_likelihood:
+        obs_lls = get_obs_lls(model_inputs)
+        f, log_g = filtering.condition_on_obs(init_dist, obs_lls)
+        N = init_dist.shape[0]
+        f *= jnp.ones((N, N))
+        log_g *= jnp.ones(N)
+    else:
+        f = init_dist
+        log_g = jnp.zeros(init_dist.shape[0])
+
     return DiscreteFilterState(
         elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
     )
