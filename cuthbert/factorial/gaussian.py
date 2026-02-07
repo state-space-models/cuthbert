@@ -61,7 +61,16 @@ def extract_and_join(
         Joint local Kalman state with no factorial index dimension.
     """
     factorial_inds = jnp.asarray(factorial_inds)
-    return tree.map(lambda x: _extract_and_join_arr(x, factorial_inds), factorial_state)
+    new_elem = tree.map(
+        lambda x: _extract_and_join_arr(x, factorial_inds), factorial_state.elem
+    )
+    new_state = factorial_state._replace(elem=new_elem)
+
+    if isinstance(factorial_state, LinearizedKalmanFilterState):
+        new_mean_prev = _extract_and_join_arr(factorial_state.mean_prev, factorial_inds)
+        new_state = new_state._replace(mean_prev=new_mean_prev)
+
+    return new_state
 
 
 def _extract_and_join_arr(arr: Array, factorial_inds: Array) -> Array:
@@ -118,11 +127,21 @@ def marginalize_and_insert(
         Joint local Kalman state with no factorial index dimension.
     """
     factorial_inds = jnp.asarray(factorial_inds)
-    return tree.map(
+    new_elem = tree.map(
         lambda loc, fac: _marginalize_and_insert_arr(loc, fac, factorial_inds),
-        local_state,
-        factorial_state,
+        local_state.elem,
+        factorial_state.elem,
     )
+    new_state = local_state._replace(elem=new_elem)
+    if isinstance(local_state, LinearizedKalmanFilterState) and isinstance(
+        factorial_state, LinearizedKalmanFilterState
+    ):
+        new_mean_prev = _marginalize_and_insert_arr(
+            local_state.mean_prev, factorial_state.mean_prev, factorial_inds
+        )
+        new_state = new_state._replace(mean_prev=new_mean_prev)
+
+    return new_state
 
 
 def _marginalize_and_insert_arr(

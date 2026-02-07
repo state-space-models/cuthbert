@@ -155,12 +155,10 @@ def init_prepare(
     m0, chol_P0 = get_init_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
 
-    (m, chol_P), ell = cond(
-        jnp.isnan(y).all(),
-        lambda _: ((m0, chol_P0), jnp.zeros((), dtype=m0.dtype)),
-        lambda _: filtering.update(m0, chol_P0, H, d, chol_R, y),
-        operand=None,
-    )
+    if jnp.isnan(y).all():
+        (m, chol_P), ell = ((m0, chol_P0), jnp.zeros((), dtype=m0.dtype))
+    else:
+        (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
 
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P),
