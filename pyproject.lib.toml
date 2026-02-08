@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuthbertlib"
+version = "0.0.3"
+description = "Core utilities for cuthbert SSM inference"
+readme = "cuthbertlib/README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Sam Duffield", email = "s@mduffield.com" },
+    { name = "Sahel Iqbal", email = "sahel13miqbal@proton.me" },
+    { name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com" },
+]
+
+dependencies = [
+    "jax>=0.4.35",
+    "numba>=0.60.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["cuthbertlib*"]
+
+[tool.ruff]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F821", "E402", "D104"]
+"cuthbertlib/resampling/**/*.py" = ["D103"]
+[tool.ruff.lint]
+select = ["D"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"

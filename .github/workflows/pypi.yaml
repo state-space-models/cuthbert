@@ -1,5 +1,4 @@
 name: Publish to PyPI
-# from https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
 on:
   release:
@@ -7,25 +6,35 @@ on:
 
 jobs:
   build:
-    name: Build distribution
+    name: Build distributions
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: "3.x"
+
     - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
+      run: python3 -m pip install build --user
+
+    # 1. Build cuthbert (uses default pyproject.toml)
+    - name: Build cuthbert
       run: python3 -m build
+
+    # 2. Build cuthbertlib (swaps config, builds, then swaps back)
+    - name: Build cuthbertlib
+      run: |
+        mv pyproject.toml pyproject.cuthbert.bak
+        mv pyproject.lib.toml pyproject.toml
+        python3 -m build
+        mv pyproject.toml pyproject.lib.toml
+        mv pyproject.cuthbert.bak pyproject.toml
+
     - name: Store the distribution packages
       uses: actions/upload-artifact@v5
       with:
@@ -33,17 +42,17 @@ jobs:
         path: dist/
 
   publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
-    needs:
-    - build
+    name: Publish distributions to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: release
-      url: https://pypi.org/p/cuthbert
+      url: https://pypi.org/p/cuthbert 
+      # The url above is just for the GitHub UI; the token works for both
+      # as long as both projects on PyPI trust the 'release' environment.
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
     - name: Download all the dists
@@ -51,9 +60,9 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
+
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-
 
   test-install:
     name: Test install from PyPI
@@ -69,8 +78,16 @@ jobs:
       - name: Give PyPI some time to update the index
         run: sleep 240
 
-      - name: Install from PyPI and import
+      - name: Test cuthbertlib install
         run: |
+          pip install "cuthbertlib==${GITHUB_REF_NAME#v}"
+          python -c "import cuthbertlib; import cuthbertlib.discrete"
+          
+      - name: Test cuthbertlib and cuthbert install
+        run: |
+          pip install "cuthbertlib==${GITHUB_REF_NAME#v}"
+          python -c "import cuthbertlib; import cuthbertlib.discrete"
+          pip uninstall cuthbertlib
           pip install "cuthbert==${GITHUB_REF_NAME#v}"
           python -c "import cuthbert; import cuthbert.discrete"
           python -c "import cuthbertlib; import cuthbertlib.discrete"
