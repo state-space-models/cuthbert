@@ -41,6 +41,7 @@ examples = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F821", "E402", "D104"]
 "tests/**/*.py" = ["D"]
+"cuthbertlib/resampling/**/*.py" = ["D103"]
 [tool.ruff.lint]
 select = ["D"]
 [tool.ruff.lint.pydocstyle]
