@@ -15,7 +15,7 @@ def linearized_kalman_filter_state_dummy_elem(
 ) -> LinearizedKalmanFilterState:
     """Create a LinearizedKalmanFilterState with a dummy element.
 
-    I.e. when associated scan is not used.
+    I.e. when associative scan is not used.
 
     Args:
         mean: Mean of the state.

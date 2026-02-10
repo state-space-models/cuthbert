@@ -105,7 +105,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=True
     )
 
-    # Run associative filter with parallel=False§
+    # Run associative filter with parallel=False
     seq_ass_states = filter(associative_moments_filter, model_inputs, parallel=False)
     seq_ass_means, seq_ass_chol_covs, seq_ass_ells = (
         seq_ass_states.mean,
@@ -139,6 +139,53 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (par_ass_means, par_ass_covs, par_ass_ells),
         rtol=1e-8,
     )
+
+
+@pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [1, 10])
+@pytest.mark.parametrize("y_dim", [1, 5])
+@pytest.mark.parametrize("associative", [True, False])
+def test_filter_noop(seed, x_dim, y_dim, associative):
+    m0, chol_P0 = generate_lgssm(seed, x_dim, y_dim, 0)[:2]
+
+    def noop_dynamics_moments(state, model_inputs):
+        def dynamics_mean_and_chol_cov_func(x):
+            return x, jnp.zeros(
+                (x_dim, x_dim)
+            )  # p(x_t | x_{t-1}) = N(x_t | x_{t-1}, 0)
+
+        return dynamics_mean_and_chol_cov_func, jnp.zeros_like(m0)
+
+    def noop_observation_moments(state, model_inputs):
+        def observation_mean_and_chol_cov_and_y_func(x):
+            return state.mean, jnp.zeros((y_dim, y_dim))  # p(y_t | x_t) = N(y_t | 0, 0)
+
+        return (
+            observation_mean_and_chol_cov_and_y_func,
+            jnp.zeros(x_dim),
+            jnp.full(y_dim, jnp.nan),  # Specify that there is no observation with nans
+        )
+
+    filter_obj = moments.build_filter(
+        get_init_params=lambda model_inputs: (m0, chol_P0),
+        get_dynamics_params=noop_dynamics_moments,
+        get_observation_params=noop_observation_moments,
+        associative=associative,
+    )
+
+    state = filter_obj.init_prepare(None)
+    prep_state = filter_obj.filter_prepare(None)
+    filtered_state = filter_obj.filter_combine(state, prep_state)
+
+    chex.assert_trees_all_close(
+        (state.mean, state.chol_cov @ state.chol_cov.T, state.log_normalizing_constant),
+        (
+            filtered_state.mean,
+            filtered_state.chol_cov @ filtered_state.chol_cov.T,
+            filtered_state.log_normalizing_constant,
+        ),
+        rtol=1e-10,
+    )  # Test covs rather than chol_covs because signs can be different
 
 
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
