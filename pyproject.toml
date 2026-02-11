@@ -65,6 +65,14 @@ convention = "google"
 [tool.pytest.ini_options]
 markers = "examples: Run tangled example scripts as tests"
 
+[tool.pyright]
+include = ["cuthbert", "cuthbertlib/cuthbertlib", "tests"]
+exclude = ["tests", "**/build", "**/dist", "**/__pycache__"]
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+extraPaths = ["cuthbertlib"]
+
 [tool.entangled]
 version = "2.3.0"
 ignore_list = ["CONTRIBUTING.md"]
