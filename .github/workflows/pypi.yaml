@@ -7,8 +7,15 @@ on:
 
 jobs:
   build:
-    name: Build distribution
+    name: Build distribution (${{ matrix.package.name }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - name: cuthbert
+            source_dir: .
+          - name: cuthbertlib
+            source_dir: cuthbertlib
 
     steps:
     - uses: actions/checkout@v6
@@ -24,24 +31,33 @@ jobs:
         pip install
         build
         --user
-    - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+    - name: Build a binary wheel and a source tarball for ${{ matrix.package.name }}
+      run: >-
+        python3 -m build
+        --sdist
+        --wheel
+        --outdir dist/${{ matrix.package.name }}
+        ${{ matrix.package.source_dir }}
     - name: Store the distribution packages
       uses: actions/upload-artifact@v5
       with:
-        name: python-package-distributions
-        path: dist/
+        name: python-package-distributions-${{ matrix.package.name }}
+        path: dist/${{ matrix.package.name }}/
 
   publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
+    name: Publish ${{ matrix.package.name }} to PyPI
     if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     needs:
     - build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - name: cuthbert
+          - name: cuthbertlib
     environment:
-      name: release
-      url: https://pypi.org/p/cuthbert
+      name: pypi-${{ matrix.package.name }}
+      url: https://pypi.org/p/${{ matrix.package.name }}
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
@@ -49,10 +65,13 @@ jobs:
     - name: Download all the dists
       uses: actions/download-artifact@v6
       with:
-        name: python-package-distributions
+        name: python-package-distributions-${{ matrix.package.name }}
         path: dist/
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish ${{ matrix.package.name }} distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: dist/
+        skip-existing: true
 
 
   test-install:
@@ -61,16 +80,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Read package versions from pyproject.toml files
+        run: |
+          echo "CUTHBERT_VERSION=$(python3 - <<'PY'
+          import tomllib
+          with open("pyproject.toml", "rb") as f:
+              print(tomllib.load(f)["project"]["version"])
+          PY
+          )" >> "$GITHUB_ENV"
+          echo "CUTHBERTLIB_VERSION=$(python3 - <<'PY'
+          import tomllib
+          with open("cuthbertlib/pyproject.toml", "rb") as f:
+              print(tomllib.load(f)["project"]["version"])
+          PY
+          )" >> "$GITHUB_ENV"
 
       - name: Give PyPI some time to update the index
         run: sleep 240
 
       - name: Install from PyPI and import
         run: |
-          pip install "cuthbert==${GITHUB_REF_NAME#v}"
+          pip install "cuthbertlib==${CUTHBERTLIB_VERSION}" "cuthbert==${CUTHBERT_VERSION}"
           python -c "import cuthbert; import cuthbert.discrete"
           python -c "import cuthbertlib; import cuthbertlib.discrete"

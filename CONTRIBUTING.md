@@ -20,8 +20,8 @@ cd cuthbert
 
 2. Install the package with the development dependencies and pre-commit hooks:
 ```bash
-pip install -e ".[tests, docs]"
-pre-commit install
+uv sync --all-packages --extra tests --extra docs
+uv run pre-commit install
 ```
 
 3. **Add your code. Add your tests. Update the docs if needed.**
@@ -33,8 +33,8 @@ mkdocs serve
 
 5. Make sure to run the linter, type checker, tests and check coverage:
 ```bash
-pre-commit run --all-files
-python -m pytest --cov=cuthbert --cov-report term-missing
+uv run pre-commit run --all-files
+uv run pytest --cov=cuthbert --cov=cuthbertlib --cov-report term-missing
 ```
 
     !!! tip "VS Code Users"

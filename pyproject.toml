@@ -16,8 +16,8 @@ authors = [
 ]
 
 dependencies = [
+    "cuthbertlib",
     "jax>=0.4.35",
-    "numba>=0.60.0",
 ]
 
 [tool.uv]
@@ -27,8 +27,14 @@ override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
 ]
 
+[tool.uv.workspace]
+members = ["cuthbertlib"]
+
+[tool.uv.sources]
+cuthbertlib = { workspace = true }
+
 [tool.setuptools.packages.find]
-include = ["cuthbert*", "cuthbertlib*"]
+include = ["cuthbert", "cuthbert.*"]
 
 [project.optional-dependencies]
 tests = [
@@ -49,7 +55,7 @@ examples = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F821", "E402", "D104"]
 "tests/**/*.py" = ["D"] # no docstring checking for tests
-"cuthbertlib/resampling/**/*.py" = ["D103"] # resampling uses decorator for docstrings
+"cuthbertlib/cuthbertlib/resampling/**/*.py" = ["D103"] # resampling uses decorator for docstrings
 [tool.ruff.lint]
 select = ["D"]
 [tool.ruff.lint.pydocstyle]

@@ -4,7 +4,7 @@ The documentation website is built with [Material for MkDocs](https://squidfunk.
 For local development, install the required dependencies with
 
 ```bash
-pip install -e ".[docs]"
+uv sync --all-packages --extra docs
 ```
 
 To preview the website, use

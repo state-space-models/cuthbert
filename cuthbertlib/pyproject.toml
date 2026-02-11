@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuthbertlib"
+version = "0.0.1"
+description = "Atomic building blocks for state-space model inference with JAX"
+readme = "cuthbertlib/README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Sam Duffield", email = "s@mduffield.com" },
+    { name = "Sahel Iqbal", email = "sahel13miqbal@proton.me" },
+    { name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com" },
+]
+
+dependencies = [
+    "jax>=0.4.35",
+    "numba>=0.60.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["cuthbertlib", "cuthbertlib.*"]
