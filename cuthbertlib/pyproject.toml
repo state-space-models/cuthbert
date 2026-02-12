@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cuthbertlib"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Atomic modules for `cuthbert`."
 readme = "cuthbertlib/README.md"
 requires-python = ">=3.10"
@@ -22,3 +22,6 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["cuthbertlib", "cuthbertlib.*"]
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
