@@ -223,21 +223,14 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
 
         return init_log_density, jnp.zeros_like(m0)
 
-    nugget = 1e-10
-
     def get_noop_dynamics_log_density(
         state: LinearizedKalmanFilterState, model_inputs: int
     ) -> tuple[LogConditionalDensity, Array, Array]:
         return (
-            lambda x_prev, x: multivariate_normal.logpdf(
-                x,
-                x_prev,
-                jnp.eye(x_dim)
-                * nugget,  # For taylor linearization we need to add a small nugget to allow the function to be evaluated at all without nans
-            ),
-            jnp.zeros_like(m0),
-            jnp.zeros_like(m0),
-        )
+            lambda x_prev, x: multivariate_normal.logpdf(x, x_prev, jnp.eye(x_dim)),
+            jnp.full_like(m0, jnp.nan),
+            jnp.full_like(m0, jnp.nan),
+        )  # For Taylor we indicate noop dynamics by setting both linearization points to NaNs
 
     def get_noop_observation_log_density(
         state: LinearizedKalmanFilterState, model_inputs: int

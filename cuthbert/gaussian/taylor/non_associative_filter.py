@@ -212,6 +212,15 @@ def filter_combine(
         ignore_nan_dims=ignore_nan_dims,
     )
 
+    # If both linearization points are all NaN, skip the predict step
+    skip_predict_flag = jnp.logical_and(
+        jnp.all(jnp.isnan(linearization_point_curr)),
+        jnp.all(jnp.isnan(linearization_point_prev)),
+    )
+    F = jnp.where(skip_predict_flag, jnp.eye(F.shape[0]), F)
+    c = jnp.where(skip_predict_flag, jnp.zeros_like(c), c)
+    chol_Q = jnp.where(skip_predict_flag, jnp.zeros_like(chol_Q), chol_Q)
+
     predict_mean, predict_chol_cov = filtering.predict(
         state_1.mean, state_1.chol_cov, F, c, chol_Q
     )
