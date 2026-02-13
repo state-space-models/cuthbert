@@ -163,3 +163,26 @@ class TestDiscrete(chex.TestCase):
             rtol=1e-10,
             atol=0.0,
         )
+
+
+@pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])
+@pytest.mark.parametrize("num_states", [5, 10])
+def test_filter_noop(seed, num_states):
+    init_dist, _, _ = build_hmm(seed, num_states, 1)
+
+    def get_noop_trans_matrix(model_inputs):
+        return jnp.eye(num_states)
+
+    def get_noop_obs_lls(model_inputs):
+        return jnp.zeros(num_states)
+
+    filter_obj = build_filter(
+        get_init_dist=lambda model_inputs: init_dist,
+        get_trans_matrix=get_noop_trans_matrix,
+        get_obs_lls=get_noop_obs_lls,
+    )
+
+    init_state = filter_obj.init_prepare(None)
+    prep_state = filter_obj.filter_prepare(None)
+    filtered_state = filter_obj.filter_combine(init_state, prep_state)
+    chex.assert_trees_all_close(filtered_state, init_state, rtol=1e-10, atol=1e-10)
