@@ -67,7 +67,7 @@ class Test(chex.TestCase):
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
         key = random.key(seed + 1)
-        filtered_states = filter(filter_obj, model_inputs, False, key)
+        filtered_states = filter(filter_obj, model_inputs, False, True, key)
 
         if method == "tracing":
             bs_fn = tracing
@@ -149,7 +149,7 @@ class Test(chex.TestCase):
         filter_key, smoother_key = random.split(key)
         num_time_steps = 5
         model_inputs = jnp.empty(num_time_steps + 1)
-        filtered_states = filter(filter_obj, model_inputs, False, filter_key)
+        filtered_states = filter(filter_obj, model_inputs, False, True, filter_key)
 
         n_smoother_particles = 1000
         smoother_obj = build_smoother(

@@ -16,6 +16,7 @@ def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
     get_observation_params: GetObservationMoments,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """Prepare the initial state for the linearized moments Kalman filter.
@@ -26,6 +27,8 @@ def init_prepare(
         get_observation_params: Function to get observation conditional mean,
             (generalised) Cholesky covariance function, linearization point and
             observation.
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: JAX random key - not used.
 
     Returns:
@@ -36,25 +39,31 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     m0, chol_P0 = get_init_params(model_inputs)
 
-    prior_state = LinearizedKalmanFilterState(
-        elem=filtering.FilterScanElement(
-            A=jnp.zeros_like(chol_P0),
-            b=m0,
-            U=chol_P0,
-            eta=jnp.zeros_like(m0),
-            Z=jnp.zeros_like(chol_P0),
-            ell=jnp.array(0.0),
-        ),
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m0),
-    )
+    if init_likelihood:
+        prior_state = LinearizedKalmanFilterState(
+            elem=filtering.FilterScanElement(
+                A=jnp.zeros_like(chol_P0),
+                b=m0,
+                U=chol_P0,
+                eta=jnp.zeros_like(m0),
+                Z=jnp.zeros_like(chol_P0),
+                ell=jnp.array(0.0),
+            ),
+            model_inputs=model_inputs,
+            mean_prev=dummy_tree_like(m0),
+        )
 
-    mean_and_chol_cov_func, linearization_point, y = get_observation_params(
-        prior_state, model_inputs
-    )
+        mean_and_chol_cov_func, linearization_point, y = get_observation_params(
+            prior_state, model_inputs
+        )
 
-    H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+        H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
+        (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
+    else:
+        m = m0
+        chol_P = chol_P0
+        ell = jnp.array(0.0)
+
     return linearized_kalman_filter_state_dummy_elem(
         mean=m,
         chol_cov=chol_P,

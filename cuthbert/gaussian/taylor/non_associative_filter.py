@@ -64,6 +64,7 @@ def init_prepare(
     get_observation_func: GetObservationFunc,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
+    init_likelihood: bool = True,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """Prepare the initial state for the linearized Taylor Kalman filter.
@@ -86,6 +87,8 @@ def init_prepare(
         ignore_nan_dims: Whether to treat dimensions with NaN on the diagonal of the
             precision matrices (found via linearization) as missing and ignore all rows
             and columns associated with them.
+        init_likelihood: Whether to do a Bayesian update on the initial state.
+            I.e. whether an observation is included at the first time point.
         key: JAX random key - not used.
 
     Returns:
@@ -104,23 +107,28 @@ def init_prepare(
         ignore_nan_dims=ignore_nan_dims,
     )
 
-    prior_state = linearized_kalman_filter_state_dummy_elem(
-        mean=m0,
-        chol_cov=chol_P0,
-        log_normalizing_constant=jnp.array(0.0),
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m0),
-    )
+    if init_likelihood:
+        prior_state = linearized_kalman_filter_state_dummy_elem(
+            mean=m0,
+            chol_cov=chol_P0,
+            log_normalizing_constant=jnp.array(0.0),
+            model_inputs=model_inputs,
+            mean_prev=dummy_tree_like(m0),
+        )
 
-    observation_output = get_observation_func(prior_state, model_inputs)
+        observation_output = get_observation_func(prior_state, model_inputs)
 
-    H, d, chol_R, observation = process_observation(
-        observation_output,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
-    )
+        H, d, chol_R, observation = process_observation(
+            observation_output,
+            rtol=rtol,
+            ignore_nan_dims=ignore_nan_dims,
+        )
 
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
+        (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
+    else:
+        m = m0
+        chol_P = chol_P0
+        ell = jnp.array(0.0)
 
     return linearized_kalman_filter_state_dummy_elem(
         mean=m,
