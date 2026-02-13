@@ -1,5 +1,5 @@
 {%
-    include-markdown "../../cuthbertlib/smc/README.md"
+    include-markdown "../../cuthbertlib/cuthbertlib/smc/README.md"
 %}
 
 ::: cuthbertlib.smc.smoothing.protocols

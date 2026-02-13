@@ -18,9 +18,18 @@ git clone git@github.com/YourUserName/cuthbert.git
 cd cuthbert
 ```
 
-2. Install the package with the development dependencies and pre-commit hooks:
+2. Install the packages with development dependencies and pre-commit hooks.
+
+Using `uv`:
 ```bash
-pip install -e ".[tests, docs]"
+uv sync --all-packages --all-extras
+uv run pre-commit install
+```
+
+Using `pip` editable installs:
+```bash
+pip install -e ./cuthbertlib
+pip install -e ".[tests,docs,examples]"
 pre-commit install
 ```
 
@@ -33,8 +42,8 @@ mkdocs serve
 
 5. Make sure to run the linter, type checker, tests and check coverage:
 ```bash
-pre-commit run --all-files
-python -m pytest --cov=cuthbert --cov-report term-missing
+uv run pre-commit run --all-files
+uv run pytest --cov=cuthbert --cov=cuthbertlib --cov-report term-missing
 ```
 
     !!! tip "VS Code Users"

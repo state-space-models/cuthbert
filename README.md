@@ -47,7 +47,8 @@ distribution which is not (necessarily) a state-space model - [`blackjax` is gre
 The codebase is structured as follows:
 
 - `cuthbert`: The main package with unified interface for filtering and smoothing.
-- `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference,
+- `cuthbertlib/cuthbertlib`: A collection of atomic, smaller-scoped tools useful for
+state-space model inference,
 that represent the building blocks that power the main `cuthbert` package.
 <!--codebase-structure-end-->
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
@@ -71,6 +72,12 @@ pip install -U cuthbert
 ```
 
 Installing `cuthbert` will also install `cuthbertlib`.
+
+For local development from this repository, install both packages in editable mode with:
+
+```bash
+uv sync --all-packages
+```
 
 <!--installation-end-->
 
@@ -100,4 +107,3 @@ mentioned [above](#non-goals).
 
 We're always looking for contributions!
 Check out the [contributing guide](CONTRIBUTING.md) for more information.
-
