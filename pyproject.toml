@@ -69,7 +69,7 @@ convention = "google"
 markers = "examples: Run tangled example scripts as tests"
 
 [tool.pyright]
-include = ["cuthbert", "cuthbertlib/cuthbertlib", "tests"]
+include = ["cuthbert", "cuthbertlib/cuthbertlib"]
 exclude = ["tests", "**/build", "**/dist", "**/__pycache__"]
 
 [[tool.pyright.executionEnvironments]]
