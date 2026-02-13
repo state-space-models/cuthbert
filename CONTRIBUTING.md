@@ -22,14 +22,14 @@ cd cuthbert
 
 Using `uv`:
 ```bash
-uv sync --all-packages --extra tests --extra docs
+uv sync --all-packages --all-extras
 uv run pre-commit install
 ```
 
 Using `pip` editable installs:
 ```bash
 pip install -e ./cuthbertlib
-pip install -e ".[tests,docs]"
+pip install -e ".[tests,docs,examples]"
 pre-commit install
 ```
 
