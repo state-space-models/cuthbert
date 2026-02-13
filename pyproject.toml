@@ -17,7 +17,7 @@ authors = [
 
 dependencies = [
     "jax>=0.4.35",
-    "numba>=0.60.0",
+    "cuthbertlib",
 ]
 
 [tool.uv]
@@ -27,8 +27,14 @@ override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
 ]
 
+[tool.uv.workspace]
+members = ["cuthbertlib"]
+
+[tool.uv.sources]
+cuthbertlib = { workspace = true }
+
 [tool.setuptools.packages.find]
-include = ["cuthbert*", "cuthbertlib*"]
+include = ["cuthbert*"]
 
 [project.optional-dependencies]
 tests = [
