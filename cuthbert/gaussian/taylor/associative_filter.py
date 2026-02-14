@@ -9,16 +9,11 @@ from cuthbert.gaussian.taylor.types import (
     GetInitLogDensity,
     GetObservationFunc,
 )
-from cuthbert.gaussian.types import (
-    LinearizedKalmanFilterState,
-)
+from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density
-from cuthbertlib.types import (
-    ArrayTreeLike,
-    KeyArray,
-)
+from cuthbertlib.types import ArrayTreeLike, KeyArray
 
 
 def init_prepare(

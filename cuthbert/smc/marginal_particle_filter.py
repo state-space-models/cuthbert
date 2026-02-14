@@ -54,9 +54,7 @@ def build_filter(
     """
     return Filter(
         init_prepare=partial(
-            init_prepare,
-            init_sample=init_sample,
-            n_filter_particles=n_filter_particles,
+            init_prepare, init_sample=init_sample, n_filter_particles=n_filter_particles
         ),
         filter_prepare=partial(
             filter_prepare,

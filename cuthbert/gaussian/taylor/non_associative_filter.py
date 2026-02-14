@@ -15,11 +15,7 @@ from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
-from cuthbertlib.types import (
-    Array,
-    ArrayTreeLike,
-    KeyArray,
-)
+from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
 def process_observation(

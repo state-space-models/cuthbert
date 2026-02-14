@@ -68,9 +68,7 @@ def build_filter(
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_dist: GetInitDist,
-    key: KeyArray | None = None,
+    model_inputs: ArrayTreeLike, get_init_dist: GetInitDist, key: KeyArray | None = None
 ) -> DiscreteFilterState:
     """Prepare the initial state for the filter.
 

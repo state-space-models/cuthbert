@@ -5,16 +5,11 @@ from jax import numpy as jnp
 
 from cuthbert.gaussian.kalman import GetInitParams
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
-from cuthbert.gaussian.types import (
-    LinearizedKalmanFilterState,
-)
+from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_moments
-from cuthbertlib.types import (
-    ArrayTreeLike,
-    KeyArray,
-)
+from cuthbertlib.types import ArrayTreeLike, KeyArray
 
 
 def init_prepare(

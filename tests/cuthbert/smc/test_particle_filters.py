@@ -90,7 +90,7 @@ def load_inference(
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[0, 42, 99, 123, 455],
+        seed=[0, 41, 99, 123, 456],
         x_dim=[3],
         y_dim=[2],
         num_time_steps=[20],
