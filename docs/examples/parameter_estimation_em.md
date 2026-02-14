@@ -20,21 +20,21 @@ where $\textrm{logit\_inv}(x) = 1/(1 + e^{-x})$. The unknown static parameters a
 $(\rho, \sigma^{2}) \eqqcolon \theta$, where $0 \leq \rho \leq 1$ and $\sigma \geq 0$.
 
 Given an observation
-sequence $y_{0:T}$, our goal is to find the maximum likelihood estimate (MLE)
+sequence $y_{1:T}$, our goal is to find the maximum likelihood estimate (MLE)
 
 $$
-\theta_{\text{MLE}} = \text{arg max}_{\theta} \, p_{\theta}(y_{0:T}) = \text{arg max}_{\theta} \, \int p_{\theta}(x_{0:T}, y_{0:T}) \, \mathrm{d} x_{0:T}.
+\theta_{\text{MLE}} = \text{arg max}_{\theta} \, p_{\theta}(y_{1:T}) = \text{arg max}_{\theta} \, \int p_{\theta}(x_{0:T}, y_{1:T}) \, \mathrm{d} x_{0:T}.
 $$
 
 ## Crash course on EM
 
 The EM algorithm is used to find the MLE when the marginal likelihood
-$p_{\theta}(y_{0:T})$ is intractable. EM maximizes a lower bound on the log
+$p_{\theta}(y_{1:T})$ is intractable. EM maximizes a lower bound on the log
 marginal likelihood known as the _evidence lower bound_ (ELBO):
 
 $$
 \begin{equation}
-Q(\theta; q) \coloneqq \int \log \frac{p_{\theta}(x_{0:T}, y_{0:T})}{q(x_{0:T})}
+Q(\theta; q) \coloneqq \int \log \frac{p_{\theta}(x_{0:T}, y_{1:T})}{q(x_{0:T})}
   \, q(x_{0:T}) \, \mathrm{d} x_{0:T},
 \end{equation}
 $$
@@ -42,7 +42,7 @@ $$
 where $q$ is an arbitrary probability distribution. The maximization is performed in two
 steps. In the _E-step_, we maximize $Q(\theta, q)$ with respect to $q$, and the maximizer
 is known analytically to be the smoothing distribution
-$q^{\star} \coloneqq p_{\theta}(x_{0:T} \mid y_{0:T})$ (i.e. the posterior).
+$q^{\star} \coloneqq p_{\theta}(x_{0:T} \mid y_{1:T})$ (i.e. the posterior).
 Then, in the _M-step_, we maximize $Q(\theta, q^{\star})$ with respect to
 $\theta$, and the maximizer is our current best guess of the MLE. This process
 is iterated until convergence.
@@ -129,7 +129,7 @@ could use a named tuple instead.
 ## Model definition
 
 Since the SSM in (1)-(3) is nonlinear, the true posterior $p_{\theta}(x_{0:T}
-\mid y_{0:T})$ is not tractable, and so must be approximated for the E-step.
+\mid y_{1:T})$ is not tractable, and so must be approximated for the E-step.
 We will use one of the Gaussian-approximated filters and smoothers
 provided in `cuthbert`, in particular the moment-based extended Kalman filter
 from [`cuthbert.gaussian.moments`](../cuthbert_api/gaussian/moments.md).

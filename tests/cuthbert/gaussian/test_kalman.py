@@ -30,21 +30,19 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     ells_incrs = []
 
     # Handle observation at time 0
-    H0, d0, R0, y0 = Hs[0], ds[0], Rs[0], ys[0]
-    m, P, ell_incr = std_update(m0, P0, H0, d0, R0, y0)
-    ms.append(m)
-    Ps.append(P)
-    ells_incrs.append(ell_incr)
+    ms.append(m0)
+    Ps.append(P0)
+    ells_incrs.append(jnp.float64(0.0))
 
     for i in range(len(Fs)):
         F, c, Q, H, d, R, y = (
             Fs[i],
             cs[i],
             Qs[i],
-            Hs[i + 1],
-            ds[i + 1],
-            Rs[i + 1],
-            ys[i + 1],
+            Hs[i],
+            ds[i],
+            Rs[i],
+            ys[i],
         )
         pred_m, pred_P = std_predict(ms[-1], Ps[-1], F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
@@ -79,10 +77,10 @@ def load_kalman_inference(
 
     def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
         return (
-            Hs[model_inputs],
-            ds[model_inputs],
-            chol_Rs[model_inputs],
-            ys[model_inputs],
+            Hs[model_inputs - 1],
+            ds[model_inputs - 1],
+            chol_Rs[model_inputs - 1],
+            ys[model_inputs - 1],
         )
 
     filter = kalman.build_filter(
@@ -91,7 +89,7 @@ def load_kalman_inference(
     smoother = kalman.build_smoother(
         get_dynamics_params, store_gain=True, store_chol_cov_given_next=True
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, model_inputs
 
 

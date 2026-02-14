@@ -90,7 +90,6 @@ def build_filter(
             init_prepare=partial(
                 associative_filter.init_prepare,
                 get_init_log_density=get_init_log_density,
-                get_observation_func=get_observation_func,
                 rtol=rtol,
                 ignore_nan_dims=ignore_nan_dims,
             ),
@@ -110,7 +109,6 @@ def build_filter(
             init_prepare=partial(
                 non_associative_filter.init_prepare,
                 get_init_log_density=get_init_log_density,
-                get_observation_func=get_observation_func,
                 rtol=rtol,
                 ignore_nan_dims=ignore_nan_dims,
             ),

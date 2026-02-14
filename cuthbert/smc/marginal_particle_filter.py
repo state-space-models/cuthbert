@@ -54,10 +54,7 @@ def build_filter(
     """
     return Filter(
         init_prepare=partial(
-            init_prepare,
-            init_sample=init_sample,
-            log_potential=log_potential,
-            n_filter_particles=n_filter_particles,
+            init_prepare, init_sample=init_sample, n_filter_particles=n_filter_particles
         ),
         filter_prepare=partial(
             filter_prepare,
@@ -78,7 +75,6 @@ def build_filter(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     init_sample: InitSample,
-    log_potential: LogPotential,
     n_filter_particles: int,
     key: KeyArray | None = None,
 ) -> MarginalParticleFilterState:
@@ -87,8 +83,6 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         init_sample: Function to sample from the initial distribution M_0(x_0).
-        log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
-            x_{t-1} is None since there is no previous state at t=0.
         n_filter_particles: Number of particles to sample.
         key: JAX random key.
 
@@ -107,9 +101,7 @@ def init_prepare(
     particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
     # Weight
-    log_weights = jax.vmap(log_potential, (None, 0, None))(
-        None, particles, model_inputs
-    )
+    log_weights = jnp.zeros(n_filter_particles)
 
     # Compute the log normalizing constant
     log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(

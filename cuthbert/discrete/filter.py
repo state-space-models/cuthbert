@@ -58,9 +58,7 @@ def build_filter(
         Filter object. Suitable for associative scan.
     """
     return Filter(
-        init_prepare=partial(
-            init_prepare, get_init_dist=get_init_dist, get_obs_lls=get_obs_lls
-        ),
+        init_prepare=partial(init_prepare, get_init_dist=get_init_dist),
         filter_prepare=partial(
             filter_prepare, get_trans_matrix=get_trans_matrix, get_obs_lls=get_obs_lls
         ),
@@ -70,17 +68,13 @@ def build_filter(
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_dist: GetInitDist,
-    get_obs_lls: GetObsLogLikelihoods,
-    key: KeyArray | None = None,
+    model_inputs: ArrayTreeLike, get_init_dist: GetInitDist, key: KeyArray | None = None
 ) -> DiscreteFilterState:
     """Prepare the initial state for the filter.
 
     Args:
         model_inputs: Model inputs.
         get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
-        get_obs_lls: Function to get observation log likelihoods b_i = log p(y_t | x_t = i).
         key: JAX random key - not used.
 
     Returns:
@@ -88,11 +82,9 @@ def init_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_dist = get_init_dist(model_inputs)
-    obs_lls = get_obs_lls(model_inputs)
-    f, log_g = filtering.condition_on_obs(init_dist, obs_lls)
     N = init_dist.shape[0]
-    f *= jnp.ones((N, N))
-    log_g *= jnp.ones(N)
+    f = init_dist * jnp.ones((N, N))
+    log_g = jnp.zeros(N)
     return DiscreteFilterState(
         elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
     )

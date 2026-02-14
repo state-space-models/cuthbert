@@ -41,7 +41,7 @@ def build_hmm(seed, num_states, num_time_steps):
     trans_matrices /= trans_matrices.sum(axis=-1, keepdims=True)
 
     # Observation log likelihoods
-    log_likelihoods = random.normal(obs_key, (num_time_steps + 1, num_states))
+    log_likelihoods = random.normal(obs_key, (num_time_steps, num_states))
     return init_dist, trans_matrices, log_likelihoods
 
 
@@ -63,12 +63,12 @@ def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
     log_alpha = []
     log_marginals = []
 
-    log_alpha_init = log_initial + log_likelihoods[0]
+    log_alpha_init = log_initial
     log_alpha.append(log_alpha_init)
-    log_marginals.append(jax.nn.logsumexp(log_alpha_init))
+    log_marginals.append(jnp.float64(0.0))
 
     for t in range(num_timesteps):
-        log_alpha_t = log_likelihoods[t + 1] + jax.nn.logsumexp(
+        log_alpha_t = log_likelihoods[t] + jax.nn.logsumexp(
             log_alpha[-1][:, None] + log_trans[t], axis=0
         )
         log_alpha.append(log_alpha_t)
@@ -84,7 +84,7 @@ def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
 
     for t in range(num_timesteps - 1, -1, -1):
         log_beta_t = jax.nn.logsumexp(
-            log_trans[t] + log_likelihoods[t + 1] + log_beta[-1], axis=1
+            log_trans[t] + log_likelihoods[t] + log_beta[-1], axis=1
         )
         log_beta.append(log_beta_t)
 
@@ -98,7 +98,7 @@ def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
 
 
 def build_inference_object(init_dist, trans_matrices, log_likelihoods):
-    T = log_likelihoods.shape[0] - 1
+    T = log_likelihoods.shape[0]
 
     def get_init_dist(model_inputs):
         return init_dist
@@ -107,7 +107,7 @@ def build_inference_object(init_dist, trans_matrices, log_likelihoods):
         return trans_matrices[model_inputs - 1]
 
     def get_obs_lls(model_inputs):
-        return log_likelihoods[model_inputs]
+        return log_likelihoods[model_inputs - 1]
 
     filter_obj = build_filter(
         get_init_dist=get_init_dist,

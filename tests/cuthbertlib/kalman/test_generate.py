@@ -65,11 +65,11 @@ def test_generate_lgssm_shapes():
     assert chol_Qs.shape == (num_time_steps, x_dim, x_dim)
     assert_is_cholesky_factor(chol_Qs)
 
-    assert Hs.shape == (num_time_steps + 1, y_dim, x_dim)
-    assert ds.shape == (num_time_steps + 1, y_dim)
-    assert chol_Rs.shape == (num_time_steps + 1, y_dim, y_dim)
+    assert Hs.shape == (num_time_steps, y_dim, x_dim)
+    assert ds.shape == (num_time_steps, y_dim)
+    assert chol_Rs.shape == (num_time_steps, y_dim, y_dim)
     assert_is_cholesky_factor(chol_Rs)
-    assert ys.shape == (num_time_steps + 1, y_dim)
+    assert ys.shape == (num_time_steps, y_dim)
 
     # Ensure randomness of the parameters
     assert not jnp.allclose(Fs[0], Fs[1])

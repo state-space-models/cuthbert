@@ -5,22 +5,16 @@ from jax import numpy as jnp
 
 from cuthbert.gaussian.kalman import GetInitParams
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
-from cuthbert.gaussian.types import (
-    LinearizedKalmanFilterState,
-)
+from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_moments
-from cuthbertlib.types import (
-    ArrayTreeLike,
-    KeyArray,
-)
+from cuthbertlib.types import ArrayTreeLike, KeyArray
 
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_params: GetInitParams,
-    get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """Prepare the initial state for the linearized moments Kalman filter.
@@ -28,9 +22,6 @@ def init_prepare(
     Args:
         model_inputs: Model inputs.
         get_init_params: Function to get m0, chol_P0 from model inputs.
-        get_observation_params: Function to get observation conditional mean,
-            (generalised) Cholesky covariance function, linearization point and
-            observation.
         key: JAX random key - not used.
 
     Returns:
@@ -54,27 +45,7 @@ def init_prepare(
         mean_prev=dummy_tree_like(m0),
     )
 
-    mean_and_chol_cov_func, linearization_point, y = get_observation_params(
-        prior_state, model_inputs
-    )
-
-    H, d, chol_R = linearize_moments(mean_and_chol_cov_func, linearization_point)
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, y)
-
-    elem = filtering.FilterScanElement(
-        A=jnp.zeros_like(chol_P),
-        b=m,
-        U=chol_P,
-        eta=jnp.zeros_like(m),
-        Z=jnp.zeros_like(chol_P),
-        ell=ell,
-    )
-
-    return LinearizedKalmanFilterState(
-        elem=elem,
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m),
-    )
+    return prior_state
 
 
 def filter_prepare(

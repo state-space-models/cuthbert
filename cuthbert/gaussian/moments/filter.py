@@ -62,9 +62,7 @@ def build_filter(
     if associative:
         return Filter(
             init_prepare=partial(
-                associative_filter.init_prepare,
-                get_init_params=get_init_params,
-                get_observation_params=get_observation_params,
+                associative_filter.init_prepare, get_init_params=get_init_params
             ),
             filter_prepare=partial(
                 associative_filter.filter_prepare,
@@ -78,13 +76,10 @@ def build_filter(
     else:
         return Filter(
             init_prepare=partial(
-                non_associative_filter.init_prepare,
-                get_init_params=get_init_params,
-                get_observation_params=get_observation_params,
+                non_associative_filter.init_prepare, get_init_params=get_init_params
             ),
             filter_prepare=partial(
-                non_associative_filter.filter_prepare,
-                get_init_params=get_init_params,
+                non_associative_filter.filter_prepare, get_init_params=get_init_params
             ),
             filter_combine=partial(
                 non_associative_filter.filter_combine,
