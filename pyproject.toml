@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cuthbert"
-version = "0.0.3"
+dynamic = ["version"]
 description = "State-space model inference with JAX"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,6 +32,9 @@ members = ["cuthbertlib"]
 
 [tool.uv.sources]
 cuthbertlib = { workspace = true }
+
+[tool.hatch.version]
+path = "cuthbertlib/_version.py" # Same version as cuthbertlib
 
 [tool.hatch.build.targets.wheel]
 packages = ["cuthbert"]

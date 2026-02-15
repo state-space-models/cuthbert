@@ -1,3 +1,5 @@
+from cuthbertlib._version import __version__
+
 from cuthbertlib import (
     discrete,
     kalman,

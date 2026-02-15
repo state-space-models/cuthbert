@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cuthbertlib"
-version = "0.0.3"
+dynamic = ["version"]
 description = "Atomic modules for `cuthbert`."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,6 +19,9 @@ dependencies = [
     "jax>=0.4.35",
     "numba>=0.60.0",
 ]
+
+[tool.hatch.version]
+path = "_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
