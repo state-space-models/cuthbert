@@ -49,9 +49,8 @@ def generate_car_tracking_data(key, num_steps=50):
     xs, ys = [], []
     key, state_key, obs_key = random.split(key, 3)
     x = m0 + chol_P0 @ random.normal(state_key, (x_dim,))
-    y = H @ x + chol_R @ random.normal(obs_key, (y_dim,))
     xs.append(x)
-    ys.append(y)
+    ys.append(jnp.full((y_dim,), jnp.nan)) # No observation at the initial time step
 
     for t in range(num_steps):
         key, state_key, obs_key = random.split(key, 3)
@@ -202,7 +201,7 @@ car's position.
     plt.grid(True, alpha=0.3)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
-    # plt.show()
+    plt.savefig("docs/assets/car_tracking.png", dpi=150, bbox_inches="tight")
     plt.close()
     ```
 
