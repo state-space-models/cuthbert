@@ -1,5 +1,3 @@
-from cuthbertlib._version import __version__
-
 from cuthbertlib import (
     discrete,
     kalman,
@@ -10,3 +8,4 @@ from cuthbertlib import (
     smc,
     stats,
 )
+from cuthbertlib._version import __version__

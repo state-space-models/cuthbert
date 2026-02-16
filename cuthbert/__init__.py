@@ -1,5 +1,3 @@
-from cuthbertlib import __version__  # Same version as cuthbertlib
-
 from cuthbert import discrete, gaussian, smc
 from cuthbert.filtering import filter
 from cuthbert.inference import (
@@ -12,3 +10,4 @@ from cuthbert.inference import (
     SmootherPrepare,
 )
 from cuthbert.smoothing import smoother
+from cuthbertlib import __version__  # Same version as cuthbertlib
