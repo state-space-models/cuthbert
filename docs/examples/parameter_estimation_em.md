@@ -78,6 +78,7 @@ from cuthbertlib.quadrature.gauss_hermite import weights
 csv_url = "https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv"
 data = read_csv(csv_url, header=None).to_numpy()[0]
 data = jnp.array(data)
+# Add dummy value for initial time step (cuthbert convention is no initial observation)
 data = jnp.concatenate([jnp.array([jnp.nan]), data])[..., None]
 ```
 Here we've added a `nan` at the start of the data to represent there being no
@@ -143,7 +144,9 @@ def model_factory(params: Params):
 
     def get_dynamics_moments(state, model_inputs: int):
         def dynamics_mean_and_chol_cov_func(x):
-            return params.rho * x, params.sigma
+            mean_t = jnp.where(model_inputs == 0, x, params.rho * x)
+            sd_t = jnp.where(model_inputs == 0, jnp.zeros_like(x), params.sigma)
+            return mean_t, sd_t
 
         return dynamics_mean_and_chol_cov_func, state.mean
 
@@ -323,7 +326,7 @@ All done! We can now visualize the learning curve with some plots.
     plt.ylabel("Log likelihood")
     plt.legend()
     plt.title("How the marginal likelihood improves over iterations")
-    plt.savefig("em_log_likelihood.png", dpi=300)
+    plt.savefig("docs/assets/em_log_likelihood.png", dpi=300)
 
     # Plot parameters
     true_mle = (0.9981, 0.1089**0.5)
@@ -343,7 +346,7 @@ All done! We can now visualize the learning curve with some plots.
     plt.ylabel("sigma")
     plt.legend()
     plt.title("EM iterates compared to the true MLE")
-    plt.savefig("em_parameters.png", dpi=300)
+    plt.savefig("docs/assets/em_parameters.png", dpi=300)
     ```
 
 ![Log marginal likelihood learning curve](../assets/em_log_likelihood.png)
