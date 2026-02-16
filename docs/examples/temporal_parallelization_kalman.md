@@ -42,11 +42,13 @@ def get_init_params(model_inputs):
 
 
 def get_dynamics_params(model_inputs):
-    return Fs[model_inputs - 1], cs[model_inputs - 1], chol_Qs[model_inputs - 1]
+    t = model_inputs - 1
+    return Fs[t], cs[t], chol_Qs[t]
 
 
 def get_observation_params(model_inputs):
-    return Hs[model_inputs], ds[model_inputs], chol_Rs[model_inputs], ys[model_inputs]
+    t = model_inputs - 1
+    return Hs[t], ds[t], chol_Rs[t], ys[t]
 
 
 filter_obj = kalman.build_filter(
