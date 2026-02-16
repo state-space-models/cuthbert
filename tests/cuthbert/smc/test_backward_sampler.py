@@ -1,7 +1,9 @@
 from functools import partial
 
 import chex
+import jax
 import jax.numpy as jnp
+import pytest
 from absl.testing import parameterized
 from jax import random
 
@@ -18,6 +20,13 @@ from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
 
+@pytest.fixture(scope="module", autouse=True)
+def config():
+    jax.config.update("jax_enable_x64", True)
+    yield
+    jax.config.update("jax_enable_x64", False)
+
+
 def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     def init_sample(key, model_inputs):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
@@ -28,7 +37,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
 
     def log_potential(state_prev, state, model_inputs: int):
-        idx = model_inputs
+        idx = model_inputs - 1
         return logpdf(
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
@@ -44,14 +53,14 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         resampling_fn,
         ess_threshold,
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter_obj, model_inputs, log_potential
 
 
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[0, 123, 455],
+        seed=[0, 123, 456],
         x_dim=[3],
         y_dim=[2],
         num_time_steps=[20],

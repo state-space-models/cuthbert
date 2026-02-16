@@ -93,13 +93,15 @@ def load_taylor_inference(
     ) -> tuple[LogConditionalDensity, Array, Array]:
         def observation_log_density(x, y):
             return multivariate_normal.logpdf(
-                y, Hs[model_inputs] @ x + ds[model_inputs], chol_Rs[model_inputs]
+                y,
+                Hs[model_inputs - 1] @ x + ds[model_inputs - 1],
+                chol_Rs[model_inputs - 1],
             )
 
         return (
             observation_log_density,
             jnp.zeros_like(m0),
-            ys[model_inputs],
+            ys[model_inputs - 1],
         )
 
     filter = taylor.build_filter(
@@ -114,7 +116,7 @@ def load_taylor_inference(
         ignore_nan_dims=ignore_nan_dims,
         store_gain=True,
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, model_inputs
 
 
@@ -350,7 +352,7 @@ def load_taylor_inference_potential(
     ) -> tuple[LogPotential, Array]:
         def observation_log_potential(x):
             return multivariate_normal.logpdf(
-                x, ms[model_inputs], chol_Rs[model_inputs]
+                x, ms[model_inputs - 1], chol_Rs[model_inputs - 1]
             )
 
         return (
@@ -368,7 +370,7 @@ def load_taylor_inference_potential(
     smoother = taylor.build_smoother(
         get_dynamics_log_density, ignore_nan_dims=ignore_nan_dims
     )
-    model_inputs = jnp.arange(len(ms))
+    model_inputs = jnp.arange(len(ms) + 1)
     return filter, smoother, model_inputs
 
 

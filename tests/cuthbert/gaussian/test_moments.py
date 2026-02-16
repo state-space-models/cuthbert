@@ -49,14 +49,14 @@ def load_moments_inference(
     def observation_moments(state, model_inputs):
         def observation_mean_and_chol_cov_and_y_func(x):
             return (
-                Hs[model_inputs] @ x + ds[model_inputs],
-                chol_Rs[model_inputs],
+                Hs[model_inputs - 1] @ x + ds[model_inputs - 1],
+                chol_Rs[model_inputs - 1],
             )
 
         return (
             observation_mean_and_chol_cov_and_y_func,
             jnp.zeros_like(m0),
-            ys[model_inputs],
+            ys[model_inputs - 1],
         )
 
     filter = moments.build_filter(
@@ -66,7 +66,7 @@ def load_moments_inference(
         associative=associative_filter,
     )
     smoother = moments.build_smoother(dynamics_moments, store_gain=True)
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, model_inputs
 
 
