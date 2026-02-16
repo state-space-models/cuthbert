@@ -105,33 +105,33 @@ The key to integrating `dynamax` with `cuthbert` is to extract the model matrice
 ```{.python #dynamax-build-cuthbert-filter}
 def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observations):
     """Build a cuthbert Kalman filter from a dynamax Linear Gaussian SSM.
-    
+
     Args:
         lgssm_model: The dynamax LinearGaussianSSM model object
         lgssm_params: The parameters of the LGSSM
         observations: The observation sequence
-        
+
     Returns:
         filter_obj: A cuthbert Filter object
         model_inputs: Time indices for filtering
     """
-    
+
     # Extract parameters from dynamax model
     m0 = lgssm_params.initial.mean
     chol_P0 = jnp.linalg.cholesky(lgssm_params.initial.cov)
-    
+
     F = lgssm_params.dynamics.weights
     c = lgssm_params.dynamics.bias
     chol_Q = jnp.linalg.cholesky(lgssm_params.dynamics.cov)
-    
+
     H = lgssm_params.emissions.weights
     d = lgssm_params.emissions.bias
     chol_R = jnp.linalg.cholesky(lgssm_params.emissions.cov)
-    
+
     def get_init_params(model_inputs):
         """Return initial state distribution parameters."""
         return m0, chol_P0
-    
+
     def get_dynamics_params(model_inputs):
         """Return dynamics parameters.
 
@@ -142,23 +142,23 @@ def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observa
         c_t = jnp.where(t == 0, jnp.zeros_like(c), c)
         chol_Q_t = jnp.where(t == 0, jnp.zeros_like(chol_Q), chol_Q)
         return F_t, c_t, chol_Q_t
-    
+
     def get_observation_params(model_inputs):
         """Return observation parameters and the observation at time t."""
         t = model_inputs
         y_t = observations[t - 1]
         return H, d, chol_R, y_t
-    
+
     # Build the Kalman filter
     filter_obj = kalman.build_filter(
         get_init_params=get_init_params,
         get_dynamics_params=get_dynamics_params,
         get_observation_params=get_observation_params
     )
-    
+
     # Model inputs are just time indices
     model_inputs = jnp.arange(len(observations) + 1) # +1 for the initial time step
-    
+
     return filter_obj, model_inputs
 
 # Create the cuthbert Kalman filter
@@ -238,18 +238,18 @@ Finally, let's visualize the filtering results:
 ??? quote "Code to plot the filtering results"
     ```{.python #dynamax-visualize}
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    
+
     # Extract position and velocity
     true_positions = true_states[:, 0]
     true_velocities = true_states[:, 1]
     filtered_positions = filtered_means[:, 0]
     filtered_velocities = filtered_means[:, 1]
-    
+
     # Compute 95% confidence intervals for position
     position_stds = jnp.sqrt(filtered_covs[:, 0, 0])
     upper_bound = filtered_positions + 1.96 * position_stds
     lower_bound = filtered_positions - 1.96 * position_stds
-    
+
     # Plot position over time
     ax = axes[0]
     time_steps = jnp.arange(num_timesteps)
@@ -264,13 +264,13 @@ Finally, let's visualize the filtering results:
     ax.set_title('Kalman Filter: Position Tracking')
     ax.legend()
     ax.grid(True, alpha=0.3)
-    
+
     # Plot velocity over time
     ax = axes[1]
     velocity_stds = jnp.sqrt(filtered_covs[:, 1, 1])
     velocity_upper = filtered_velocities + 1.96 * velocity_stds
     velocity_lower = filtered_velocities - 1.96 * velocity_stds
-    
+
     ax.plot(time_steps, true_velocities, 'b-', label='True velocity', linewidth=2, alpha=0.7)
     ax.plot(time_steps, filtered_velocities, 'g-', label='Filtered velocity', linewidth=2)
     ax.fill_between(time_steps, velocity_lower, velocity_upper, alpha=0.3, color='green',
@@ -280,7 +280,7 @@ Finally, let's visualize the filtering results:
     ax.set_title('Kalman Filter: Velocity Estimation')
     ax.legend()
     ax.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
     plt.savefig('docs/assets/dynamax_integration.png', dpi=150, bbox_inches='tight')
     print("Visualization saved to docs/assets/dynamax_integration.png")
