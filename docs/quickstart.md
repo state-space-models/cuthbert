@@ -131,6 +131,17 @@ match_results = jnp.where(
 )  # 0 for draw, 1 for home win, 2 for away win
 ```
 
+`cuthbert` convention is to not include an observation at the initial time step.
+So we add dummy values to the start of the data
+```{.python #quickstart-no-initial-obs}
+match_times = jnp.concatenate([jnp.array([0]), match_times])
+match_team_indices = jnp.concatenate([jnp.array([[-1, -1]]), match_team_indices])
+home_goals = jnp.concatenate([jnp.array([-1]), home_goals])
+away_goals = jnp.concatenate([jnp.array([-1]), away_goals])
+match_results = jnp.concatenate([jnp.array([-1]), match_results])
+```
+
+
 I said `cuthbert` expects JAX arrays, but more specifically and more generally,
 it expects [`pytrees`](https://docs.jax.dev/en/latest/working-with-pytrees.html) with
 `jax.Array` leaves (we call this an `ArrayTree`). Basically this allows us to
@@ -407,6 +418,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 <<quickstart-imports>>
 <<quickstart-load-data>>
 <<quickstart-load-data-jax>>
+<<quickstart-no-initial-obs>>
 <<quickstart-model-inputs>>
 <<quickstart-state-space-model>>
 <<quickstart-build-filter>>

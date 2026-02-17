@@ -56,7 +56,7 @@ def load_inference(
             return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
 
         def log_potential(state_prev, state, model_inputs: int):
-            idx = model_inputs
+            idx = model_inputs - 1
             return logpdf(
                 Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
             )
@@ -66,7 +66,6 @@ def load_inference(
         init_prepare=partial(
             algo.init_prepare,
             init_sample=init_sample,
-            log_potential=log_potential,
             n_filter_particles=n_filter_particles,
         ),
         filter_prepare=partial(
@@ -84,14 +83,14 @@ def load_inference(
         associative=False,
     )
 
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return inference, model_inputs
 
 
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[0, 42, 99, 123, 455],
+        seed=[0, 41, 99, 123, 456],
         x_dim=[3],
         y_dim=[2],
         num_time_steps=[20],
@@ -173,7 +172,6 @@ class Test(chex.TestCase):
             init_prepare=partial(
                 algo.init_prepare,
                 init_sample=init_sample,
-                log_potential=log_potential,
                 n_filter_particles=n_filter_particles,
             ),
             filter_prepare=partial(

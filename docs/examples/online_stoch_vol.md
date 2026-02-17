@@ -92,6 +92,12 @@ class ObservationData(NamedTuple):
 
 times = jnp.array(data["days_since_origin"].values)
 log_returns = jnp.array(data["log_return"].values)
+
+# Add dummy values to the start of the data
+# (no observation for init_prepare)
+times = jnp.concatenate([jnp.array([0]), times])
+log_returns = jnp.concatenate([jnp.array([jnp.nan]), log_returns])
+
 times_prev = jnp.concatenate([jnp.array([0]), times[:-1]])
 
 obs_data = ObservationData(
