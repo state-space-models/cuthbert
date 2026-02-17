@@ -1,5 +1,3 @@
-from importlib.metadata import version
-
 from cuthbert import discrete, gaussian, smc
 from cuthbert.filtering import filter
 from cuthbert.inference import (
@@ -12,7 +10,3 @@ from cuthbert.inference import (
     SmootherPrepare,
 )
 from cuthbert.smoothing import smoother
-
-__version__ = version("cuthbert")  # Same version as cuthbertlib
-
-del version  # Remove so that cuthbert.version isn't a thing
