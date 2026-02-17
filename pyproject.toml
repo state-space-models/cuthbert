@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "cuthbert"
-version = "0.0.3"
+dynamic = ["version"]
 description = "State-space model inference with JAX"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,7 +17,7 @@ authors = [
 
 dependencies = [
     "jax>=0.4.35",
-    "numba>=0.60.0",
+    "cuthbertlib",
 ]
 
 [tool.uv]
@@ -27,8 +27,17 @@ override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
 ]
 
-[tool.setuptools.packages.find]
-include = ["cuthbert*", "cuthbertlib*"]
+[tool.uv.workspace]
+members = ["cuthbertlib"]
+
+[tool.uv.sources]
+cuthbertlib = { workspace = true }
+
+[tool.hatch.version]
+path = "cuthbertlib/_version.py" # Same version as cuthbertlib
+
+[tool.hatch.build.targets.wheel]
+packages = ["cuthbert"]
 
 [project.optional-dependencies]
 tests = [
