@@ -24,5 +24,8 @@ dependencies = [
 path = "_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
-exclude = ["pyproject.toml", "README.md"]
+include = ["**/*.py"]
+exclude = ["pyproject.toml", "README*"]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "cuthbertlib"
