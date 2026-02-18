@@ -37,7 +37,11 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
 @partial(conditional_resampling_decorator, name="Multinomial", desc=_DESCRIPTION)
 def conditional_resampling(
-    key: Array, logits: ArrayLike, n: int, pivot_in: ScalarArrayLike, pivot_out: ScalarArrayLike
+    key: Array,
+    logits: ArrayLike,
+    n: int,
+    pivot_in: ScalarArrayLike,
+    pivot_out: ScalarArrayLike,
 ) -> Array:
     idx = resampling(key, logits, n)
     idx = idx.at[pivot_in].set(pivot_out)

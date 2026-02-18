@@ -28,7 +28,11 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
 @partial(conditional_resampling_decorator, name="Systematic", desc=_DESCRIPTION)
 def conditional_resampling(
-    key: Array, logits: ArrayLike, n: int, pivot_in: ScalarArrayLike, pivot_out: ScalarArrayLike
+    key: Array,
+    logits: ArrayLike,
+    n: int,
+    pivot_in: ScalarArrayLike,
+    pivot_out: ScalarArrayLike,
 ) -> Array:
     logits = jnp.asarray(logits)
     # FIXME: no need for normalizing in theory
