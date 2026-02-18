@@ -35,6 +35,8 @@ def conditional_resampling(
     pivot_out: ScalarArrayLike,
 ) -> Array:
     logits = jnp.asarray(logits)
+    pivot_in = jnp.asarray(pivot_in)
+    pivot_out = jnp.asarray(pivot_out)
     # FIXME: no need for normalizing in theory
     N = logits.shape[0]
     logits -= logsumexp(logits)

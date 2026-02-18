@@ -43,6 +43,9 @@ def conditional_resampling(
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
 ) -> Array:
+    pivot_in = jnp.asarray(pivot_in)
+    pivot_out = jnp.asarray(pivot_out)
+
     idx = resampling(key, logits, n)
     idx = idx.at[pivot_in].set(pivot_out)
     return idx

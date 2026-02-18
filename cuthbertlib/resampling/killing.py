@@ -58,6 +58,9 @@ def conditional_resampling(
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
 ) -> Array:
+    pivot_in = jnp.asarray(pivot_in)
+    pivot_out = jnp.asarray(pivot_out)
+
     # Unconditional resampling
     key_resample, key_shuffle = random.split(key)
     idx = resampling(key_resample, logits, n)
