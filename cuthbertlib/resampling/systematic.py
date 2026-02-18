@@ -12,7 +12,7 @@ from cuthbertlib.resampling.protocols import (
     resampling_decorator,
 )
 from cuthbertlib.resampling.utils import inverse_cdf
-from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
 
 _DESCRIPTION = """
 The Systematic resampling is a variance reduction which places marginally
@@ -28,7 +28,7 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
 @partial(conditional_resampling_decorator, name="Systematic", desc=_DESCRIPTION)
 def conditional_resampling(
-    key: Array, logits: ArrayLike, n: int, pivot_in: int, pivot_out: int
+    key: Array, logits: ArrayLike, n: int, pivot_in: ScalarArrayLike, pivot_out: ScalarArrayLike
 ) -> Array:
     logits = jnp.asarray(logits)
     # FIXME: no need for normalizing in theory

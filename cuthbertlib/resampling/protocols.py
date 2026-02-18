@@ -34,8 +34,8 @@ class ConditionalResampling(Protocol):
         key: KeyArray,
         logits: ArrayLike,
         n: int,
-        pivot_in: int,
-        pivot_out: int,
+        pivot_in: ScalarArrayLike,
+        pivot_out: ScalarArrayLike,
     ) -> Array:
         """Conditional resampling.
 
