@@ -30,7 +30,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
       - name: Install dev environment
         run: |
-          uv sync --extra tests --extra examples
+          uv sync --package cuthbert --extra tests --extra examples
       - name: Run the tests with pytest
         run: |
           uv run pytest -n auto -vv -m "not examples"

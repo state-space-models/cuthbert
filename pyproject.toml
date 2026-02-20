@@ -1,24 +1,5 @@
-[build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "cuthbert"
-version = "0.0.5"
-description = "State-space model inference with JAX"
-readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
-authors = [
-    { name = "Sam Duffield", email = "s@mduffield.com" },
-    { name = "Sahel Iqbal", email = "sahel13miqbal@proton.me" },
-    { name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com" },
-]
-
-dependencies = [
-    "jax>=0.4.35",
-    "numba>=0.60.0",
-]
+[tool.uv.workspace]
+members = ["pkg/*"]
 
 [tool.uv]
 # The tensorflow-probability override forces installation on undefined platforms only
@@ -26,24 +7,6 @@ dependencies = [
 override-dependencies = [
     "tensorflow-probability ; sys_platform == 'undefined'",
 ]
-
-[tool.setuptools.packages.find]
-include = ["cuthbert*", "cuthbertlib*"]
-
-[project.optional-dependencies]
-tests = [
-    "chex",  # test additional dependencies
-    "pre-commit", "ruff", "pyright",  # linting etc
-    "pytest", "pytest-xdist",  # testing
-    "entangled-cli; python_version >= '3.12'", # convert .md examples to .py, requires Python 3.12+
-]
-docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
-examples = [
-    "matplotlib", "pandas", "pandas-stubs", "yfinance",
-    "dynamax", "ipython", "tfp-nightly[jax]",
-]
-# ipython just required for dynamax, can be removed when they do a new release
-# tfp-nightly[jax] provides tensorflow_probability module that dynamax needs
 
 [tool.ruff]
 [tool.ruff.lint.per-file-ignores]

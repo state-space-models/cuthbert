@@ -51,6 +51,7 @@ The codebase is structured as follows:
 that represent the building blocks that power the main `cuthbert` package.
 <!--codebase-structure-end-->
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
+- `pkg`: Packaging configuration for publishing `cuthbert` and `cuthbertlib` to PyPI.
 - `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
 
@@ -64,13 +65,35 @@ For example, on computers with NVIDIA GPUs:
 pip install -U "jax[cuda13]"
 ```
 
-Now install `cuthbert` from PyPI:
+### From PyPI
 
 ```bash
 pip install -U cuthbert
 ```
 
 Installing `cuthbert` will also install `cuthbertlib`.
+You can also install `cuthbertlib` on its own:
+
+```bash
+pip install -U cuthbertlib
+```
+
+### Local development (uv)
+
+```bash
+git clone https://github.com/state-space-models/cuthbert.git
+cd cuthbert
+uv sync --package cuthbert --extra tests
+```
+
+### Local development (pip)
+
+```bash
+git clone https://github.com/state-space-models/cuthbert.git
+cd cuthbert
+pip install -e ./pkg/cuthbertlib
+pip install -e "./pkg/cuthbert[tests]"
+```
 
 <!--installation-end-->
 
