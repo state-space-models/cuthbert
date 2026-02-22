@@ -11,7 +11,7 @@ from cuthbertlib.resampling.protocols import (
     conditional_resampling_decorator,
     resampling_decorator,
 )
-from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
 
 _DESCRIPTION = """
 The Killing resampling is a simple resampling mechanism that checks if 
@@ -52,8 +52,15 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
 @partial(conditional_resampling_decorator, name="Killing", desc=_DESCRIPTION)
 def conditional_resampling(
-    key: Array, logits: ArrayLike, n: int, pivot_in: int, pivot_out: int
+    key: Array,
+    logits: ArrayLike,
+    n: int,
+    pivot_in: ScalarArrayLike,
+    pivot_out: ScalarArrayLike,
 ) -> Array:
+    pivot_in = jnp.asarray(pivot_in)
+    pivot_out = jnp.asarray(pivot_out)
+
     # Unconditional resampling
     key_resample, key_shuffle = random.split(key)
     idx = resampling(key_resample, logits, n)
