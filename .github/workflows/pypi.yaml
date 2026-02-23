@@ -19,7 +19,9 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v5
     - name: Build a binary wheel and a source tarball
-      run: uv build --package ${{ matrix.package }}
+      run: |
+        uv build --sdist --package ${{ matrix.package }}
+        uv build --wheel --package ${{ matrix.package }}
     - name: Store the distribution packages
       uses: actions/upload-artifact@v5
       with:
