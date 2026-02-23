@@ -18,9 +18,18 @@ git clone git@github.com/YourUserName/cuthbert.git
 cd cuthbert
 ```
 
-2. Install the package with the development dependencies and pre-commit hooks:
+2. Install the package with the development dependencies and pre-commit hooks.
+
+With `uv`:
 ```bash
-pip install -e ".[tests, docs]"
+uv sync --all-extras
+pre-commit install
+```
+
+With `pip`:
+```bash
+pip install -e ./pkg/cuthbertlib
+pip install -e "./pkg/cuthbert[tests,docs,examples]"
 pre-commit install
 ```
 
