@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
 name = "cuthbertlib"
-dynamic = ["version"]
+version = "0.0.6rc3"
 description = "Atomic building blocks for state-space model inference with JAX"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -17,10 +17,6 @@ dependencies = [
     "jax>=0.4.35",
     "numba>=0.60.0",
 ]
-
-[tool.hatch.version]
-source = "vcs"
-raw-options = { root = "../.." }
 
 [tool.hatch.build]
 dev-mode-dirs = ["../.."]
