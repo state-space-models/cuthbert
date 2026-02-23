@@ -84,12 +84,12 @@ jobs:
 
       - name: Install cuthbertlib from PyPI and import
         run: |
-          uv pip install --system "cuthbertlib==${GITHUB_REF_NAME#v}"
-          python -c "import cuthbertlib; import cuthbertlib.discrete"
-          uv pip uninstall --system -y cuthbertlib
+          uv pip install "cuthbertlib==${GITHUB_REF_NAME#v}"
+          uv run python -c "import cuthbertlib; import cuthbertlib.discrete"
+          uv pip uninstall -y cuthbertlib
 
       - name: Install cuthbert from PyPI and import
         run: |
-          uv pip install --system "cuthbert==${GITHUB_REF_NAME#v}"
-          python -c "import cuthbert; import cuthbert.discrete"
-          python -c "import cuthbertlib; import cuthbertlib.discrete"
+          uv pip install "cuthbert==${GITHUB_REF_NAME#v}"
+          uv run python -c "import cuthbert; import cuthbert.discrete"
+          uv run python -c "import cuthbertlib; import cuthbertlib.discrete"
