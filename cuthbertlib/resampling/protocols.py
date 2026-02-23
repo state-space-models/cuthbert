@@ -4,7 +4,7 @@ from typing import Protocol, runtime_checkable
 
 import jax
 
-from cuthbertlib.types import Array, ArrayLike, KeyArray
+from cuthbertlib.types import Array, ArrayLike, KeyArray, ScalarArrayLike
 
 
 @runtime_checkable
@@ -34,8 +34,8 @@ class ConditionalResampling(Protocol):
         key: KeyArray,
         logits: ArrayLike,
         n: int,
-        pivot_in: int,
-        pivot_out: int,
+        pivot_in: ScalarArrayLike,
+        pivot_out: ScalarArrayLike,
     ) -> Array:
         """Conditional resampling.
 

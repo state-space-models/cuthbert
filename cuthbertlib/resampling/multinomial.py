@@ -11,7 +11,7 @@ from cuthbertlib.resampling.protocols import (
     resampling_decorator,
 )
 from cuthbertlib.resampling.utils import inverse_cdf
-from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
 
 _DESCRIPTION = """
 This has higher variance than other resampling schemes as it samples from
@@ -37,8 +37,15 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
 @partial(conditional_resampling_decorator, name="Multinomial", desc=_DESCRIPTION)
 def conditional_resampling(
-    key: Array, logits: ArrayLike, n: int, pivot_in: int, pivot_out: int
+    key: Array,
+    logits: ArrayLike,
+    n: int,
+    pivot_in: ScalarArrayLike,
+    pivot_out: ScalarArrayLike,
 ) -> Array:
+    pivot_in = jnp.asarray(pivot_in)
+    pivot_out = jnp.asarray(pivot_out)
+
     idx = resampling(key, logits, n)
     idx = idx.at[pivot_in].set(pivot_out)
     return idx
