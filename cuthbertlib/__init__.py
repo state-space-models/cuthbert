@@ -12,4 +12,5 @@ from cuthbertlib import (
     resampling,
     smc,
     stats,
+    types,
 )
