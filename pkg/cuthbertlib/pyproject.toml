@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cuthbertlib"
-version = "0.0.6rc5"
+version = "0.0.6rc6"
 description = "Atomic building blocks for state-space model inference with JAX"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
