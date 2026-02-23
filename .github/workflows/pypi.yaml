@@ -84,6 +84,7 @@ jobs:
 
       - name: Install cuthbertlib from PyPI and import
         run: |
+          uv venv
           uv pip install "cuthbertlib==${GITHUB_REF_NAME#v}"
           uv run python -c "import cuthbertlib; import cuthbertlib.discrete"
           uv pip uninstall -y cuthbertlib
