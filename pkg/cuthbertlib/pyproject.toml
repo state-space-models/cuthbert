@@ -26,6 +26,3 @@ packages = ["cuthbertlib"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "../../cuthbertlib" = "cuthbertlib"
-
-[tool.hatch.build.targets.wheel.force-include]
-"../../cuthbertlib" = "cuthbertlib"

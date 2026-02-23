@@ -1,5 +1,4 @@
 name: Publish to PyPI
-# from https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
 on:
   release:
@@ -17,23 +16,15 @@ jobs:
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
     - name: Build a binary wheel and a source tarball
-      run: python3 -m build pkg/${{ matrix.package }}
+      run: uv build --package ${{ matrix.package }}
     - name: Store the distribution packages
       uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.package }}-distributions
-        path: pkg/${{ matrix.package }}/dist/
+        path: dist/
 
   publish-cuthbertlib:
     name: Publish cuthbertlib to PyPI
@@ -83,16 +74,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Give PyPI some time to update the index
         run: sleep 240
 
-      - name: Install from PyPI and import
+      - name: Install cuthbertlib from PyPI and import
         run: |
-          pip install "cuthbert==${GITHUB_REF_NAME#v}"
+          uv pip install --system "cuthbertlib==${GITHUB_REF_NAME#v}"
+          python -c "import cuthbertlib; import cuthbertlib.discrete"
+          uv pip uninstall --system -y cuthbertlib
+
+      - name: Install cuthbert from PyPI and import
+        run: |
+          uv pip install --system "cuthbert==${GITHUB_REF_NAME#v}"
           python -c "import cuthbert; import cuthbert.discrete"
           python -c "import cuthbertlib; import cuthbertlib.discrete"

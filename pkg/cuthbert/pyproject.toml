@@ -41,6 +41,3 @@ packages = ["cuthbert"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "../../cuthbert" = "cuthbert"
-
-[tool.hatch.build.targets.wheel.force-include]
-"../../cuthbert" = "cuthbert"
