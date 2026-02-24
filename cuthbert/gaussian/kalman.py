@@ -8,7 +8,6 @@ from typing import NamedTuple
 
 from jax import numpy as jnp
 from jax import tree
-from jax.lax import cond
 
 from cuthbert.gaussian.types import (
     GetDynamicsParams,
