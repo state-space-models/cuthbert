@@ -29,12 +29,6 @@ def generate_factorial_kalman_model(
     _, _, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate.generate_lgssm(
         seed + 1, num_factors_local * x_dim, y_dim, num_time_steps
     )
-    # Remove the first time step from observation parameters (set as nan)
-    # no initial observation for factorial models
-    Hs = Hs.at[0].set(jnp.full_like(Hs[0], jnp.nan))
-    ds = ds.at[0].set(jnp.full_like(ds[0], jnp.nan))
-    chol_Rs = chol_Rs.at[0].set(jnp.full_like(chol_Rs[0], jnp.nan))
-    ys = ys.at[0].set(jnp.full_like(ys[0], jnp.nan))
 
     # factorial_indices with shape (T, num_factors_local)
     # Each entry is a random integer in {0, ..., num_factors - 1}

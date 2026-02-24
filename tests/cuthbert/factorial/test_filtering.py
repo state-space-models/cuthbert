@@ -5,17 +5,15 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array, vmap
+from jax import Array
 from jax.scipy.linalg import block_diag
 
 from cuthbert import factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
-from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.types import ArrayTree
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
-from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -31,10 +29,10 @@ def load_kalman_pairwise_factorial_inference(
     Fs: Array,  # (T, 2 * d, 2 * d)
     cs: Array,  # (T, 2 * d)
     chol_Qs: Array,  # (T, 2 * d, 2 * d)
-    Hs: Array,  # (T+1, d_y, 2 * d) with nans for initial time step
-    ds: Array,  # (T+1, d_y) with nans for initial time step
-    chol_Rs: Array,  # (T+1, d_y, d_y) with nans for initial time step
-    ys: Array,  # (T+1, d_y) with nans for initial time step
+    Hs: Array,  # (T, d_y, 2 * d) with nans for initial time step
+    ds: Array,  # (T, d_y) with nans for initial time step
+    chol_Rs: Array,  # (T, d_y, d_y) with nans for initial time step
+    ys: Array,  # (T, d_y) with nans for initial time step
     factorial_indices: Array,  # (T, 2)
 ) -> tuple[Filter, Smoother, factorial.Factorializer, Array]:
     """Builds Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
@@ -47,10 +45,10 @@ def load_kalman_pairwise_factorial_inference(
 
     def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
         return (
-            Hs[model_inputs],
-            ds[model_inputs],
-            chol_Rs[model_inputs],
-            ys[model_inputs],
+            Hs[model_inputs - 1],
+            ds[model_inputs - 1],
+            chol_Rs[model_inputs - 1],
+            ys[model_inputs - 1],
         )
 
     filter = kalman.build_filter(
@@ -63,7 +61,7 @@ def load_kalman_pairwise_factorial_inference(
     factorializer = factorial.gaussian.build_factorializer(
         get_factorial_indices=lambda model_inputs: factorial_indices[model_inputs - 1]
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, factorializer, model_inputs
 
 
@@ -88,7 +86,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     model_params = generate_factorial_kalman_model(
         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
     )
-    filter_obj, smoother_obj, factorializer, model_inputs = (
+    filter_obj, _, factorializer, model_inputs = (
         load_kalman_pairwise_factorial_inference(*model_params)
     )
 
@@ -110,10 +108,10 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
             model_params[4][i - 1],
         )
         H, d, chol_R, y = (
-            model_params[5][i],
-            model_params[6][i],
-            model_params[7][i],
-            model_params[8][i],
+            model_params[5][i - 1],
+            model_params[6][i - 1],
+            model_params[7][i - 1],
+            model_params[8][i - 1],
         )
         fac_inds = model_params[9][i - 1]
 
