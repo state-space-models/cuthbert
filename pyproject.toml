@@ -25,10 +25,3 @@ markers = "examples: Run tangled example scripts as tests"
 [tool.entangled]
 version = "2.3.0"
 ignore_list = ["CONTRIBUTING.md"]
-
-[dependency-groups]
-dev = [
-    "chex>=0.1.90",
-    "pip>=26.0.1",
-    "pytest>=9.0.2",
-]
