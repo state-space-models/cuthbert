@@ -30,21 +30,19 @@ def std_kalman_filter(m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys):
     ells_incrs = []
 
     # Handle observation at time 0
-    H0, d0, R0, y0 = Hs[0], ds[0], Rs[0], ys[0]
-    m, P, ell_incr = std_update(m0, P0, H0, d0, R0, y0)
-    ms.append(m)
-    Ps.append(P)
-    ells_incrs.append(ell_incr)
+    ms.append(m0)
+    Ps.append(P0)
+    ells_incrs.append(jnp.float64(0.0))
 
     for i in range(len(Fs)):
         F, c, Q, H, d, R, y = (
             Fs[i],
             cs[i],
             Qs[i],
-            Hs[i + 1],
-            ds[i + 1],
-            Rs[i + 1],
-            ys[i + 1],
+            Hs[i],
+            ds[i],
+            Rs[i],
+            ys[i],
         )
         pred_m, pred_P = std_predict(ms[-1], Ps[-1], F, c, Q)
         m, P, ell_incr = std_update(pred_m, pred_P, H, d, R, y)
@@ -79,10 +77,10 @@ def load_kalman_inference(
 
     def get_observation_params(model_inputs: int) -> tuple[Array, Array, Array, Array]:
         return (
-            Hs[model_inputs],
-            ds[model_inputs],
-            chol_Rs[model_inputs],
-            ys[model_inputs],
+            Hs[model_inputs - 1],
+            ds[model_inputs - 1],
+            chol_Rs[model_inputs - 1],
+            ys[model_inputs - 1],
         )
 
     filter = kalman.build_filter(
@@ -91,7 +89,7 @@ def load_kalman_inference(
     smoother = kalman.build_smoother(
         get_dynamics_params, store_gain=True, store_chol_cov_given_next=True
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, model_inputs
 
 
@@ -150,6 +148,46 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (des_means, des_covs, des_ells),
         rtol=1e-10,
     )
+
+
+@pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [1, 10])
+@pytest.mark.parametrize("y_dim", [1, 5])
+def test_filter_noop(seed, x_dim, y_dim):
+    m0, chol_P0 = generate_lgssm(seed, x_dim, y_dim, 0)[:2]
+
+    filter_obj = kalman.build_filter(
+        get_init_params=lambda model_inputs: (m0, chol_P0),
+        get_dynamics_params=lambda model_inputs: (  # p(x_t | x_{t-1}) = N(x_t | x_{t-1}, 0)
+            jnp.eye(x_dim),
+            jnp.zeros(x_dim),
+            jnp.zeros(
+                (x_dim, x_dim)
+            ),  #  cuthbert.gaussian.kalman can handle chol_Q = 0
+        ),
+        get_observation_params=lambda model_inputs: (
+            jnp.zeros((y_dim, x_dim)),
+            jnp.zeros(y_dim),
+            jnp.zeros((y_dim, y_dim)),
+            jnp.full(
+                y_dim, jnp.nan
+            ),  # Need to specify that there is no observation with nans, cuthbert.gaussian.kalman cannot handle chol_R = 0 directly
+        ),
+    )
+
+    state = filter_obj.init_prepare(None)
+    prep_state = filter_obj.filter_prepare(None)
+    filtered_state = filter_obj.filter_combine(state, prep_state)
+
+    chex.assert_trees_all_close(
+        (state.mean, state.chol_cov @ state.chol_cov.T, state.log_normalizing_constant),
+        (
+            filtered_state.mean,
+            filtered_state.chol_cov @ filtered_state.chol_cov.T,
+            filtered_state.log_normalizing_constant,
+        ),
+        rtol=1e-10,
+    )  # Test covs rather than chol_covs because signs can be different
 
 
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)

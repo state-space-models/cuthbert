@@ -93,13 +93,15 @@ def load_taylor_inference(
     ) -> tuple[LogConditionalDensity, Array, Array]:
         def observation_log_density(x, y):
             return multivariate_normal.logpdf(
-                y, Hs[model_inputs] @ x + ds[model_inputs], chol_Rs[model_inputs]
+                y,
+                Hs[model_inputs - 1] @ x + ds[model_inputs - 1],
+                chol_Rs[model_inputs - 1],
             )
 
         return (
             observation_log_density,
             jnp.zeros_like(m0),
-            ys[model_inputs],
+            ys[model_inputs - 1],
         )
 
     filter = taylor.build_filter(
@@ -114,7 +116,7 @@ def load_taylor_inference(
         ignore_nan_dims=ignore_nan_dims,
         store_gain=True,
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter, smoother, model_inputs
 
 
@@ -210,6 +212,63 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
 
+@pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [1, 10])
+@pytest.mark.parametrize("y_dim", [1, 5])
+@pytest.mark.parametrize("associative", [True, False])
+def test_filter_noop(seed, x_dim, y_dim, associative):
+    m0, chol_P0 = generate_lgssm(seed, x_dim, y_dim, 0)[:2]
+
+    def get_init_log_density(model_inputs: int) -> tuple[LogDensity, Array]:
+        def init_log_density(x):
+            return multivariate_normal.logpdf(x, m0, chol_P0)
+
+        return init_log_density, jnp.zeros_like(m0)
+
+    def get_noop_dynamics_log_density(
+        state: LinearizedKalmanFilterState, model_inputs: int
+    ) -> tuple[LogConditionalDensity, Array, Array]:
+        return (
+            lambda x_prev, x: multivariate_normal.logpdf(x, x_prev, jnp.eye(x_dim)),
+            jnp.full_like(m0, jnp.nan),
+            jnp.full_like(m0, jnp.nan),
+        )  # For Taylor we indicate noop dynamics by setting both linearization points to NaNs
+
+    def get_noop_observation_log_density(
+        state: LinearizedKalmanFilterState, model_inputs: int
+    ) -> tuple[LogConditionalDensity, Array, Array]:
+        return (
+            lambda x, y: multivariate_normal.logpdf(
+                y,
+                x,
+                jnp.zeros((y_dim, y_dim)),
+            ),
+            jnp.zeros_like(m0),
+            jnp.full(y_dim, jnp.nan),
+        )
+
+    filter_obj = taylor.build_filter(
+        get_init_log_density=get_init_log_density,
+        get_dynamics_log_density=get_noop_dynamics_log_density,
+        get_observation_func=get_noop_observation_log_density,
+        associative=associative,
+    )
+
+    state = filter_obj.init_prepare(None)
+    prep_state = filter_obj.filter_prepare(None)
+    filtered_state = filter_obj.filter_combine(state, prep_state)
+
+    chex.assert_trees_all_close(
+        (state.mean, state.chol_cov @ state.chol_cov.T, state.log_normalizing_constant),
+        (
+            filtered_state.mean,
+            filtered_state.chol_cov @ filtered_state.chol_cov.T,
+            filtered_state.log_normalizing_constant,
+        ),
+        rtol=1e-10,
+    )  # Test covs rather than chol_covs because signs can be different
+
+
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
 def test_smoother(seed, x_dim, y_dim, num_time_steps):
     # Generate a linear-Gaussian state-space model.
@@ -293,7 +352,7 @@ def load_taylor_inference_potential(
     ) -> tuple[LogPotential, Array]:
         def observation_log_potential(x):
             return multivariate_normal.logpdf(
-                x, ms[model_inputs], chol_Rs[model_inputs]
+                x, ms[model_inputs - 1], chol_Rs[model_inputs - 1]
             )
 
         return (
@@ -311,7 +370,7 @@ def load_taylor_inference_potential(
     smoother = taylor.build_smoother(
         get_dynamics_log_density, ignore_nan_dims=ignore_nan_dims
     )
-    model_inputs = jnp.arange(len(ms))
+    model_inputs = jnp.arange(len(ms) + 1)
     return filter, smoother, model_inputs
 
 

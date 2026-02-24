@@ -1,5 +1,4 @@
 name: Publish to PyPI
-# from https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
 on:
   release:
@@ -7,70 +6,91 @@ on:
 
 jobs:
   build:
-    name: Build distribution
+    name: Build ${{ matrix.package }} distribution
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [cuthbert, cuthbertlib]
 
     steps:
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
     - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+      run: |
+        uv build --sdist --package ${{ matrix.package }}
+        uv build --wheel --package ${{ matrix.package }}
     - name: Store the distribution packages
       uses: actions/upload-artifact@v5
       with:
-        name: python-package-distributions
+        name: ${{ matrix.package }}-distributions
         path: dist/
 
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+  publish-cuthbertlib:
+    name: Publish cuthbertlib to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
     - build
     runs-on: ubuntu-latest
     environment:
       name: release
-      url: https://pypi.org/p/cuthbert
+      url: https://pypi.org/p/cuthbertlib
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
-    - name: Download all the dists
+    - name: Download cuthbertlib dists
       uses: actions/download-artifact@v6
       with:
-        name: python-package-distributions
+        name: cuthbertlib-distributions
         path: dist/
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish cuthbertlib to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
 
+  publish-cuthbert:
+    name: Publish cuthbert to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+    - publish-cuthbertlib
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/cuthbert
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download cuthbert dists
+      uses: actions/download-artifact@v6
+      with:
+        name: cuthbert-distributions
+        path: dist/
+    - name: Publish cuthbert to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
   test-install:
     name: Test install from PyPI
-    needs: publish-to-pypi
+    needs: publish-cuthbert
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Give PyPI some time to update the index
         run: sleep 240
 
-      - name: Install from PyPI and import
+      - name: Install cuthbertlib from PyPI and import
         run: |
-          pip install "cuthbert==${GITHUB_REF_NAME#v}"
-          python -c "import cuthbert; import cuthbert.discrete"
-          python -c "import cuthbertlib; import cuthbertlib.discrete"
+          uv venv
+          uv pip install "cuthbertlib==${GITHUB_REF_NAME#v}"
+          uv run python -c "import cuthbertlib; import cuthbertlib.discrete"
+          uv pip uninstall -y cuthbertlib
+
+      - name: Install cuthbert from PyPI and import
+        run: |
+          uv pip install "cuthbert==${GITHUB_REF_NAME#v}"
+          uv run python -c "import cuthbert; import cuthbert.discrete"
+          uv run python -c "import cuthbertlib; import cuthbertlib.discrete"

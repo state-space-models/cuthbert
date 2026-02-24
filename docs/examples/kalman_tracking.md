@@ -47,11 +47,9 @@ def generate_car_tracking_data(key, num_steps=50):
 
     # Simulate states and observations
     xs, ys = [], []
-    key, state_key, obs_key = random.split(key, 3)
+    key, state_key = random.split(key)
     x = m0 + chol_P0 @ random.normal(state_key, (x_dim,))
-    y = H @ x + chol_R @ random.normal(obs_key, (y_dim,))
     xs.append(x)
-    ys.append(y)
 
     for t in range(num_steps):
         key, state_key, obs_key = random.split(key, 3)
@@ -60,30 +58,24 @@ def generate_car_tracking_data(key, num_steps=50):
         xs.append(x)
         ys.append(y)
 
-    # Duplicate the model parameters across time steps
-    Fs = jnp.repeat(F[None], num_steps, axis=0)
-    cs = jnp.zeros((num_steps, x_dim))
-    chol_Qs = jnp.repeat(chol_Q[None], num_steps, axis=0)
-
-    Hs = jnp.repeat(H[None], num_steps + 1, axis=0)
-    ds = jnp.zeros((num_steps + 1, y_dim))
-    chol_Rs = jnp.repeat(chol_R[None], num_steps + 1, axis=0)
     ys = jnp.stack(ys)
     true_states = jnp.stack(xs)
+    c = jnp.zeros(x_dim)
+    d = jnp.zeros(y_dim)
 
-    return m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, true_states
+    return m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys, true_states
 
 # Generate example data
 key = random.key(42)
-m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, true_states = generate_car_tracking_data(key)
+m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys, true_states = generate_car_tracking_data(key)
 ```
 
 The state-space model specification for using the Kalman filter in `cuthbert` is as follows:
 
 \begin{align*}
     x_{0} & \sim \mathcal{N}(m_{0}, \mathrm{chol\_P}_{0} \times \mathrm{chol\_P}_{0}^{\top}), \\
-    x_{t+1} \mid x_{t} & \sim \mathcal{N}(F_{t} x_{t} + c_{t}, \mathrm{chol\_Q}_{t} \times \mathrm{chol\_Q}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
-    y_{t} \mid x_{t} & \sim \mathcal{N}(H_{t} x_{t} + d_{t}, \mathrm{chol\_R}_{t} \times \mathrm{chol\_R}_{t}^{\top}), \quad t \in \{0, 1, \ldots, T\}.
+    x_{t+1} \mid x_{t} & \sim \mathcal{N}(F x_{t} + c, \mathrm{chol\_Q} \times \mathrm{chol\_Q}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
+    y_{t} \mid x_{t} & \sim \mathcal{N}(H x_{t} + d, \mathrm{chol\_R} \times \mathrm{chol\_R}^{\top}), \quad t \in \{1, \ldots, T\}.
 \end{align*}
 
 Note that instead of working with full covariance matrices, we work with their
@@ -116,30 +108,30 @@ This pattern separates the model specification from the filtering algorithm, mak
     allowing each function to select the appropriate matrices for that time step. The filtering
     algorithm passes each element of the `model_inputs` array to the extraction functions in sequence.
 
-**Important indexing note**: The `get_dynamics_params` function uses `model_inputs - 1` because dynamics describe transitions from time $t-1$ to $t$, while `get_observation_params` uses `model_inputs` directly since observations occur at each time step.
+**Important indexing note**: The `get_observation_params` function uses
+`model_inputs - 1` to access observations since observations occur at $t \in
+\{1, \dots, T\}$ and `ys` is an array of length $T$.
 
 ```{.python #kalman-build-filter}
-def build_car_tracking_filter(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
+def build_car_tracking_filter(m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys):
 
     def get_init_params(model_inputs):
         return m0, chol_P0
 
     def get_dynamics_params(model_inputs):
-        t = model_inputs - 1
-        return Fs[t], cs[t], chol_Qs[t]
+        return F, c, chol_Q
 
     def get_observation_params(model_inputs):
-        t = model_inputs
-        return Hs[t], ds[t], chol_Rs[t], ys[t]
+        return H, d, chol_R, ys[model_inputs - 1]
 
     filter_obj = kalman.build_filter(
         get_init_params, get_dynamics_params, get_observation_params
     )
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return filter_obj, model_inputs
 
 filter_obj, model_inputs = build_car_tracking_filter(
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+    m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys
 )
 ```
 
@@ -202,7 +194,7 @@ car's position.
     plt.grid(True, alpha=0.3)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
-    # plt.show()
+    plt.savefig("docs/assets/car_tracking.png", dpi=150, bbox_inches="tight")
     plt.close()
     ```
 
@@ -217,7 +209,7 @@ car's position.
 
     # Rebuild filter with missing data
     filter_obj_missing, model_inputs_missing = build_car_tracking_filter(
-        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys_missing
+        m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys_missing
     )
 
     # Run filtering - cuthbert handles NaNs automatically

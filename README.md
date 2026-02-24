@@ -27,10 +27,10 @@ different **inference** methods without be tied to a specific model specificatio
 - Compose with the [JAX ecosystem](#ecosystem) for extensive external tools.
 - Functional API: The only classes in `cuthbert` are `NamedTuple`s and `Protocol`s.
 All functions are pure and work seamlessly with `jax.grad`, `jax.jit`, `jax.vmap` etc.
-- Methods for filtering: $p(x_t \mid y_{0:t}, \theta)$.
-- Methods for smoothing: $p(x_{0:T} \mid y_{0:T}, \theta)$ or $p(x_{t} \mid y_{0:T}, \theta)$.
-- Methods for static parameter estimation: $p(\theta \mid y_{0:T})$
-or $\text{argmax} p(y_{0:T} \mid \theta)$.
+- Methods for filtering: $p(x_t \mid y_{1:t}, \theta)$.
+- Methods for smoothing: $p(x_{0:T} \mid y_{1:T}, \theta)$ or $p(x_{t} \mid y_{1:T}, \theta)$.
+- Methods for static parameter estimation: $p(\theta \mid y_{1:T})$
+or $\text{argmax} p(y_{1:T} \mid \theta)$.
 - This includes support for forward-backward/Baum-Welch, particle filtering/sequential Monte Carlo,
 Kalman filtering (+ extended/unscented/ensemble), expectation-maximization and more!
 
@@ -51,6 +51,7 @@ The codebase is structured as follows:
 that represent the building blocks that power the main `cuthbert` package.
 <!--codebase-structure-end-->
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
+- `pkg`: Packaging configuration for publishing `cuthbert` and `cuthbertlib` to PyPI.
 - `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
 
@@ -64,13 +65,35 @@ For example, on computers with NVIDIA GPUs:
 pip install -U "jax[cuda13]"
 ```
 
-Now install `cuthbert` from PyPI:
+### From PyPI
 
 ```bash
 pip install -U cuthbert
 ```
 
 Installing `cuthbert` will also install `cuthbertlib`.
+You can also install `cuthbertlib` on its own:
+
+```bash
+pip install -U cuthbertlib
+```
+
+### Local development (uv)
+
+```bash
+git clone https://github.com/state-space-models/cuthbert.git
+cd cuthbert
+uv sync --package cuthbert --extra tests
+```
+
+### Local development (pip)
+
+```bash
+git clone https://github.com/state-space-models/cuthbert.git
+cd cuthbert
+pip install -e ./pkg/cuthbertlib
+pip install -e "./pkg/cuthbert[tests]"
+```
 
 <!--installation-end-->
 

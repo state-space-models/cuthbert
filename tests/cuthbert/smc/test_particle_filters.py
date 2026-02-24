@@ -23,7 +23,9 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
+def load_inference(
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method, noop=False
+):
     # Maybe make this more flexible in the future if we want to support other methods.
     if method == "bootstrap":
         n_filter_particles = 1_000_000
@@ -38,23 +40,32 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
     def init_sample(key, model_inputs):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
-    def propagate_sample(key, state, model_inputs: int):
-        idx = model_inputs - 1
-        mean_sample = Fs[idx] @ state + cs[idx]
-        return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
+    if noop:
 
-    def log_potential(state_prev, state, model_inputs: int):
-        idx = model_inputs
-        return logpdf(
-            Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
-        )
+        def propagate_sample(key, state, model_inputs: int):
+            return state
+
+        def log_potential(state_prev, state, model_inputs: int):
+            return jnp.zeros(())
+
+    else:
+
+        def propagate_sample(key, state, model_inputs: int):
+            idx = model_inputs - 1
+            mean_sample = Fs[idx] @ state + cs[idx]
+            return mean_sample + chol_Qs[idx] @ random.normal(key, mean_sample.shape)
+
+        def log_potential(state_prev, state, model_inputs: int):
+            idx = model_inputs - 1
+            return logpdf(
+                Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
+            )
 
     ess_threshold = 0.7
     inference = Filter(
         init_prepare=partial(
             algo.init_prepare,
             init_sample=init_sample,
-            log_potential=log_potential,
             n_filter_particles=n_filter_particles,
         ),
         filter_prepare=partial(
@@ -72,14 +83,14 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method):
         associative=False,
     )
 
-    model_inputs = jnp.arange(len(ys))
+    model_inputs = jnp.arange(len(ys) + 1)
     return inference, model_inputs
 
 
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(
-        seed=[0, 42, 99, 123, 455],
+        seed=[0, 41, 99, 123, 456],
         x_dim=[3],
         y_dim=[2],
         num_time_steps=[20],
@@ -161,7 +172,6 @@ class Test(chex.TestCase):
             init_prepare=partial(
                 algo.init_prepare,
                 init_sample=init_sample,
-                log_potential=log_potential,
                 n_filter_particles=n_filter_particles,
             ),
             filter_prepare=partial(
@@ -194,3 +204,24 @@ class Test(chex.TestCase):
         assert isinstance(particles, tuple) and len(particles) == 2
         expected_shape = (num_time_steps + 1, n_filter_particles, 2)
         chex.assert_shape(particles, expected_shape)
+
+
+@pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [1, 10])
+@pytest.mark.parametrize("y_dim", [1, 5])
+@pytest.mark.parametrize("method", ["bootstrap", "marginal"])
+def test_filter_noop(seed, x_dim, y_dim, method):
+    lgssm = generate_lgssm(seed, x_dim, y_dim, 0)
+
+    inference, _ = load_inference(*lgssm, method=method, noop=True)
+
+    init_state = inference.init_prepare(None, key=random.key(seed + 1))
+    prep_state = inference.filter_prepare(None, key=random.key(seed + 2))
+    filtered_state = inference.filter_combine(init_state, prep_state)
+
+    chex.assert_trees_all_close(
+        filtered_state._replace(key=None),
+        init_state._replace(key=None),
+        rtol=1e-10,
+        atol=1e-10,
+    )

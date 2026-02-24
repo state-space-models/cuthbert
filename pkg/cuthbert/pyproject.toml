@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cuthbert"
+version = "0.0.8"
+description = "State-space model inference with JAX"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Sam Duffield", email = "s@mduffield.com" },
+    { name = "Sahel Iqbal", email = "sahel13miqbal@proton.me" },
+    { name = "Adrien Corenflos", email = "adrien.corenflos.stats@gmail.com" },
+]
+dependencies = [
+    "cuthbertlib",
+]
+
+[project.optional-dependencies]
+tests = [
+    "chex",
+    "pre-commit", "ruff", "pyright",
+    "pytest", "pytest-xdist",
+    "entangled-cli; python_version >= '3.12'",
+]
+docs = ["mkdocs-material", "mkdocs-include-markdown-plugin", "mkdocstrings-python"]
+examples = [
+    "matplotlib", "pandas", "pandas-stubs", "yfinance",
+    "dynamax", "ipython", "tfp-nightly[jax]",
+]
+
+[tool.uv.sources]
+cuthbertlib = { workspace = true }
+
+[tool.hatch.build]
+dev-mode-dirs = ["../.."]
+
+[tool.hatch.build.targets.wheel]
+packages = ["cuthbert"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"../../cuthbert" = "cuthbert"
+
+[tool.hatch.build.targets.sdist.force-include]
+"../../cuthbert" = "cuthbert"
+"../../README.md" = "README.md"

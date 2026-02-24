@@ -15,11 +15,7 @@ from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
-from cuthbertlib.types import (
-    Array,
-    ArrayTreeLike,
-    KeyArray,
-)
+from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
 def process_observation(
@@ -61,7 +57,6 @@ def process_observation(
 def init_prepare(
     model_inputs: ArrayTreeLike,
     get_init_log_density: GetInitLogDensity,
-    get_observation_func: GetObservationFunc,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
@@ -72,11 +67,6 @@ def init_prepare(
         model_inputs: Model inputs.
         get_init_log_density: Function that returns log density log p(x_0)
             and linearization point.
-        get_observation_func: Function that returns either
-            - An observation log density
-                function log p(y_0 | x_0) as well as points x_0 and y_0
-                to linearize around.
-            - A log potential function log G(x_0) and a linearization point x_0.
         rtol: The relative tolerance for the singular values of precision matrices
             when passed to `symmetric_inv_sqrt` during linearization.
             Cutoff for small singular values; singular values smaller than
@@ -111,24 +101,7 @@ def init_prepare(
         model_inputs=model_inputs,
         mean_prev=dummy_tree_like(m0),
     )
-
-    observation_output = get_observation_func(prior_state, model_inputs)
-
-    H, d, chol_R, observation = process_observation(
-        observation_output,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
-    )
-
-    (m, chol_P), ell = filtering.update(m0, chol_P0, H, d, chol_R, observation)
-
-    return linearized_kalman_filter_state_dummy_elem(
-        mean=m,
-        chol_cov=chol_P,
-        log_normalizing_constant=ell,
-        model_inputs=model_inputs,
-        mean_prev=dummy_tree_like(m),
-    )
+    return prior_state
 
 
 def filter_prepare(
@@ -211,6 +184,15 @@ def filter_combine(
         rtol=rtol,
         ignore_nan_dims=ignore_nan_dims,
     )
+
+    # If both linearization points are all NaN, skip the predict step
+    skip_predict_flag = jnp.logical_and(
+        jnp.all(jnp.isnan(linearization_point_curr)),
+        jnp.all(jnp.isnan(linearization_point_prev)),
+    )
+    F = jnp.where(skip_predict_flag, jnp.eye(F.shape[0]), F)
+    c = jnp.where(skip_predict_flag, jnp.zeros_like(c), c)
+    chol_Q = jnp.where(skip_predict_flag, jnp.zeros_like(chol_Q), chol_Q)
 
     predict_mean, predict_chol_cov = filtering.predict(
         state_1.mean, state_1.chol_cov, F, c, chol_Q
