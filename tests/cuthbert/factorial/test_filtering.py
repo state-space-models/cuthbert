@@ -29,10 +29,10 @@ def load_kalman_pairwise_factorial_inference(
     Fs: Array,  # (T, 2 * d, 2 * d)
     cs: Array,  # (T, 2 * d)
     chol_Qs: Array,  # (T, 2 * d, 2 * d)
-    Hs: Array,  # (T, d_y, 2 * d) with nans for initial time step
-    ds: Array,  # (T, d_y) with nans for initial time step
-    chol_Rs: Array,  # (T, d_y, d_y) with nans for initial time step
-    ys: Array,  # (T, d_y) with nans for initial time step
+    Hs: Array,  # (T, d_y, 2 * d)
+    ds: Array,  # (T, d_y)
+    chol_Rs: Array,  # (T, d_y, d_y)
+    ys: Array,  # (T, d_y)
     factorial_indices: Array,  # (T, 2)
 ) -> tuple[Filter, Smoother, factorial.Factorializer, Array]:
     """Builds Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
