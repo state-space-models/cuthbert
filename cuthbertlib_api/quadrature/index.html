@@ -1,0 +1,4188 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/cuthbertlib_api/quadrature/">
+      
+      
+        <link rel="prev" href="../linearize/">
+      
+      
+        <link rel="next" href="../resampling/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Quadrature Methods - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quadrature-based-linearization" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quadrature Methods
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cubature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="cubature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.CubatureQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CubatureQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.get_sigma_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_sigma_points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gauss_hermite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="gauss_hermite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GaussHermiteQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        linearize
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="linearize">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.conditional_moments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conditional_moments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.functional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        functional
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unscented
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="unscented">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UnscentedQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cubature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="cubature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.CubatureQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CubatureQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.get_sigma_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_sigma_points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.cubature.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gauss_hermite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="gauss_hermite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GaussHermiteQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.gauss_hermite.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        linearize
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="linearize">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.conditional_moments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conditional_moments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.linearize.functional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        functional
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unscented
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="unscented">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.__all__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __all__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UnscentedQuadrature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbertlib.quadrature.unscented.weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="quadrature-based-linearization">Quadrature based linearization</h1>
+<p>This sub-repository is concerned with the problem of forming linear <span class="arithmatex">\(Y \approx
+A X + b + \epsilon\)</span> (where <span class="arithmatex">\(\epsilon\)</span> is a zero-mean Gaussian with covariance
+<span class="arithmatex">\(Q\)</span>) approximations to general statistical models <span class="arithmatex">\(p(y \mid x)\)</span> which either
+exhibit additive noise:</p>
+<div class="arithmatex">\[
+p(y \mid x) = N(y; f(x), \Sigma)
+\]</div>
+<p>where <span class="arithmatex">\(f\)</span> is a deterministic function and <span class="arithmatex">\(\Sigma\)</span> a given covariance matrix,
+or for which the conditional mean and covariance</p>
+<div class="arithmatex">\[
+\mathbb{E}[Y \mid X=x] = m(x), \quad \mathbb{V}[Y \mid X=x] = c(x)
+\]</div>
+<p>are known or can be approximated otherwise.
+This approximation is done by minimizing (approximately for the latter, exactly
+for the former) the expected <a href="https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence">Kullback-Leibler divergence</a></p>
+<div class="arithmatex">\[
+A, b, Q = \textrm{arg min } \mathbb{E}_{N(X \mid m, P)}\left[\textrm{KL}(p(y \mid X) \| N(y; AX + b, Q)\right].
+\]</div>
+<p>This can be done either directly in the covariance form (where <span class="arithmatex">\(\Sigma\)</span> is provided and <span class="arithmatex">\(Q\)</span> is obtained as covariance matrices) or in the square-root form, more stable but computationally more expensive (where <span class="arithmatex">\(\Sigma\)</span> is provided as a Cholesky decomposition and <span class="arithmatex">\(L\)</span> obtained such that <span class="arithmatex">\(Q = L L^{T}\)</span> is the covariance matrix of interest).</p>
+<p>A typical call to the library would then be:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">mean_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">cov_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">quadrature_method</span> <span class="o">=</span> <span class="n">quadrature</span><span class="o">.</span><span class="n">gauss_hermite</span><span class="o">.</span><span class="n">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">m</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">cov</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadrature</span><span class="o">.</span><span class="n">conditional_moments</span><span class="p">(</span><span class="n">mean_fn</span><span class="p">,</span> <span class="n">cov_fn</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">quadrature_method</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;covariance&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbertlib.quadrature.cubature" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbertlib.quadrature.cubature</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Implements cubature quadrature.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="cuthbertlib.quadrature.cubature.__all__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;CubatureQuadrature&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbertlib.quadrature.cubature.CubatureQuadrature" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>CubatureQuadrature</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.NamedTuple">NamedTuple</span></code></p>
+
+
+
+        <p>Cubature quadrature.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wm
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.cubature.CubatureQuadrature.wm)" href="#cuthbertlib.quadrature.cubature.CubatureQuadrature.wm">wm</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wc
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.cubature.CubatureQuadrature.wc)" href="#cuthbertlib.quadrature.cubature.CubatureQuadrature.wc">wc</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            xi
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.cubature.CubatureQuadrature.xi)" href="#cuthbertlib.quadrature.cubature.CubatureQuadrature.xi">xi</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The sigma points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.cubature.CubatureQuadrature.wm" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wm</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.cubature.CubatureQuadrature.wc" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wc</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.cubature.CubatureQuadrature.xi" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">xi</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbertlib.quadrature.cubature.CubatureQuadrature.get_sigma_points" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the sigma points.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>m</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chol</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The Cholesky factor of the covariance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SigmaPoints</code></td>            <td>
+                  <code><span title="cuthbertlib.quadrature.common.SigmaPoints">SigmaPoints</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The sigma points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/cubature.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#__codelineno-0-37">37</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">chol</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SigmaPoints</span><span class="p">:</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sigma points.</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        m: The mean.</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        chol: The Cholesky factor of the covariance.</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        SigmaPoints: The sigma points.</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="k">return</span> <span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wc</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.cubature.get_sigma_points" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">wm</span><span class="p">,</span> <span class="n">wc</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/cubature.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_points</span><span class="p">(</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">chol</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">wm</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">wc</span><span class="p">:</span> <span class="n">ArrayLike</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SigmaPoints</span><span class="p">:</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="c1"># TODO: Add docstring here</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">chol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">chol</span><span class="p">)</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="n">xi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="n">wm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">wm</span><span class="p">)</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">wc</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">wc</span><span class="p">)</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">sigma_points</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">chol</span><span class="p">,</span> <span class="n">xi</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="k">return</span> <span class="n">SigmaPoints</span><span class="p">(</span><span class="n">sigma_points</span><span class="p">,</span> <span class="n">wm</span><span class="p">,</span> <span class="n">wc</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.cubature.weights" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes the weights associated with the spherical cubature method.</p>
+<p>The number of sigma-points is 2 * n_dim.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_dim</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dimensionality of the problem.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="cuthbertlib.quadrature.common.Quadrature">Quadrature</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The quadrature object with the weights and sigma-points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="references" open>
+  <summary>References</summary>
+  <p>Simo Särkkä, Lennard Svensson. <em>Bayesian Filtering and Smoothing.</em>
+    In: Cambridge University Press 2023.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/cubature.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quadrature</span><span class="p">:</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the weights associated with the spherical cubature method.</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    The number of sigma-points is 2 * n_dim.</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">        n_dim: Dimensionality of the problem.</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        The quadrature object with the weights and sigma-points.</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    References:</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">        Simo Särkkä, Lennard Svensson. *Bayesian Filtering and Smoothing.*</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            In: Cambridge University Press 2023.</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="n">wm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_dim</span><span class="p">,))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_dim</span><span class="p">)</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">wc</span> <span class="o">=</span> <span class="n">wm</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_dim</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>
+</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="k">return</span> <span class="n">CubatureQuadrature</span><span class="p">(</span><span class="n">wm</span><span class="o">=</span><span class="n">wm</span><span class="p">,</span> <span class="n">wc</span><span class="o">=</span><span class="n">wc</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="n">xi</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbertlib.quadrature.gauss_hermite" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbertlib.quadrature.gauss_hermite</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Implements Gauss-Hermite quadrature.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="cuthbertlib.quadrature.gauss_hermite.__all__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;GaussHermiteQuadrature&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>GaussHermiteQuadrature</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.NamedTuple">NamedTuple</span></code></p>
+
+
+
+        <p>Gauss-Hermite quadrature.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wm
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wm)" href="#cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wm">wm</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wc
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wc)" href="#cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wc">wc</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            xi
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.xi)" href="#cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.xi">xi</a></code></td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The sigma points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wm" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wm</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.wc" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wc</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.xi" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">xi</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbertlib.quadrature.gauss_hermite.GaussHermiteQuadrature.get_sigma_points" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the sigma points.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>m</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chol</code>
+            </td>
+            <td>
+                  <code><span title="jax.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The Cholesky factor of the covariance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SigmaPoints</code></td>            <td>
+                  <code><span title="cuthbertlib.quadrature.common.SigmaPoints">SigmaPoints</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The sigma points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/gauss_hermite.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#__codelineno-0-39">39</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">chol</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SigmaPoints</span><span class="p">:</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sigma points.</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        m: The mean.</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        chol: The Cholesky factor of the covariance.</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        SigmaPoints: The sigma points.</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">return</span> <span class="n">cubature</span><span class="o">.</span><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wc</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.gauss_hermite.weights" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes the weights associated with the Gauss-Hermite quadrature method.</p>
+<p>The Hermite polynomial is in the probabilist's version.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_dim</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dimensionality of the problem.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>order</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The order of Hermite polynomial. Defaults to 3.</p>
+              </div>
+            </td>
+            <td>
+                  <code>3</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="cuthbertlib.quadrature.common.Quadrature">Quadrature</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The quadrature object with the weights and sigma-points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="references" open>
+  <summary>References</summary>
+  <p>Simo Särkkä. <em>Bayesian Filtering and Smoothing.</em>
+    In: Cambridge University Press 2013.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/gauss_hermite.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quadrature</span><span class="p">:</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the weights associated with the Gauss-Hermite quadrature method.</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    The Hermite polynomial is in the probabilist&#39;s version.</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">        n_dim: Dimensionality of the problem.</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">        order: The order of Hermite polynomial. Defaults to 3.</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">        The quadrature object with the weights and sigma-points.</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    References:</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">        Simo Särkkä. *Bayesian Filtering and Smoothing.*</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">            In: Cambridge University Press 2013.</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">hermegauss</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="n">xn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">*</span> <span class="n">n_dim</span><span class="p">)))</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="n">wn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">w</span><span class="p">,)</span> <span class="o">*</span> <span class="n">n_dim</span><span class="p">))),</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="n">wn</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="n">n_dim</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="k">return</span> <span class="n">GaussHermiteQuadrature</span><span class="p">(</span><span class="n">wm</span><span class="o">=</span><span class="n">wn</span><span class="p">,</span> <span class="n">wc</span><span class="o">=</span><span class="n">wn</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="n">xn</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbertlib.quadrature.linearize" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbertlib.quadrature.linearize</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Implements quadrature-based linearization of conditional moments and functional.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="cuthbertlib.quadrature.linearize.__all__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;conditional_moments&#39;</span><span class="p">,</span> <span class="s1">&#39;functional&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.linearize.conditional_moments" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">conditional_moments</span><span class="p">(</span><span class="n">mean_fn</span><span class="p">,</span> <span class="n">cov_fn</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">quadrature</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;covariance&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Linearizes the conditional mean and covariance of a Gaussian distribution.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mean_fn</code>
+            </td>
+            <td>
+                  <code><span title="typing.Callable">Callable</span>[[<span title="cuthbertlib.types.ArrayLike">ArrayLike</span>], <span title="cuthbertlib.types.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean function <span class="arithmatex">\(\mathbb{E}[Y \mid x] =\)</span> <code>mean_fn(x)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cov_fn</code>
+            </td>
+            <td>
+                  <code><span title="typing.Callable">Callable</span>[[<span title="cuthbertlib.types.ArrayLike">ArrayLike</span>], <span title="cuthbertlib.types.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance function <span class="arithmatex">\(\mathbb{C}[Y \mid x] =\)</span> <code>cov_fn(x)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>m</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean of the Gaussian distribution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cov</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance of the Gaussian distribution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quadrature</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.quadrature.common.Quadrature">Quadrature</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The quadrature object with the weights and sigma-points.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mode</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mode of the covariance. Default is 'covariance', which means that cov
+and cov_fn are given as covariance matrices.
+Otherwise, the Cholesky factor of the covariances are given.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;covariance&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="cuthbertlib.types.Array">Array</span>, <span title="cuthbertlib.types.Array">Array</span>, <span title="cuthbertlib.types.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A, b, Q where A, b are the linearized model parameters and Q is either given as
+a full covariance matrix or as a square root factor depending on
+the <code>mode</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/linearize.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">conditional_moments</span><span class="p">(</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">mean_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ArrayLike</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">cov_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ArrayLike</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">cov</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">quadrature</span><span class="p">:</span> <span class="n">Quadrature</span><span class="p">,</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;covariance&quot;</span><span class="p">,</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Linearizes the conditional mean and covariance of a Gaussian distribution.</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">        mean_fn: The mean function $\mathbb{E}[Y \mid x] =$ `mean_fn(x)`.</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">        cov_fn: The covariance function $\mathbb{C}[Y \mid x] =$ `cov_fn(x)`.</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        m: The mean of the Gaussian distribution.</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        cov: The covariance of the Gaussian distribution.</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        quadrature: The quadrature object with the weights and sigma-points.</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        mode: The mode of the covariance. Default is &#39;covariance&#39;, which means that cov</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">            and cov_fn are given as covariance matrices.</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">            Otherwise, the Cholesky factor of the covariances are given.</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">        A, b, Q where A, b are the linearized model parameters and Q is either given as</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">            a full covariance matrix or as a square root factor depending on</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">            the `mode`.</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;covariance&quot;</span><span class="p">:</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="n">chol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">chol</span> <span class="o">=</span> <span class="n">cov</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="n">x_pts</span><span class="p">:</span> <span class="n">SigmaPoints</span> <span class="o">=</span> <span class="n">quadrature</span><span class="o">.</span><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">)</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">f_pts</span> <span class="o">=</span> <span class="n">SigmaPoints</span><span class="p">(</span><span class="n">vmap</span><span class="p">(</span><span class="n">mean_fn</span><span class="p">)(</span><span class="n">x_pts</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="n">x_pts</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span> <span class="n">x_pts</span><span class="o">.</span><span class="n">wc</span><span class="p">)</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">Psi_x</span> <span class="o">=</span> <span class="n">x_pts</span><span class="o">.</span><span class="n">covariance</span><span class="p">(</span><span class="n">f_pts</span><span class="p">)</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">A</span> <span class="o">=</span> <span class="n">cho_solve</span><span class="p">((</span><span class="n">chol</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">Psi_x</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">b</span> <span class="o">=</span> <span class="n">f_pts</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">A</span> <span class="o">@</span> <span class="n">m</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;covariance&quot;</span><span class="p">:</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="c1"># This can probably be abstracted better.</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">sqrt_Phi</span> <span class="o">=</span> <span class="n">f_pts</span><span class="o">.</span><span class="n">sqrt</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">chol_pts</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">cov_fn</span><span class="p">)(</span><span class="n">x_pts</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="n">temp</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x_pts</span><span class="o">.</span><span class="n">wc</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">chol_pts</span>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="c1"># concatenate the blocks properly, it&#39;s a bit urk, but what can you do...</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="n">temp</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="n">chol_Q</span> <span class="o">=</span> <span class="n">tria</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">sqrt_Phi</span><span class="p">,</span> <span class="n">temp</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="n">chol_Q</span> <span class="o">=</span> <span class="n">cholesky_update_many</span><span class="p">(</span><span class="n">chol_Q</span><span class="p">,</span> <span class="p">(</span><span class="n">A</span> <span class="o">@</span> <span class="n">chol</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">chol_Q</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="n">V_pts</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">cov_fn</span><span class="p">)(</span><span class="n">x_pts</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="n">v_f</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x_pts</span><span class="o">.</span><span class="n">wc</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">V_pts</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="n">Phi</span> <span class="o">=</span> <span class="n">f_pts</span><span class="o">.</span><span class="n">covariance</span><span class="p">()</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">Q</span> <span class="o">=</span> <span class="n">Phi</span> <span class="o">+</span> <span class="n">v_f</span> <span class="o">-</span> <span class="n">A</span> <span class="o">@</span> <span class="n">cov</span> <span class="o">@</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">Q</span> <span class="o">+</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.linearize.functional" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">functional</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">quadrature</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;covariance&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Linearizes a nonlinear function of a Gaussian distribution.</p>
+<p>For a given Gaussian distribution <span class="arithmatex">\(p(x) = N(x \mid m, P)\)</span>,
+and <span class="arithmatex">\(Y = f(X) + \epsilon\)</span>, where <span class="arithmatex">\(\epsilon\)</span> is a zero-mean Gaussian noise
+with covariance S, this function computes an approximation <span class="arithmatex">\(Y = A X + b + \epsilon\)</span>
+using the sigma points method given by get_sigma_points.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fn</code>
+            </td>
+            <td>
+                  <code><span title="typing.Callable">Callable</span>[[<span title="cuthbertlib.types.ArrayLike">ArrayLike</span>], <span title="cuthbertlib.types.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The function <span class="arithmatex">\(Y = f(X) + N(0, S)\)</span>.
+Because the function is linearized, the function should be vectorized.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>S</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance of the noise.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>m</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean of the Gaussian distribution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cov</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance of the Gaussian distribution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>quadrature</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.quadrature.common.Quadrature">Quadrature</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The quadrature object with the weights and sigma-points.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mode</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mode of the covariance. Default is 'covariance', which means that cov
+and cov_fn are given as covariance matrices. Otherwise, the Cholesky factor
+of the covariances are given.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;covariance&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="cuthbertlib.types.Array">Array</span>, <span title="cuthbertlib.types.Array">Array</span>, <span title="cuthbertlib.types.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A, b, Q: The linearized model parameters <span class="arithmatex">\(Y = A X + b + N(0, Q)\)</span>.
+Q is either given as a full covariance matrix or as a square root factor depending on the <code>mode</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <p>We do not support non-additive noise in this method.
+If you have a non-additive noise, you should use the <code>conditional_moments</code> or
+the Taylor linearization method.
+Another solution is to form the covariance function using the quadrature method
+itself. For example, if you have a function <span class="arithmatex">\(f(x, q)\)</span>, where <span class="arithmatex">\(q\)</span> is a zero-mean
+random variable with covariance <code>S</code>,
+you can form the mean and covariance function as follows:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">linearize_q_part</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">n_dim</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">m_q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">functional</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">q_sigma_points</span><span class="o">.</span><span class="n">points</span><span class="p">),</span> <span class="mf">0.</span> <span class="o">*</span> <span class="n">S</span><span class="p">,</span> <span class="n">m_q</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">quadrature</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">Q</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">cov_fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">linearize_q_part</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">Q</span> <span class="o">+</span> <span class="n">A</span> <span class="o">@</span> <span class="n">S</span> <span class="o">@</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">mean_fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">linearize_q_part</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">m_q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="k">return</span> <span class="n">b</span> <span class="o">+</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">m_q</span><span class="p">)</span>
+</span></code></pre></div>
+<p>This technique is a bit wasteful due to our current separation of duties between
+the mean and covariance functions, but as we develop the library further, we
+will provide a more elegant solution.</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/linearize.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-75"> 75</a></span>
+<span class="normal"><a href="#__codelineno-0-76"> 76</a></span>
+<span class="normal"><a href="#__codelineno-0-77"> 77</a></span>
+<span class="normal"><a href="#__codelineno-0-78"> 78</a></span>
+<span class="normal"><a href="#__codelineno-0-79"> 79</a></span>
+<span class="normal"><a href="#__codelineno-0-80"> 80</a></span>
+<span class="normal"><a href="#__codelineno-0-81"> 81</a></span>
+<span class="normal"><a href="#__codelineno-0-82"> 82</a></span>
+<span class="normal"><a href="#__codelineno-0-83"> 83</a></span>
+<span class="normal"><a href="#__codelineno-0-84"> 84</a></span>
+<span class="normal"><a href="#__codelineno-0-85"> 85</a></span>
+<span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#__codelineno-0-124">124</a></span>
+<span class="normal"><a href="#__codelineno-0-125">125</a></span>
+<span class="normal"><a href="#__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#__codelineno-0-128">128</a></span>
+<span class="normal"><a href="#__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#__codelineno-0-131">131</a></span>
+<span class="normal"><a href="#__codelineno-0-132">132</a></span>
+<span class="normal"><a href="#__codelineno-0-133">133</a></span>
+<span class="normal"><a href="#__codelineno-0-134">134</a></span>
+<span class="normal"><a href="#__codelineno-0-135">135</a></span>
+<span class="normal"><a href="#__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#__codelineno-0-140">140</a></span>
+<span class="normal"><a href="#__codelineno-0-141">141</a></span>
+<span class="normal"><a href="#__codelineno-0-142">142</a></span>
+<span class="normal"><a href="#__codelineno-0-143">143</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="k">def</span><span class="w"> </span><span class="nf">functional</span><span class="p">(</span>
+</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ArrayLike</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">S</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="n">cov</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="n">quadrature</span><span class="p">:</span> <span class="n">Quadrature</span><span class="p">,</span>
+</span><span id="__span-0-81"><a id="__codelineno-0-81" name="__codelineno-0-81"></a>    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;covariance&quot;</span><span class="p">,</span>
+</span><span id="__span-0-82"><a id="__codelineno-0-82" name="__codelineno-0-82"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-0-83"><a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Linearizes a nonlinear function of a Gaussian distribution.</span>
+</span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a>
+</span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a><span class="sd">    For a given Gaussian distribution $p(x) = N(x \mid m, P)$,</span>
+</span><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a><span class="sd">    and $Y = f(X) + \epsilon$, where $\epsilon$ is a zero-mean Gaussian noise</span>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a><span class="sd">    with covariance S, this function computes an approximation $Y = A X + b + \epsilon$</span>
+</span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a><span class="sd">    using the sigma points method given by get_sigma_points.</span>
+</span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="sd">        fn: The function $Y = f(X) + N(0, S)$.</span>
+</span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="sd">            Because the function is linearized, the function should be vectorized.</span>
+</span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="sd">        S: The covariance of the noise.</span>
+</span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">        m: The mean of the Gaussian distribution.</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">        cov: The covariance of the Gaussian distribution.</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">        quadrature: The quadrature object with the weights and sigma-points.</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="sd">        mode: The mode of the covariance. Default is &#39;covariance&#39;, which means that cov</span>
+</span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">            and cov_fn are given as covariance matrices. Otherwise, the Cholesky factor</span>
+</span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">            of the covariances are given.</span>
+</span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>
+</span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">        A, b, Q: The linearized model parameters $Y = A X + b + N(0, Q)$.</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">            Q is either given as a full covariance matrix or as a square root factor depending on the `mode`.</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>
+</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="sd">        We do not support non-additive noise in this method.</span>
+</span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">        If you have a non-additive noise, you should use the `conditional_moments` or</span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="sd">        the Taylor linearization method.</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="sd">        Another solution is to form the covariance function using the quadrature method</span>
+</span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="sd">        itself. For example, if you have a function $f(x, q)$, where $q$ is a zero-mean</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a><span class="sd">        random variable with covariance `S`,</span>
+</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">        you can form the mean and covariance function as follows:</span>
+</span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>
+</span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">        ```python</span>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">        def linearize_q_part(x):</span>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a><span class="sd">            n_dim = S.shape[0]</span>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a><span class="sd">            m_q = jnp.zeros(n_dim)</span>
+</span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a><span class="sd">            A, b, Q = functional(lambda x: f(x, q_sigma_points.points), 0. * S, m_q, S, quadrature, mode)</span>
+</span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a><span class="sd">            return A, b, Q</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="sd">        def cov_fn(x):</span>
+</span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a><span class="sd">            A, b, Q = linearize_q_part(x)</span>
+</span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="sd">            return Q + A @ S @ A.T</span>
+</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>
+</span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="sd">        def mean_fn(x):</span>
+</span><span id="__span-0-126"><a id="__codelineno-0-126" name="__codelineno-0-126"></a><span class="sd">            A, b, Q = linearize_q_part(x)</span>
+</span><span id="__span-0-127"><a id="__codelineno-0-127" name="__codelineno-0-127"></a><span class="sd">            m_q = jnp.zeros(n_dim)</span>
+</span><span id="__span-0-128"><a id="__codelineno-0-128" name="__codelineno-0-128"></a><span class="sd">            return b + f(x, m_q)</span>
+</span><span id="__span-0-129"><a id="__codelineno-0-129" name="__codelineno-0-129"></a><span class="sd">        ```</span>
+</span><span id="__span-0-130"><a id="__codelineno-0-130" name="__codelineno-0-130"></a>
+</span><span id="__span-0-131"><a id="__codelineno-0-131" name="__codelineno-0-131"></a><span class="sd">        This technique is a bit wasteful due to our current separation of duties between</span>
+</span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="sd">        the mean and covariance functions, but as we develop the library further, we</span>
+</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="sd">        will provide a more elegant solution.</span>
+</span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>
+</span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="c1"># make the equivalent conditional_moments model</span>
+</span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">mean_fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a>
+</span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cov_fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>
+</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="k">return</span> <span class="n">conditional_moments</span><span class="p">(</span><span class="n">mean_fn</span><span class="p">,</span> <span class="n">cov_fn</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">quadrature</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbertlib.quadrature.unscented" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbertlib.quadrature.unscented</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Implements unscented quadrature.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="cuthbertlib.quadrature.unscented.__all__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;UnscentedQuadrature&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbertlib.quadrature.unscented.UnscentedQuadrature" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>UnscentedQuadrature</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.NamedTuple">NamedTuple</span></code></p>
+
+
+
+        <p>Unscented quadrature.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wm
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.unscented.UnscentedQuadrature.wm)" href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature.wm">wm</a></code></td>
+            <td>
+                  <code><span title="cuthbertlib.types.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            wc
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.unscented.UnscentedQuadrature.wc)" href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature.wc">wc</a></code></td>
+            <td>
+                  <code><span title="cuthbertlib.types.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The covariance weights.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            lamda
+
+  
+      instance-attribute
+   (cuthbertlib.quadrature.unscented.UnscentedQuadrature.lamda)" href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature.lamda">lamda</a></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The lambda parameter.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.unscented.UnscentedQuadrature.wm" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wm</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.unscented.UnscentedQuadrature.wc" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">wc</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbertlib.quadrature.unscented.UnscentedQuadrature.lamda" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">lamda</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbertlib.quadrature.unscented.UnscentedQuadrature.get_sigma_points" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the sigma points.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>m</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The mean.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chol</code>
+            </td>
+            <td>
+                  <code><span title="cuthbertlib.types.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The Cholesky factor of the covariance.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SigmaPoints</code></td>            <td>
+                  <code><span title="cuthbertlib.quadrature.common.SigmaPoints">SigmaPoints</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The sigma points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/unscented.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">chol</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SigmaPoints</span><span class="p">:</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sigma points.</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        m: The mean.</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        chol: The Cholesky factor of the covariance.</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        SigmaPoints: The sigma points.</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">chol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">chol</span><span class="p">)</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="n">n_dim</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="n">scaled_chol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamda</span><span class="p">)</span> <span class="o">*</span> <span class="n">chol</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="n">zeros</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">))</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">sigma_points</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="p">[</span><span class="n">zeros</span><span class="p">,</span> <span class="n">scaled_chol</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="o">-</span><span class="n">scaled_chol</span><span class="o">.</span><span class="n">T</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="p">)</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="k">return</span> <span class="n">SigmaPoints</span><span class="p">(</span><span class="n">sigma_points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wc</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbertlib.quadrature.unscented.weights" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">weights</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes the weights associated with the unscented cubature method.</p>
+<p>The number of sigma-points is 2 * n_dim.
+This method is also known as the Unscented Transform, and generalizes the
+<code>cubature.py</code> weights: the cubature method is a special case of the unscented
+for the parameters <code>alpha=1.0</code>, <code>beta=0.0</code>, <code>kappa=0.0</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_dim</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dimension of the space.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>alpha</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter of the unscented transform, default is 0.5.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.5</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>beta</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter of the unscented transform, default is 2.0.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>kappa</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter of the unscented transform, default is 3 + n_dim.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>UnscentedQuadrature</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="            UnscentedQuadrature (cuthbertlib.quadrature.unscented.UnscentedQuadrature)" href="#cuthbertlib.quadrature.unscented.UnscentedQuadrature">UnscentedQuadrature</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The quadrature object with the weights and sigma-points.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="references" open>
+  <summary>References</summary>
+  <ul>
+<li>https://groups.seas.harvard.edu/courses/cs281/papers/unscented.pdf</li>
+</ul>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbertlib/quadrature/unscented.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#__codelineno-0-79">79</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">n_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnscentedQuadrature</span><span class="p">:</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the weights associated with the unscented cubature method.</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    The number of sigma-points is 2 * n_dim.</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">    This method is also known as the Unscented Transform, and generalizes the</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">    `cubature.py` weights: the cubature method is a special case of the unscented</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    for the parameters `alpha=1.0`, `beta=0.0`, `kappa=0.0`.</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">        n_dim: Dimension of the space.</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">        alpha: Parameter of the unscented transform, default is 0.5.</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">        beta: Parameter of the unscented transform, default is 2.0.</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        kappa: Parameter of the unscented transform, default is 3 + n_dim.</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">        UnscentedQuadrature: The quadrature object with the weights and sigma-points.</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">    References:</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">        - https://groups.seas.harvard.edu/courses/cs281/papers/unscented.pdf</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">if</span> <span class="n">kappa</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">kappa</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">+</span> <span class="n">n_dim</span>
+</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>
+</span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">lamda</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="n">kappa</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_dim</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a>    <span class="n">wm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="n">lamda</span><span class="p">)))</span>
+</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">wm</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">lamda</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="n">lamda</span><span class="p">))</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">wc</span> <span class="o">=</span> <span class="n">wm</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">lamda</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="n">lamda</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">beta</span><span class="p">))</span>
+</span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="k">return</span> <span class="n">UnscentedQuadrature</span><span class="p">(</span><span class="n">wm</span><span class="o">=</span><span class="n">wm</span><span class="p">,</span> <span class="n">wc</span><span class="o">=</span><span class="n">wc</span><span class="p">,</span> <span class="n">lamda</span><span class="o">=</span><span class="n">lamda</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

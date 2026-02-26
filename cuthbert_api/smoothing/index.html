@@ -1,0 +1,3082 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/cuthbert_api/smoothing/">
+      
+      
+        <link rel="prev" href="../filtering/">
+      
+      
+        <link rel="next" href="../discrete/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Smoothing - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#smoothing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Smoothing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbert.smoothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        smoothing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="smoothing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.smoothing.smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        smoother
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbert.inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="inference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.Smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smoother
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.SmootherPrepare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SmootherPrepare
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.SmootherCombine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SmootherCombine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.ConvertFilterToSmootherState" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConvertFilterToSmootherState
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbert.smoothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        smoothing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="smoothing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.smoothing.smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        smoother
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuthbert.inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="inference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.Smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smoother
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.SmootherPrepare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SmootherPrepare
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.SmootherCombine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SmootherCombine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cuthbert.inference.ConvertFilterToSmootherState" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConvertFilterToSmootherState
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="smoothing">Smoothing</h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbert.smoothing" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbert.smoothing</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Unified cuthbert smoothing interface.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cuthbert.smoothing.smoother" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">smoother</span><span class="p">(</span><span class="n">smoother_obj</span><span class="p">,</span> <span class="n">filter_states</span><span class="p">,</span> <span class="n">model_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Applies offline smoothing given a smoother object, output from filter, and model inputs.</p>
+<p><code>filter_states</code> should have leading temporal dimension of length T + 1, where
+T is the number of time steps excluding the initial state.</p>
+<p>Each element of <code>model_inputs</code> refers to the transition from t to t+1, except for the
+first element which refers to the initial state. The initial state <code>model_inputs</code>
+are not used for smoothing. Thus the <code>model_inputs</code> used here have length T.
+By default, <code>filter_states.model_inputs[1:]</code> are used (i.e. the <code>model_inputs</code>
+used for the initial state is ignored).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>smoother_obj</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            Smoother (cuthbert.inference.Smoother)" href="#cuthbert.inference.Smoother">Smoother</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The smoother inference object.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_states</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The filtered states (with leading temporal dimension of length T + 1).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>model_inputs</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The model inputs (with leading temporal dimension of length T).
+Optional, if None then <code>filter_states.model_inputs[1:]</code> are used.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>parallel</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to run the smoother in parallel.
+Requires <code>smoother_obj.associative_smoother</code> to be <code>True</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>key</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            KeyArray = Array
+
+  
+      module-attribute
+   (cuthbertlib.types.KeyArray)" href="../../cuthbertlib_api/types/#cuthbertlib.types.KeyArray">KeyArray</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The key for the random number generator.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTree = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTree)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTree">ArrayTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The smoothed states (NamedTuple with leading temporal dimension of length T + 1).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbert/smoothing.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14"> 14</a></span>
+<span class="normal"><a href="#__codelineno-0-15"> 15</a></span>
+<span class="normal"><a href="#__codelineno-0-16"> 16</a></span>
+<span class="normal"><a href="#__codelineno-0-17"> 17</a></span>
+<span class="normal"><a href="#__codelineno-0-18"> 18</a></span>
+<span class="normal"><a href="#__codelineno-0-19"> 19</a></span>
+<span class="normal"><a href="#__codelineno-0-20"> 20</a></span>
+<span class="normal"><a href="#__codelineno-0-21"> 21</a></span>
+<span class="normal"><a href="#__codelineno-0-22"> 22</a></span>
+<span class="normal"><a href="#__codelineno-0-23"> 23</a></span>
+<span class="normal"><a href="#__codelineno-0-24"> 24</a></span>
+<span class="normal"><a href="#__codelineno-0-25"> 25</a></span>
+<span class="normal"><a href="#__codelineno-0-26"> 26</a></span>
+<span class="normal"><a href="#__codelineno-0-27"> 27</a></span>
+<span class="normal"><a href="#__codelineno-0-28"> 28</a></span>
+<span class="normal"><a href="#__codelineno-0-29"> 29</a></span>
+<span class="normal"><a href="#__codelineno-0-30"> 30</a></span>
+<span class="normal"><a href="#__codelineno-0-31"> 31</a></span>
+<span class="normal"><a href="#__codelineno-0-32"> 32</a></span>
+<span class="normal"><a href="#__codelineno-0-33"> 33</a></span>
+<span class="normal"><a href="#__codelineno-0-34"> 34</a></span>
+<span class="normal"><a href="#__codelineno-0-35"> 35</a></span>
+<span class="normal"><a href="#__codelineno-0-36"> 36</a></span>
+<span class="normal"><a href="#__codelineno-0-37"> 37</a></span>
+<span class="normal"><a href="#__codelineno-0-38"> 38</a></span>
+<span class="normal"><a href="#__codelineno-0-39"> 39</a></span>
+<span class="normal"><a href="#__codelineno-0-40"> 40</a></span>
+<span class="normal"><a href="#__codelineno-0-41"> 41</a></span>
+<span class="normal"><a href="#__codelineno-0-42"> 42</a></span>
+<span class="normal"><a href="#__codelineno-0-43"> 43</a></span>
+<span class="normal"><a href="#__codelineno-0-44"> 44</a></span>
+<span class="normal"><a href="#__codelineno-0-45"> 45</a></span>
+<span class="normal"><a href="#__codelineno-0-46"> 46</a></span>
+<span class="normal"><a href="#__codelineno-0-47"> 47</a></span>
+<span class="normal"><a href="#__codelineno-0-48"> 48</a></span>
+<span class="normal"><a href="#__codelineno-0-49"> 49</a></span>
+<span class="normal"><a href="#__codelineno-0-50"> 50</a></span>
+<span class="normal"><a href="#__codelineno-0-51"> 51</a></span>
+<span class="normal"><a href="#__codelineno-0-52"> 52</a></span>
+<span class="normal"><a href="#__codelineno-0-53"> 53</a></span>
+<span class="normal"><a href="#__codelineno-0-54"> 54</a></span>
+<span class="normal"><a href="#__codelineno-0-55"> 55</a></span>
+<span class="normal"><a href="#__codelineno-0-56"> 56</a></span>
+<span class="normal"><a href="#__codelineno-0-57"> 57</a></span>
+<span class="normal"><a href="#__codelineno-0-58"> 58</a></span>
+<span class="normal"><a href="#__codelineno-0-59"> 59</a></span>
+<span class="normal"><a href="#__codelineno-0-60"> 60</a></span>
+<span class="normal"><a href="#__codelineno-0-61"> 61</a></span>
+<span class="normal"><a href="#__codelineno-0-62"> 62</a></span>
+<span class="normal"><a href="#__codelineno-0-63"> 63</a></span>
+<span class="normal"><a href="#__codelineno-0-64"> 64</a></span>
+<span class="normal"><a href="#__codelineno-0-65"> 65</a></span>
+<span class="normal"><a href="#__codelineno-0-66"> 66</a></span>
+<span class="normal"><a href="#__codelineno-0-67"> 67</a></span>
+<span class="normal"><a href="#__codelineno-0-68"> 68</a></span>
+<span class="normal"><a href="#__codelineno-0-69"> 69</a></span>
+<span class="normal"><a href="#__codelineno-0-70"> 70</a></span>
+<span class="normal"><a href="#__codelineno-0-71"> 71</a></span>
+<span class="normal"><a href="#__codelineno-0-72"> 72</a></span>
+<span class="normal"><a href="#__codelineno-0-73"> 73</a></span>
+<span class="normal"><a href="#__codelineno-0-74"> 74</a></span>
+<span class="normal"><a href="#__codelineno-0-75"> 75</a></span>
+<span class="normal"><a href="#__codelineno-0-76"> 76</a></span>
+<span class="normal"><a href="#__codelineno-0-77"> 77</a></span>
+<span class="normal"><a href="#__codelineno-0-78"> 78</a></span>
+<span class="normal"><a href="#__codelineno-0-79"> 79</a></span>
+<span class="normal"><a href="#__codelineno-0-80"> 80</a></span>
+<span class="normal"><a href="#__codelineno-0-81"> 81</a></span>
+<span class="normal"><a href="#__codelineno-0-82"> 82</a></span>
+<span class="normal"><a href="#__codelineno-0-83"> 83</a></span>
+<span class="normal"><a href="#__codelineno-0-84"> 84</a></span>
+<span class="normal"><a href="#__codelineno-0-85"> 85</a></span>
+<span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#__codelineno-0-124">124</a></span>
+<span class="normal"><a href="#__codelineno-0-125">125</a></span>
+<span class="normal"><a href="#__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#__codelineno-0-128">128</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="k">def</span><span class="w"> </span><span class="nf">smoother</span><span class="p">(</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="n">smoother_obj</span><span class="p">:</span> <span class="n">Smoother</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">filter_states</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">model_inputs</span><span class="p">:</span> <span class="n">ArrayTreeLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">parallel</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">key</span><span class="p">:</span> <span class="n">KeyArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayTree</span><span class="p">:</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies offline smoothing given a smoother object, output from filter, and model inputs.</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    `filter_states` should have leading temporal dimension of length T + 1, where</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    T is the number of time steps excluding the initial state.</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    Each element of `model_inputs` refers to the transition from t to t+1, except for the</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    first element which refers to the initial state. The initial state `model_inputs`</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    are not used for smoothing. Thus the `model_inputs` used here have length T.</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">    By default, `filter_states.model_inputs[1:]` are used (i.e. the `model_inputs`</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    used for the initial state is ignored).</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        smoother_obj: The smoother inference object.</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        filter_states: The filtered states (with leading temporal dimension of length T + 1).</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        model_inputs: The model inputs (with leading temporal dimension of length T).</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">            Optional, if None then `filter_states.model_inputs[1:]` are used.</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        parallel: Whether to run the smoother in parallel.</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">            Requires `smoother_obj.associative_smoother` to be `True`.</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        key: The key for the random number generator.</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        The smoothed states (NamedTuple with leading temporal dimension of length T + 1).</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="k">if</span> <span class="n">parallel</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">associative</span><span class="p">:</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>            <span class="s2">&quot;Parallel smoothing attempted but smoother.associative is False &quot;</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>            <span class="sa">f</span><span class="s2">&quot;for </span><span class="si">{</span><span class="n">smoother</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>        <span class="p">)</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">if</span> <span class="n">model_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">filter_states</span><span class="o">.</span><span class="n">model_inputs</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">T</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">leaves</span><span class="p">(</span><span class="n">filter_states</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="c1"># model_inputs for the dynamics distribution from t-1 to t is stored</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="c1"># in model_inputs[t] thus we need model_inputs[1:]</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="c1"># model_inputs[0] is only used for init_prepare and not for smoothing.</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="c1"># Therefore, we allow model_inputs to be either of length T + 1 or T</span>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="c1"># where if length is T + 1 then we simply discard model_inputs[0]</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="n">model_inputs_length</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">leaves</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="k">if</span> <span class="n">model_inputs_length</span> <span class="o">==</span> <span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">model_inputs</span><span class="p">)</span>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="k">elif</span> <span class="n">model_inputs_length</span> <span class="o">!=</span> <span class="n">T</span><span class="p">:</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>            <span class="s2">&quot;model_inputs must have length T + 1 or T, got length &quot;</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_inputs_length</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="p">)</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="c1"># This will throw error if used as a key, which is desired</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="c1"># (albeit not a useful error, we could improve this)</span>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">prepare_keys</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a>        <span class="n">prepare_keys</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">T</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a>
+</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="n">final_filter_state</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">filter_states</span><span class="p">)</span>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">other_filter_states</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">filter_states</span><span class="p">)</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a>
+</span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="c1"># Final smoother state doesn&#39;t need model inputs, so we create a dummy one</span>
+</span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="c1"># with the same structure as model_inputs but with all values set to dummy values.</span>
+</span><span id="__span-0-81"><a id="__codelineno-0-81" name="__codelineno-0-81"></a>    <span class="n">dummy_single_model_inputs</span> <span class="o">=</span> <span class="n">dummy_tree_like</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">model_inputs</span><span class="p">))</span>
+</span><span id="__span-0-82"><a id="__codelineno-0-82" name="__codelineno-0-82"></a>
+</span><span id="__span-0-83"><a id="__codelineno-0-83" name="__codelineno-0-83"></a>    <span class="n">final_smoother_state</span> <span class="o">=</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">convert_filter_to_smoother_state</span><span class="p">(</span>
+</span><span id="__span-0-84"><a id="__codelineno-0-84" name="__codelineno-0-84"></a>        <span class="n">final_filter_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="o">=</span><span class="n">dummy_single_model_inputs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">prepare_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a>    <span class="p">)</span>
+</span><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="k">if</span> <span class="n">parallel</span><span class="p">:</span>
+</span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a>        <span class="n">prep_states</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span>
+</span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a>            <span class="k">lambda</span> <span class="n">fs</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">smoother_prepare</span><span class="p">(</span>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a>                <span class="n">fs</span><span class="p">,</span> <span class="n">model_inputs</span><span class="o">=</span><span class="n">inp</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">k</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a>            <span class="p">)</span>
+</span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a>        <span class="p">)(</span><span class="n">other_filter_states</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">prepare_keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+</span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>        <span class="n">prep_states</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+</span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a>            <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="kc">None</span><span class="p">]]),</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>            <span class="n">prep_states</span><span class="p">,</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>            <span class="n">final_smoother_state</span><span class="p">,</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>        <span class="p">)</span>
+</span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>
+</span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>        <span class="n">states</span> <span class="o">=</span> <span class="n">associative_scan</span><span class="p">(</span>
+</span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>            <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">current</span><span class="p">,</span> <span class="nb">next</span><span class="p">:</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">smoother_combine</span><span class="p">(</span><span class="nb">next</span><span class="p">,</span> <span class="n">current</span><span class="p">)),</span>
+</span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>            <span class="c1"># TODO: Maybe change cuthbertlib direction so that this lambda isn&#39;t needed</span>
+</span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>            <span class="n">prep_states</span><span class="p">,</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>        <span class="p">)</span>
+</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>
+</span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">next_state</span><span class="p">,</span> <span class="n">filt_state_and_prep_inp_and_k</span><span class="p">):</span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>            <span class="n">filt_state</span><span class="p">,</span> <span class="n">prep_inp</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">filt_state_and_prep_inp_and_k</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>            <span class="n">prep_state</span> <span class="o">=</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">smoother_prepare</span><span class="p">(</span>
+</span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>                <span class="n">filt_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="o">=</span><span class="n">prep_inp</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">k</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>            <span class="p">)</span>
+</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a>            <span class="n">state</span> <span class="o">=</span> <span class="n">smoother_obj</span><span class="o">.</span><span class="n">smoother_combine</span><span class="p">(</span><span class="n">prep_state</span><span class="p">,</span> <span class="n">next_state</span><span class="p">)</span>
+</span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>            <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span>
+</span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>        <span class="n">_</span><span class="p">,</span> <span class="n">states</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>            <span class="n">body</span><span class="p">,</span>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>            <span class="n">final_smoother_state</span><span class="p">,</span>
+</span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a>            <span class="p">(</span><span class="n">other_filter_states</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">prepare_keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+</span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a>            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>        <span class="p">)</span>
+</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>
+</span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a>        <span class="n">states</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+</span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a>            <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="kc">None</span><span class="p">]]),</span>
+</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>            <span class="n">states</span><span class="p">,</span>
+</span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a>            <span class="n">final_smoother_state</span><span class="p">,</span>
+</span><span id="__span-0-126"><a id="__codelineno-0-126" name="__codelineno-0-126"></a>        <span class="p">)</span>
+</span><span id="__span-0-127"><a id="__codelineno-0-127" name="__codelineno-0-127"></a>
+</span><span id="__span-0-128"><a id="__codelineno-0-128" name="__codelineno-0-128"></a>    <span class="k">return</span> <span class="n">states</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="cuthbert.inference" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>cuthbert.inference</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Provides protocols and types for representing unified inference objects.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbert.inference.Smoother" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>Smoother</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.NamedTuple">NamedTuple</span></code></p>
+
+
+
+        <p>Smoother object.</p>
+<p>Typically passed to <a class="autorefs autorefs-internal" title="            smoother(smoother_obj, filter_states, model_inputs=None, parallel=False, key=None)" href="#cuthbert.smoothing.smoother">cuthbert.smoothing.smoother</a>.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            convert_filter_to_smoother_state
+
+  
+      instance-attribute
+   (cuthbert.inference.Smoother.convert_filter_to_smoother_state)" href="#cuthbert.inference.Smoother.convert_filter_to_smoother_state">convert_filter_to_smoother_state</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ConvertFilterToSmootherState (cuthbert.inference.ConvertFilterToSmootherState)" href="#cuthbert.inference.ConvertFilterToSmootherState">ConvertFilterToSmootherState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Function to convert the final filter state to a smoother state.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            smoother_prepare
+
+  
+      instance-attribute
+   (cuthbert.inference.Smoother.smoother_prepare)" href="#cuthbert.inference.Smoother.smoother_prepare">smoother_prepare</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            SmootherPrepare (cuthbert.inference.SmootherPrepare)" href="#cuthbert.inference.SmootherPrepare">SmootherPrepare</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Function to prepare intermediate states for the smoother.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            smoother_combine
+
+  
+      instance-attribute
+   (cuthbert.inference.Smoother.smoother_combine)" href="#cuthbert.inference.Smoother.smoother_combine">smoother_combine</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            SmootherCombine (cuthbert.inference.SmootherCombine)" href="#cuthbert.inference.SmootherCombine">SmootherCombine</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Function that combines two smoother states to produce another.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="            associative = False
+
+  
+      class-attribute
+      instance-attribute
+   (cuthbert.inference.Smoother.associative)" href="#cuthbert.inference.Smoother.associative">associative</a></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether <code>smoother_combine</code> is an associative operator. Temporally
+parallelized smoothers are guaranteed to produce correct results only if
+<code>associative=True</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbert.inference.Smoother.convert_filter_to_smoother_state" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">convert_filter_to_smoother_state</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbert.inference.Smoother.smoother_prepare" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">smoother_prepare</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbert.inference.Smoother.smoother_combine" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">smoother_combine</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="cuthbert.inference.Smoother.associative" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">associative</span> <span class="o">=</span> <span class="kc">False</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbert.inference.SmootherPrepare" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SmootherPrepare</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+
+
+        <p>Protocol for preparing the state for the smoother.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbert.inference.SmootherPrepare.__call__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">filter_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Prepare the state for the smoother at the next time point.</p>
+<p>Converts <code>filter_state</code> with <code>model_inputs</code> (and any stochasticity) into a
+unified state object which can be combined with a state (of the same form)
+from the next time point with <code>SmootherCombine</code>.</p>
+<p>Remember smoothing iterates backwards in time.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">state</span> <span class="o">=</span> <span class="n">SmootherCombine</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">SmootherPrepare</span><span class="p">(</span><span class="n">filter_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="n">next_smoother_state</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>Note that the <code>model_inputs</code> here are different to <code>filter_state.model_inputs</code>.
+The <code>model_inputs</code> required here are for the transition from t to t+1.
+<code>filter_state.model_inputs</code> represents the transition from t-1 to t.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The state from the filter at the previous time point.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>model_inputs</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Model inputs for the transition from t to t+1.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>key</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            KeyArray = Array
+
+  
+      module-attribute
+   (cuthbertlib.types.KeyArray)" href="../../cuthbertlib_api/types/#cuthbertlib.types.KeyArray">KeyArray</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The key for the random number generator.
+Optional, as only used for stochastic inference methods</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTree = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTree)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTree">ArrayTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The state prepared for <code>SmootherCombine</code>,
+a NamedTuple with inference-specific fields.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbert/inference.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a>    <span class="n">filter_state</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a>    <span class="n">model_inputs</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a>    <span class="n">key</span><span class="p">:</span> <span class="n">KeyArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayTree</span><span class="p">:</span>
+</span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare the state for the smoother at the next time point.</span>
+</span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>
+</span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    Converts `filter_state` with `model_inputs` (and any stochasticity) into a</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">    unified state object which can be combined with a state (of the same form)</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">    from the next time point with `SmootherCombine`.</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>
+</span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">    Remember smoothing iterates backwards in time.</span>
+</span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>
+</span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="sd">    ```python</span>
+</span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    state = SmootherCombine(</span>
+</span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">        SmootherPrepare(filter_state, model_inputs, key), next_smoother_state</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">    )</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="sd">    ```</span>
+</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>
+</span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="sd">    Note that the `model_inputs` here are different to `filter_state.model_inputs`.</span>
+</span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">    The `model_inputs` required here are for the transition from t to t+1.</span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="sd">    `filter_state.model_inputs` represents the transition from t-1 to t.</span>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>
+</span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a><span class="sd">        filter_state: The state from the filter at the previous time point.</span>
+</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">        model_inputs: Model inputs for the transition from t to t+1.</span>
+</span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">        key: The key for the random number generator.</span>
+</span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">            Optional, as only used for stochastic inference methods</span>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a><span class="sd">        The state prepared for `SmootherCombine`,</span>
+</span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a><span class="sd">            a NamedTuple with inference-specific fields.</span>
+</span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>    <span class="o">...</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbert.inference.SmootherCombine" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SmootherCombine</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+
+
+        <p>Protocol for combining the next smoother state with the state prepared with latest model inputs.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbert.inference.SmootherCombine.__call__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">state_1</span><span class="p">,</span> <span class="n">state_2</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Combine the state from the next time point with the state from <code>SmootherPrepare</code>.</p>
+<p>Remember smoothing iterates backwards in time.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">state</span> <span class="o">=</span> <span class="n">SmootherCombine</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">SmootherPrepare</span><span class="p">(</span><span class="n">filter_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="n">next_smoother_state</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</span></code></pre></div>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state_1</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The state from <code>SmootherPrepare</code> for the current time point.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>state_2</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The state from the next time point.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTree = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTree)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTree">ArrayTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The combined smoother state, a NamedTuple with inference-specific fields.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbert/inference.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#__codelineno-0-128">128</a></span>
+<span class="normal"><a href="#__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#__codelineno-0-131">131</a></span>
+<span class="normal"><a href="#__codelineno-0-132">132</a></span>
+<span class="normal"><a href="#__codelineno-0-133">133</a></span>
+<span class="normal"><a href="#__codelineno-0-134">134</a></span>
+<span class="normal"><a href="#__codelineno-0-135">135</a></span>
+<span class="normal"><a href="#__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#__codelineno-0-140">140</a></span>
+<span class="normal"><a href="#__codelineno-0-141">141</a></span>
+<span class="normal"><a href="#__codelineno-0-142">142</a></span>
+<span class="normal"><a href="#__codelineno-0-143">143</a></span>
+<span class="normal"><a href="#__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#__codelineno-0-146">146</a></span>
+<span class="normal"><a href="#__codelineno-0-147">147</a></span>
+<span class="normal"><a href="#__codelineno-0-148">148</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-126"><a id="__codelineno-0-126" name="__codelineno-0-126"></a><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+</span><span id="__span-0-127"><a id="__codelineno-0-127" name="__codelineno-0-127"></a>    <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-0-128"><a id="__codelineno-0-128" name="__codelineno-0-128"></a>    <span class="n">state_1</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-129"><a id="__codelineno-0-129" name="__codelineno-0-129"></a>    <span class="n">state_2</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-130"><a id="__codelineno-0-130" name="__codelineno-0-130"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayTree</span><span class="p">:</span>
+</span><span id="__span-0-131"><a id="__codelineno-0-131" name="__codelineno-0-131"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine the state from the next time point with the state from `SmootherPrepare`.</span>
+</span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>
+</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="sd">    Remember smoothing iterates backwards in time.</span>
+</span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="sd">    ```python</span>
+</span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="sd">    state = SmootherCombine(</span>
+</span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a><span class="sd">        SmootherPrepare(filter_state, model_inputs, key), next_smoother_state</span>
+</span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="sd">    )</span>
+</span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="sd">    ```</span>
+</span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a>
+</span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="sd">        state_1: The state from `SmootherPrepare` for the current time point.</span>
+</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a><span class="sd">        state_2: The state from the next time point.</span>
+</span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>
+</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="sd">        The combined smoother state, a NamedTuple with inference-specific fields.</span>
+</span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-148"><a id="__codelineno-0-148" name="__codelineno-0-148"></a>    <span class="o">...</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="cuthbert.inference.ConvertFilterToSmootherState" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>ConvertFilterToSmootherState</code>
+
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+
+
+        <p>Protocol for converting a filter state to a smoother state.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cuthbert.inference.ConvertFilterToSmootherState.__call__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">filter_state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert the filter state to a smoother state.</p>
+<p>Useful for offline smoothing where the final filter state is statistically
+equivalent to the final smoother state.
+This function converts the filter state to the smoother state data structure.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The filter state.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>model_inputs</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTreeLike = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTreeLike)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTreeLike">ArrayTreeLike</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Only used to create an empty <code>model_inputs</code> tree
+(the values are ignored).
+Useful so that the final smoother state has the same structure as the rest.
+By default, <code>filter_state.model_inputs</code> is used. So this
+is only needed if the smoother <code>model_inputs</code> have a different tree
+structure to <code>filter_state.model_inputs</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>key</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            KeyArray = Array
+
+  
+      module-attribute
+   (cuthbertlib.types.KeyArray)" href="../../cuthbertlib_api/types/#cuthbertlib.types.KeyArray">KeyArray</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The key for the random number generator.
+Optional, as only used for stochastic inference methods</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ArrayTree = Any
+
+  
+      module-attribute
+   (cuthbertlib.types.ArrayTree)" href="../../cuthbertlib_api/types/#cuthbertlib.types.ArrayTree">ArrayTree</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The smoother state.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>cuthbert/inference.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#__codelineno-0-180">180</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+</span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a>    <span class="bp">self</span><span class="p">,</span>
+</span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a>    <span class="n">filter_state</span><span class="p">:</span> <span class="n">ArrayTreeLike</span><span class="p">,</span>
+</span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a>    <span class="n">model_inputs</span><span class="p">:</span> <span class="n">ArrayTreeLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="n">key</span><span class="p">:</span> <span class="n">KeyArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayTree</span><span class="p">:</span>
+</span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert the filter state to a smoother state.</span>
+</span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a>
+</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    Useful for offline smoothing where the final filter state is statistically</span>
+</span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    equivalent to the final smoother state.</span>
+</span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">    This function converts the filter state to the smoother state data structure.</span>
+</span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>
+</span><span id="__span-0-166"><a id="__codelineno-0-166" name="__codelineno-0-166"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-167"><a id="__codelineno-0-167" name="__codelineno-0-167"></a><span class="sd">        filter_state: The filter state.</span>
+</span><span id="__span-0-168"><a id="__codelineno-0-168" name="__codelineno-0-168"></a><span class="sd">        model_inputs: Only used to create an empty `model_inputs` tree</span>
+</span><span id="__span-0-169"><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="sd">            (the values are ignored).</span>
+</span><span id="__span-0-170"><a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">            Useful so that the final smoother state has the same structure as the rest.</span>
+</span><span id="__span-0-171"><a id="__codelineno-0-171" name="__codelineno-0-171"></a><span class="sd">            By default, `filter_state.model_inputs` is used. So this</span>
+</span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">            is only needed if the smoother `model_inputs` have a different tree</span>
+</span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">            structure to `filter_state.model_inputs`.</span>
+</span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">        key: The key for the random number generator.</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">            Optional, as only used for stochastic inference methods</span>
+</span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a>
+</span><span id="__span-0-177"><a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-178"><a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">        The smoother state.</span>
+</span><span id="__span-0-179"><a id="__codelineno-0-179" name="__codelineno-0-179"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-180"><a id="__codelineno-0-180" name="__codelineno-0-180"></a>    <span class="o">...</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

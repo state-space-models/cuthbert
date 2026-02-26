@@ -1,0 +1,1916 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/examples/kalman_tracking/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../temporal_parallelization_kalman/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Kalman Tracking - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#a-simple-kalman-filter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Kalman Tracking
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-sample-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate sample data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize the results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-sample-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate sample data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize the results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="a-simple-kalman-filter">A simple Kalman filter</h1>
+<p>Let's implement a Kalman filter with <code>cuthbert</code>. We'll use Example 6.8 from <a href="https://users.aalto.fi/~ssarkka/pub/bfs_book_2023_online.pdf">Särkka and Svensson (2023)</a>,
+where the goal is to track a car's position and velocity in 2D space at discrete time intervals from noisy measurements of its position.</p>
+<h3 id="setup-and-imports">Setup and imports</h3>
+<div id="kalman-imports" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-imports-1"><a id="__codelineno-kalman-imports-1" name="__codelineno-kalman-imports-1" href="#__codelineno-kalman-imports-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span><span class="p">,</span> <span class="n">jit</span><span class="p">,</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">jnp</span>
+</span><span id="__span-kalman-imports-2"><a id="__codelineno-kalman-imports-2" name="__codelineno-kalman-imports-2" href="#__codelineno-kalman-imports-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</span><span id="__span-kalman-imports-3"><a id="__codelineno-kalman-imports-3" name="__codelineno-kalman-imports-3" href="#__codelineno-kalman-imports-3"></a>
+</span><span id="__span-kalman-imports-4"><a id="__codelineno-kalman-imports-4" name="__codelineno-kalman-imports-4" href="#__codelineno-kalman-imports-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span>
+</span><span id="__span-kalman-imports-5"><a id="__codelineno-kalman-imports-5" name="__codelineno-kalman-imports-5" href="#__codelineno-kalman-imports-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">kalman</span>
+</span></code></pre></div>
+<h3 id="generate-sample-data">Generate sample data</h3>
+<p>We first simulate the system to generate a sequence of observations. The state vector represents the car's position and velocity: <span class="arithmatex">\(\textbf{x} = (x, y, \dot{x}, \dot{y})\)</span> where <span class="arithmatex">\((x, y)\)</span> is the car's position and <span class="arithmatex">\((\dot{x}, \dot{y})\)</span> its velocity.</p>
+<div id="kalman-generate-data" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-generate-data-1"><a id="__codelineno-kalman-generate-data-1" name="__codelineno-kalman-generate-data-1" href="#__codelineno-kalman-generate-data-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">generate_car_tracking_data</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+</span><span id="__span-kalman-generate-data-2"><a id="__codelineno-kalman-generate-data-2" name="__codelineno-kalman-generate-data-2" href="#__codelineno-kalman-generate-data-2"></a>    <span class="c1"># Model specification follows Example 6.8 from Särkka and Svensson (2023).</span>
+</span><span id="__span-kalman-generate-data-3"><a id="__codelineno-kalman-generate-data-3" name="__codelineno-kalman-generate-data-3" href="#__codelineno-kalman-generate-data-3"></a>    <span class="n">x_dim</span><span class="p">,</span> <span class="n">y_dim</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.1</span>
+</span><span id="__span-kalman-generate-data-4"><a id="__codelineno-kalman-generate-data-4" name="__codelineno-kalman-generate-data-4" href="#__codelineno-kalman-generate-data-4"></a>
+</span><span id="__span-kalman-generate-data-5"><a id="__codelineno-kalman-generate-data-5" name="__codelineno-kalman-generate-data-5" href="#__codelineno-kalman-generate-data-5"></a>    <span class="c1"># Initial state</span>
+</span><span id="__span-kalman-generate-data-6"><a id="__codelineno-kalman-generate-data-6" name="__codelineno-kalman-generate-data-6" href="#__codelineno-kalman-generate-data-6"></a>    <span class="n">m0</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">])</span>
+</span><span id="__span-kalman-generate-data-7"><a id="__codelineno-kalman-generate-data-7" name="__codelineno-kalman-generate-data-7" href="#__codelineno-kalman-generate-data-7"></a>    <span class="n">chol_P0</span> <span class="o">=</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">x_dim</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-8"><a id="__codelineno-kalman-generate-data-8" name="__codelineno-kalman-generate-data-8" href="#__codelineno-kalman-generate-data-8"></a>
+</span><span id="__span-kalman-generate-data-9"><a id="__codelineno-kalman-generate-data-9" name="__codelineno-kalman-generate-data-9" href="#__codelineno-kalman-generate-data-9"></a>    <span class="c1"># Dynamics model</span>
+</span><span id="__span-kalman-generate-data-10"><a id="__codelineno-kalman-generate-data-10" name="__codelineno-kalman-generate-data-10" href="#__codelineno-kalman-generate-data-10"></a>    <span class="n">F</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dt</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+</span><span id="__span-kalman-generate-data-11"><a id="__codelineno-kalman-generate-data-11" name="__codelineno-kalman-generate-data-11" href="#__codelineno-kalman-generate-data-11"></a>    <span class="n">q1_squared</span> <span class="o">=</span> <span class="mf">1.0</span>
+</span><span id="__span-kalman-generate-data-12"><a id="__codelineno-kalman-generate-data-12" name="__codelineno-kalman-generate-data-12" href="#__codelineno-kalman-generate-data-12"></a>    <span class="n">q2_squared</span> <span class="o">=</span> <span class="mf">1.0</span>
+</span><span id="__span-kalman-generate-data-13"><a id="__codelineno-kalman-generate-data-13" name="__codelineno-kalman-generate-data-13" href="#__codelineno-kalman-generate-data-13"></a>    <span class="n">Q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+</span><span id="__span-kalman-generate-data-14"><a id="__codelineno-kalman-generate-data-14" name="__codelineno-kalman-generate-data-14" href="#__codelineno-kalman-generate-data-14"></a>        <span class="p">[</span>
+</span><span id="__span-kalman-generate-data-15"><a id="__codelineno-kalman-generate-data-15" name="__codelineno-kalman-generate-data-15" href="#__codelineno-kalman-generate-data-15"></a>            <span class="p">[</span><span class="n">q1_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q1_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span id="__span-kalman-generate-data-16"><a id="__codelineno-kalman-generate-data-16" name="__codelineno-kalman-generate-data-16" href="#__codelineno-kalman-generate-data-16"></a>            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">q2_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q2_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
+</span><span id="__span-kalman-generate-data-17"><a id="__codelineno-kalman-generate-data-17" name="__codelineno-kalman-generate-data-17" href="#__codelineno-kalman-generate-data-17"></a>            <span class="p">[</span><span class="n">q1_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q1_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span id="__span-kalman-generate-data-18"><a id="__codelineno-kalman-generate-data-18" name="__codelineno-kalman-generate-data-18" href="#__codelineno-kalman-generate-data-18"></a>            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">q2_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q2_squared</span> <span class="o">*</span> <span class="n">dt</span><span class="p">],</span>
+</span><span id="__span-kalman-generate-data-19"><a id="__codelineno-kalman-generate-data-19" name="__codelineno-kalman-generate-data-19" href="#__codelineno-kalman-generate-data-19"></a>        <span class="p">]</span>
+</span><span id="__span-kalman-generate-data-20"><a id="__codelineno-kalman-generate-data-20" name="__codelineno-kalman-generate-data-20" href="#__codelineno-kalman-generate-data-20"></a>    <span class="p">)</span>
+</span><span id="__span-kalman-generate-data-21"><a id="__codelineno-kalman-generate-data-21" name="__codelineno-kalman-generate-data-21" href="#__codelineno-kalman-generate-data-21"></a>    <span class="n">chol_Q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-22"><a id="__codelineno-kalman-generate-data-22" name="__codelineno-kalman-generate-data-22" href="#__codelineno-kalman-generate-data-22"></a>
+</span><span id="__span-kalman-generate-data-23"><a id="__codelineno-kalman-generate-data-23" name="__codelineno-kalman-generate-data-23" href="#__codelineno-kalman-generate-data-23"></a>    <span class="c1"># Observation model</span>
+</span><span id="__span-kalman-generate-data-24"><a id="__codelineno-kalman-generate-data-24" name="__codelineno-kalman-generate-data-24" href="#__codelineno-kalman-generate-data-24"></a>    <span class="n">H</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+</span><span id="__span-kalman-generate-data-25"><a id="__codelineno-kalman-generate-data-25" name="__codelineno-kalman-generate-data-25" href="#__codelineno-kalman-generate-data-25"></a>    <span class="n">chol_R</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-26"><a id="__codelineno-kalman-generate-data-26" name="__codelineno-kalman-generate-data-26" href="#__codelineno-kalman-generate-data-26"></a>
+</span><span id="__span-kalman-generate-data-27"><a id="__codelineno-kalman-generate-data-27" name="__codelineno-kalman-generate-data-27" href="#__codelineno-kalman-generate-data-27"></a>    <span class="c1"># Simulate states and observations</span>
+</span><span id="__span-kalman-generate-data-28"><a id="__codelineno-kalman-generate-data-28" name="__codelineno-kalman-generate-data-28" href="#__codelineno-kalman-generate-data-28"></a>    <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+</span><span id="__span-kalman-generate-data-29"><a id="__codelineno-kalman-generate-data-29" name="__codelineno-kalman-generate-data-29" href="#__codelineno-kalman-generate-data-29"></a>    <span class="n">key</span><span class="p">,</span> <span class="n">state_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-30"><a id="__codelineno-kalman-generate-data-30" name="__codelineno-kalman-generate-data-30" href="#__codelineno-kalman-generate-data-30"></a>    <span class="n">x</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">+</span> <span class="n">chol_P0</span> <span class="o">@</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">state_key</span><span class="p">,</span> <span class="p">(</span><span class="n">x_dim</span><span class="p">,))</span>
+</span><span id="__span-kalman-generate-data-31"><a id="__codelineno-kalman-generate-data-31" name="__codelineno-kalman-generate-data-31" href="#__codelineno-kalman-generate-data-31"></a>    <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-32"><a id="__codelineno-kalman-generate-data-32" name="__codelineno-kalman-generate-data-32" href="#__codelineno-kalman-generate-data-32"></a>
+</span><span id="__span-kalman-generate-data-33"><a id="__codelineno-kalman-generate-data-33" name="__codelineno-kalman-generate-data-33" href="#__codelineno-kalman-generate-data-33"></a>    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+</span><span id="__span-kalman-generate-data-34"><a id="__codelineno-kalman-generate-data-34" name="__codelineno-kalman-generate-data-34" href="#__codelineno-kalman-generate-data-34"></a>        <span class="n">key</span><span class="p">,</span> <span class="n">state_key</span><span class="p">,</span> <span class="n">obs_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-35"><a id="__codelineno-kalman-generate-data-35" name="__codelineno-kalman-generate-data-35" href="#__codelineno-kalman-generate-data-35"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span> <span class="o">@</span> <span class="n">x</span> <span class="o">+</span> <span class="n">chol_Q</span> <span class="o">@</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">state_key</span><span class="p">,</span> <span class="p">(</span><span class="n">x_dim</span><span class="p">,))</span>
+</span><span id="__span-kalman-generate-data-36"><a id="__codelineno-kalman-generate-data-36" name="__codelineno-kalman-generate-data-36" href="#__codelineno-kalman-generate-data-36"></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">H</span> <span class="o">@</span> <span class="n">x</span> <span class="o">+</span> <span class="n">chol_R</span> <span class="o">@</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">obs_key</span><span class="p">,</span> <span class="p">(</span><span class="n">y_dim</span><span class="p">,))</span>
+</span><span id="__span-kalman-generate-data-37"><a id="__codelineno-kalman-generate-data-37" name="__codelineno-kalman-generate-data-37" href="#__codelineno-kalman-generate-data-37"></a>        <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-38"><a id="__codelineno-kalman-generate-data-38" name="__codelineno-kalman-generate-data-38" href="#__codelineno-kalman-generate-data-38"></a>        <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-39"><a id="__codelineno-kalman-generate-data-39" name="__codelineno-kalman-generate-data-39" href="#__codelineno-kalman-generate-data-39"></a>
+</span><span id="__span-kalman-generate-data-40"><a id="__codelineno-kalman-generate-data-40" name="__codelineno-kalman-generate-data-40" href="#__codelineno-kalman-generate-data-40"></a>    <span class="n">ys</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-41"><a id="__codelineno-kalman-generate-data-41" name="__codelineno-kalman-generate-data-41" href="#__codelineno-kalman-generate-data-41"></a>    <span class="n">true_states</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-42"><a id="__codelineno-kalman-generate-data-42" name="__codelineno-kalman-generate-data-42" href="#__codelineno-kalman-generate-data-42"></a>    <span class="n">c</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x_dim</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-43"><a id="__codelineno-kalman-generate-data-43" name="__codelineno-kalman-generate-data-43" href="#__codelineno-kalman-generate-data-43"></a>    <span class="n">d</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">y_dim</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-44"><a id="__codelineno-kalman-generate-data-44" name="__codelineno-kalman-generate-data-44" href="#__codelineno-kalman-generate-data-44"></a>
+</span><span id="__span-kalman-generate-data-45"><a id="__codelineno-kalman-generate-data-45" name="__codelineno-kalman-generate-data-45" href="#__codelineno-kalman-generate-data-45"></a>    <span class="k">return</span> <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">true_states</span>
+</span><span id="__span-kalman-generate-data-46"><a id="__codelineno-kalman-generate-data-46" name="__codelineno-kalman-generate-data-46" href="#__codelineno-kalman-generate-data-46"></a>
+</span><span id="__span-kalman-generate-data-47"><a id="__codelineno-kalman-generate-data-47" name="__codelineno-kalman-generate-data-47" href="#__codelineno-kalman-generate-data-47"></a><span class="c1"># Generate example data</span>
+</span><span id="__span-kalman-generate-data-48"><a id="__codelineno-kalman-generate-data-48" name="__codelineno-kalman-generate-data-48" href="#__codelineno-kalman-generate-data-48"></a><span class="n">key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+</span><span id="__span-kalman-generate-data-49"><a id="__codelineno-kalman-generate-data-49" name="__codelineno-kalman-generate-data-49" href="#__codelineno-kalman-generate-data-49"></a><span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">true_states</span> <span class="o">=</span> <span class="n">generate_car_tracking_data</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</span></code></pre></div>
+<p>The state-space model specification for using the Kalman filter in <code>cuthbert</code> is as follows:</p>
+<div class="arithmatex">\[\begin{align*}
+    x_{0} &amp; \sim \mathcal{N}(m_{0}, \mathrm{chol\_P}_{0} \times \mathrm{chol\_P}_{0}^{\top}), \\
+    x_{t+1} \mid x_{t} &amp; \sim \mathcal{N}(F x_{t} + c, \mathrm{chol\_Q} \times \mathrm{chol\_Q}^{\top}), \quad t \in \{0, 1, \ldots, T - 1\}, \\
+    y_{t} \mid x_{t} &amp; \sim \mathcal{N}(H x_{t} + d, \mathrm{chol\_R} \times \mathrm{chol\_R}^{\top}), \quad t \in \{1, \ldots, T\}.
+\end{align*}\]</div>
+<p>Note that instead of working with full covariance matrices, we work with their
+<em>square roots</em> or generalized Cholesky decompositions for improved numerical
+stability, denoted by the <code>chol_</code> prefix.</p>
+<h3 id="build-the-kalman-filter">Build the Kalman filter</h3>
+<p><code>cuthbert</code> uses a functional approach based on <strong>parameter extraction
+functions</strong> to build filters. This design pattern allows for flexible handling
+of time-varying parameters.</p>
+<h4 id="the-parameter-extraction-pattern">The Parameter Extraction Pattern</h4>
+<p>Instead of passing matrices directly, <code>kalman.build_filter()</code> takes three functions that extract the necessary parameters given a time index (or other model inputs):</p>
+<ul>
+<li><strong><code>get_init_params(model_inputs)</code></strong>: Returns initial state mean <code>m0</code> and noise Cholesky factor <code>chol_P0</code>.</li>
+<li><strong><code>get_dynamics_params(model_inputs)</code></strong>: Returns dynamics matrix <code>F</code>, bias term <code>c</code>, and process noise Cholesky factor <code>chol_Q</code>.</li>
+<li><strong><code>get_observation_params(model_inputs)</code></strong>: Returns observation matrix <code>H</code>, bias term <code>d</code>, observation noise Cholesky factor <code>chol_R</code>, and the actual observation <code>y</code>.</li>
+</ul>
+<p>This pattern separates the model specification from the filtering algorithm, making the code more modular and allowing the same filter to work with different parameterizations (time-varying, hierarchical, etc.).</p>
+<details>
+<summary>Understanding <code>model_inputs</code></summary>
+<p>The <code>model_inputs</code> parameter passed to each extraction function can be any
+<a href="https://docs.jax.dev/en/latest/pytrees.html">pytree</a> that helps identify what parameters to return.
+In the most common case, it's simply a time index, but it could be more complex data like
+hyperparameters or external covariates.</p>
+<p>In our car tracking example, <code>model_inputs</code> is just an array of time indices (0, 1, 2, ..., T),
+allowing each function to select the appropriate matrices for that time step. The filtering
+algorithm passes each element of the <code>model_inputs</code> array to the extraction functions in sequence.</p>
+</details>
+<p><strong>Important indexing note</strong>: The <code>get_observation_params</code> function uses
+<code>model_inputs - 1</code> to access observations since observations occur at <span class="arithmatex">\(t \in
+\{1, \dots, T\}\)</span> and <code>ys</code> is an array of length <span class="arithmatex">\(T\)</span>.</p>
+<div id="kalman-build-filter" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-build-filter-1"><a id="__codelineno-kalman-build-filter-1" name="__codelineno-kalman-build-filter-1" href="#__codelineno-kalman-build-filter-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_car_tracking_filter</span><span class="p">(</span><span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
+</span><span id="__span-kalman-build-filter-2"><a id="__codelineno-kalman-build-filter-2" name="__codelineno-kalman-build-filter-2" href="#__codelineno-kalman-build-filter-2"></a>
+</span><span id="__span-kalman-build-filter-3"><a id="__codelineno-kalman-build-filter-3" name="__codelineno-kalman-build-filter-3" href="#__codelineno-kalman-build-filter-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_init_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-kalman-build-filter-4"><a id="__codelineno-kalman-build-filter-4" name="__codelineno-kalman-build-filter-4" href="#__codelineno-kalman-build-filter-4"></a>        <span class="k">return</span> <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span>
+</span><span id="__span-kalman-build-filter-5"><a id="__codelineno-kalman-build-filter-5" name="__codelineno-kalman-build-filter-5" href="#__codelineno-kalman-build-filter-5"></a>
+</span><span id="__span-kalman-build-filter-6"><a id="__codelineno-kalman-build-filter-6" name="__codelineno-kalman-build-filter-6" href="#__codelineno-kalman-build-filter-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dynamics_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-kalman-build-filter-7"><a id="__codelineno-kalman-build-filter-7" name="__codelineno-kalman-build-filter-7" href="#__codelineno-kalman-build-filter-7"></a>        <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span>
+</span><span id="__span-kalman-build-filter-8"><a id="__codelineno-kalman-build-filter-8" name="__codelineno-kalman-build-filter-8" href="#__codelineno-kalman-build-filter-8"></a>
+</span><span id="__span-kalman-build-filter-9"><a id="__codelineno-kalman-build-filter-9" name="__codelineno-kalman-build-filter-9" href="#__codelineno-kalman-build-filter-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_observation_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-kalman-build-filter-10"><a id="__codelineno-kalman-build-filter-10" name="__codelineno-kalman-build-filter-10" href="#__codelineno-kalman-build-filter-10"></a>        <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys</span><span class="p">[</span><span class="n">model_inputs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-kalman-build-filter-11"><a id="__codelineno-kalman-build-filter-11" name="__codelineno-kalman-build-filter-11" href="#__codelineno-kalman-build-filter-11"></a>
+</span><span id="__span-kalman-build-filter-12"><a id="__codelineno-kalman-build-filter-12" name="__codelineno-kalman-build-filter-12" href="#__codelineno-kalman-build-filter-12"></a>    <span class="n">filter_obj</span> <span class="o">=</span> <span class="n">kalman</span><span class="o">.</span><span class="n">build_filter</span><span class="p">(</span>
+</span><span id="__span-kalman-build-filter-13"><a id="__codelineno-kalman-build-filter-13" name="__codelineno-kalman-build-filter-13" href="#__codelineno-kalman-build-filter-13"></a>        <span class="n">get_init_params</span><span class="p">,</span> <span class="n">get_dynamics_params</span><span class="p">,</span> <span class="n">get_observation_params</span>
+</span><span id="__span-kalman-build-filter-14"><a id="__codelineno-kalman-build-filter-14" name="__codelineno-kalman-build-filter-14" href="#__codelineno-kalman-build-filter-14"></a>    <span class="p">)</span>
+</span><span id="__span-kalman-build-filter-15"><a id="__codelineno-kalman-build-filter-15" name="__codelineno-kalman-build-filter-15" href="#__codelineno-kalman-build-filter-15"></a>    <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-kalman-build-filter-16"><a id="__codelineno-kalman-build-filter-16" name="__codelineno-kalman-build-filter-16" href="#__codelineno-kalman-build-filter-16"></a>    <span class="k">return</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span>
+</span><span id="__span-kalman-build-filter-17"><a id="__codelineno-kalman-build-filter-17" name="__codelineno-kalman-build-filter-17" href="#__codelineno-kalman-build-filter-17"></a>
+</span><span id="__span-kalman-build-filter-18"><a id="__codelineno-kalman-build-filter-18" name="__codelineno-kalman-build-filter-18" href="#__codelineno-kalman-build-filter-18"></a><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">build_car_tracking_filter</span><span class="p">(</span>
+</span><span id="__span-kalman-build-filter-19"><a id="__codelineno-kalman-build-filter-19" name="__codelineno-kalman-build-filter-19" href="#__codelineno-kalman-build-filter-19"></a>    <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys</span>
+</span><span id="__span-kalman-build-filter-20"><a id="__codelineno-kalman-build-filter-20" name="__codelineno-kalman-build-filter-20" href="#__codelineno-kalman-build-filter-20"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="run-the-kalman-filter">Run the Kalman filter</h3>
+<p>With the filter built, running the Kalman filter is now as simple as calling the <code>cuthbert.filter</code>
+function with our constructed filter object and model inputs:</p>
+<div id="kalman-run-filter" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-run-filter-1"><a id="__codelineno-kalman-run-filter-1" name="__codelineno-kalman-run-filter-1" href="#__codelineno-kalman-run-filter-1"></a><span class="c1"># Run the filter</span>
+</span><span id="__span-kalman-run-filter-2"><a id="__codelineno-kalman-run-filter-2" name="__codelineno-kalman-run-filter-2" href="#__codelineno-kalman-run-filter-2"></a><span class="n">filtered_states</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-kalman-run-filter-3"><a id="__codelineno-kalman-run-filter-3" name="__codelineno-kalman-run-filter-3" href="#__codelineno-kalman-run-filter-3"></a>
+</span><span id="__span-kalman-run-filter-4"><a id="__codelineno-kalman-run-filter-4" name="__codelineno-kalman-run-filter-4" href="#__codelineno-kalman-run-filter-4"></a><span class="c1"># Extract results</span>
+</span><span id="__span-kalman-run-filter-5"><a id="__codelineno-kalman-run-filter-5" name="__codelineno-kalman-run-filter-5" href="#__codelineno-kalman-run-filter-5"></a><span class="n">means</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">mean</span>  <span class="c1"># Posterior state means</span>
+</span><span id="__span-kalman-run-filter-6"><a id="__codelineno-kalman-run-filter-6" name="__codelineno-kalman-run-filter-6" href="#__codelineno-kalman-run-filter-6"></a><span class="n">chol_covs</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">chol_cov</span>  <span class="c1"># Cholesky factors of posterior covariances</span>
+</span><span id="__span-kalman-run-filter-7"><a id="__codelineno-kalman-run-filter-7" name="__codelineno-kalman-run-filter-7" href="#__codelineno-kalman-run-filter-7"></a><span class="n">log_normalizing_constant</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">log_normalizing_constant</span>  <span class="c1"># Log marginal likelihoods</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Temporal parallelization of the filter</p>
+<p>The <code>parallel=True</code> option enables <a href="https://ieeexplore.ieee.org/document/9013038">temporal parallelization</a>
+of the filter, which can significantly speed up computation for longer time
+series if a hardware accelerator (GPU or TPU) is available (from
+<span class="arithmatex">\(\mathcal{O}(T)\)</span> for the sequential filter to <span class="arithmatex">\(\mathcal{O}(\log T)\)</span> for the
+parallel filter). Our implementation is based on <a href="https://epubs-siam-org.libproxy.aalto.fi/doi/10.1137/23M156121X">Yaghoobi et al. (2025)</a>.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Just-in-time (JIT) compilation for repeated use</p>
+<p>If you need to run the filter multiple times (e.g., during parameter optimization), you can
+JIT-compile it for better performance with
+<a href="https://docs.jax.dev/en/latest/_autosummary/jax.jit.html"><code>jax.jit</code></a>. All functions in <code>cuthbert</code> are
+pure and designed to work seamlessly with JAX function transformations.</p>
+<div id="kalman-jit-example" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-jit-example-1"><a id="__codelineno-kalman-jit-example-1" name="__codelineno-kalman-jit-example-1" href="#__codelineno-kalman-jit-example-1"></a><span class="n">jitted_filter</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;filter_obj&#39;</span><span class="p">,</span> <span class="s1">&#39;parallel&#39;</span><span class="p">])</span>
+</span><span id="__span-kalman-jit-example-2"><a id="__codelineno-kalman-jit-example-2" name="__codelineno-kalman-jit-example-2" href="#__codelineno-kalman-jit-example-2"></a><span class="n">filtered_states</span> <span class="o">=</span> <span class="n">jitted_filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+<h3 id="visualize-the-results">Visualize the results</h3>
+<p>Now let's visualize how well our Kalman filter tracked the car's movement. The
+plot shows three key elements: the true trajectory (unknown in real
+applications), the noisy GPS measurements, and the filtered estimates of the
+car's position.</p>
+<details>
+<summary>Code to plot the results.</summary>
+<div id="kalman-plot" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-plot-1"><a id="__codelineno-kalman-plot-1" name="__codelineno-kalman-plot-1" href="#__codelineno-kalman-plot-1"></a><span class="n">true_pos</span> <span class="o">=</span> <span class="n">true_states</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+</span><span id="__span-kalman-plot-2"><a id="__codelineno-kalman-plot-2" name="__codelineno-kalman-plot-2" href="#__codelineno-kalman-plot-2"></a><span class="n">filtered_pos</span> <span class="o">=</span> <span class="n">means</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+</span><span id="__span-kalman-plot-3"><a id="__codelineno-kalman-plot-3" name="__codelineno-kalman-plot-3" href="#__codelineno-kalman-plot-3"></a>
+</span><span id="__span-kalman-plot-4"><a id="__codelineno-kalman-plot-4" name="__codelineno-kalman-plot-4" href="#__codelineno-kalman-plot-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</span><span id="__span-kalman-plot-5"><a id="__codelineno-kalman-plot-5" name="__codelineno-kalman-plot-5" href="#__codelineno-kalman-plot-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">true_pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">true_pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#2E86AB&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-kalman-plot-6"><a id="__codelineno-kalman-plot-6" name="__codelineno-kalman-plot-6" href="#__codelineno-kalman-plot-6"></a>        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;True trajectory&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-7"><a id="__codelineno-kalman-plot-7" name="__codelineno-kalman-plot-7" href="#__codelineno-kalman-plot-7"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">ys</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ys</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;#F24236&#39;</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;darkred&#39;</span><span class="p">,</span>
+</span><span id="__span-kalman-plot-8"><a id="__codelineno-kalman-plot-8" name="__codelineno-kalman-plot-8" href="#__codelineno-kalman-plot-8"></a>        <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Measurements&#39;</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-9"><a id="__codelineno-kalman-plot-9" name="__codelineno-kalman-plot-9" href="#__codelineno-kalman-plot-9"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filtered_pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">filtered_pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#F6AE2D&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-kalman-plot-10"><a id="__codelineno-kalman-plot-10" name="__codelineno-kalman-plot-10" href="#__codelineno-kalman-plot-10"></a>        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Filter estimate&#39;</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-11"><a id="__codelineno-kalman-plot-11" name="__codelineno-kalman-plot-11" href="#__codelineno-kalman-plot-11"></a>
+</span><span id="__span-kalman-plot-12"><a id="__codelineno-kalman-plot-12" name="__codelineno-kalman-plot-12" href="#__codelineno-kalman-plot-12"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-13"><a id="__codelineno-kalman-plot-13" name="__codelineno-kalman-plot-13" href="#__codelineno-kalman-plot-13"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-14"><a id="__codelineno-kalman-plot-14" name="__codelineno-kalman-plot-14" href="#__codelineno-kalman-plot-14"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-15"><a id="__codelineno-kalman-plot-15" name="__codelineno-kalman-plot-15" href="#__codelineno-kalman-plot-15"></a><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-16"><a id="__codelineno-kalman-plot-16" name="__codelineno-kalman-plot-16" href="#__codelineno-kalman-plot-16"></a><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-17"><a id="__codelineno-kalman-plot-17" name="__codelineno-kalman-plot-17" href="#__codelineno-kalman-plot-17"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-kalman-plot-18"><a id="__codelineno-kalman-plot-18" name="__codelineno-kalman-plot-18" href="#__codelineno-kalman-plot-18"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;docs/assets/car_tracking.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+</span><span id="__span-kalman-plot-19"><a id="__codelineno-kalman-plot-19" name="__codelineno-kalman-plot-19" href="#__codelineno-kalman-plot-19"></a><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></div>
+</details>
+<p><img alt="Car Tracking Results" src="../../assets/car_tracking.png" /></p>
+<details class="tip">
+<summary>Bonus: Handle missing observations</summary>
+<p><code>cuthbert</code> automatically handles missing data when observations contain NaN values:</p>
+<div id="kalman-bonus-missing" class="language-python highlight"><pre><span></span><code><span id="__span-kalman-bonus-missing-1"><a id="__codelineno-kalman-bonus-missing-1" name="__codelineno-kalman-bonus-missing-1" href="#__codelineno-kalman-bonus-missing-1"></a><span class="c1"># Create data with missing observations (simulate GPS outage)</span>
+</span><span id="__span-kalman-bonus-missing-2"><a id="__codelineno-kalman-bonus-missing-2" name="__codelineno-kalman-bonus-missing-2" href="#__codelineno-kalman-bonus-missing-2"></a><span class="n">ys_missing</span> <span class="o">=</span> <span class="n">ys</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>  <span class="c1"># Missing position observations during turn</span>
+</span><span id="__span-kalman-bonus-missing-3"><a id="__codelineno-kalman-bonus-missing-3" name="__codelineno-kalman-bonus-missing-3" href="#__codelineno-kalman-bonus-missing-3"></a>
+</span><span id="__span-kalman-bonus-missing-4"><a id="__codelineno-kalman-bonus-missing-4" name="__codelineno-kalman-bonus-missing-4" href="#__codelineno-kalman-bonus-missing-4"></a><span class="c1"># Rebuild filter with missing data</span>
+</span><span id="__span-kalman-bonus-missing-5"><a id="__codelineno-kalman-bonus-missing-5" name="__codelineno-kalman-bonus-missing-5" href="#__codelineno-kalman-bonus-missing-5"></a><span class="n">filter_obj_missing</span><span class="p">,</span> <span class="n">model_inputs_missing</span> <span class="o">=</span> <span class="n">build_car_tracking_filter</span><span class="p">(</span>
+</span><span id="__span-kalman-bonus-missing-6"><a id="__codelineno-kalman-bonus-missing-6" name="__codelineno-kalman-bonus-missing-6" href="#__codelineno-kalman-bonus-missing-6"></a>    <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">chol_Q</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">ys_missing</span>
+</span><span id="__span-kalman-bonus-missing-7"><a id="__codelineno-kalman-bonus-missing-7" name="__codelineno-kalman-bonus-missing-7" href="#__codelineno-kalman-bonus-missing-7"></a><span class="p">)</span>
+</span><span id="__span-kalman-bonus-missing-8"><a id="__codelineno-kalman-bonus-missing-8" name="__codelineno-kalman-bonus-missing-8" href="#__codelineno-kalman-bonus-missing-8"></a>
+</span><span id="__span-kalman-bonus-missing-9"><a id="__codelineno-kalman-bonus-missing-9" name="__codelineno-kalman-bonus-missing-9" href="#__codelineno-kalman-bonus-missing-9"></a><span class="c1"># Run filtering - cuthbert handles NaNs automatically</span>
+</span><span id="__span-kalman-bonus-missing-10"><a id="__codelineno-kalman-bonus-missing-10" name="__codelineno-kalman-bonus-missing-10" href="#__codelineno-kalman-bonus-missing-10"></a><span class="n">filtered_states_missing</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filter_obj_missing</span><span class="p">,</span> <span class="n">model_inputs_missing</span><span class="p">)</span>
+</span><span id="__span-kalman-bonus-missing-11"><a id="__codelineno-kalman-bonus-missing-11" name="__codelineno-kalman-bonus-missing-11" href="#__codelineno-kalman-bonus-missing-11"></a>
+</span><span id="__span-kalman-bonus-missing-12"><a id="__codelineno-kalman-bonus-missing-12" name="__codelineno-kalman-bonus-missing-12" href="#__codelineno-kalman-bonus-missing-12"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Successfully handled missing observations!&quot;</span><span class="p">)</span>
+</span><span id="__span-kalman-bonus-missing-13"><a id="__codelineno-kalman-bonus-missing-13" name="__codelineno-kalman-bonus-missing-13" href="#__codelineno-kalman-bonus-missing-13"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Missing observation period: steps 20-30 during the car&#39;s turn&quot;</span><span class="p">)</span>
+</span><span id="__span-kalman-bonus-missing-14"><a id="__codelineno-kalman-bonus-missing-14" name="__codelineno-kalman-bonus-missing-14" href="#__codelineno-kalman-bonus-missing-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Filter uncertainty automatically increased during GPS outage&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+</details>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Parameter extraction pattern</strong>: <code>cuthbert</code> uses a functional approach where
+  filters are built from parameter extraction functions, allowing flexible handling
+  of time-varying parameters and clean separation of model specification from
+  algorithm implementation.</li>
+<li><strong>Cholesky-based filtering</strong>: <code>cuthbert</code> works with Cholesky factors of covariance
+  matrices for improved numerical stability, avoiding direct covariance matrix
+  operations.</li>
+<li><strong>Temporal parallelization</strong>: The <code>parallel=True</code> option enables parallel-in-time
+  filtering, reducing complexity from <span class="arithmatex">\(\mathcal{O}(T)\)</span> to <span class="arithmatex">\(\mathcal{O}(\log T)\)</span> on
+  accelerators.</li>
+<li><strong>Automatic missing data handling</strong>: <code>cuthbert</code> automatically handles missing
+  observations (NaN values) without special configuration.</li>
+<li><strong>JAX integration</strong>: All <code>cuthbert</code> functions are pure and compatible with JAX
+  transformations like <code>jit</code>, <code>vmap</code>, and automatic differentiation.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong>Smoothing</strong>: Use <a href="../../cuthbert_api/smoothing/"><code>cuthbert.smoother</code></a> for
+  backward pass smoothing.</li>
+<li><strong>Parameter Learning</strong>: Combine with optimization libraries like
+  <a href="https://github.com/google-deepmind/optax"><code>optax</code></a>. Check out the <a href="../parameter_estimation_em/">parameter
+  estimation example</a> for more details.</li>
+<li><strong>Sequential Monte Carlo</strong>: Explore nonlinear and non-Gaussian filtering with
+  <code>cuthbert.smc</code>, check out the example on <a href="../online_stoch_vol/">online particle filtering and
+  prediction for a stochastic volatility model</a>.</li>
+<li><strong>Advanced Models</strong>: Check out an extended Kalman filter for a nonlinear
+  state-space model <a href="../../quickstart/">inferring latent football team skill
+  ratings</a>.</li>
+</ul>
+<!--- entangled-tangle-block
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">imports</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">generate</span><span class="o">-</span><span class="n">data</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">run</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">jit</span><span class="o">-</span><span class="n">example</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">plot</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="o">&lt;&lt;</span><span class="n">kalman</span><span class="o">-</span><span class="n">bonus</span><span class="o">-</span><span class="n">missing</span><span class="o">&gt;&gt;</span>
+</span></code></pre></div>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

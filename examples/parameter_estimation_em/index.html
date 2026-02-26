@@ -1,0 +1,2067 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/examples/parameter_estimation_em/">
+      
+      
+        <link rel="prev" href="../online_stoch_vol/">
+      
+      
+        <link rel="next" href="../dynamax_integration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Parameter Estimation with Expectation Maximization - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#parameter-estimation-with-expectation-maximization" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Parameter Estimation with Expectation Maximization
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#crash-course-on-em" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crash course on EM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#imports-and-data-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports and data loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameter-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameter specification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model definition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numerial-integration-for-the-m-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerial integration for the M-step
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-em" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run EM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#crash-course-on-em" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crash course on EM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#imports-and-data-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports and data loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameter-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameter specification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model definition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numerial-integration-for-the-m-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerial integration for the M-step
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-em" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run EM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="parameter-estimation-with-expectation-maximization">Parameter Estimation with Expectation Maximization</h1>
+<p>This is a tutorial on using <code>cuthbert</code> to perform parameter estimation in state-space models
+with the expectation-maximization (EM) algorithm (<a href="https://www.jstor.org/stable/2984875">Dempster et al. (1977)</a>).</p>
+<p>We use the example from experiment 14.6 in <a href="https://link.springer.com/book/10.1007/978-3-030-47845-2">Chopin and Papaspiliopoulos
+(2020)</a>, which
+is originally from <a href="https://doi.org/10.1523/JNEUROSCI.1586-08.2008">Temereanca et al. (2008)</a>.
+The state-space model is defined as follows:</p>
+<div class="arithmatex">\[
+\begin{align}
+    X_0 &amp; \sim N(0, \sigma^2), \\
+    X_t &amp; = \rho X_{t-1} + \sigma \xi_t, \qquad \xi_t \sim N(0, 1), \\
+    Y_t &amp; \sim \text{Binomial}(50, \textrm{logit\_inv}(X_t)), \\
+\end{align}
+\]</div>
+<p>where <span class="arithmatex">\(\textrm{logit\_inv}(x) = 1/(1 + e^{-x})\)</span>. The unknown static parameters are
+<span class="arithmatex">\((\rho, \sigma^{2}) \eqqcolon \theta\)</span>, where <span class="arithmatex">\(0 \leq \rho \leq 1\)</span> and <span class="arithmatex">\(\sigma \geq 0\)</span>.</p>
+<p>Given an observation
+sequence <span class="arithmatex">\(y_{1:T}\)</span>, our goal is to find the maximum likelihood estimate (MLE)</p>
+<div class="arithmatex">\[
+\theta_{\text{MLE}} = \text{arg max}_{\theta} \, p_{\theta}(y_{1:T}) = \text{arg max}_{\theta} \, \int p_{\theta}(x_{0:T}, y_{1:T}) \, \mathrm{d} x_{0:T}.
+\]</div>
+<h2 id="crash-course-on-em">Crash course on EM</h2>
+<p>The EM algorithm is used to find the MLE when the marginal likelihood
+<span class="arithmatex">\(p_{\theta}(y_{1:T})\)</span> is intractable. EM maximizes a lower bound on the log
+marginal likelihood known as the <em>evidence lower bound</em> (ELBO):</p>
+<div class="arithmatex">\[
+\begin{equation}
+Q(\theta; q) \coloneqq \int \log \frac{p_{\theta}(x_{0:T}, y_{1:T})}{q(x_{0:T})}
+  \, q(x_{0:T}) \, \mathrm{d} x_{0:T},
+\end{equation}
+\]</div>
+<p>where <span class="arithmatex">\(q\)</span> is an arbitrary probability distribution. The maximization is performed in two
+steps. In the <em>E-step</em>, we maximize <span class="arithmatex">\(Q(\theta, q)\)</span> with respect to <span class="arithmatex">\(q\)</span>, and the maximizer
+is known analytically to be the smoothing distribution
+<span class="arithmatex">\(q^{\star} \coloneqq p_{\theta}(x_{0:T} \mid y_{1:T})\)</span> (i.e. the posterior).
+Then, in the <em>M-step</em>, we maximize <span class="arithmatex">\(Q(\theta, q^{\star})\)</span> with respect to
+<span class="arithmatex">\(\theta\)</span>, and the maximizer is our current best guess of the MLE. This process
+is iterated until convergence.</p>
+<p>For more details on the use of EM for parameter estimation in state-space models, see
+section 14 in <a href="https://link.springer.com/book/10.1007/978-3-030-47845-2">Chopin and Papaspiliopoulos
+(2020)</a> or section 12 in
+<a href="https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf">Särkkä (2013)</a>.</p>
+<h2 id="imports-and-data-loading">Imports and data loading</h2>
+<p>We start by importing all the necessary modules, along with the experiment
+data from <a href="https://doi.org/10.1523/JNEUROSCI.1586-08.2008">Temereanca et al. (2008)</a>
+hosted in the <a href="https://github.com/nchopin/particles/"><code>particles</code></a>
+GitHub repository.</p>
+<p><div id="em-imports" class="language-python highlight"><pre><span></span><code><span id="__span-em-imports-1"><a id="__codelineno-em-imports-1" name="__codelineno-em-imports-1" href="#__codelineno-em-imports-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
+</span><span id="__span-em-imports-2"><a id="__codelineno-em-imports-2" name="__codelineno-em-imports-2" href="#__codelineno-em-imports-2"></a>
+</span><span id="__span-em-imports-3"><a id="__codelineno-em-imports-3" name="__codelineno-em-imports-3" href="#__codelineno-em-imports-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+</span><span id="__span-em-imports-4"><a id="__codelineno-em-imports-4" name="__codelineno-em-imports-4" href="#__codelineno-em-imports-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</span><span id="__span-em-imports-5"><a id="__codelineno-em-imports-5" name="__codelineno-em-imports-5" href="#__codelineno-em-imports-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">vmap</span>
+</span><span id="__span-em-imports-6"><a id="__codelineno-em-imports-6" name="__codelineno-em-imports-6" href="#__codelineno-em-imports-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+</span><span id="__span-em-imports-7"><a id="__codelineno-em-imports-7" name="__codelineno-em-imports-7" href="#__codelineno-em-imports-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">binom</span><span class="p">,</span> <span class="n">norm</span>
+</span><span id="__span-em-imports-8"><a id="__codelineno-em-imports-8" name="__codelineno-em-imports-8" href="#__codelineno-em-imports-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_csv</span>
+</span><span id="__span-em-imports-9"><a id="__codelineno-em-imports-9" name="__codelineno-em-imports-9" href="#__codelineno-em-imports-9"></a>
+</span><span id="__span-em-imports-10"><a id="__codelineno-em-imports-10" name="__codelineno-em-imports-10" href="#__codelineno-em-imports-10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span><span class="p">,</span> <span class="n">smoother</span>
+</span><span id="__span-em-imports-11"><a id="__codelineno-em-imports-11" name="__codelineno-em-imports-11" href="#__codelineno-em-imports-11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">moments</span>
+</span><span id="__span-em-imports-12"><a id="__codelineno-em-imports-12" name="__codelineno-em-imports-12" href="#__codelineno-em-imports-12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian.kalman</span><span class="w"> </span><span class="kn">import</span> <span class="n">KalmanSmootherState</span>
+</span><span id="__span-em-imports-13"><a id="__codelineno-em-imports-13" name="__codelineno-em-imports-13" href="#__codelineno-em-imports-13"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbertlib.quadrature.gauss_hermite</span><span class="w"> </span><span class="kn">import</span> <span class="n">weights</span>
+</span><span id="__span-em-imports-14"><a id="__codelineno-em-imports-14" name="__codelineno-em-imports-14" href="#__codelineno-em-imports-14"></a>
+</span><span id="__span-em-imports-15"><a id="__codelineno-em-imports-15" name="__codelineno-em-imports-15" href="#__codelineno-em-imports-15"></a><span class="c1"># Load observation data</span>
+</span><span id="__span-em-imports-16"><a id="__codelineno-em-imports-16" name="__codelineno-em-imports-16" href="#__codelineno-em-imports-16"></a><span class="n">csv_url</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/nchopin/particles/refs/heads/master/particles/datasets/thaldata.csv&quot;</span>
+</span><span id="__span-em-imports-17"><a id="__codelineno-em-imports-17" name="__codelineno-em-imports-17" href="#__codelineno-em-imports-17"></a><span class="n">data</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="n">csv_url</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-em-imports-18"><a id="__codelineno-em-imports-18" name="__codelineno-em-imports-18" href="#__codelineno-em-imports-18"></a><span class="n">data</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="__span-em-imports-19"><a id="__codelineno-em-imports-19" name="__codelineno-em-imports-19" href="#__codelineno-em-imports-19"></a><span class="c1"># Add dummy value for initial time step (cuthbert convention is no initial observation)</span>
+</span><span id="__span-em-imports-20"><a id="__codelineno-em-imports-20" name="__codelineno-em-imports-20" href="#__codelineno-em-imports-20"></a><span class="n">data</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">nan</span><span class="p">]),</span> <span class="n">data</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+</span></code></pre></div>
+Here we've added a <code>nan</code> at the start of the data to represent there being no
+observation at time <span class="arithmatex">\(t=0\)</span>. By setting the observation to <code>nan</code>, <code>cuthbert</code> will
+know to treat this observation as missing.</p>
+<h2 id="parameter-specification">Parameter specification</h2>
+<p>We then define a named tuple to hold the parameters, along with functions to
+convert between constrained and unconstrained formulations of <span class="arithmatex">\(\rho \in [0, 1]\)</span> and
+<span class="arithmatex">\(\sigma \in [0, \infty)\)</span>. Being able to constrain and unconstrain will be useful for
+when we perform the M-step optimization numerically where we always want to be working
+with unconstrained parameters in <span class="arithmatex">\([-\infty, \infty]\)</span>. For more information on
+constraint transforms for inference, see the <a href="https://mc-stan.org/docs/reference-manual/transforms.html">Stan reference manual</a>.</p>
+<p><div id="em-utils" class="language-python highlight"><pre><span></span><code><span id="__span-em-utils-1"><a id="__codelineno-em-utils-1" name="__codelineno-em-utils-1" href="#__codelineno-em-utils-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Params</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+</span><span id="__span-em-utils-2"><a id="__codelineno-em-utils-2" name="__codelineno-em-utils-2" href="#__codelineno-em-utils-2"></a>    <span class="n">rho</span><span class="p">:</span> <span class="n">Array</span>
+</span><span id="__span-em-utils-3"><a id="__codelineno-em-utils-3" name="__codelineno-em-utils-3" href="#__codelineno-em-utils-3"></a>    <span class="n">sigma</span><span class="p">:</span> <span class="n">Array</span>
+</span><span id="__span-em-utils-4"><a id="__codelineno-em-utils-4" name="__codelineno-em-utils-4" href="#__codelineno-em-utils-4"></a>
+</span><span id="__span-em-utils-5"><a id="__codelineno-em-utils-5" name="__codelineno-em-utils-5" href="#__codelineno-em-utils-5"></a>
+</span><span id="__span-em-utils-6"><a id="__codelineno-em-utils-6" name="__codelineno-em-utils-6" href="#__codelineno-em-utils-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">logit</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+</span><span id="__span-em-utils-7"><a id="__codelineno-em-utils-7" name="__codelineno-em-utils-7" href="#__codelineno-em-utils-7"></a>    <span class="c1"># Converts [0, 1] to [-inf, inf]</span>
+</span><span id="__span-em-utils-8"><a id="__codelineno-em-utils-8" name="__codelineno-em-utils-8" href="#__codelineno-em-utils-8"></a>    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
+</span><span id="__span-em-utils-9"><a id="__codelineno-em-utils-9" name="__codelineno-em-utils-9" href="#__codelineno-em-utils-9"></a>
+</span><span id="__span-em-utils-10"><a id="__codelineno-em-utils-10" name="__codelineno-em-utils-10" href="#__codelineno-em-utils-10"></a>
+</span><span id="__span-em-utils-11"><a id="__codelineno-em-utils-11" name="__codelineno-em-utils-11" href="#__codelineno-em-utils-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">logit_inv</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+</span><span id="__span-em-utils-12"><a id="__codelineno-em-utils-12" name="__codelineno-em-utils-12" href="#__codelineno-em-utils-12"></a>    <span class="c1"># Converts [-inf, inf] to [0, 1]</span>
+</span><span id="__span-em-utils-13"><a id="__codelineno-em-utils-13" name="__codelineno-em-utils-13" href="#__codelineno-em-utils-13"></a>    <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">))</span>
+</span><span id="__span-em-utils-14"><a id="__codelineno-em-utils-14" name="__codelineno-em-utils-14" href="#__codelineno-em-utils-14"></a>
+</span><span id="__span-em-utils-15"><a id="__codelineno-em-utils-15" name="__codelineno-em-utils-15" href="#__codelineno-em-utils-15"></a>
+</span><span id="__span-em-utils-16"><a id="__codelineno-em-utils-16" name="__codelineno-em-utils-16" href="#__codelineno-em-utils-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">constrain_params</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Params</span><span class="p">:</span>
+</span><span id="__span-em-utils-17"><a id="__codelineno-em-utils-17" name="__codelineno-em-utils-17" href="#__codelineno-em-utils-17"></a>    <span class="k">return</span> <span class="n">Params</span><span class="p">(</span>
+</span><span id="__span-em-utils-18"><a id="__codelineno-em-utils-18" name="__codelineno-em-utils-18" href="#__codelineno-em-utils-18"></a>        <span class="n">rho</span><span class="o">=</span><span class="n">logit_inv</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+</span><span id="__span-em-utils-19"><a id="__codelineno-em-utils-19" name="__codelineno-em-utils-19" href="#__codelineno-em-utils-19"></a>        <span class="n">sigma</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+</span><span id="__span-em-utils-20"><a id="__codelineno-em-utils-20" name="__codelineno-em-utils-20" href="#__codelineno-em-utils-20"></a>    <span class="p">)</span>
+</span><span id="__span-em-utils-21"><a id="__codelineno-em-utils-21" name="__codelineno-em-utils-21" href="#__codelineno-em-utils-21"></a>
+</span><span id="__span-em-utils-22"><a id="__codelineno-em-utils-22" name="__codelineno-em-utils-22" href="#__codelineno-em-utils-22"></a>
+</span><span id="__span-em-utils-23"><a id="__codelineno-em-utils-23" name="__codelineno-em-utils-23" href="#__codelineno-em-utils-23"></a><span class="k">def</span><span class="w"> </span><span class="nf">unconstrain_params</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+</span><span id="__span-em-utils-24"><a id="__codelineno-em-utils-24" name="__codelineno-em-utils-24" href="#__codelineno-em-utils-24"></a>    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">logit</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">sigma</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())])</span>
+</span></code></pre></div>
+Note that the unconstrained parameters are also converted to an array rather than
+named tuple. This is purely due to the limitations of the
+<a href="https://docs.jax.dev/en/latest/_autosummary/jax.scipy.optimize.minimize.html"><code>jax.scipy.optimize.minimize</code></a>
+function we will use that requires array input. If we instead used
+<a href="https://github.com/google-deepmind/optax"><code>optax</code></a> or another optimizer library, we
+could use a named tuple instead.</p>
+<h2 id="model-definition">Model definition</h2>
+<p>Since the SSM in (1)-(3) is nonlinear, the true posterior <span class="arithmatex">\(p_{\theta}(x_{0:T}
+\mid y_{1:T})\)</span> is not tractable, and so must be approximated for the E-step.
+We will use one of the Gaussian-approximated filters and smoothers
+provided in <code>cuthbert</code>, in particular the moment-based extended Kalman filter
+from <a href="../../cuthbert_api/gaussian/moments/"><code>cuthbert.gaussian.moments</code></a>.
+Let's build the filter and smoother objects below that correspond to the SSM:</p>
+<p><div id="em-model" class="language-python highlight"><pre><span></span><code><span id="__span-em-model-1"><a id="__codelineno-em-model-1" name="__codelineno-em-model-1" href="#__codelineno-em-model-1"></a><span class="c1"># Build model objects - this is where the model definition is encapsulated</span>
+</span><span id="__span-em-model-2"><a id="__codelineno-em-model-2" name="__codelineno-em-model-2" href="#__codelineno-em-model-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">model_factory</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Params</span><span class="p">):</span>
+</span><span id="__span-em-model-3"><a id="__codelineno-em-model-3" name="__codelineno-em-model-3" href="#__codelineno-em-model-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_init_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-em-model-4"><a id="__codelineno-em-model-4" name="__codelineno-em-model-4" href="#__codelineno-em-model-4"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]),</span> <span class="n">params</span><span class="o">.</span><span class="n">sigma</span>
+</span><span id="__span-em-model-5"><a id="__codelineno-em-model-5" name="__codelineno-em-model-5" href="#__codelineno-em-model-5"></a>
+</span><span id="__span-em-model-6"><a id="__codelineno-em-model-6" name="__codelineno-em-model-6" href="#__codelineno-em-model-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dynamics_moments</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="__span-em-model-7"><a id="__codelineno-em-model-7" name="__codelineno-em-model-7" href="#__codelineno-em-model-7"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">dynamics_mean_and_chol_cov_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-em-model-8"><a id="__codelineno-em-model-8" name="__codelineno-em-model-8" href="#__codelineno-em-model-8"></a>            <span class="n">mean_t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">model_inputs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+</span><span id="__span-em-model-9"><a id="__codelineno-em-model-9" name="__codelineno-em-model-9" href="#__codelineno-em-model-9"></a>            <span class="n">sd_t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">model_inputs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">params</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>
+</span><span id="__span-em-model-10"><a id="__codelineno-em-model-10" name="__codelineno-em-model-10" href="#__codelineno-em-model-10"></a>            <span class="k">return</span> <span class="n">mean_t</span><span class="p">,</span> <span class="n">sd_t</span>
+</span><span id="__span-em-model-11"><a id="__codelineno-em-model-11" name="__codelineno-em-model-11" href="#__codelineno-em-model-11"></a>
+</span><span id="__span-em-model-12"><a id="__codelineno-em-model-12" name="__codelineno-em-model-12" href="#__codelineno-em-model-12"></a>        <span class="k">return</span> <span class="n">dynamics_mean_and_chol_cov_func</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">mean</span>
+</span><span id="__span-em-model-13"><a id="__codelineno-em-model-13" name="__codelineno-em-model-13" href="#__codelineno-em-model-13"></a>
+</span><span id="__span-em-model-14"><a id="__codelineno-em-model-14" name="__codelineno-em-model-14" href="#__codelineno-em-model-14"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_observation_moments</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="__span-em-model-15"><a id="__codelineno-em-model-15" name="__codelineno-em-model-15" href="#__codelineno-em-model-15"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">observation_mean_and_chol_cov_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-em-model-16"><a id="__codelineno-em-model-16" name="__codelineno-em-model-16" href="#__codelineno-em-model-16"></a>            <span class="c1"># Binomial parameters</span>
+</span><span id="__span-em-model-17"><a id="__codelineno-em-model-17" name="__codelineno-em-model-17" href="#__codelineno-em-model-17"></a>            <span class="n">n</span> <span class="o">=</span> <span class="mi">50</span>
+</span><span id="__span-em-model-18"><a id="__codelineno-em-model-18" name="__codelineno-em-model-18" href="#__codelineno-em-model-18"></a>            <span class="n">p</span> <span class="o">=</span> <span class="n">logit_inv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-em-model-19"><a id="__codelineno-em-model-19" name="__codelineno-em-model-19" href="#__codelineno-em-model-19"></a>            <span class="n">mean</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">p</span>
+</span><span id="__span-em-model-20"><a id="__codelineno-em-model-20" name="__codelineno-em-model-20" href="#__codelineno-em-model-20"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+</span><span id="__span-em-model-21"><a id="__codelineno-em-model-21" name="__codelineno-em-model-21" href="#__codelineno-em-model-21"></a>            <span class="n">sd</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+</span><span id="__span-em-model-22"><a id="__codelineno-em-model-22" name="__codelineno-em-model-22" href="#__codelineno-em-model-22"></a>            <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sd</span>
+</span><span id="__span-em-model-23"><a id="__codelineno-em-model-23" name="__codelineno-em-model-23" href="#__codelineno-em-model-23"></a>
+</span><span id="__span-em-model-24"><a id="__codelineno-em-model-24" name="__codelineno-em-model-24" href="#__codelineno-em-model-24"></a>        <span class="k">return</span> <span class="p">(</span>
+</span><span id="__span-em-model-25"><a id="__codelineno-em-model-25" name="__codelineno-em-model-25" href="#__codelineno-em-model-25"></a>            <span class="n">observation_mean_and_chol_cov_func</span><span class="p">,</span>
+</span><span id="__span-em-model-26"><a id="__codelineno-em-model-26" name="__codelineno-em-model-26" href="#__codelineno-em-model-26"></a>            <span class="n">state</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+</span><span id="__span-em-model-27"><a id="__codelineno-em-model-27" name="__codelineno-em-model-27" href="#__codelineno-em-model-27"></a>            <span class="n">data</span><span class="p">[</span><span class="n">model_inputs</span><span class="p">],</span>
+</span><span id="__span-em-model-28"><a id="__codelineno-em-model-28" name="__codelineno-em-model-28" href="#__codelineno-em-model-28"></a>        <span class="p">)</span>
+</span><span id="__span-em-model-29"><a id="__codelineno-em-model-29" name="__codelineno-em-model-29" href="#__codelineno-em-model-29"></a>
+</span><span id="__span-em-model-30"><a id="__codelineno-em-model-30" name="__codelineno-em-model-30" href="#__codelineno-em-model-30"></a>    <span class="n">filter_obj</span> <span class="o">=</span> <span class="n">moments</span><span class="o">.</span><span class="n">build_filter</span><span class="p">(</span>
+</span><span id="__span-em-model-31"><a id="__codelineno-em-model-31" name="__codelineno-em-model-31" href="#__codelineno-em-model-31"></a>        <span class="n">get_init_params</span><span class="p">,</span>
+</span><span id="__span-em-model-32"><a id="__codelineno-em-model-32" name="__codelineno-em-model-32" href="#__codelineno-em-model-32"></a>        <span class="n">get_dynamics_moments</span><span class="p">,</span>
+</span><span id="__span-em-model-33"><a id="__codelineno-em-model-33" name="__codelineno-em-model-33" href="#__codelineno-em-model-33"></a>        <span class="n">get_observation_moments</span><span class="p">,</span>
+</span><span id="__span-em-model-34"><a id="__codelineno-em-model-34" name="__codelineno-em-model-34" href="#__codelineno-em-model-34"></a>        <span class="n">associative</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-em-model-35"><a id="__codelineno-em-model-35" name="__codelineno-em-model-35" href="#__codelineno-em-model-35"></a>    <span class="p">)</span>
+</span><span id="__span-em-model-36"><a id="__codelineno-em-model-36" name="__codelineno-em-model-36" href="#__codelineno-em-model-36"></a>    <span class="n">smoother_obj</span> <span class="o">=</span> <span class="n">moments</span><span class="o">.</span><span class="n">build_smoother</span><span class="p">(</span>
+</span><span id="__span-em-model-37"><a id="__codelineno-em-model-37" name="__codelineno-em-model-37" href="#__codelineno-em-model-37"></a>        <span class="n">get_dynamics_moments</span><span class="p">,</span> <span class="n">store_gain</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">store_chol_cov_given_next</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="__span-em-model-38"><a id="__codelineno-em-model-38" name="__codelineno-em-model-38" href="#__codelineno-em-model-38"></a>    <span class="p">)</span>
+</span><span id="__span-em-model-39"><a id="__codelineno-em-model-39" name="__codelineno-em-model-39" href="#__codelineno-em-model-39"></a>
+</span><span id="__span-em-model-40"><a id="__codelineno-em-model-40" name="__codelineno-em-model-40" href="#__codelineno-em-model-40"></a>    <span class="k">return</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">smoother_obj</span>
+</span><span id="__span-em-model-41"><a id="__codelineno-em-model-41" name="__codelineno-em-model-41" href="#__codelineno-em-model-41"></a>
+</span><span id="__span-em-model-42"><a id="__codelineno-em-model-42" name="__codelineno-em-model-42" href="#__codelineno-em-model-42"></a>
+</span><span id="__span-em-model-43"><a id="__codelineno-em-model-43" name="__codelineno-em-model-43" href="#__codelineno-em-model-43"></a><span class="c1"># Define model inputs</span>
+</span><span id="__span-em-model-44"><a id="__codelineno-em-model-44" name="__codelineno-em-model-44" href="#__codelineno-em-model-44"></a><span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="__span-em-model-45"><a id="__codelineno-em-model-45" name="__codelineno-em-model-45" href="#__codelineno-em-model-45"></a><span class="n">model_inputs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+</span></code></pre></div>
+Note that for the smoother we had to specify that we want to store the smoothing
+<code>gain</code> and <code>chol_cov_given_next</code> matrices in the smoother state. We'll need these later
+to compute integrals with respect to the joint smoothing distributions
+<span class="arithmatex">\(p(x_{t-1}, x_t | y_{1:T})\)</span> (by default <code>cuthbert.gaussian.moments</code> calculates them
+but doesn't store them).</p>
+<h2 id="numerial-integration-for-the-m-step">Numerial integration for the M-step</h2>
+<p>Now that we have a way to approximately solve the E-step (i.e. compute the
+smoothing distribution), we need to compute
+<span class="arithmatex">\(Q(\theta; q^{\star})\)</span> for the M-step. However, the integral in (4) is
+intractable, and hence must also be approximated. Conveniently, since we're
+using a Gaussian approximation for the posterior, we can use one of the
+Gaussian quadrature methods provided in <a href="../../cuthbertlib_api/quadrature/"><code>cuthbertlib.quadrature</code></a>
+to estimate the integral. Here we use the <a href="https://en.wikipedia.org/wiki/Gauss%E2%80%93Hermite_quadrature">Gauss-Hermite
+quadrature</a>
+method, available in <code>cuthbertlib.quadrature.gauss_hermite</code>.
+Note that since the optimizer we'll be using expects a loss function to <strong>minimize</strong>,
+we'll define the loss as the negative ELBO <span class="arithmatex">\(-Q(\theta, q^{\star})\)</span>. We'll also ignore
+the <span class="arithmatex">\(\log q(x_{0:T})\)</span> term inside the integral for the purposes of optimization since it
+doesn't depend on <span class="arithmatex">\(\theta\)</span>.</p>
+<div id="em-loss-fn" class="language-python highlight"><pre><span></span><code><span id="__span-em-loss-fn-1"><a id="__codelineno-em-loss-fn-1" name="__codelineno-em-loss-fn-1" href="#__codelineno-em-loss-fn-1"></a><span class="c1"># Define loss function for M-step as -Q</span>
+</span><span id="__span-em-loss-fn-2"><a id="__codelineno-em-loss-fn-2" name="__codelineno-em-loss-fn-2" href="#__codelineno-em-loss-fn-2"></a><span class="c1"># Use Gauss-Hermite quadrature to approximate the expectation</span>
+</span><span id="__span-em-loss-fn-3"><a id="__codelineno-em-loss-fn-3" name="__codelineno-em-loss-fn-3" href="#__codelineno-em-loss-fn-3"></a><span class="n">gauss_hermite_order</span> <span class="o">=</span> <span class="mi">10</span>
+</span><span id="__span-em-loss-fn-4"><a id="__codelineno-em-loss-fn-4" name="__codelineno-em-loss-fn-4" href="#__codelineno-em-loss-fn-4"></a><span class="n">quadrature_1d</span> <span class="o">=</span> <span class="n">weights</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">gauss_hermite_order</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-5"><a id="__codelineno-em-loss-fn-5" name="__codelineno-em-loss-fn-5" href="#__codelineno-em-loss-fn-5"></a><span class="n">quadrature_2d</span> <span class="o">=</span> <span class="n">weights</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">gauss_hermite_order</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-6"><a id="__codelineno-em-loss-fn-6" name="__codelineno-em-loss-fn-6" href="#__codelineno-em-loss-fn-6"></a>
+</span><span id="__span-em-loss-fn-7"><a id="__codelineno-em-loss-fn-7" name="__codelineno-em-loss-fn-7" href="#__codelineno-em-loss-fn-7"></a>
+</span><span id="__span-em-loss-fn-8"><a id="__codelineno-em-loss-fn-8" name="__codelineno-em-loss-fn-8" href="#__codelineno-em-loss-fn-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">loss_fn</span><span class="p">(</span><span class="n">unconstrained_params</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">ys</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="p">:</span> <span class="n">KalmanSmootherState</span><span class="p">):</span>
+</span><span id="__span-em-loss-fn-9"><a id="__codelineno-em-loss-fn-9" name="__codelineno-em-loss-fn-9" href="#__codelineno-em-loss-fn-9"></a>    <span class="n">params</span> <span class="o">=</span> <span class="n">constrain_params</span><span class="p">(</span><span class="n">unconstrained_params</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-10"><a id="__codelineno-em-loss-fn-10" name="__codelineno-em-loss-fn-10" href="#__codelineno-em-loss-fn-10"></a>
+</span><span id="__span-em-loss-fn-11"><a id="__codelineno-em-loss-fn-11" name="__codelineno-em-loss-fn-11" href="#__codelineno-em-loss-fn-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">loss_initial</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol_cov</span><span class="p">):</span>
+</span><span id="__span-em-loss-fn-12"><a id="__codelineno-em-loss-fn-12" name="__codelineno-em-loss-fn-12" href="#__codelineno-em-loss-fn-12"></a>        <span class="c1"># E_{p(x_0 | m, chol_cov)} [log N(x_0 | 0, params.sigma^2)]</span>
+</span><span id="__span-em-loss-fn-13"><a id="__codelineno-em-loss-fn-13" name="__codelineno-em-loss-fn-13" href="#__codelineno-em-loss-fn-13"></a>        <span class="n">sigma_points</span> <span class="o">=</span> <span class="n">quadrature_1d</span><span class="o">.</span><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol_cov</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-14"><a id="__codelineno-em-loss-fn-14" name="__codelineno-em-loss-fn-14" href="#__codelineno-em-loss-fn-14"></a>        <span class="c1"># points.shape=wm.shape=wc.shape=(gauss_hermite_order, 1)</span>
+</span><span id="__span-em-loss-fn-15"><a id="__codelineno-em-loss-fn-15" name="__codelineno-em-loss-fn-15" href="#__codelineno-em-loss-fn-15"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-16"><a id="__codelineno-em-loss-fn-16" name="__codelineno-em-loss-fn-16" href="#__codelineno-em-loss-fn-16"></a>            <span class="n">sigma_points</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-17"><a id="__codelineno-em-loss-fn-17" name="__codelineno-em-loss-fn-17" href="#__codelineno-em-loss-fn-17"></a>            <span class="n">norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-18"><a id="__codelineno-em-loss-fn-18" name="__codelineno-em-loss-fn-18" href="#__codelineno-em-loss-fn-18"></a>                <span class="n">sigma_points</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-19"><a id="__codelineno-em-loss-fn-19" name="__codelineno-em-loss-fn-19" href="#__codelineno-em-loss-fn-19"></a>                <span class="mf">0.0</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-20"><a id="__codelineno-em-loss-fn-20" name="__codelineno-em-loss-fn-20" href="#__codelineno-em-loss-fn-20"></a>                <span class="n">params</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-21"><a id="__codelineno-em-loss-fn-21" name="__codelineno-em-loss-fn-21" href="#__codelineno-em-loss-fn-21"></a>            <span class="p">),</span>
+</span><span id="__span-em-loss-fn-22"><a id="__codelineno-em-loss-fn-22" name="__codelineno-em-loss-fn-22" href="#__codelineno-em-loss-fn-22"></a>        <span class="p">)</span>
+</span><span id="__span-em-loss-fn-23"><a id="__codelineno-em-loss-fn-23" name="__codelineno-em-loss-fn-23" href="#__codelineno-em-loss-fn-23"></a>
+</span><span id="__span-em-loss-fn-24"><a id="__codelineno-em-loss-fn-24" name="__codelineno-em-loss-fn-24" href="#__codelineno-em-loss-fn-24"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">loss_dynamics</span><span class="p">(</span><span class="n">m_joint</span><span class="p">,</span> <span class="n">chol_cov_joint</span><span class="p">):</span>
+</span><span id="__span-em-loss-fn-25"><a id="__codelineno-em-loss-fn-25" name="__codelineno-em-loss-fn-25" href="#__codelineno-em-loss-fn-25"></a>        <span class="c1"># E_{p(x_{t-1}, x_t | m_joint, chol_cov_joint)} [log N(x_t | rho * x_{t-1}, params.sigma^2)]</span>
+</span><span id="__span-em-loss-fn-26"><a id="__codelineno-em-loss-fn-26" name="__codelineno-em-loss-fn-26" href="#__codelineno-em-loss-fn-26"></a>        <span class="n">sigma_points</span> <span class="o">=</span> <span class="n">quadrature_2d</span><span class="o">.</span><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m_joint</span><span class="p">,</span> <span class="n">chol_cov_joint</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-27"><a id="__codelineno-em-loss-fn-27" name="__codelineno-em-loss-fn-27" href="#__codelineno-em-loss-fn-27"></a>        <span class="c1"># points.shape=wm.shape=wc.shape=(gauss_hermite_order, 2)</span>
+</span><span id="__span-em-loss-fn-28"><a id="__codelineno-em-loss-fn-28" name="__codelineno-em-loss-fn-28" href="#__codelineno-em-loss-fn-28"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-29"><a id="__codelineno-em-loss-fn-29" name="__codelineno-em-loss-fn-29" href="#__codelineno-em-loss-fn-29"></a>            <span class="n">sigma_points</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-30"><a id="__codelineno-em-loss-fn-30" name="__codelineno-em-loss-fn-30" href="#__codelineno-em-loss-fn-30"></a>            <span class="n">norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-31"><a id="__codelineno-em-loss-fn-31" name="__codelineno-em-loss-fn-31" href="#__codelineno-em-loss-fn-31"></a>                <span class="n">sigma_points</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span id="__span-em-loss-fn-32"><a id="__codelineno-em-loss-fn-32" name="__codelineno-em-loss-fn-32" href="#__codelineno-em-loss-fn-32"></a>                <span class="n">sigma_points</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">params</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-33"><a id="__codelineno-em-loss-fn-33" name="__codelineno-em-loss-fn-33" href="#__codelineno-em-loss-fn-33"></a>                <span class="n">params</span><span class="o">.</span><span class="n">sigma</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+</span><span id="__span-em-loss-fn-34"><a id="__codelineno-em-loss-fn-34" name="__codelineno-em-loss-fn-34" href="#__codelineno-em-loss-fn-34"></a>            <span class="p">),</span>
+</span><span id="__span-em-loss-fn-35"><a id="__codelineno-em-loss-fn-35" name="__codelineno-em-loss-fn-35" href="#__codelineno-em-loss-fn-35"></a>        <span class="p">)</span>
+</span><span id="__span-em-loss-fn-36"><a id="__codelineno-em-loss-fn-36" name="__codelineno-em-loss-fn-36" href="#__codelineno-em-loss-fn-36"></a>
+</span><span id="__span-em-loss-fn-37"><a id="__codelineno-em-loss-fn-37" name="__codelineno-em-loss-fn-37" href="#__codelineno-em-loss-fn-37"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">loss_observation</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol_cov</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+</span><span id="__span-em-loss-fn-38"><a id="__codelineno-em-loss-fn-38" name="__codelineno-em-loss-fn-38" href="#__codelineno-em-loss-fn-38"></a>        <span class="c1"># E_{x_t | m, chol_cov)} [log Bin(y_t | 50, logit_inv(x_t))]</span>
+</span><span id="__span-em-loss-fn-39"><a id="__codelineno-em-loss-fn-39" name="__codelineno-em-loss-fn-39" href="#__codelineno-em-loss-fn-39"></a>        <span class="n">sigma_points</span> <span class="o">=</span> <span class="n">quadrature_1d</span><span class="o">.</span><span class="n">get_sigma_points</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">chol_cov</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-40"><a id="__codelineno-em-loss-fn-40" name="__codelineno-em-loss-fn-40" href="#__codelineno-em-loss-fn-40"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-41"><a id="__codelineno-em-loss-fn-41" name="__codelineno-em-loss-fn-41" href="#__codelineno-em-loss-fn-41"></a>            <span class="n">sigma_points</span><span class="o">.</span><span class="n">wm</span><span class="p">,</span>
+</span><span id="__span-em-loss-fn-42"><a id="__codelineno-em-loss-fn-42" name="__codelineno-em-loss-fn-42" href="#__codelineno-em-loss-fn-42"></a>            <span class="n">binom</span><span class="o">.</span><span class="n">logpmf</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">logit_inv</span><span class="p">(</span><span class="n">sigma_points</span><span class="o">.</span><span class="n">points</span><span class="p">)),</span>
+</span><span id="__span-em-loss-fn-43"><a id="__codelineno-em-loss-fn-43" name="__codelineno-em-loss-fn-43" href="#__codelineno-em-loss-fn-43"></a>        <span class="p">)</span>
+</span><span id="__span-em-loss-fn-44"><a id="__codelineno-em-loss-fn-44" name="__codelineno-em-loss-fn-44" href="#__codelineno-em-loss-fn-44"></a>
+</span><span id="__span-em-loss-fn-45"><a id="__codelineno-em-loss-fn-45" name="__codelineno-em-loss-fn-45" href="#__codelineno-em-loss-fn-45"></a>    <span class="n">joint_means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">smooth_dist</span><span class="o">.</span><span class="n">mean</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">smooth_dist</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span><span class="mi">1</span><span class="p">:]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-em-loss-fn-46"><a id="__codelineno-em-loss-fn-46" name="__codelineno-em-loss-fn-46" href="#__codelineno-em-loss-fn-46"></a>
+</span><span id="__span-em-loss-fn-47"><a id="__codelineno-em-loss-fn-47" name="__codelineno-em-loss-fn-47" href="#__codelineno-em-loss-fn-47"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">construct_joint_chol_cov</span><span class="p">(</span><span class="n">chol_cov_t_plus_1</span><span class="p">,</span> <span class="n">gain_t</span><span class="p">,</span> <span class="n">chol_cov_t_given_t_plus_1</span><span class="p">):</span>
+</span><span id="__span-em-loss-fn-48"><a id="__codelineno-em-loss-fn-48" name="__codelineno-em-loss-fn-48" href="#__codelineno-em-loss-fn-48"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">block</span><span class="p">(</span>
+</span><span id="__span-em-loss-fn-49"><a id="__codelineno-em-loss-fn-49" name="__codelineno-em-loss-fn-49" href="#__codelineno-em-loss-fn-49"></a>            <span class="p">[</span>
+</span><span id="__span-em-loss-fn-50"><a id="__codelineno-em-loss-fn-50" name="__codelineno-em-loss-fn-50" href="#__codelineno-em-loss-fn-50"></a>                <span class="p">[</span><span class="n">chol_cov_t_plus_1</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">chol_cov_t_plus_1</span><span class="p">)],</span>
+</span><span id="__span-em-loss-fn-51"><a id="__codelineno-em-loss-fn-51" name="__codelineno-em-loss-fn-51" href="#__codelineno-em-loss-fn-51"></a>                <span class="p">[</span><span class="n">gain_t</span> <span class="o">@</span> <span class="n">chol_cov_t_plus_1</span><span class="p">,</span> <span class="n">chol_cov_t_given_t_plus_1</span><span class="p">],</span>
+</span><span id="__span-em-loss-fn-52"><a id="__codelineno-em-loss-fn-52" name="__codelineno-em-loss-fn-52" href="#__codelineno-em-loss-fn-52"></a>            <span class="p">]</span>
+</span><span id="__span-em-loss-fn-53"><a id="__codelineno-em-loss-fn-53" name="__codelineno-em-loss-fn-53" href="#__codelineno-em-loss-fn-53"></a>        <span class="p">)</span>
+</span><span id="__span-em-loss-fn-54"><a id="__codelineno-em-loss-fn-54" name="__codelineno-em-loss-fn-54" href="#__codelineno-em-loss-fn-54"></a>
+</span><span id="__span-em-loss-fn-55"><a id="__codelineno-em-loss-fn-55" name="__codelineno-em-loss-fn-55" href="#__codelineno-em-loss-fn-55"></a>    <span class="n">joint_chol_covs</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">construct_joint_chol_cov</span><span class="p">)(</span>
+</span><span id="__span-em-loss-fn-56"><a id="__codelineno-em-loss-fn-56" name="__codelineno-em-loss-fn-56" href="#__codelineno-em-loss-fn-56"></a>        <span class="n">smooth_dist</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+</span><span id="__span-em-loss-fn-57"><a id="__codelineno-em-loss-fn-57" name="__codelineno-em-loss-fn-57" href="#__codelineno-em-loss-fn-57"></a>        <span class="n">smooth_dist</span><span class="o">.</span><span class="n">gain</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+</span><span id="__span-em-loss-fn-58"><a id="__codelineno-em-loss-fn-58" name="__codelineno-em-loss-fn-58" href="#__codelineno-em-loss-fn-58"></a>        <span class="n">smooth_dist</span><span class="o">.</span><span class="n">chol_cov_given_next</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+</span><span id="__span-em-loss-fn-59"><a id="__codelineno-em-loss-fn-59" name="__codelineno-em-loss-fn-59" href="#__codelineno-em-loss-fn-59"></a>    <span class="p">)</span>
+</span><span id="__span-em-loss-fn-60"><a id="__codelineno-em-loss-fn-60" name="__codelineno-em-loss-fn-60" href="#__codelineno-em-loss-fn-60"></a>
+</span><span id="__span-em-loss-fn-61"><a id="__codelineno-em-loss-fn-61" name="__codelineno-em-loss-fn-61" href="#__codelineno-em-loss-fn-61"></a>    <span class="n">total_loss</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="__span-em-loss-fn-62"><a id="__codelineno-em-loss-fn-62" name="__codelineno-em-loss-fn-62" href="#__codelineno-em-loss-fn-62"></a>        <span class="n">loss_initial</span><span class="p">(</span><span class="n">smooth_dist</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smooth_dist</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+</span><span id="__span-em-loss-fn-63"><a id="__codelineno-em-loss-fn-63" name="__codelineno-em-loss-fn-63" href="#__codelineno-em-loss-fn-63"></a>        <span class="o">+</span> <span class="n">vmap</span><span class="p">(</span><span class="n">loss_dynamics</span><span class="p">)(</span><span class="n">joint_means</span><span class="p">,</span> <span class="n">joint_chol_covs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</span><span id="__span-em-loss-fn-64"><a id="__codelineno-em-loss-fn-64" name="__codelineno-em-loss-fn-64" href="#__codelineno-em-loss-fn-64"></a>        <span class="o">+</span> <span class="n">vmap</span><span class="p">(</span><span class="n">loss_observation</span><span class="p">)(</span>
+</span><span id="__span-em-loss-fn-65"><a id="__codelineno-em-loss-fn-65" name="__codelineno-em-loss-fn-65" href="#__codelineno-em-loss-fn-65"></a>            <span class="n">smooth_dist</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">smooth_dist</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">ys</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span id="__span-em-loss-fn-66"><a id="__codelineno-em-loss-fn-66" name="__codelineno-em-loss-fn-66" href="#__codelineno-em-loss-fn-66"></a>        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</span><span id="__span-em-loss-fn-67"><a id="__codelineno-em-loss-fn-67" name="__codelineno-em-loss-fn-67" href="#__codelineno-em-loss-fn-67"></a>    <span class="p">)</span>
+</span><span id="__span-em-loss-fn-68"><a id="__codelineno-em-loss-fn-68" name="__codelineno-em-loss-fn-68" href="#__codelineno-em-loss-fn-68"></a>    <span class="k">return</span> <span class="o">-</span><span class="n">total_loss</span>
+</span></code></pre></div>
+<h2 id="run-em">Run EM</h2>
+<p>We now have all the building blocks necessary to perform EM. All that is left
+is to put the E and M-steps into a loop. In the code block below, we use the
+<a href="https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm">BFGS algorithm</a>
+provided by <code>jax.scipy.optimize.minimize</code> for the M-step for simplicity (the
+<a href="https://github.com/google-deepmind/optax"><code>optax</code></a> library provides several
+other optimizers which you might want to use in practice).</p>
+<div id="em-run-em" class="language-python highlight"><pre><span></span><code><span id="__span-em-run-em-1"><a id="__codelineno-em-run-em-1" name="__codelineno-em-run-em-1" href="#__codelineno-em-run-em-1"></a><span class="c1"># Initialize parameters</span>
+</span><span id="__span-em-run-em-2"><a id="__codelineno-em-run-em-2" name="__codelineno-em-run-em-2" href="#__codelineno-em-run-em-2"></a><span class="n">rho_init</span> <span class="o">=</span> <span class="mf">0.1</span>
+</span><span id="__span-em-run-em-3"><a id="__codelineno-em-run-em-3" name="__codelineno-em-run-em-3" href="#__codelineno-em-run-em-3"></a><span class="n">sig_init</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">**</span><span class="mf">0.5</span>
+</span><span id="__span-em-run-em-4"><a id="__codelineno-em-run-em-4" name="__codelineno-em-run-em-4" href="#__codelineno-em-run-em-4"></a><span class="n">params</span> <span class="o">=</span> <span class="n">Params</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rho_init</span><span class="p">]),</span> <span class="n">sigma</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sig_init</span><span class="p">]]))</span>
+</span><span id="__span-em-run-em-5"><a id="__codelineno-em-run-em-5" name="__codelineno-em-run-em-5" href="#__codelineno-em-run-em-5"></a><span class="n">params_track</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">params</span><span class="p">)</span>
+</span><span id="__span-em-run-em-6"><a id="__codelineno-em-run-em-6" name="__codelineno-em-run-em-6" href="#__codelineno-em-run-em-6"></a><span class="n">log_marginal_likelihood_track</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-em-run-em-7"><a id="__codelineno-em-run-em-7" name="__codelineno-em-run-em-7" href="#__codelineno-em-run-em-7"></a><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">30</span>
+</span><span id="__span-em-run-em-8"><a id="__codelineno-em-run-em-8" name="__codelineno-em-run-em-8" href="#__codelineno-em-run-em-8"></a>
+</span><span id="__span-em-run-em-9"><a id="__codelineno-em-run-em-9" name="__codelineno-em-run-em-9" href="#__codelineno-em-run-em-9"></a><span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+</span><span id="__span-em-run-em-10"><a id="__codelineno-em-run-em-10" name="__codelineno-em-run-em-10" href="#__codelineno-em-run-em-10"></a>    <span class="n">filter_obj</span><span class="p">,</span> <span class="n">smoother_obj</span> <span class="o">=</span> <span class="n">model_factory</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span id="__span-em-run-em-11"><a id="__codelineno-em-run-em-11" name="__codelineno-em-run-em-11" href="#__codelineno-em-run-em-11"></a>    <span class="n">filtered_states</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">)</span>
+</span><span id="__span-em-run-em-12"><a id="__codelineno-em-run-em-12" name="__codelineno-em-run-em-12" href="#__codelineno-em-run-em-12"></a>    <span class="n">log_marginal_likelihood_track</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filtered_states</span><span class="o">.</span><span class="n">log_normalizing_constant</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-em-run-em-13"><a id="__codelineno-em-run-em-13" name="__codelineno-em-run-em-13" href="#__codelineno-em-run-em-13"></a>    <span class="n">smoother_states</span> <span class="o">=</span> <span class="n">smoother</span><span class="p">(</span><span class="n">smoother_obj</span><span class="p">,</span> <span class="n">filtered_states</span><span class="p">)</span>
+</span><span id="__span-em-run-em-14"><a id="__codelineno-em-run-em-14" name="__codelineno-em-run-em-14" href="#__codelineno-em-run-em-14"></a>
+</span><span id="__span-em-run-em-15"><a id="__codelineno-em-run-em-15" name="__codelineno-em-run-em-15" href="#__codelineno-em-run-em-15"></a>    <span class="n">optim_result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+</span><span id="__span-em-run-em-16"><a id="__codelineno-em-run-em-16" name="__codelineno-em-run-em-16" href="#__codelineno-em-run-em-16"></a>        <span class="n">loss_fn</span><span class="p">,</span>
+</span><span id="__span-em-run-em-17"><a id="__codelineno-em-run-em-17" name="__codelineno-em-run-em-17" href="#__codelineno-em-run-em-17"></a>        <span class="n">unconstrain_params</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
+</span><span id="__span-em-run-em-18"><a id="__codelineno-em-run-em-18" name="__codelineno-em-run-em-18" href="#__codelineno-em-run-em-18"></a>        <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">smoother_states</span><span class="p">),</span>
+</span><span id="__span-em-run-em-19"><a id="__codelineno-em-run-em-19" name="__codelineno-em-run-em-19" href="#__codelineno-em-run-em-19"></a>        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span>
+</span><span id="__span-em-run-em-20"><a id="__codelineno-em-run-em-20" name="__codelineno-em-run-em-20" href="#__codelineno-em-run-em-20"></a>    <span class="p">)</span>
+</span><span id="__span-em-run-em-21"><a id="__codelineno-em-run-em-21" name="__codelineno-em-run-em-21" href="#__codelineno-em-run-em-21"></a>    <span class="n">params</span> <span class="o">=</span> <span class="n">constrain_params</span><span class="p">(</span><span class="n">optim_result</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-em-run-em-22"><a id="__codelineno-em-run-em-22" name="__codelineno-em-run-em-22" href="#__codelineno-em-run-em-22"></a>    <span class="n">params_track</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+</span><span id="__span-em-run-em-23"><a id="__codelineno-em-run-em-23" name="__codelineno-em-run-em-23" href="#__codelineno-em-run-em-23"></a>        <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="kc">None</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">params_track</span><span class="p">,</span> <span class="n">params</span>
+</span><span id="__span-em-run-em-24"><a id="__codelineno-em-run-em-24" name="__codelineno-em-run-em-24" href="#__codelineno-em-run-em-24"></a>    <span class="p">)</span>
+</span><span id="__span-em-run-em-25"><a id="__codelineno-em-run-em-25" name="__codelineno-em-run-em-25" href="#__codelineno-em-run-em-25"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_epochs</span><span class="si">}</span><span class="s2">: log marginal likelihood = </span><span class="si">{</span><span class="n">log_marginal_likelihood_track</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>All done! We can now visualize the learning curve with some plots.</p>
+<details>
+<summary>Code to plot the results.</summary>
+<div id="em-plots" class="language-python highlight"><pre><span></span><code><span id="__span-em-plots-1"><a id="__codelineno-em-plots-1" name="__codelineno-em-plots-1" href="#__codelineno-em-plots-1"></a><span class="c1"># Plot log likelihood</span>
+</span><span id="__span-em-plots-2"><a id="__codelineno-em-plots-2" name="__codelineno-em-plots-2" href="#__codelineno-em-plots-2"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</span><span id="__span-em-plots-3"><a id="__codelineno-em-plots-3" name="__codelineno-em-plots-3" href="#__codelineno-em-plots-3"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">log_marginal_likelihood_track</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Log likelihood&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-4"><a id="__codelineno-em-plots-4" name="__codelineno-em-plots-4" href="#__codelineno-em-plots-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Epoch&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-5"><a id="__codelineno-em-plots-5" name="__codelineno-em-plots-5" href="#__codelineno-em-plots-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Log likelihood&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-6"><a id="__codelineno-em-plots-6" name="__codelineno-em-plots-6" href="#__codelineno-em-plots-6"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</span><span id="__span-em-plots-7"><a id="__codelineno-em-plots-7" name="__codelineno-em-plots-7" href="#__codelineno-em-plots-7"></a><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;How the marginal likelihood improves over iterations&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-8"><a id="__codelineno-em-plots-8" name="__codelineno-em-plots-8" href="#__codelineno-em-plots-8"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;docs/assets/em_log_likelihood.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="__span-em-plots-9"><a id="__codelineno-em-plots-9" name="__codelineno-em-plots-9" href="#__codelineno-em-plots-9"></a>
+</span><span id="__span-em-plots-10"><a id="__codelineno-em-plots-10" name="__codelineno-em-plots-10" href="#__codelineno-em-plots-10"></a><span class="c1"># Plot parameters</span>
+</span><span id="__span-em-plots-11"><a id="__codelineno-em-plots-11" name="__codelineno-em-plots-11" href="#__codelineno-em-plots-11"></a><span class="n">true_mle</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.9981</span><span class="p">,</span> <span class="mf">0.1089</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="__span-em-plots-12"><a id="__codelineno-em-plots-12" name="__codelineno-em-plots-12" href="#__codelineno-em-plots-12"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</span><span id="__span-em-plots-13"><a id="__codelineno-em-plots-13" name="__codelineno-em-plots-13" href="#__codelineno-em-plots-13"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+</span><span id="__span-em-plots-14"><a id="__codelineno-em-plots-14" name="__codelineno-em-plots-14" href="#__codelineno-em-plots-14"></a>    <span class="n">params_track</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+</span><span id="__span-em-plots-15"><a id="__codelineno-em-plots-15" name="__codelineno-em-plots-15" href="#__codelineno-em-plots-15"></a>    <span class="n">params_track</span><span class="o">.</span><span class="n">sigma</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+</span><span id="__span-em-plots-16"><a id="__codelineno-em-plots-16" name="__codelineno-em-plots-16" href="#__codelineno-em-plots-16"></a>    <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+</span><span id="__span-em-plots-17"><a id="__codelineno-em-plots-17" name="__codelineno-em-plots-17" href="#__codelineno-em-plots-17"></a>    <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+</span><span id="__span-em-plots-18"><a id="__codelineno-em-plots-18" name="__codelineno-em-plots-18" href="#__codelineno-em-plots-18"></a>    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;EM&quot;</span><span class="p">,</span>
+</span><span id="__span-em-plots-19"><a id="__codelineno-em-plots-19" name="__codelineno-em-plots-19" href="#__codelineno-em-plots-19"></a>    <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-em-plots-20"><a id="__codelineno-em-plots-20" name="__codelineno-em-plots-20" href="#__codelineno-em-plots-20"></a><span class="p">)</span>
+</span><span id="__span-em-plots-21"><a id="__codelineno-em-plots-21" name="__codelineno-em-plots-21" href="#__codelineno-em-plots-21"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+</span><span id="__span-em-plots-22"><a id="__codelineno-em-plots-22" name="__codelineno-em-plots-22" href="#__codelineno-em-plots-22"></a>    <span class="n">true_mle</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">true_mle</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;True MLE&quot;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span>
+</span><span id="__span-em-plots-23"><a id="__codelineno-em-plots-23" name="__codelineno-em-plots-23" href="#__codelineno-em-plots-23"></a><span class="p">)</span>
+</span><span id="__span-em-plots-24"><a id="__codelineno-em-plots-24" name="__codelineno-em-plots-24" href="#__codelineno-em-plots-24"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-25"><a id="__codelineno-em-plots-25" name="__codelineno-em-plots-25" href="#__codelineno-em-plots-25"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-26"><a id="__codelineno-em-plots-26" name="__codelineno-em-plots-26" href="#__codelineno-em-plots-26"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</span><span id="__span-em-plots-27"><a id="__codelineno-em-plots-27" name="__codelineno-em-plots-27" href="#__codelineno-em-plots-27"></a><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;EM iterates compared to the true MLE&quot;</span><span class="p">)</span>
+</span><span id="__span-em-plots-28"><a id="__codelineno-em-plots-28" name="__codelineno-em-plots-28" href="#__codelineno-em-plots-28"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;docs/assets/em_parameters.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span></code></pre></div>
+</details>
+<p><img alt="Log marginal likelihood learning curve" src="../../assets/em_log_likelihood.png" /></p>
+<p><img alt="How the parameter evolves with training" src="../../assets/em_parameters.png" /></p>
+<p>We know the true MLE in this example (marked in red in the above figure). Note
+that EM converges to the vicinity of the true value but not exactly, because
+both our E and M-steps are approximated. Both these approximations can be
+improved, say by replacing the Gaussian-approximated filter and smoother with
+asymptotically unbiased particle approximations (see
+<a href="../../cuthbert_api/smc/"><code>cuthbert.smc</code></a>), or by
+increasing the order of the Gauss-Hermite quadrature.</p>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>EM algorithm integration</strong>: <code>cuthbert</code>'s filtering and smoothing capabilities
+  integrate seamlessly with the EM algorithm for parameter estimation in
+  state-space models.</li>
+<li><strong>Gaussian approximation</strong>: The moment-based extended Kalman filter provides
+  an efficient Gaussian approximation to the intractable posterior, enabling
+  tractable E-steps.</li>
+<li><strong>Quadrature for M-step</strong>: Gaussian quadrature methods from
+  <code>cuthbertlib.quadrature</code> enable efficient approximation of the M-step
+  integrals when using Gaussian approximations.</li>
+<li><strong>Flexible parameter constraints</strong>: The constraint/unconstraint pattern allows
+  optimization in unconstrained space while maintaining parameter bounds (e.g.,
+  <span class="arithmatex">\(\rho \in [0,1]\)</span>, <span class="arithmatex">\(\sigma \geq 0\)</span>).</li>
+<li><strong>Approximate inference</strong>: Both E and M-steps use approximations, but the
+  approximations can be improved by using particle filters/smoothers or
+  higher-order quadrature.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong>Particle-based EM</strong>: Replace the Gaussian approximation with particle filters
+  and smoothers from <a href="../../cuthbert_api/smc/"><code>cuthbert.smc</code></a> for
+  asymptotically unbiased parameter estimates.</li>
+<li><strong>Other optimization methods</strong>: Explore gradient-based optimization with
+  <a href="https://github.com/google-deepmind/optax"><code>optax</code></a> for the M-step, or use
+  stochastic gradient EM for large datasets.</li>
+<li><strong>More examples</strong>: Check out other <a href="../">examples</a> including <a href="../online_stoch_vol/">online
+  particle filtering</a> and <a href="../kalman_tracking/">Kalman
+  tracking</a>.</li>
+</ul>
+<!--- entangled-tangle-block
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">imports</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">utils</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">model</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">loss</span><span class="o">-</span><span class="n">fn</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">run</span><span class="o">-</span><span class="n">em</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="o">&lt;&lt;</span><span class="n">em</span><span class="o">-</span><span class="n">plots</span><span class="o">&gt;&gt;</span>
+</span></code></pre></div>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

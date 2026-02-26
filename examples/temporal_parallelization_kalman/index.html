@@ -1,0 +1,1791 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/examples/temporal_parallelization_kalman/">
+      
+      
+        <link rel="prev" href="../kalman_tracking/">
+      
+      
+        <link rel="next" href="../online_stoch_vol/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Temporally-Parallelized Kalman Filter - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#temporally-parallelized-kalman-filter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Temporally-Parallelized Kalman Filter
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Everything
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-everything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Everything
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="temporally-parallelized-kalman-filter">Temporally-Parallelized Kalman Filter</h1>
+<p>In <code>cuthbert</code>, we provide an implementation of the Kalman filter that can be
+executed in parallel across time steps. For a problem with <span class="arithmatex">\(T\)</span> time steps, if
+there are <span class="arithmatex">\(T\)</span> available parallel workers, this implementation achieves
+logarithmic time complexity <span class="arithmatex">\(\mathcal{O}(\log(T))\)</span> as opposed to the standard
+linear time complexity, as shown in <a href="https://doi.org/10.1109/TAC.2020.2976316">Särkka and Garcia-Fernández</a>. Users can decide whether to run the filter in parallel
+via the <code>parallel</code> argument to the <a class="autorefs autorefs-internal" title="            filter(filter_obj, model_inputs, parallel=False, key=None)" href="../../cuthbert_api/filtering/#cuthbert.filtering.filter"><code>filter</code></a>
+function. In this example, we demonstrate the usage and performance of the
+temporally-parallelized Kalman filter.</p>
+<h2 id="setup-and-imports">Setup and imports</h2>
+<p>We first import the necessary libraries and specify a linear-Gaussian
+state-space model. We use a helper function called <code>generate_lgssm</code> to create
+example model parameters and observations, and then build the Kalman filter
+object like we covered in the <a href="../kalman_tracking/">Kalman tracking example</a>.</p>
+<div id="parallel-kalman-setup" class="language-python highlight"><pre><span></span><code><span id="__span-parallel-kalman-setup-1"><a id="__codelineno-parallel-kalman-setup-1" name="__codelineno-parallel-kalman-setup-1" href="#__codelineno-parallel-kalman-setup-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">timeit</span>
+</span><span id="__span-parallel-kalman-setup-2"><a id="__codelineno-parallel-kalman-setup-2" name="__codelineno-parallel-kalman-setup-2" href="#__codelineno-parallel-kalman-setup-2"></a>
+</span><span id="__span-parallel-kalman-setup-3"><a id="__codelineno-parallel-kalman-setup-3" name="__codelineno-parallel-kalman-setup-3" href="#__codelineno-parallel-kalman-setup-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+</span><span id="__span-parallel-kalman-setup-4"><a id="__codelineno-parallel-kalman-setup-4" name="__codelineno-parallel-kalman-setup-4" href="#__codelineno-parallel-kalman-setup-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+</span><span id="__span-parallel-kalman-setup-5"><a id="__codelineno-parallel-kalman-setup-5" name="__codelineno-parallel-kalman-setup-5" href="#__codelineno-parallel-kalman-setup-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span id="__span-parallel-kalman-setup-6"><a id="__codelineno-parallel-kalman-setup-6" name="__codelineno-parallel-kalman-setup-6" href="#__codelineno-parallel-kalman-setup-6"></a>
+</span><span id="__span-parallel-kalman-setup-7"><a id="__codelineno-parallel-kalman-setup-7" name="__codelineno-parallel-kalman-setup-7" href="#__codelineno-parallel-kalman-setup-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span>
+</span><span id="__span-parallel-kalman-setup-8"><a id="__codelineno-parallel-kalman-setup-8" name="__codelineno-parallel-kalman-setup-8" href="#__codelineno-parallel-kalman-setup-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">kalman</span>
+</span><span id="__span-parallel-kalman-setup-9"><a id="__codelineno-parallel-kalman-setup-9" name="__codelineno-parallel-kalman-setup-9" href="#__codelineno-parallel-kalman-setup-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbertlib.kalman.generate</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_lgssm</span>
+</span><span id="__span-parallel-kalman-setup-10"><a id="__codelineno-parallel-kalman-setup-10" name="__codelineno-parallel-kalman-setup-10" href="#__codelineno-parallel-kalman-setup-10"></a>
+</span><span id="__span-parallel-kalman-setup-11"><a id="__codelineno-parallel-kalman-setup-11" name="__codelineno-parallel-kalman-setup-11" href="#__codelineno-parallel-kalman-setup-11"></a><span class="n">seed</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="__span-parallel-kalman-setup-12"><a id="__codelineno-parallel-kalman-setup-12" name="__codelineno-parallel-kalman-setup-12" href="#__codelineno-parallel-kalman-setup-12"></a><span class="n">x_dim</span> <span class="o">=</span> <span class="mi">20</span>
+</span><span id="__span-parallel-kalman-setup-13"><a id="__codelineno-parallel-kalman-setup-13" name="__codelineno-parallel-kalman-setup-13" href="#__codelineno-parallel-kalman-setup-13"></a><span class="n">y_dim</span> <span class="o">=</span> <span class="mi">10</span>
+</span><span id="__span-parallel-kalman-setup-14"><a id="__codelineno-parallel-kalman-setup-14" name="__codelineno-parallel-kalman-setup-14" href="#__codelineno-parallel-kalman-setup-14"></a><span class="n">num_time_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+</span><span id="__span-parallel-kalman-setup-15"><a id="__codelineno-parallel-kalman-setup-15" name="__codelineno-parallel-kalman-setup-15" href="#__codelineno-parallel-kalman-setup-15"></a>
+</span><span id="__span-parallel-kalman-setup-16"><a id="__codelineno-parallel-kalman-setup-16" name="__codelineno-parallel-kalman-setup-16" href="#__codelineno-parallel-kalman-setup-16"></a><span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">cs</span><span class="p">,</span> <span class="n">chol_Qs</span><span class="p">,</span> <span class="n">Hs</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">chol_Rs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="n">generate_lgssm</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-setup-17"><a id="__codelineno-parallel-kalman-setup-17" name="__codelineno-parallel-kalman-setup-17" href="#__codelineno-parallel-kalman-setup-17"></a>    <span class="n">seed</span><span class="p">,</span> <span class="n">x_dim</span><span class="p">,</span> <span class="n">y_dim</span><span class="p">,</span> <span class="n">num_time_steps</span>
+</span><span id="__span-parallel-kalman-setup-18"><a id="__codelineno-parallel-kalman-setup-18" name="__codelineno-parallel-kalman-setup-18" href="#__codelineno-parallel-kalman-setup-18"></a><span class="p">)</span>
+</span><span id="__span-parallel-kalman-setup-19"><a id="__codelineno-parallel-kalman-setup-19" name="__codelineno-parallel-kalman-setup-19" href="#__codelineno-parallel-kalman-setup-19"></a>
+</span><span id="__span-parallel-kalman-setup-20"><a id="__codelineno-parallel-kalman-setup-20" name="__codelineno-parallel-kalman-setup-20" href="#__codelineno-parallel-kalman-setup-20"></a>
+</span><span id="__span-parallel-kalman-setup-21"><a id="__codelineno-parallel-kalman-setup-21" name="__codelineno-parallel-kalman-setup-21" href="#__codelineno-parallel-kalman-setup-21"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_init_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-parallel-kalman-setup-22"><a id="__codelineno-parallel-kalman-setup-22" name="__codelineno-parallel-kalman-setup-22" href="#__codelineno-parallel-kalman-setup-22"></a>    <span class="k">return</span> <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span>
+</span><span id="__span-parallel-kalman-setup-23"><a id="__codelineno-parallel-kalman-setup-23" name="__codelineno-parallel-kalman-setup-23" href="#__codelineno-parallel-kalman-setup-23"></a>
+</span><span id="__span-parallel-kalman-setup-24"><a id="__codelineno-parallel-kalman-setup-24" name="__codelineno-parallel-kalman-setup-24" href="#__codelineno-parallel-kalman-setup-24"></a>
+</span><span id="__span-parallel-kalman-setup-25"><a id="__codelineno-parallel-kalman-setup-25" name="__codelineno-parallel-kalman-setup-25" href="#__codelineno-parallel-kalman-setup-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_dynamics_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-parallel-kalman-setup-26"><a id="__codelineno-parallel-kalman-setup-26" name="__codelineno-parallel-kalman-setup-26" href="#__codelineno-parallel-kalman-setup-26"></a>    <span class="n">t</span> <span class="o">=</span> <span class="n">model_inputs</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span id="__span-parallel-kalman-setup-27"><a id="__codelineno-parallel-kalman-setup-27" name="__codelineno-parallel-kalman-setup-27" href="#__codelineno-parallel-kalman-setup-27"></a>    <span class="k">return</span> <span class="n">Fs</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">cs</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">chol_Qs</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+</span><span id="__span-parallel-kalman-setup-28"><a id="__codelineno-parallel-kalman-setup-28" name="__codelineno-parallel-kalman-setup-28" href="#__codelineno-parallel-kalman-setup-28"></a>
+</span><span id="__span-parallel-kalman-setup-29"><a id="__codelineno-parallel-kalman-setup-29" name="__codelineno-parallel-kalman-setup-29" href="#__codelineno-parallel-kalman-setup-29"></a>
+</span><span id="__span-parallel-kalman-setup-30"><a id="__codelineno-parallel-kalman-setup-30" name="__codelineno-parallel-kalman-setup-30" href="#__codelineno-parallel-kalman-setup-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_observation_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-parallel-kalman-setup-31"><a id="__codelineno-parallel-kalman-setup-31" name="__codelineno-parallel-kalman-setup-31" href="#__codelineno-parallel-kalman-setup-31"></a>    <span class="n">t</span> <span class="o">=</span> <span class="n">model_inputs</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span id="__span-parallel-kalman-setup-32"><a id="__codelineno-parallel-kalman-setup-32" name="__codelineno-parallel-kalman-setup-32" href="#__codelineno-parallel-kalman-setup-32"></a>    <span class="k">return</span> <span class="n">Hs</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">chol_Rs</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+</span><span id="__span-parallel-kalman-setup-33"><a id="__codelineno-parallel-kalman-setup-33" name="__codelineno-parallel-kalman-setup-33" href="#__codelineno-parallel-kalman-setup-33"></a>
+</span><span id="__span-parallel-kalman-setup-34"><a id="__codelineno-parallel-kalman-setup-34" name="__codelineno-parallel-kalman-setup-34" href="#__codelineno-parallel-kalman-setup-34"></a>
+</span><span id="__span-parallel-kalman-setup-35"><a id="__codelineno-parallel-kalman-setup-35" name="__codelineno-parallel-kalman-setup-35" href="#__codelineno-parallel-kalman-setup-35"></a><span class="n">filter_obj</span> <span class="o">=</span> <span class="n">kalman</span><span class="o">.</span><span class="n">build_filter</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-setup-36"><a id="__codelineno-parallel-kalman-setup-36" name="__codelineno-parallel-kalman-setup-36" href="#__codelineno-parallel-kalman-setup-36"></a>    <span class="n">get_init_params</span><span class="p">,</span> <span class="n">get_dynamics_params</span><span class="p">,</span> <span class="n">get_observation_params</span>
+</span><span id="__span-parallel-kalman-setup-37"><a id="__codelineno-parallel-kalman-setup-37" name="__codelineno-parallel-kalman-setup-37" href="#__codelineno-parallel-kalman-setup-37"></a><span class="p">)</span>
+</span><span id="__span-parallel-kalman-setup-38"><a id="__codelineno-parallel-kalman-setup-38" name="__codelineno-parallel-kalman-setup-38" href="#__codelineno-parallel-kalman-setup-38"></a><span class="n">model_inputs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_time_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="time-everything">Time Everything</h2>
+<p>We JIT-compile the <a class="autorefs autorefs-internal" title="            filter(filter_obj, model_inputs, parallel=False, key=None)" href="../../cuthbert_api/filtering/#cuthbert.filtering.filter"><code>filter</code></a> function, making
+sure to mark the <code>filter_obj</code> and <code>parallel</code> arguments as static. We then
+measure the compilation times using the
+<a href="https://docs.python.org/3/library/timeit.html"><code>timeit</code></a> module for both the
+sequential and parallel implementations.</p>
+<div id="parallel-kalman-compiletime" class="language-python highlight"><pre><span></span><code><span id="__span-parallel-kalman-compiletime-1"><a id="__codelineno-parallel-kalman-compiletime-1" name="__codelineno-parallel-kalman-compiletime-1" href="#__codelineno-parallel-kalman-compiletime-1"></a><span class="n">jitted_filter</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;filter_obj&quot;</span><span class="p">,</span> <span class="s2">&quot;parallel&quot;</span><span class="p">))</span>
+</span><span id="__span-parallel-kalman-compiletime-2"><a id="__codelineno-parallel-kalman-compiletime-2" name="__codelineno-parallel-kalman-compiletime-2" href="#__codelineno-parallel-kalman-compiletime-2"></a>
+</span><span id="__span-parallel-kalman-compiletime-3"><a id="__codelineno-parallel-kalman-compiletime-3" name="__codelineno-parallel-kalman-compiletime-3" href="#__codelineno-parallel-kalman-compiletime-3"></a><span class="n">seq_compile_time</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-compiletime-4"><a id="__codelineno-parallel-kalman-compiletime-4" name="__codelineno-parallel-kalman-compiletime-4" href="#__codelineno-parallel-kalman-compiletime-4"></a>    <span class="k">lambda</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-compiletime-5"><a id="__codelineno-parallel-kalman-compiletime-5" name="__codelineno-parallel-kalman-compiletime-5" href="#__codelineno-parallel-kalman-compiletime-5"></a>        <span class="n">jitted_filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-compiletime-6"><a id="__codelineno-parallel-kalman-compiletime-6" name="__codelineno-parallel-kalman-compiletime-6" href="#__codelineno-parallel-kalman-compiletime-6"></a>    <span class="p">)</span>
+</span><span id="__span-parallel-kalman-compiletime-7"><a id="__codelineno-parallel-kalman-compiletime-7" name="__codelineno-parallel-kalman-compiletime-7" href="#__codelineno-parallel-kalman-compiletime-7"></a><span class="p">)</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-compiletime-8"><a id="__codelineno-parallel-kalman-compiletime-8" name="__codelineno-parallel-kalman-compiletime-8" href="#__codelineno-parallel-kalman-compiletime-8"></a><span class="n">par_compile_time</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-compiletime-9"><a id="__codelineno-parallel-kalman-compiletime-9" name="__codelineno-parallel-kalman-compiletime-9" href="#__codelineno-parallel-kalman-compiletime-9"></a>    <span class="k">lambda</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-compiletime-10"><a id="__codelineno-parallel-kalman-compiletime-10" name="__codelineno-parallel-kalman-compiletime-10" href="#__codelineno-parallel-kalman-compiletime-10"></a>        <span class="n">jitted_filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-compiletime-11"><a id="__codelineno-parallel-kalman-compiletime-11" name="__codelineno-parallel-kalman-compiletime-11" href="#__codelineno-parallel-kalman-compiletime-11"></a>    <span class="p">)</span>
+</span><span id="__span-parallel-kalman-compiletime-12"><a id="__codelineno-parallel-kalman-compiletime-12" name="__codelineno-parallel-kalman-compiletime-12" href="#__codelineno-parallel-kalman-compiletime-12"></a><span class="p">)</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Let's do the same for the runtimes. We run each implementation 10 times and
+report the minimum and median runtimes.</p>
+<div id="parallel-kalman-runtime" class="language-python highlight"><pre><span></span><code><span id="__span-parallel-kalman-runtime-1"><a id="__codelineno-parallel-kalman-runtime-1" name="__codelineno-parallel-kalman-runtime-1" href="#__codelineno-parallel-kalman-runtime-1"></a><span class="n">num_runs</span> <span class="o">=</span> <span class="mi">10</span>
+</span><span id="__span-parallel-kalman-runtime-2"><a id="__codelineno-parallel-kalman-runtime-2" name="__codelineno-parallel-kalman-runtime-2" href="#__codelineno-parallel-kalman-runtime-2"></a>
+</span><span id="__span-parallel-kalman-runtime-3"><a id="__codelineno-parallel-kalman-runtime-3" name="__codelineno-parallel-kalman-runtime-3" href="#__codelineno-parallel-kalman-runtime-3"></a><span class="n">seq_runtimes</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-runtime-4"><a id="__codelineno-parallel-kalman-runtime-4" name="__codelineno-parallel-kalman-runtime-4" href="#__codelineno-parallel-kalman-runtime-4"></a>    <span class="k">lambda</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-runtime-5"><a id="__codelineno-parallel-kalman-runtime-5" name="__codelineno-parallel-kalman-runtime-5" href="#__codelineno-parallel-kalman-runtime-5"></a>        <span class="n">jitted_filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-6"><a id="__codelineno-parallel-kalman-runtime-6" name="__codelineno-parallel-kalman-runtime-6" href="#__codelineno-parallel-kalman-runtime-6"></a>    <span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-7"><a id="__codelineno-parallel-kalman-runtime-7" name="__codelineno-parallel-kalman-runtime-7" href="#__codelineno-parallel-kalman-runtime-7"></a><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-8"><a id="__codelineno-parallel-kalman-runtime-8" name="__codelineno-parallel-kalman-runtime-8" href="#__codelineno-parallel-kalman-runtime-8"></a><span class="n">par_runtimes</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-runtime-9"><a id="__codelineno-parallel-kalman-runtime-9" name="__codelineno-parallel-kalman-runtime-9" href="#__codelineno-parallel-kalman-runtime-9"></a>    <span class="k">lambda</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span>
+</span><span id="__span-parallel-kalman-runtime-10"><a id="__codelineno-parallel-kalman-runtime-10" name="__codelineno-parallel-kalman-runtime-10" href="#__codelineno-parallel-kalman-runtime-10"></a>        <span class="n">jitted_filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-11"><a id="__codelineno-parallel-kalman-runtime-11" name="__codelineno-parallel-kalman-runtime-11" href="#__codelineno-parallel-kalman-runtime-11"></a>    <span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-12"><a id="__codelineno-parallel-kalman-runtime-12" name="__codelineno-parallel-kalman-runtime-12" href="#__codelineno-parallel-kalman-runtime-12"></a><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">repeat</span><span class="o">=</span><span class="n">num_runs</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-13"><a id="__codelineno-parallel-kalman-runtime-13" name="__codelineno-parallel-kalman-runtime-13" href="#__codelineno-parallel-kalman-runtime-13"></a>
+</span><span id="__span-parallel-kalman-runtime-14"><a id="__codelineno-parallel-kalman-runtime-14" name="__codelineno-parallel-kalman-runtime-14" href="#__codelineno-parallel-kalman-runtime-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;             Sequential | Parallel&quot;</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-15"><a id="__codelineno-parallel-kalman-runtime-15" name="__codelineno-parallel-kalman-runtime-15" href="#__codelineno-parallel-kalman-runtime-15"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">35</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-16"><a id="__codelineno-parallel-kalman-runtime-16" name="__codelineno-parallel-kalman-runtime-16" href="#__codelineno-parallel-kalman-runtime-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Compile time  : </span><span class="si">{</span><span class="n">seq_compile_time</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s | </span><span class="si">{</span><span class="n">par_compile_time</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-17"><a id="__codelineno-parallel-kalman-runtime-17" name="__codelineno-parallel-kalman-runtime-17" href="#__codelineno-parallel-kalman-runtime-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Min runtime   : </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">seq_runtimes</span><span class="p">)</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s | </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">par_runtimes</span><span class="p">)</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+</span><span id="__span-parallel-kalman-runtime-18"><a id="__codelineno-parallel-kalman-runtime-18" name="__codelineno-parallel-kalman-runtime-18" href="#__codelineno-parallel-kalman-runtime-18"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Median runtime: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">seq_runtimes</span><span class="p">)</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s | </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">par_runtimes</span><span class="p">)</span><span class="si">:</span><span class="s2"> &gt;7.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="example-results">Example Results</h2>
+<p>Running the above code on an AMD Ryzen 7 PRO 7840U CPU yields:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>              Sequential | Parallel
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>------------------------------------
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Compile time  :   0.422s |    4.932s
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Min runtime   :   0.042s |    0.071s
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Median runtime:   0.043s |    0.076s
+</span></code></pre></div>
+<p>We highlight two things. First, the compile time for the parallel version is
+higher, and this is because the parallel implementation is more complex and has
+more operations (thus more work for the compiler). Second, since this CPU
+only has 16 threads, there's not enough opportunity for parallelism, and hence
+the parallel version ends up being slower due to the higher computational
+complexity.</p>
+<p>The benefit of the parallel version becomes clear when we run it on a GPU, in
+this case on an NVIDIA A100-SXM4-80GB:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>               Sequential | Parallel
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>--------------------------------------
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Compile time  :    2.541s |   15.345s
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Min runtime   :    0.597s |    0.022s
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>Median runtime:    0.598s |    0.022s
+</span></code></pre></div>
+<p>The parallel implementation is now about 27 times faster than the sequential
+one, and this difference will only increase with increasing <span class="arithmatex">\(T\)</span>. So if you have
+a problem where you have to run the Kalman filter (or smoother) repeatedly for
+the same model, and you have a GPU available, it might be beneficial to pay the
+higher compilation cost and use the parallel implementation.</p>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Temporal parallelization</strong>: <code>cuthbert</code> provides parallel-in-time filtering
+  that reduces time complexity from <span class="arithmatex">\(\mathcal{O}(T)\)</span> to <span class="arithmatex">\(\mathcal{O}(\log T)\)</span>
+  when sufficient parallel workers are available.</li>
+<li><strong>Hardware-dependent performance</strong>: The parallel implementation shows
+  significant speedups on GPUs/TPUs (27x faster in the example), but may be
+  slower on CPUs with limited parallelism due to higher computational overhead.</li>
+<li><strong>Compilation trade-off</strong>: The parallel version has higher compilation time,
+  but this cost is amortized when running the filter multiple times on the same
+  model.</li>
+<li><strong>Simple API</strong>: Parallelization is enabled with a single <code>parallel=True</code>
+  argument to the <code>filter</code> function, making it easy to experiment with both
+  implementations.</li>
+<li><strong>JIT compilation</strong>: Both sequential and parallel filters can be
+  JIT-compiled for optimal performance, with static arguments properly marked.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong>Smoothing</strong>: Apply temporal parallelization to smoothing with
+  <a href="../../cuthbert_api/smoothing/"><code>cuthbert.smoother</code></a> for backward pass
+  efficiency.</li>
+<li><strong>More examples</strong>: Explore other <a href="../">examples</a> including <a href="../kalman_tracking/">Kalman
+  tracking</a> and <a href="../dynamax_integration/">dynamax integration</a>.</li>
+<li><strong>Performance tuning</strong>: Experiment with different time series lengths and
+  hardware configurations to find the optimal parallelization strategy for your
+  use case.</li>
+</ul>
+<!--- entangled-tangle-block
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="o">&lt;&lt;</span><span class="n">parallel</span><span class="o">-</span><span class="n">kalman</span><span class="o">-</span><span class="n">setup</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="o">&lt;&lt;</span><span class="n">parallel</span><span class="o">-</span><span class="n">kalman</span><span class="o">-</span><span class="n">compiletime</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="o">&lt;&lt;</span><span class="n">parallel</span><span class="o">-</span><span class="n">kalman</span><span class="o">-</span><span class="n">runtime</span><span class="o">&gt;&gt;</span>
+</span></code></pre></div>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2012 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/examples/dynamax_integration/">
+      
+      
+        <link rel="prev" href="../parameter_estimation_em/">
+      
+      
+        <link rel="next" href="../../cuthbert_api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Dynamax Integration - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dynamax-integration-kalman-filtering-with-linear-gaussian-ssm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dynamax Integration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-and-initialize-a-dynamax-linear-gaussian-ssm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create and initialize a Dynamax Linear Gaussian SSM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-sample-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate sample data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-cuthbert-kalman-filter-from-dynamax-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build cuthbert Kalman filter from dynamax model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare-with-dynamax-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare with dynamax filtering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-and-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup and imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-and-initialize-a-dynamax-linear-gaussian-ssm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create and initialize a Dynamax Linear Gaussian SSM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-sample-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate sample data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-cuthbert-kalman-filter-from-dynamax-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build cuthbert Kalman filter from dynamax model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-kalman-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the Kalman filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare-with-dynamax-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare with dynamax filtering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dynamax-integration-kalman-filtering-with-linear-gaussian-ssm">Dynamax Integration: Kalman Filtering with Linear Gaussian SSM</h1>
+<p>This example demonstrates how to use a <a href="https://github.com/probml/dynamax"><code>dynamax</code></a> Linear Gaussian State Space Model (LGSSM) with <code>cuthbert</code> to perform fast parallel-in-time Kalman filtering. <code>dynamax</code> provides a rich ecosystem for defining state space models, while <code>cuthbert</code> offers efficient filtering algorithms.</p>
+<h2 id="setup-and-imports">Setup and imports</h2>
+<div id="dynamax-imports" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-imports-1"><a id="__codelineno-dynamax-imports-1" name="__codelineno-dynamax-imports-1" href="#__codelineno-dynamax-imports-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+</span><span id="__span-dynamax-imports-2"><a id="__codelineno-dynamax-imports-2" name="__codelineno-dynamax-imports-2" href="#__codelineno-dynamax-imports-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax.random</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jr</span>
+</span><span id="__span-dynamax-imports-3"><a id="__codelineno-dynamax-imports-3" name="__codelineno-dynamax-imports-3" href="#__codelineno-dynamax-imports-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dynamax.linear_gaussian_ssm</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearGaussianSSM</span><span class="p">,</span> <span class="n">lgssm_filter</span>
+</span><span id="__span-dynamax-imports-4"><a id="__codelineno-dynamax-imports-4" name="__codelineno-dynamax-imports-4" href="#__codelineno-dynamax-imports-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</span><span id="__span-dynamax-imports-5"><a id="__codelineno-dynamax-imports-5" name="__codelineno-dynamax-imports-5" href="#__codelineno-dynamax-imports-5"></a>
+</span><span id="__span-dynamax-imports-6"><a id="__codelineno-dynamax-imports-6" name="__codelineno-dynamax-imports-6" href="#__codelineno-dynamax-imports-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">cuthbert</span>
+</span><span id="__span-dynamax-imports-7"><a id="__codelineno-dynamax-imports-7" name="__codelineno-dynamax-imports-7" href="#__codelineno-dynamax-imports-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">kalman</span>
+</span></code></pre></div>
+<h2 id="create-and-initialize-a-dynamax-linear-gaussian-ssm">Create and initialize a Dynamax Linear Gaussian SSM</h2>
+<p>Let's create a simple linear Gaussian state space model for tracking a 1D position and velocity over time. This is a classic constant velocity model.</p>
+<div id="dynamax-create-model" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-create-model-1"><a id="__codelineno-dynamax-create-model-1" name="__codelineno-dynamax-create-model-1" href="#__codelineno-dynamax-create-model-1"></a><span class="c1"># Model parameters</span>
+</span><span id="__span-dynamax-create-model-2"><a id="__codelineno-dynamax-create-model-2" name="__codelineno-dynamax-create-model-2" href="#__codelineno-dynamax-create-model-2"></a><span class="n">state_dim</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># position and velocity</span>
+</span><span id="__span-dynamax-create-model-3"><a id="__codelineno-dynamax-create-model-3" name="__codelineno-dynamax-create-model-3" href="#__codelineno-dynamax-create-model-3"></a><span class="n">emission_dim</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># we only observe position</span>
+</span><span id="__span-dynamax-create-model-4"><a id="__codelineno-dynamax-create-model-4" name="__codelineno-dynamax-create-model-4" href="#__codelineno-dynamax-create-model-4"></a><span class="n">num_timesteps</span> <span class="o">=</span> <span class="mi">50</span>
+</span><span id="__span-dynamax-create-model-5"><a id="__codelineno-dynamax-create-model-5" name="__codelineno-dynamax-create-model-5" href="#__codelineno-dynamax-create-model-5"></a><span class="n">dt</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># time step</span>
+</span><span id="__span-dynamax-create-model-6"><a id="__codelineno-dynamax-create-model-6" name="__codelineno-dynamax-create-model-6" href="#__codelineno-dynamax-create-model-6"></a>
+</span><span id="__span-dynamax-create-model-7"><a id="__codelineno-dynamax-create-model-7" name="__codelineno-dynamax-create-model-7" href="#__codelineno-dynamax-create-model-7"></a><span class="c1"># Create the Linear Gaussian SSM model</span>
+</span><span id="__span-dynamax-create-model-8"><a id="__codelineno-dynamax-create-model-8" name="__codelineno-dynamax-create-model-8" href="#__codelineno-dynamax-create-model-8"></a><span class="n">lgssm</span> <span class="o">=</span> <span class="n">LinearGaussianSSM</span><span class="p">(</span><span class="n">state_dim</span><span class="o">=</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">emission_dim</span><span class="o">=</span><span class="n">emission_dim</span><span class="p">)</span>
+</span><span id="__span-dynamax-create-model-9"><a id="__codelineno-dynamax-create-model-9" name="__codelineno-dynamax-create-model-9" href="#__codelineno-dynamax-create-model-9"></a>
+</span><span id="__span-dynamax-create-model-10"><a id="__codelineno-dynamax-create-model-10" name="__codelineno-dynamax-create-model-10" href="#__codelineno-dynamax-create-model-10"></a><span class="c1"># Define dynamics: constant velocity model</span>
+</span><span id="__span-dynamax-create-model-11"><a id="__codelineno-dynamax-create-model-11" name="__codelineno-dynamax-create-model-11" href="#__codelineno-dynamax-create-model-11"></a><span class="c1"># x_t = [position, velocity]</span>
+</span><span id="__span-dynamax-create-model-12"><a id="__codelineno-dynamax-create-model-12" name="__codelineno-dynamax-create-model-12" href="#__codelineno-dynamax-create-model-12"></a><span class="c1"># x_{t+1} = F @ x_t + noise</span>
+</span><span id="__span-dynamax-create-model-13"><a id="__codelineno-dynamax-create-model-13" name="__codelineno-dynamax-create-model-13" href="#__codelineno-dynamax-create-model-13"></a><span class="n">F</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">dt</span><span class="p">],</span>
+</span><span id="__span-dynamax-create-model-14"><a id="__codelineno-dynamax-create-model-14" name="__codelineno-dynamax-create-model-14" href="#__codelineno-dynamax-create-model-14"></a>               <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+</span><span id="__span-dynamax-create-model-15"><a id="__codelineno-dynamax-create-model-15" name="__codelineno-dynamax-create-model-15" href="#__codelineno-dynamax-create-model-15"></a>
+</span><span id="__span-dynamax-create-model-16"><a id="__codelineno-dynamax-create-model-16" name="__codelineno-dynamax-create-model-16" href="#__codelineno-dynamax-create-model-16"></a><span class="c1"># Process noise covariance</span>
+</span><span id="__span-dynamax-create-model-17"><a id="__codelineno-dynamax-create-model-17" name="__codelineno-dynamax-create-model-17" href="#__codelineno-dynamax-create-model-17"></a><span class="n">Q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+</span><span id="__span-dynamax-create-model-18"><a id="__codelineno-dynamax-create-model-18" name="__codelineno-dynamax-create-model-18" href="#__codelineno-dynamax-create-model-18"></a>               <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">]])</span>
+</span><span id="__span-dynamax-create-model-19"><a id="__codelineno-dynamax-create-model-19" name="__codelineno-dynamax-create-model-19" href="#__codelineno-dynamax-create-model-19"></a>
+</span><span id="__span-dynamax-create-model-20"><a id="__codelineno-dynamax-create-model-20" name="__codelineno-dynamax-create-model-20" href="#__codelineno-dynamax-create-model-20"></a><span class="c1"># Observation model: we only observe position</span>
+</span><span id="__span-dynamax-create-model-21"><a id="__codelineno-dynamax-create-model-21" name="__codelineno-dynamax-create-model-21" href="#__codelineno-dynamax-create-model-21"></a><span class="c1"># y_t = H @ x_t + noise</span>
+</span><span id="__span-dynamax-create-model-22"><a id="__codelineno-dynamax-create-model-22" name="__codelineno-dynamax-create-model-22" href="#__codelineno-dynamax-create-model-22"></a><span class="n">H</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span>
+</span><span id="__span-dynamax-create-model-23"><a id="__codelineno-dynamax-create-model-23" name="__codelineno-dynamax-create-model-23" href="#__codelineno-dynamax-create-model-23"></a>
+</span><span id="__span-dynamax-create-model-24"><a id="__codelineno-dynamax-create-model-24" name="__codelineno-dynamax-create-model-24" href="#__codelineno-dynamax-create-model-24"></a><span class="c1"># Observation noise covariance</span>
+</span><span id="__span-dynamax-create-model-25"><a id="__codelineno-dynamax-create-model-25" name="__codelineno-dynamax-create-model-25" href="#__codelineno-dynamax-create-model-25"></a><span class="n">R</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">]])</span>
+</span><span id="__span-dynamax-create-model-26"><a id="__codelineno-dynamax-create-model-26" name="__codelineno-dynamax-create-model-26" href="#__codelineno-dynamax-create-model-26"></a>
+</span><span id="__span-dynamax-create-model-27"><a id="__codelineno-dynamax-create-model-27" name="__codelineno-dynamax-create-model-27" href="#__codelineno-dynamax-create-model-27"></a><span class="c1"># Initial state distribution</span>
+</span><span id="__span-dynamax-create-model-28"><a id="__codelineno-dynamax-create-model-28" name="__codelineno-dynamax-create-model-28" href="#__codelineno-dynamax-create-model-28"></a><span class="n">m0</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>  <span class="c1"># start at position 0 with velocity 1</span>
+</span><span id="__span-dynamax-create-model-29"><a id="__codelineno-dynamax-create-model-29" name="__codelineno-dynamax-create-model-29" href="#__codelineno-dynamax-create-model-29"></a><span class="n">P0</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">state_dim</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+</span><span id="__span-dynamax-create-model-30"><a id="__codelineno-dynamax-create-model-30" name="__codelineno-dynamax-create-model-30" href="#__codelineno-dynamax-create-model-30"></a>
+</span><span id="__span-dynamax-create-model-31"><a id="__codelineno-dynamax-create-model-31" name="__codelineno-dynamax-create-model-31" href="#__codelineno-dynamax-create-model-31"></a><span class="c1"># Initialize model parameters with our custom values</span>
+</span><span id="__span-dynamax-create-model-32"><a id="__codelineno-dynamax-create-model-32" name="__codelineno-dynamax-create-model-32" href="#__codelineno-dynamax-create-model-32"></a><span class="n">key</span> <span class="o">=</span> <span class="n">jr</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+</span><span id="__span-dynamax-create-model-33"><a id="__codelineno-dynamax-create-model-33" name="__codelineno-dynamax-create-model-33" href="#__codelineno-dynamax-create-model-33"></a><span class="n">params</span><span class="p">,</span> <span class="n">props</span> <span class="o">=</span> <span class="n">lgssm</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+</span><span id="__span-dynamax-create-model-34"><a id="__codelineno-dynamax-create-model-34" name="__codelineno-dynamax-create-model-34" href="#__codelineno-dynamax-create-model-34"></a>    <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-35"><a id="__codelineno-dynamax-create-model-35" name="__codelineno-dynamax-create-model-35" href="#__codelineno-dynamax-create-model-35"></a>    <span class="n">initial_mean</span><span class="o">=</span><span class="n">m0</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-36"><a id="__codelineno-dynamax-create-model-36" name="__codelineno-dynamax-create-model-36" href="#__codelineno-dynamax-create-model-36"></a>    <span class="n">initial_covariance</span><span class="o">=</span><span class="n">P0</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-37"><a id="__codelineno-dynamax-create-model-37" name="__codelineno-dynamax-create-model-37" href="#__codelineno-dynamax-create-model-37"></a>    <span class="n">dynamics_weights</span><span class="o">=</span><span class="n">F</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-38"><a id="__codelineno-dynamax-create-model-38" name="__codelineno-dynamax-create-model-38" href="#__codelineno-dynamax-create-model-38"></a>    <span class="n">dynamics_covariance</span><span class="o">=</span><span class="n">Q</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-39"><a id="__codelineno-dynamax-create-model-39" name="__codelineno-dynamax-create-model-39" href="#__codelineno-dynamax-create-model-39"></a>    <span class="n">emission_weights</span><span class="o">=</span><span class="n">H</span><span class="p">,</span>
+</span><span id="__span-dynamax-create-model-40"><a id="__codelineno-dynamax-create-model-40" name="__codelineno-dynamax-create-model-40" href="#__codelineno-dynamax-create-model-40"></a>    <span class="n">emission_covariance</span><span class="o">=</span><span class="n">R</span>
+</span><span id="__span-dynamax-create-model-41"><a id="__codelineno-dynamax-create-model-41" name="__codelineno-dynamax-create-model-41" href="#__codelineno-dynamax-create-model-41"></a><span class="p">)</span>
+</span><span id="__span-dynamax-create-model-42"><a id="__codelineno-dynamax-create-model-42" name="__codelineno-dynamax-create-model-42" href="#__codelineno-dynamax-create-model-42"></a>
+</span><span id="__span-dynamax-create-model-43"><a id="__codelineno-dynamax-create-model-43" name="__codelineno-dynamax-create-model-43" href="#__codelineno-dynamax-create-model-43"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dynamics matrix F:</span><span class="se">\n</span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">dynamics</span><span class="o">.</span><span class="n">weights</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-create-model-44"><a id="__codelineno-dynamax-create-model-44" name="__codelineno-dynamax-create-model-44" href="#__codelineno-dynamax-create-model-44"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observation matrix H:</span><span class="se">\n</span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">emissions</span><span class="o">.</span><span class="n">weights</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Running the above code yields
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Dynamics matrix F:
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[[1.  0.1]
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a> [0.  1. ]]
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>Observation matrix H:
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[[1. 0.]]
+</span></code></pre></div></p>
+<h2 id="generate-sample-data">Generate sample data</h2>
+<p>Now we'll sample a sequence of observations from the model:</p>
+<div id="dynamax-generate-data" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-generate-data-1"><a id="__codelineno-dynamax-generate-data-1" name="__codelineno-dynamax-generate-data-1" href="#__codelineno-dynamax-generate-data-1"></a><span class="c1"># Sample from the model</span>
+</span><span id="__span-dynamax-generate-data-2"><a id="__codelineno-dynamax-generate-data-2" name="__codelineno-dynamax-generate-data-2" href="#__codelineno-dynamax-generate-data-2"></a><span class="n">key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">jr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</span><span id="__span-dynamax-generate-data-3"><a id="__codelineno-dynamax-generate-data-3" name="__codelineno-dynamax-generate-data-3" href="#__codelineno-dynamax-generate-data-3"></a><span class="n">true_states</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="n">lgssm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">sample_key</span><span class="p">,</span> <span class="n">num_timesteps</span><span class="p">)</span>
+</span><span id="__span-dynamax-generate-data-4"><a id="__codelineno-dynamax-generate-data-4" name="__codelineno-dynamax-generate-data-4" href="#__codelineno-dynamax-generate-data-4"></a>
+</span><span id="__span-dynamax-generate-data-5"><a id="__codelineno-dynamax-generate-data-5" name="__codelineno-dynamax-generate-data-5" href="#__codelineno-dynamax-generate-data-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span><span class="si">}</span><span class="s2"> observations&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-generate-data-6"><a id="__codelineno-dynamax-generate-data-6" name="__codelineno-dynamax-generate-data-6" href="#__codelineno-dynamax-generate-data-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True states shape: </span><span class="si">{</span><span class="n">true_states</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-generate-data-7"><a id="__codelineno-dynamax-generate-data-7" name="__codelineno-dynamax-generate-data-7" href="#__codelineno-dynamax-generate-data-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observations shape: </span><span class="si">{</span><span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-generate-data-8"><a id="__codelineno-dynamax-generate-data-8" name="__codelineno-dynamax-generate-data-8" href="#__codelineno-dynamax-generate-data-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First 5 observations: </span><span class="si">{</span><span class="n">observations</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Running the above code yields
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Generated 50 observations
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>True states shape: (50, 2)
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Observations shape: (50, 1)
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>First 5 observations: [-0.12673497 -1.9195632  -0.7634685  -0.7985211  -0.06220094]
+</span></code></pre></div></p>
+<h2 id="build-cuthbert-kalman-filter-from-dynamax-model">Build <code>cuthbert</code> Kalman filter from <code>dynamax</code> model</h2>
+<p>The key to integrating <code>dynamax</code> with <code>cuthbert</code> is to extract the model matrices and wrap them in <code>cuthbert</code>'s parameter extraction functions.</p>
+<div id="dynamax-build-cuthbert-filter" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-build-cuthbert-filter-1"><a id="__codelineno-dynamax-build-cuthbert-filter-1" name="__codelineno-dynamax-build-cuthbert-filter-1" href="#__codelineno-dynamax-build-cuthbert-filter-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_cuthbert_kalman_filter_from_dynamax</span><span class="p">(</span><span class="n">lgssm_model</span><span class="p">,</span> <span class="n">lgssm_params</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-2"><a id="__codelineno-dynamax-build-cuthbert-filter-2" name="__codelineno-dynamax-build-cuthbert-filter-2" href="#__codelineno-dynamax-build-cuthbert-filter-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a cuthbert Kalman filter from a dynamax Linear Gaussian SSM.</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-3"><a id="__codelineno-dynamax-build-cuthbert-filter-3" name="__codelineno-dynamax-build-cuthbert-filter-3" href="#__codelineno-dynamax-build-cuthbert-filter-3"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-4"><a id="__codelineno-dynamax-build-cuthbert-filter-4" name="__codelineno-dynamax-build-cuthbert-filter-4" href="#__codelineno-dynamax-build-cuthbert-filter-4"></a><span class="sd">    Args:</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-5"><a id="__codelineno-dynamax-build-cuthbert-filter-5" name="__codelineno-dynamax-build-cuthbert-filter-5" href="#__codelineno-dynamax-build-cuthbert-filter-5"></a><span class="sd">        lgssm_model: The dynamax LinearGaussianSSM model object</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-6"><a id="__codelineno-dynamax-build-cuthbert-filter-6" name="__codelineno-dynamax-build-cuthbert-filter-6" href="#__codelineno-dynamax-build-cuthbert-filter-6"></a><span class="sd">        lgssm_params: The parameters of the LGSSM</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-7"><a id="__codelineno-dynamax-build-cuthbert-filter-7" name="__codelineno-dynamax-build-cuthbert-filter-7" href="#__codelineno-dynamax-build-cuthbert-filter-7"></a><span class="sd">        observations: The observation sequence</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-8"><a id="__codelineno-dynamax-build-cuthbert-filter-8" name="__codelineno-dynamax-build-cuthbert-filter-8" href="#__codelineno-dynamax-build-cuthbert-filter-8"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-9"><a id="__codelineno-dynamax-build-cuthbert-filter-9" name="__codelineno-dynamax-build-cuthbert-filter-9" href="#__codelineno-dynamax-build-cuthbert-filter-9"></a><span class="sd">    Returns:</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-10"><a id="__codelineno-dynamax-build-cuthbert-filter-10" name="__codelineno-dynamax-build-cuthbert-filter-10" href="#__codelineno-dynamax-build-cuthbert-filter-10"></a><span class="sd">        filter_obj: A cuthbert Filter object</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-11"><a id="__codelineno-dynamax-build-cuthbert-filter-11" name="__codelineno-dynamax-build-cuthbert-filter-11" href="#__codelineno-dynamax-build-cuthbert-filter-11"></a><span class="sd">        model_inputs: Time indices for filtering</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-12"><a id="__codelineno-dynamax-build-cuthbert-filter-12" name="__codelineno-dynamax-build-cuthbert-filter-12" href="#__codelineno-dynamax-build-cuthbert-filter-12"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-13"><a id="__codelineno-dynamax-build-cuthbert-filter-13" name="__codelineno-dynamax-build-cuthbert-filter-13" href="#__codelineno-dynamax-build-cuthbert-filter-13"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-14"><a id="__codelineno-dynamax-build-cuthbert-filter-14" name="__codelineno-dynamax-build-cuthbert-filter-14" href="#__codelineno-dynamax-build-cuthbert-filter-14"></a>    <span class="c1"># Extract parameters from dynamax model</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-15"><a id="__codelineno-dynamax-build-cuthbert-filter-15" name="__codelineno-dynamax-build-cuthbert-filter-15" href="#__codelineno-dynamax-build-cuthbert-filter-15"></a>    <span class="n">m0</span> <span class="o">=</span> <span class="n">lgssm_params</span><span class="o">.</span><span class="n">initial</span><span class="o">.</span><span class="n">mean</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-16"><a id="__codelineno-dynamax-build-cuthbert-filter-16" name="__codelineno-dynamax-build-cuthbert-filter-16" href="#__codelineno-dynamax-build-cuthbert-filter-16"></a>    <span class="n">chol_P0</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">lgssm_params</span><span class="o">.</span><span class="n">initial</span><span class="o">.</span><span class="n">cov</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-17"><a id="__codelineno-dynamax-build-cuthbert-filter-17" name="__codelineno-dynamax-build-cuthbert-filter-17" href="#__codelineno-dynamax-build-cuthbert-filter-17"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-18"><a id="__codelineno-dynamax-build-cuthbert-filter-18" name="__codelineno-dynamax-build-cuthbert-filter-18" href="#__codelineno-dynamax-build-cuthbert-filter-18"></a>    <span class="n">F</span> <span class="o">=</span> <span class="n">lgssm_params</span><span class="o">.</span><span class="n">dynamics</span><span class="o">.</span><span class="n">weights</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-19"><a id="__codelineno-dynamax-build-cuthbert-filter-19" name="__codelineno-dynamax-build-cuthbert-filter-19" href="#__codelineno-dynamax-build-cuthbert-filter-19"></a>    <span class="n">c</span> <span class="o">=</span> <span class="n">lgssm_params</span><span class="o">.</span><span class="n">dynamics</span><span class="o">.</span><span class="n">bias</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-20"><a id="__codelineno-dynamax-build-cuthbert-filter-20" name="__codelineno-dynamax-build-cuthbert-filter-20" href="#__codelineno-dynamax-build-cuthbert-filter-20"></a>    <span class="n">chol_Q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">lgssm_params</span><span class="o">.</span><span class="n">dynamics</span><span class="o">.</span><span class="n">cov</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-21"><a id="__codelineno-dynamax-build-cuthbert-filter-21" name="__codelineno-dynamax-build-cuthbert-filter-21" href="#__codelineno-dynamax-build-cuthbert-filter-21"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-22"><a id="__codelineno-dynamax-build-cuthbert-filter-22" name="__codelineno-dynamax-build-cuthbert-filter-22" href="#__codelineno-dynamax-build-cuthbert-filter-22"></a>    <span class="n">H</span> <span class="o">=</span> <span class="n">lgssm_params</span><span class="o">.</span><span class="n">emissions</span><span class="o">.</span><span class="n">weights</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-23"><a id="__codelineno-dynamax-build-cuthbert-filter-23" name="__codelineno-dynamax-build-cuthbert-filter-23" href="#__codelineno-dynamax-build-cuthbert-filter-23"></a>    <span class="n">d</span> <span class="o">=</span> <span class="n">lgssm_params</span><span class="o">.</span><span class="n">emissions</span><span class="o">.</span><span class="n">bias</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-24"><a id="__codelineno-dynamax-build-cuthbert-filter-24" name="__codelineno-dynamax-build-cuthbert-filter-24" href="#__codelineno-dynamax-build-cuthbert-filter-24"></a>    <span class="n">chol_R</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">lgssm_params</span><span class="o">.</span><span class="n">emissions</span><span class="o">.</span><span class="n">cov</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-25"><a id="__codelineno-dynamax-build-cuthbert-filter-25" name="__codelineno-dynamax-build-cuthbert-filter-25" href="#__codelineno-dynamax-build-cuthbert-filter-25"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-26"><a id="__codelineno-dynamax-build-cuthbert-filter-26" name="__codelineno-dynamax-build-cuthbert-filter-26" href="#__codelineno-dynamax-build-cuthbert-filter-26"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_init_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-27"><a id="__codelineno-dynamax-build-cuthbert-filter-27" name="__codelineno-dynamax-build-cuthbert-filter-27" href="#__codelineno-dynamax-build-cuthbert-filter-27"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return initial state distribution parameters.&quot;&quot;&quot;</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-28"><a id="__codelineno-dynamax-build-cuthbert-filter-28" name="__codelineno-dynamax-build-cuthbert-filter-28" href="#__codelineno-dynamax-build-cuthbert-filter-28"></a>        <span class="k">return</span> <span class="n">m0</span><span class="p">,</span> <span class="n">chol_P0</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-29"><a id="__codelineno-dynamax-build-cuthbert-filter-29" name="__codelineno-dynamax-build-cuthbert-filter-29" href="#__codelineno-dynamax-build-cuthbert-filter-29"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-30"><a id="__codelineno-dynamax-build-cuthbert-filter-30" name="__codelineno-dynamax-build-cuthbert-filter-30" href="#__codelineno-dynamax-build-cuthbert-filter-30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dynamics_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-31"><a id="__codelineno-dynamax-build-cuthbert-filter-31" name="__codelineno-dynamax-build-cuthbert-filter-31" href="#__codelineno-dynamax-build-cuthbert-filter-31"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return dynamics parameters.</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-32"><a id="__codelineno-dynamax-build-cuthbert-filter-32" name="__codelineno-dynamax-build-cuthbert-filter-32" href="#__codelineno-dynamax-build-cuthbert-filter-32"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-33"><a id="__codelineno-dynamax-build-cuthbert-filter-33" name="__codelineno-dynamax-build-cuthbert-filter-33" href="#__codelineno-dynamax-build-cuthbert-filter-33"></a><span class="sd">        Handles differing conventions, dynamax has y_0 but cuthbert does not.</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-34"><a id="__codelineno-dynamax-build-cuthbert-filter-34" name="__codelineno-dynamax-build-cuthbert-filter-34" href="#__codelineno-dynamax-build-cuthbert-filter-34"></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-35"><a id="__codelineno-dynamax-build-cuthbert-filter-35" name="__codelineno-dynamax-build-cuthbert-filter-35" href="#__codelineno-dynamax-build-cuthbert-filter-35"></a>        <span class="n">t</span> <span class="o">=</span> <span class="n">model_inputs</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-36"><a id="__codelineno-dynamax-build-cuthbert-filter-36" name="__codelineno-dynamax-build-cuthbert-filter-36" href="#__codelineno-dynamax-build-cuthbert-filter-36"></a>        <span class="n">F_t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">state_dim</span><span class="p">),</span> <span class="n">F</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-37"><a id="__codelineno-dynamax-build-cuthbert-filter-37" name="__codelineno-dynamax-build-cuthbert-filter-37" href="#__codelineno-dynamax-build-cuthbert-filter-37"></a>        <span class="n">c_t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">c</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-38"><a id="__codelineno-dynamax-build-cuthbert-filter-38" name="__codelineno-dynamax-build-cuthbert-filter-38" href="#__codelineno-dynamax-build-cuthbert-filter-38"></a>        <span class="n">chol_Q_t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">chol_Q</span><span class="p">),</span> <span class="n">chol_Q</span><span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-39"><a id="__codelineno-dynamax-build-cuthbert-filter-39" name="__codelineno-dynamax-build-cuthbert-filter-39" href="#__codelineno-dynamax-build-cuthbert-filter-39"></a>        <span class="k">return</span> <span class="n">F_t</span><span class="p">,</span> <span class="n">c_t</span><span class="p">,</span> <span class="n">chol_Q_t</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-40"><a id="__codelineno-dynamax-build-cuthbert-filter-40" name="__codelineno-dynamax-build-cuthbert-filter-40" href="#__codelineno-dynamax-build-cuthbert-filter-40"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-41"><a id="__codelineno-dynamax-build-cuthbert-filter-41" name="__codelineno-dynamax-build-cuthbert-filter-41" href="#__codelineno-dynamax-build-cuthbert-filter-41"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_observation_params</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">):</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-42"><a id="__codelineno-dynamax-build-cuthbert-filter-42" name="__codelineno-dynamax-build-cuthbert-filter-42" href="#__codelineno-dynamax-build-cuthbert-filter-42"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return observation parameters and the observation at time t.&quot;&quot;&quot;</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-43"><a id="__codelineno-dynamax-build-cuthbert-filter-43" name="__codelineno-dynamax-build-cuthbert-filter-43" href="#__codelineno-dynamax-build-cuthbert-filter-43"></a>        <span class="n">t</span> <span class="o">=</span> <span class="n">model_inputs</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-44"><a id="__codelineno-dynamax-build-cuthbert-filter-44" name="__codelineno-dynamax-build-cuthbert-filter-44" href="#__codelineno-dynamax-build-cuthbert-filter-44"></a>        <span class="n">y_t</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-45"><a id="__codelineno-dynamax-build-cuthbert-filter-45" name="__codelineno-dynamax-build-cuthbert-filter-45" href="#__codelineno-dynamax-build-cuthbert-filter-45"></a>        <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">chol_R</span><span class="p">,</span> <span class="n">y_t</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-46"><a id="__codelineno-dynamax-build-cuthbert-filter-46" name="__codelineno-dynamax-build-cuthbert-filter-46" href="#__codelineno-dynamax-build-cuthbert-filter-46"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-47"><a id="__codelineno-dynamax-build-cuthbert-filter-47" name="__codelineno-dynamax-build-cuthbert-filter-47" href="#__codelineno-dynamax-build-cuthbert-filter-47"></a>    <span class="c1"># Build the Kalman filter</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-48"><a id="__codelineno-dynamax-build-cuthbert-filter-48" name="__codelineno-dynamax-build-cuthbert-filter-48" href="#__codelineno-dynamax-build-cuthbert-filter-48"></a>    <span class="n">filter_obj</span> <span class="o">=</span> <span class="n">kalman</span><span class="o">.</span><span class="n">build_filter</span><span class="p">(</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-49"><a id="__codelineno-dynamax-build-cuthbert-filter-49" name="__codelineno-dynamax-build-cuthbert-filter-49" href="#__codelineno-dynamax-build-cuthbert-filter-49"></a>        <span class="n">get_init_params</span><span class="o">=</span><span class="n">get_init_params</span><span class="p">,</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-50"><a id="__codelineno-dynamax-build-cuthbert-filter-50" name="__codelineno-dynamax-build-cuthbert-filter-50" href="#__codelineno-dynamax-build-cuthbert-filter-50"></a>        <span class="n">get_dynamics_params</span><span class="o">=</span><span class="n">get_dynamics_params</span><span class="p">,</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-51"><a id="__codelineno-dynamax-build-cuthbert-filter-51" name="__codelineno-dynamax-build-cuthbert-filter-51" href="#__codelineno-dynamax-build-cuthbert-filter-51"></a>        <span class="n">get_observation_params</span><span class="o">=</span><span class="n">get_observation_params</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-52"><a id="__codelineno-dynamax-build-cuthbert-filter-52" name="__codelineno-dynamax-build-cuthbert-filter-52" href="#__codelineno-dynamax-build-cuthbert-filter-52"></a>    <span class="p">)</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-53"><a id="__codelineno-dynamax-build-cuthbert-filter-53" name="__codelineno-dynamax-build-cuthbert-filter-53" href="#__codelineno-dynamax-build-cuthbert-filter-53"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-54"><a id="__codelineno-dynamax-build-cuthbert-filter-54" name="__codelineno-dynamax-build-cuthbert-filter-54" href="#__codelineno-dynamax-build-cuthbert-filter-54"></a>    <span class="c1"># Model inputs are just time indices</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-55"><a id="__codelineno-dynamax-build-cuthbert-filter-55" name="__codelineno-dynamax-build-cuthbert-filter-55" href="#__codelineno-dynamax-build-cuthbert-filter-55"></a>    <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># +1 for the initial time step</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-56"><a id="__codelineno-dynamax-build-cuthbert-filter-56" name="__codelineno-dynamax-build-cuthbert-filter-56" href="#__codelineno-dynamax-build-cuthbert-filter-56"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-57"><a id="__codelineno-dynamax-build-cuthbert-filter-57" name="__codelineno-dynamax-build-cuthbert-filter-57" href="#__codelineno-dynamax-build-cuthbert-filter-57"></a>    <span class="k">return</span> <span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-58"><a id="__codelineno-dynamax-build-cuthbert-filter-58" name="__codelineno-dynamax-build-cuthbert-filter-58" href="#__codelineno-dynamax-build-cuthbert-filter-58"></a>
+</span><span id="__span-dynamax-build-cuthbert-filter-59"><a id="__codelineno-dynamax-build-cuthbert-filter-59" name="__codelineno-dynamax-build-cuthbert-filter-59" href="#__codelineno-dynamax-build-cuthbert-filter-59"></a><span class="c1"># Create the cuthbert Kalman filter</span>
+</span><span id="__span-dynamax-build-cuthbert-filter-60"><a id="__codelineno-dynamax-build-cuthbert-filter-60" name="__codelineno-dynamax-build-cuthbert-filter-60" href="#__codelineno-dynamax-build-cuthbert-filter-60"></a><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">build_cuthbert_kalman_filter_from_dynamax</span><span class="p">(</span><span class="n">lgssm</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="run-the-kalman-filter">Run the Kalman filter</h2>
+<p>Now we can run the <code>cuthbert</code> Kalman filter to obtain the filtering distributions:</p>
+<div id="dynamax-run-filter" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-run-filter-1"><a id="__codelineno-dynamax-run-filter-1" name="__codelineno-dynamax-run-filter-1" href="#__codelineno-dynamax-run-filter-1"></a><span class="c1"># Run Kalman filtering</span>
+</span><span id="__span-dynamax-run-filter-2"><a id="__codelineno-dynamax-run-filter-2" name="__codelineno-dynamax-run-filter-2" href="#__codelineno-dynamax-run-filter-2"></a><span class="n">filtered_states</span> <span class="o">=</span> <span class="n">cuthbert</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filter_obj</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">)</span>
+</span><span id="__span-dynamax-run-filter-3"><a id="__codelineno-dynamax-run-filter-3" name="__codelineno-dynamax-run-filter-3" href="#__codelineno-dynamax-run-filter-3"></a>
+</span><span id="__span-dynamax-run-filter-4"><a id="__codelineno-dynamax-run-filter-4" name="__codelineno-dynamax-run-filter-4" href="#__codelineno-dynamax-run-filter-4"></a><span class="c1"># Extract filtering results - remove initial time step</span>
+</span><span id="__span-dynamax-run-filter-5"><a id="__codelineno-dynamax-run-filter-5" name="__codelineno-dynamax-run-filter-5" href="#__codelineno-dynamax-run-filter-5"></a><span class="n">filtered_means</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span id="__span-dynamax-run-filter-6"><a id="__codelineno-dynamax-run-filter-6" name="__codelineno-dynamax-run-filter-6" href="#__codelineno-dynamax-run-filter-6"></a><span class="n">filtered_chol_covs</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span id="__span-dynamax-run-filter-7"><a id="__codelineno-dynamax-run-filter-7" name="__codelineno-dynamax-run-filter-7" href="#__codelineno-dynamax-run-filter-7"></a><span class="n">log_likelihoods</span> <span class="o">=</span> <span class="n">filtered_states</span><span class="o">.</span><span class="n">log_normalizing_constant</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span id="__span-dynamax-run-filter-8"><a id="__codelineno-dynamax-run-filter-8" name="__codelineno-dynamax-run-filter-8" href="#__codelineno-dynamax-run-filter-8"></a><span class="n">total_log_likelihood</span> <span class="o">=</span> <span class="n">log_likelihoods</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-dynamax-run-filter-9"><a id="__codelineno-dynamax-run-filter-9" name="__codelineno-dynamax-run-filter-9" href="#__codelineno-dynamax-run-filter-9"></a>
+</span><span id="__span-dynamax-run-filter-10"><a id="__codelineno-dynamax-run-filter-10" name="__codelineno-dynamax-run-filter-10" href="#__codelineno-dynamax-run-filter-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filtered means shape: </span><span class="si">{</span><span class="n">filtered_means</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-run-filter-11"><a id="__codelineno-dynamax-run-filter-11" name="__codelineno-dynamax-run-filter-11" href="#__codelineno-dynamax-run-filter-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total log likelihood: </span><span class="si">{</span><span class="n">total_log_likelihood</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-run-filter-12"><a id="__codelineno-dynamax-run-filter-12" name="__codelineno-dynamax-run-filter-12" href="#__codelineno-dynamax-run-filter-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First 5 filtered positions: </span><span class="si">{</span><span class="n">filtered_means</span><span class="p">[:</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-run-filter-13"><a id="__codelineno-dynamax-run-filter-13" name="__codelineno-dynamax-run-filter-13" href="#__codelineno-dynamax-run-filter-13"></a>
+</span><span id="__span-dynamax-run-filter-14"><a id="__codelineno-dynamax-run-filter-14" name="__codelineno-dynamax-run-filter-14" href="#__codelineno-dynamax-run-filter-14"></a><span class="c1"># Compute filtering covariances from Cholesky factors</span>
+</span><span id="__span-dynamax-run-filter-15"><a id="__codelineno-dynamax-run-filter-15" name="__codelineno-dynamax-run-filter-15" href="#__codelineno-dynamax-run-filter-15"></a><span class="n">filtered_covs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;tij,tkj-&gt;tik&#39;</span><span class="p">,</span> <span class="n">filtered_chol_covs</span><span class="p">,</span> <span class="n">filtered_chol_covs</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Running the above code yields
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Filtered means shape: (50, 2)
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Total log likelihood: -55.41
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>First 5 filtered positions: [-0.0211225  -0.2383174  -0.23843466 -0.24582891 -0.13977882]
+</span></code></pre></div></p>
+<h2 id="compare-with-dynamax-filtering">Compare with <code>dynamax</code> filtering</h2>
+<p>Let's verify our results match <code>dynamax</code>'s built-in Kalman filtering:</p>
+<div id="dynamax-compare" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-compare-1"><a id="__codelineno-dynamax-compare-1" name="__codelineno-dynamax-compare-1" href="#__codelineno-dynamax-compare-1"></a><span class="c1"># Run dynamax&#39;s Kalman filter for comparison</span>
+</span><span id="__span-dynamax-compare-2"><a id="__codelineno-dynamax-compare-2" name="__codelineno-dynamax-compare-2" href="#__codelineno-dynamax-compare-2"></a><span class="n">dynamax_posterior</span> <span class="o">=</span> <span class="n">lgssm_filter</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
+</span><span id="__span-dynamax-compare-3"><a id="__codelineno-dynamax-compare-3" name="__codelineno-dynamax-compare-3" href="#__codelineno-dynamax-compare-3"></a><span class="n">dynamax_filtered_means</span> <span class="o">=</span> <span class="n">dynamax_posterior</span><span class="o">.</span><span class="n">filtered_means</span>
+</span><span id="__span-dynamax-compare-4"><a id="__codelineno-dynamax-compare-4" name="__codelineno-dynamax-compare-4" href="#__codelineno-dynamax-compare-4"></a><span class="n">dynamax_filtered_covs</span> <span class="o">=</span> <span class="n">dynamax_posterior</span><span class="o">.</span><span class="n">filtered_covariances</span>
+</span><span id="__span-dynamax-compare-5"><a id="__codelineno-dynamax-compare-5" name="__codelineno-dynamax-compare-5" href="#__codelineno-dynamax-compare-5"></a>
+</span><span id="__span-dynamax-compare-6"><a id="__codelineno-dynamax-compare-6" name="__codelineno-dynamax-compare-6" href="#__codelineno-dynamax-compare-6"></a><span class="c1"># Compare means</span>
+</span><span id="__span-dynamax-compare-7"><a id="__codelineno-dynamax-compare-7" name="__codelineno-dynamax-compare-7" href="#__codelineno-dynamax-compare-7"></a><span class="n">mean_max_diff</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">filtered_means</span> <span class="o">-</span> <span class="n">dynamax_filtered_means</span><span class="p">))</span>
+</span><span id="__span-dynamax-compare-8"><a id="__codelineno-dynamax-compare-8" name="__codelineno-dynamax-compare-8" href="#__codelineno-dynamax-compare-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum difference in filtered means: </span><span class="si">{</span><span class="n">mean_max_diff</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-compare-9"><a id="__codelineno-dynamax-compare-9" name="__codelineno-dynamax-compare-9" href="#__codelineno-dynamax-compare-9"></a>
+</span><span id="__span-dynamax-compare-10"><a id="__codelineno-dynamax-compare-10" name="__codelineno-dynamax-compare-10" href="#__codelineno-dynamax-compare-10"></a><span class="c1"># Compare covariances</span>
+</span><span id="__span-dynamax-compare-11"><a id="__codelineno-dynamax-compare-11" name="__codelineno-dynamax-compare-11" href="#__codelineno-dynamax-compare-11"></a><span class="n">cov_max_diff</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">filtered_covs</span> <span class="o">-</span> <span class="n">dynamax_filtered_covs</span><span class="p">))</span>
+</span><span id="__span-dynamax-compare-12"><a id="__codelineno-dynamax-compare-12" name="__codelineno-dynamax-compare-12" href="#__codelineno-dynamax-compare-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum difference in filtered covariances: </span><span class="si">{</span><span class="n">cov_max_diff</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-compare-13"><a id="__codelineno-dynamax-compare-13" name="__codelineno-dynamax-compare-13" href="#__codelineno-dynamax-compare-13"></a>
+</span><span id="__span-dynamax-compare-14"><a id="__codelineno-dynamax-compare-14" name="__codelineno-dynamax-compare-14" href="#__codelineno-dynamax-compare-14"></a><span class="c1"># Compare log likelihoods</span>
+</span><span id="__span-dynamax-compare-15"><a id="__codelineno-dynamax-compare-15" name="__codelineno-dynamax-compare-15" href="#__codelineno-dynamax-compare-15"></a><span class="n">dynamax_log_likelihood</span> <span class="o">=</span> <span class="n">dynamax_posterior</span><span class="o">.</span><span class="n">marginal_loglik</span>
+</span><span id="__span-dynamax-compare-16"><a id="__codelineno-dynamax-compare-16" name="__codelineno-dynamax-compare-16" href="#__codelineno-dynamax-compare-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuthbert log likelihood: </span><span class="si">{</span><span class="n">total_log_likelihood</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-compare-17"><a id="__codelineno-dynamax-compare-17" name="__codelineno-dynamax-compare-17" href="#__codelineno-dynamax-compare-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dynamax log likelihood: </span><span class="si">{</span><span class="n">dynamax_log_likelihood</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-compare-18"><a id="__codelineno-dynamax-compare-18" name="__codelineno-dynamax-compare-18" href="#__codelineno-dynamax-compare-18"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Difference: </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">total_log_likelihood</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dynamax_log_likelihood</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Running the above code yields
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Maximum difference in filtered means: 4.77e-07
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Maximum difference in filtered covariances: 1.19e-07
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>cuthbert log likelihood: -55.41
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>dynamax log likelihood: -55.41
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>Difference: 1.53e-05
+</span></code></pre></div></p>
+<h2 id="visualize-results">Visualize results</h2>
+<p>Finally, let's visualize the filtering results:</p>
+<p><img alt="Filtering Results" src="../../assets/dynamax_integration.png" /></p>
+<details class="quote">
+<summary>Code to plot the filtering results</summary>
+<div id="dynamax-visualize" class="language-python highlight"><pre><span></span><code><span id="__span-dynamax-visualize-1"><a id="__codelineno-dynamax-visualize-1" name="__codelineno-dynamax-visualize-1" href="#__codelineno-dynamax-visualize-1"></a><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</span><span id="__span-dynamax-visualize-2"><a id="__codelineno-dynamax-visualize-2" name="__codelineno-dynamax-visualize-2" href="#__codelineno-dynamax-visualize-2"></a>
+</span><span id="__span-dynamax-visualize-3"><a id="__codelineno-dynamax-visualize-3" name="__codelineno-dynamax-visualize-3" href="#__codelineno-dynamax-visualize-3"></a><span class="c1"># Extract position and velocity</span>
+</span><span id="__span-dynamax-visualize-4"><a id="__codelineno-dynamax-visualize-4" name="__codelineno-dynamax-visualize-4" href="#__codelineno-dynamax-visualize-4"></a><span class="n">true_positions</span> <span class="o">=</span> <span class="n">true_states</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-5"><a id="__codelineno-dynamax-visualize-5" name="__codelineno-dynamax-visualize-5" href="#__codelineno-dynamax-visualize-5"></a><span class="n">true_velocities</span> <span class="o">=</span> <span class="n">true_states</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-6"><a id="__codelineno-dynamax-visualize-6" name="__codelineno-dynamax-visualize-6" href="#__codelineno-dynamax-visualize-6"></a><span class="n">filtered_positions</span> <span class="o">=</span> <span class="n">filtered_means</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-7"><a id="__codelineno-dynamax-visualize-7" name="__codelineno-dynamax-visualize-7" href="#__codelineno-dynamax-visualize-7"></a><span class="n">filtered_velocities</span> <span class="o">=</span> <span class="n">filtered_means</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-8"><a id="__codelineno-dynamax-visualize-8" name="__codelineno-dynamax-visualize-8" href="#__codelineno-dynamax-visualize-8"></a>
+</span><span id="__span-dynamax-visualize-9"><a id="__codelineno-dynamax-visualize-9" name="__codelineno-dynamax-visualize-9" href="#__codelineno-dynamax-visualize-9"></a><span class="c1"># Compute 95% confidence intervals for position</span>
+</span><span id="__span-dynamax-visualize-10"><a id="__codelineno-dynamax-visualize-10" name="__codelineno-dynamax-visualize-10" href="#__codelineno-dynamax-visualize-10"></a><span class="n">position_stds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">filtered_covs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+</span><span id="__span-dynamax-visualize-11"><a id="__codelineno-dynamax-visualize-11" name="__codelineno-dynamax-visualize-11" href="#__codelineno-dynamax-visualize-11"></a><span class="n">upper_bound</span> <span class="o">=</span> <span class="n">filtered_positions</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">position_stds</span>
+</span><span id="__span-dynamax-visualize-12"><a id="__codelineno-dynamax-visualize-12" name="__codelineno-dynamax-visualize-12" href="#__codelineno-dynamax-visualize-12"></a><span class="n">lower_bound</span> <span class="o">=</span> <span class="n">filtered_positions</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">position_stds</span>
+</span><span id="__span-dynamax-visualize-13"><a id="__codelineno-dynamax-visualize-13" name="__codelineno-dynamax-visualize-13" href="#__codelineno-dynamax-visualize-13"></a>
+</span><span id="__span-dynamax-visualize-14"><a id="__codelineno-dynamax-visualize-14" name="__codelineno-dynamax-visualize-14" href="#__codelineno-dynamax-visualize-14"></a><span class="c1"># Plot position over time</span>
+</span><span id="__span-dynamax-visualize-15"><a id="__codelineno-dynamax-visualize-15" name="__codelineno-dynamax-visualize-15" href="#__codelineno-dynamax-visualize-15"></a><span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-16"><a id="__codelineno-dynamax-visualize-16" name="__codelineno-dynamax-visualize-16" href="#__codelineno-dynamax-visualize-16"></a><span class="n">time_steps</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_timesteps</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-17"><a id="__codelineno-dynamax-visualize-17" name="__codelineno-dynamax-visualize-17" href="#__codelineno-dynamax-visualize-17"></a><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">true_positions</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;True position&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-18"><a id="__codelineno-dynamax-visualize-18" name="__codelineno-dynamax-visualize-18" href="#__codelineno-dynamax-visualize-18"></a><span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">observations</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> 
+</span><span id="__span-dynamax-visualize-19"><a id="__codelineno-dynamax-visualize-19" name="__codelineno-dynamax-visualize-19" href="#__codelineno-dynamax-visualize-19"></a>          <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Observations&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-20"><a id="__codelineno-dynamax-visualize-20" name="__codelineno-dynamax-visualize-20" href="#__codelineno-dynamax-visualize-20"></a><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">filtered_positions</span><span class="p">,</span> <span class="s1">&#39;g-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Filtered position&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-21"><a id="__codelineno-dynamax-visualize-21" name="__codelineno-dynamax-visualize-21" href="#__codelineno-dynamax-visualize-21"></a><span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+</span><span id="__span-dynamax-visualize-22"><a id="__codelineno-dynamax-visualize-22" name="__codelineno-dynamax-visualize-22" href="#__codelineno-dynamax-visualize-22"></a>                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;95</span><span class="si">% c</span><span class="s1">onfidence interval&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-23"><a id="__codelineno-dynamax-visualize-23" name="__codelineno-dynamax-visualize-23" href="#__codelineno-dynamax-visualize-23"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time step&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-24"><a id="__codelineno-dynamax-visualize-24" name="__codelineno-dynamax-visualize-24" href="#__codelineno-dynamax-visualize-24"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Position&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-25"><a id="__codelineno-dynamax-visualize-25" name="__codelineno-dynamax-visualize-25" href="#__codelineno-dynamax-visualize-25"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Kalman Filter: Position Tracking&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-26"><a id="__codelineno-dynamax-visualize-26" name="__codelineno-dynamax-visualize-26" href="#__codelineno-dynamax-visualize-26"></a><span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</span><span id="__span-dynamax-visualize-27"><a id="__codelineno-dynamax-visualize-27" name="__codelineno-dynamax-visualize-27" href="#__codelineno-dynamax-visualize-27"></a><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-28"><a id="__codelineno-dynamax-visualize-28" name="__codelineno-dynamax-visualize-28" href="#__codelineno-dynamax-visualize-28"></a>
+</span><span id="__span-dynamax-visualize-29"><a id="__codelineno-dynamax-visualize-29" name="__codelineno-dynamax-visualize-29" href="#__codelineno-dynamax-visualize-29"></a><span class="c1"># Plot velocity over time</span>
+</span><span id="__span-dynamax-visualize-30"><a id="__codelineno-dynamax-visualize-30" name="__codelineno-dynamax-visualize-30" href="#__codelineno-dynamax-visualize-30"></a><span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-dynamax-visualize-31"><a id="__codelineno-dynamax-visualize-31" name="__codelineno-dynamax-visualize-31" href="#__codelineno-dynamax-visualize-31"></a><span class="n">velocity_stds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">filtered_covs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-dynamax-visualize-32"><a id="__codelineno-dynamax-visualize-32" name="__codelineno-dynamax-visualize-32" href="#__codelineno-dynamax-visualize-32"></a><span class="n">velocity_upper</span> <span class="o">=</span> <span class="n">filtered_velocities</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">velocity_stds</span>
+</span><span id="__span-dynamax-visualize-33"><a id="__codelineno-dynamax-visualize-33" name="__codelineno-dynamax-visualize-33" href="#__codelineno-dynamax-visualize-33"></a><span class="n">velocity_lower</span> <span class="o">=</span> <span class="n">filtered_velocities</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">velocity_stds</span>
+</span><span id="__span-dynamax-visualize-34"><a id="__codelineno-dynamax-visualize-34" name="__codelineno-dynamax-visualize-34" href="#__codelineno-dynamax-visualize-34"></a>
+</span><span id="__span-dynamax-visualize-35"><a id="__codelineno-dynamax-visualize-35" name="__codelineno-dynamax-visualize-35" href="#__codelineno-dynamax-visualize-35"></a><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">true_velocities</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;True velocity&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-36"><a id="__codelineno-dynamax-visualize-36" name="__codelineno-dynamax-visualize-36" href="#__codelineno-dynamax-visualize-36"></a><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">filtered_velocities</span><span class="p">,</span> <span class="s1">&#39;g-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Filtered velocity&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-37"><a id="__codelineno-dynamax-visualize-37" name="__codelineno-dynamax-visualize-37" href="#__codelineno-dynamax-visualize-37"></a><span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">velocity_lower</span><span class="p">,</span> <span class="n">velocity_upper</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+</span><span id="__span-dynamax-visualize-38"><a id="__codelineno-dynamax-visualize-38" name="__codelineno-dynamax-visualize-38" href="#__codelineno-dynamax-visualize-38"></a>                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;95</span><span class="si">% c</span><span class="s1">onfidence interval&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-39"><a id="__codelineno-dynamax-visualize-39" name="__codelineno-dynamax-visualize-39" href="#__codelineno-dynamax-visualize-39"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time step&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-40"><a id="__codelineno-dynamax-visualize-40" name="__codelineno-dynamax-visualize-40" href="#__codelineno-dynamax-visualize-40"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Velocity&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-41"><a id="__codelineno-dynamax-visualize-41" name="__codelineno-dynamax-visualize-41" href="#__codelineno-dynamax-visualize-41"></a><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Kalman Filter: Velocity Estimation&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-42"><a id="__codelineno-dynamax-visualize-42" name="__codelineno-dynamax-visualize-42" href="#__codelineno-dynamax-visualize-42"></a><span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</span><span id="__span-dynamax-visualize-43"><a id="__codelineno-dynamax-visualize-43" name="__codelineno-dynamax-visualize-43" href="#__codelineno-dynamax-visualize-43"></a><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-44"><a id="__codelineno-dynamax-visualize-44" name="__codelineno-dynamax-visualize-44" href="#__codelineno-dynamax-visualize-44"></a>
+</span><span id="__span-dynamax-visualize-45"><a id="__codelineno-dynamax-visualize-45" name="__codelineno-dynamax-visualize-45" href="#__codelineno-dynamax-visualize-45"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-dynamax-visualize-46"><a id="__codelineno-dynamax-visualize-46" name="__codelineno-dynamax-visualize-46" href="#__codelineno-dynamax-visualize-46"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;docs/assets/dynamax_integration.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-47"><a id="__codelineno-dynamax-visualize-47" name="__codelineno-dynamax-visualize-47" href="#__codelineno-dynamax-visualize-47"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Visualization saved to docs/assets/dynamax_integration.png&quot;</span><span class="p">)</span>
+</span><span id="__span-dynamax-visualize-48"><a id="__codelineno-dynamax-visualize-48" name="__codelineno-dynamax-visualize-48" href="#__codelineno-dynamax-visualize-48"></a><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></div>
+</details>
+<h2 id="key-takeaways">Key takeaways</h2>
+<ul>
+<li><strong>Seamless integration</strong>: <code>dynamax</code> Linear Gaussian SSMs can be easily used with
+  <code>cuthbert</code>'s efficient Kalman filtering algorithms</li>
+<li><strong>Parameter extraction pattern</strong>: The key is extracting <code>dynamax</code> model parameters
+  (F, Q, H, R, etc.) and wrapping them in <code>cuthbert</code>'s parameter extraction
+  functions</li>
+<li><strong>Square-root filtering</strong>: <code>cuthbert</code> uses Cholesky factors for numerical
+  stability, which we compute from <code>dynamax</code>'s covariance matrices</li>
+<li><strong>Consistent results</strong>: <code>cuthbert</code> and <code>dynamax</code> produce identical filtering
+  distributions (up to numerical precision)</li>
+</ul>
+<p>This integration pattern works for any Linear Gaussian State Space Model in
+<code>dynamax</code>. For nonlinear models, you could similarly integrate <code>dynamax</code>'s
+representation with, e.g., <code>cuthbert</code>'s particle filters or extended Kalman
+filters.</p>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong>Smoothing</strong>: Use <a href="../../cuthbert_api/smoothing/"><code>cuthbert.smoother</code></a> to
+  perform backward smoothing for more accurate state estimates.</li>
+<li><strong>Temporal parallelization</strong>: Enable parallel-in-time filtering for faster
+  computation on longer time series - see the <a href="../temporal_parallelization_kalman/">temporal parallelization
+  example</a>.</li>
+<li><strong>More examples</strong>: Check out other <a href="../">examples</a> including <a href="../kalman_tracking/">Kalman
+  tracking</a> and <a href="../parameter_estimation_em/">parameter estimation</a>.</li>
+</ul>
+<!--- entangled-tangle-block
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">imports</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">create</span><span class="o">-</span><span class="n">model</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">generate</span><span class="o">-</span><span class="n">data</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">cuthbert</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">run</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">compare</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="o">&lt;&lt;</span><span class="n">dynamax</span><span class="o">-</span><span class="n">visualize</span><span class="o">&gt;&gt;</span>
+</span></code></pre></div>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>

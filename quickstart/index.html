@@ -1,0 +1,2115 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://state-space-models.github.io/cuthbert/quickstart/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/cuthbert_c.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Quick Start - cuthbert</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quick-start" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="cuthbert" class="md-header__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../assets/cuthbert.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            cuthbert
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quick Start
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="cuthbert" class="md-nav__button md-logo" aria-label="cuthbert" data-md-component="logo">
+      
+  <img src="../assets/cuthbert.png" alt="logo">
+
+    </a>
+    cuthbert
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/state-space-models/cuthbert" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-state-space-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define the state-space model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ok-so-who-are-the-best-teams-right-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ok so who are the best teams right now?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-run-the-smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and run the smoother
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ok-so-who-are-the-best-teams-historically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ok so who are the best teams historically?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/kalman_tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/temporal_parallelization_kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Temporally-Parallelized Kalman Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/online_stoch_vol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online Filtering and Prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/parameter_estimation_em/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameter Estimation with Expectation Maximization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/dynamax_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamax Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cuthbert_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbert API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbert API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/smoothing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Smoothing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cuthbert_api/gaussian/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaussian filters and smoothers
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gaussian filters and smoothers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/gaussian/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exact Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/gaussian/moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/gaussian/taylor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Taylor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cuthbert_api/smc/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequential Monte Carlo
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/smc/backward_sampler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backward Sampler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/smc/marginal_particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marginal Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/smc/particle_filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Particle Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbert_api/smc/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cuthbertlib_api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuthbertlib API
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    cuthbertlib API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/discrete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discrete HMMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/kalman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kalman
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/linalg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linalg
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/linearize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linearize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/quadrature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quadrature Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/smc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/stats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cuthbertlib_api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-state-space-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define the state-space model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ok-so-who-are-the-best-teams-right-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ok so who are the best teams right now?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-run-the-smoother" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and run the smoother
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ok-so-who-are-the-best-teams-historically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ok so who are the best teams historically?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="quick-start">Quick start</h1>
+<p>This guide will get you up and running with <code>cuthbert</code> for state-space model inference.
+We'll walk through an example of ranking international football teams over
+time using a linearized Kalman filter.</p>
+<h2 id="imports">Imports</h2>
+<div id="quickstart-imports" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-imports-1"><a id="__codelineno-quickstart-imports-1" name="__codelineno-quickstart-imports-1" href="#__codelineno-quickstart-imports-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
+</span><span id="__span-quickstart-imports-2"><a id="__codelineno-quickstart-imports-2" name="__codelineno-quickstart-imports-2" href="#__codelineno-quickstart-imports-2"></a>
+</span><span id="__span-quickstart-imports-3"><a id="__codelineno-quickstart-imports-3" name="__codelineno-quickstart-imports-3" href="#__codelineno-quickstart-imports-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+</span><span id="__span-quickstart-imports-4"><a id="__codelineno-quickstart-imports-4" name="__codelineno-quickstart-imports-4" href="#__codelineno-quickstart-imports-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+</span><span id="__span-quickstart-imports-5"><a id="__codelineno-quickstart-imports-5" name="__codelineno-quickstart-imports-5" href="#__codelineno-quickstart-imports-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">vmap</span>
+</span><span id="__span-quickstart-imports-6"><a id="__codelineno-quickstart-imports-6" name="__codelineno-quickstart-imports-6" href="#__codelineno-quickstart-imports-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">jnp</span>
+</span><span id="__span-quickstart-imports-7"><a id="__codelineno-quickstart-imports-7" name="__codelineno-quickstart-imports-7" href="#__codelineno-quickstart-imports-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
+</span><span id="__span-quickstart-imports-8"><a id="__codelineno-quickstart-imports-8" name="__codelineno-quickstart-imports-8" href="#__codelineno-quickstart-imports-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
+</span><span id="__span-quickstart-imports-9"><a id="__codelineno-quickstart-imports-9" name="__codelineno-quickstart-imports-9" href="#__codelineno-quickstart-imports-9"></a>
+</span><span id="__span-quickstart-imports-10"><a id="__codelineno-quickstart-imports-10" name="__codelineno-quickstart-imports-10" href="#__codelineno-quickstart-imports-10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span><span class="p">,</span> <span class="n">smoother</span>
+</span><span id="__span-quickstart-imports-11"><a id="__codelineno-quickstart-imports-11" name="__codelineno-quickstart-imports-11" href="#__codelineno-quickstart-imports-11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbert.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">taylor</span>
+</span><span id="__span-quickstart-imports-12"><a id="__codelineno-quickstart-imports-12" name="__codelineno-quickstart-imports-12" href="#__codelineno-quickstart-imports-12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">cuthbertlib.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogConditionalDensity</span><span class="p">,</span> <span class="n">LogDensity</span>
+</span></code></pre></div>
+<p>Nothing too surprising there I hope. We'll be using the <a href="../cuthbert_api/gaussian/taylor/"><code>taylor</code></a>
+module which will let us generate Gaussian approximations to the filtering and smoothing
+distributions whilst handling the discrete nature of the observations.</p>
+<h2 id="load-data">Load data</h2>
+<p>We're going to need historical data from international football matches including
+the dates of the matches, which teams played, and the result (draw, home win, away win).
+Luckily, there's a very handy dataset of international football match results available on GitHub:
+<a href="https://github.com/martj42/international_results">github.com/martj42/international_results</a>.</p>
+<p>Expand the code block below to see the data loading code (or just trust me on it).</p>
+<details class="quote">
+<summary>Code to download international football data into a <code>pandas</code> DataFrame</summary>
+<div id="quickstart-load-data" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-load-data-1"><a id="__codelineno-quickstart-load-data-1" name="__codelineno-quickstart-load-data-1" href="#__codelineno-quickstart-load-data-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_international_football_data</span><span class="p">(</span>
+</span><span id="__span-quickstart-load-data-2"><a id="__codelineno-quickstart-load-data-2" name="__codelineno-quickstart-load-data-2" href="#__codelineno-quickstart-load-data-2"></a>    <span class="n">start_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1872-11-30&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-load-data-3"><a id="__codelineno-quickstart-load-data-3" name="__codelineno-quickstart-load-data-3" href="#__codelineno-quickstart-load-data-3"></a>    <span class="n">end_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-quickstart-load-data-4"><a id="__codelineno-quickstart-load-data-4" name="__codelineno-quickstart-load-data-4" href="#__codelineno-quickstart-load-data-4"></a>    <span class="n">origin_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-quickstart-load-data-5"><a id="__codelineno-quickstart-load-data-5" name="__codelineno-quickstart-load-data-5" href="#__codelineno-quickstart-load-data-5"></a>    <span class="n">min_matches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-quickstart-load-data-6"><a id="__codelineno-quickstart-load-data-6" name="__codelineno-quickstart-load-data-6" href="#__codelineno-quickstart-load-data-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+</span><span id="__span-quickstart-load-data-7"><a id="__codelineno-quickstart-load-data-7" name="__codelineno-quickstart-load-data-7" href="#__codelineno-quickstart-load-data-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-quickstart-load-data-8"><a id="__codelineno-quickstart-load-data-8" name="__codelineno-quickstart-load-data-8" href="#__codelineno-quickstart-load-data-8"></a><span class="sd">    Load international football match result data.</span>
+</span><span id="__span-quickstart-load-data-9"><a id="__codelineno-quickstart-load-data-9" name="__codelineno-quickstart-load-data-9" href="#__codelineno-quickstart-load-data-9"></a>
+</span><span id="__span-quickstart-load-data-10"><a id="__codelineno-quickstart-load-data-10" name="__codelineno-quickstart-load-data-10" href="#__codelineno-quickstart-load-data-10"></a><span class="sd">    Sourced with gratitude from the very handy:</span>
+</span><span id="__span-quickstart-load-data-11"><a id="__codelineno-quickstart-load-data-11" name="__codelineno-quickstart-load-data-11" href="#__codelineno-quickstart-load-data-11"></a><span class="sd">    https://github.com/martj42/international_results</span>
+</span><span id="__span-quickstart-load-data-12"><a id="__codelineno-quickstart-load-data-12" name="__codelineno-quickstart-load-data-12" href="#__codelineno-quickstart-load-data-12"></a>
+</span><span id="__span-quickstart-load-data-13"><a id="__codelineno-quickstart-load-data-13" name="__codelineno-quickstart-load-data-13" href="#__codelineno-quickstart-load-data-13"></a><span class="sd">    Requires internet connection to read the data.</span>
+</span><span id="__span-quickstart-load-data-14"><a id="__codelineno-quickstart-load-data-14" name="__codelineno-quickstart-load-data-14" href="#__codelineno-quickstart-load-data-14"></a>
+</span><span id="__span-quickstart-load-data-15"><a id="__codelineno-quickstart-load-data-15" name="__codelineno-quickstart-load-data-15" href="#__codelineno-quickstart-load-data-15"></a><span class="sd">    Args:</span>
+</span><span id="__span-quickstart-load-data-16"><a id="__codelineno-quickstart-load-data-16" name="__codelineno-quickstart-load-data-16" href="#__codelineno-quickstart-load-data-16"></a><span class="sd">        start_date: The start date of the data to load.</span>
+</span><span id="__span-quickstart-load-data-17"><a id="__codelineno-quickstart-load-data-17" name="__codelineno-quickstart-load-data-17" href="#__codelineno-quickstart-load-data-17"></a><span class="sd">            Defaults to the apparent start of international football &quot;1872-11-30&quot;.</span>
+</span><span id="__span-quickstart-load-data-18"><a id="__codelineno-quickstart-load-data-18" name="__codelineno-quickstart-load-data-18" href="#__codelineno-quickstart-load-data-18"></a><span class="sd">            Required in &quot;YYYY-MM-DD&quot; format.</span>
+</span><span id="__span-quickstart-load-data-19"><a id="__codelineno-quickstart-load-data-19" name="__codelineno-quickstart-load-data-19" href="#__codelineno-quickstart-load-data-19"></a><span class="sd">        end_date: The end date of the data to load. Defaults to today&#39;s date</span>
+</span><span id="__span-quickstart-load-data-20"><a id="__codelineno-quickstart-load-data-20" name="__codelineno-quickstart-load-data-20" href="#__codelineno-quickstart-load-data-20"></a><span class="sd">            Required in &quot;YYYY-MM-DD&quot; format.</span>
+</span><span id="__span-quickstart-load-data-21"><a id="__codelineno-quickstart-load-data-21" name="__codelineno-quickstart-load-data-21" href="#__codelineno-quickstart-load-data-21"></a><span class="sd">        origin_date: The date to use as the zero point the output timestamps. Defaults</span>
+</span><span id="__span-quickstart-load-data-22"><a id="__codelineno-quickstart-load-data-22" name="__codelineno-quickstart-load-data-22" href="#__codelineno-quickstart-load-data-22"></a><span class="sd">            to start_date. Required in &quot;YYYY-MM-DD&quot; format.</span>
+</span><span id="__span-quickstart-load-data-23"><a id="__codelineno-quickstart-load-data-23" name="__codelineno-quickstart-load-data-23" href="#__codelineno-quickstart-load-data-23"></a><span class="sd">        min_matches: The minimum number of matches a team must have to be included.</span>
+</span><span id="__span-quickstart-load-data-24"><a id="__codelineno-quickstart-load-data-24" name="__codelineno-quickstart-load-data-24" href="#__codelineno-quickstart-load-data-24"></a>
+</span><span id="__span-quickstart-load-data-25"><a id="__codelineno-quickstart-load-data-25" name="__codelineno-quickstart-load-data-25" href="#__codelineno-quickstart-load-data-25"></a><span class="sd">    Returns:</span>
+</span><span id="__span-quickstart-load-data-26"><a id="__codelineno-quickstart-load-data-26" name="__codelineno-quickstart-load-data-26" href="#__codelineno-quickstart-load-data-26"></a><span class="sd">        A tuple of match times, match team indices,</span>
+</span><span id="__span-quickstart-load-data-27"><a id="__codelineno-quickstart-load-data-27" name="__codelineno-quickstart-load-data-27" href="#__codelineno-quickstart-load-data-27"></a><span class="sd">            match results (0 for draw, 1 for home win, 2 for away win),</span>
+</span><span id="__span-quickstart-load-data-28"><a id="__codelineno-quickstart-load-data-28" name="__codelineno-quickstart-load-data-28" href="#__codelineno-quickstart-load-data-28"></a><span class="sd">            teams id to name dictionary, and teams name to id dictionary.</span>
+</span><span id="__span-quickstart-load-data-29"><a id="__codelineno-quickstart-load-data-29" name="__codelineno-quickstart-load-data-29" href="#__codelineno-quickstart-load-data-29"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-quickstart-load-data-30"><a id="__codelineno-quickstart-load-data-30" name="__codelineno-quickstart-load-data-30" href="#__codelineno-quickstart-load-data-30"></a>    <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-quickstart-load-data-31"><a id="__codelineno-quickstart-load-data-31" name="__codelineno-quickstart-load-data-31" href="#__codelineno-quickstart-load-data-31"></a>        <span class="n">end_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-32"><a id="__codelineno-quickstart-load-data-32" name="__codelineno-quickstart-load-data-32" href="#__codelineno-quickstart-load-data-32"></a>
+</span><span id="__span-quickstart-load-data-33"><a id="__codelineno-quickstart-load-data-33" name="__codelineno-quickstart-load-data-33" href="#__codelineno-quickstart-load-data-33"></a>    <span class="k">if</span> <span class="n">origin_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-quickstart-load-data-34"><a id="__codelineno-quickstart-load-data-34" name="__codelineno-quickstart-load-data-34" href="#__codelineno-quickstart-load-data-34"></a>        <span class="n">origin_date</span> <span class="o">=</span> <span class="n">start_date</span>
+</span><span id="__span-quickstart-load-data-35"><a id="__codelineno-quickstart-load-data-35" name="__codelineno-quickstart-load-data-35" href="#__codelineno-quickstart-load-data-35"></a>
+</span><span id="__span-quickstart-load-data-36"><a id="__codelineno-quickstart-load-data-36" name="__codelineno-quickstart-load-data-36" href="#__codelineno-quickstart-load-data-36"></a>    <span class="n">origin_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">origin_date</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-37"><a id="__codelineno-quickstart-load-data-37" name="__codelineno-quickstart-load-data-37" href="#__codelineno-quickstart-load-data-37"></a>
+</span><span id="__span-quickstart-load-data-38"><a id="__codelineno-quickstart-load-data-38" name="__codelineno-quickstart-load-data-38" href="#__codelineno-quickstart-load-data-38"></a>    <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/martj42/international_results/master/results.csv&quot;</span>
+</span><span id="__span-quickstart-load-data-39"><a id="__codelineno-quickstart-load-data-39" name="__codelineno-quickstart-load-data-39" href="#__codelineno-quickstart-load-data-39"></a>    <span class="n">data_all</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_url</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-40"><a id="__codelineno-quickstart-load-data-40" name="__codelineno-quickstart-load-data-40" href="#__codelineno-quickstart-load-data-40"></a>
+</span><span id="__span-quickstart-load-data-41"><a id="__codelineno-quickstart-load-data-41" name="__codelineno-quickstart-load-data-41" href="#__codelineno-quickstart-load-data-41"></a>    <span class="c1"># Process time data into days since origin date</span>
+</span><span id="__span-quickstart-load-data-42"><a id="__codelineno-quickstart-load-data-42" name="__codelineno-quickstart-load-data-42" href="#__codelineno-quickstart-load-data-42"></a>    <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
+</span><span id="__span-quickstart-load-data-43"><a id="__codelineno-quickstart-load-data-43" name="__codelineno-quickstart-load-data-43" href="#__codelineno-quickstart-load-data-43"></a>    <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;timestamp_days&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">origin_timestamp</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+</span><span id="__span-quickstart-load-data-44"><a id="__codelineno-quickstart-load-data-44" name="__codelineno-quickstart-load-data-44" href="#__codelineno-quickstart-load-data-44"></a>    <span class="n">data_all</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span>
+</span><span id="__span-quickstart-load-data-45"><a id="__codelineno-quickstart-load-data-45" name="__codelineno-quickstart-load-data-45" href="#__codelineno-quickstart-load-data-45"></a>        <span class="p">(</span><span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-46"><a id="__codelineno-quickstart-load-data-46" name="__codelineno-quickstart-load-data-46" href="#__codelineno-quickstart-load-data-46"></a>    <span class="p">]</span>
+</span><span id="__span-quickstart-load-data-47"><a id="__codelineno-quickstart-load-data-47" name="__codelineno-quickstart-load-data-47" href="#__codelineno-quickstart-load-data-47"></a>
+</span><span id="__span-quickstart-load-data-48"><a id="__codelineno-quickstart-load-data-48" name="__codelineno-quickstart-load-data-48" href="#__codelineno-quickstart-load-data-48"></a>    <span class="c1"># Filter teams with fewer than min_matches</span>
+</span><span id="__span-quickstart-load-data-49"><a id="__codelineno-quickstart-load-data-49" name="__codelineno-quickstart-load-data-49" href="#__codelineno-quickstart-load-data-49"></a>    <span class="n">home_counts</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;home_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</span><span id="__span-quickstart-load-data-50"><a id="__codelineno-quickstart-load-data-50" name="__codelineno-quickstart-load-data-50" href="#__codelineno-quickstart-load-data-50"></a>    <span class="n">away_counts</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;away_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</span><span id="__span-quickstart-load-data-51"><a id="__codelineno-quickstart-load-data-51" name="__codelineno-quickstart-load-data-51" href="#__codelineno-quickstart-load-data-51"></a>    <span class="n">total_counts</span> <span class="o">=</span> <span class="n">home_counts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">away_counts</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-52"><a id="__codelineno-quickstart-load-data-52" name="__codelineno-quickstart-load-data-52" href="#__codelineno-quickstart-load-data-52"></a>    <span class="n">valid_teams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">total_counts</span><span class="p">[</span><span class="n">total_counts</span> <span class="o">&gt;=</span> <span class="n">min_matches</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-53"><a id="__codelineno-quickstart-load-data-53" name="__codelineno-quickstart-load-data-53" href="#__codelineno-quickstart-load-data-53"></a>    <span class="n">data_all</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span>
+</span><span id="__span-quickstart-load-data-54"><a id="__codelineno-quickstart-load-data-54" name="__codelineno-quickstart-load-data-54" href="#__codelineno-quickstart-load-data-54"></a>        <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;home_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">valid_teams</span><span class="p">))</span>
+</span><span id="__span-quickstart-load-data-55"><a id="__codelineno-quickstart-load-data-55" name="__codelineno-quickstart-load-data-55" href="#__codelineno-quickstart-load-data-55"></a>        <span class="o">&amp;</span> <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;away_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">valid_teams</span><span class="p">))</span>
+</span><span id="__span-quickstart-load-data-56"><a id="__codelineno-quickstart-load-data-56" name="__codelineno-quickstart-load-data-56" href="#__codelineno-quickstart-load-data-56"></a>    <span class="p">]</span>
+</span><span id="__span-quickstart-load-data-57"><a id="__codelineno-quickstart-load-data-57" name="__codelineno-quickstart-load-data-57" href="#__codelineno-quickstart-load-data-57"></a>
+</span><span id="__span-quickstart-load-data-58"><a id="__codelineno-quickstart-load-data-58" name="__codelineno-quickstart-load-data-58" href="#__codelineno-quickstart-load-data-58"></a>    <span class="c1"># Build team dictionaries and IDs</span>
+</span><span id="__span-quickstart-load-data-59"><a id="__codelineno-quickstart-load-data-59" name="__codelineno-quickstart-load-data-59" href="#__codelineno-quickstart-load-data-59"></a>    <span class="n">teams_arr</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">valid_teams</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-60"><a id="__codelineno-quickstart-load-data-60" name="__codelineno-quickstart-load-data-60" href="#__codelineno-quickstart-load-data-60"></a>    <span class="n">teams_name_to_id_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">teams_arr</span><span class="p">)}</span>
+</span><span id="__span-quickstart-load-data-61"><a id="__codelineno-quickstart-load-data-61" name="__codelineno-quickstart-load-data-61" href="#__codelineno-quickstart-load-data-61"></a>    <span class="n">teams_id_to_name_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">a</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">teams_arr</span><span class="p">)}</span>
+</span><span id="__span-quickstart-load-data-62"><a id="__codelineno-quickstart-load-data-62" name="__codelineno-quickstart-load-data-62" href="#__codelineno-quickstart-load-data-62"></a>    <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;home_team_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;home_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+</span><span id="__span-quickstart-load-data-63"><a id="__codelineno-quickstart-load-data-63" name="__codelineno-quickstart-load-data-63" href="#__codelineno-quickstart-load-data-63"></a>        <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">teams_name_to_id_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+</span><span id="__span-quickstart-load-data-64"><a id="__codelineno-quickstart-load-data-64" name="__codelineno-quickstart-load-data-64" href="#__codelineno-quickstart-load-data-64"></a>    <span class="p">)</span>
+</span><span id="__span-quickstart-load-data-65"><a id="__codelineno-quickstart-load-data-65" name="__codelineno-quickstart-load-data-65" href="#__codelineno-quickstart-load-data-65"></a>    <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;away_team_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_all</span><span class="p">[</span><span class="s2">&quot;away_team&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+</span><span id="__span-quickstart-load-data-66"><a id="__codelineno-quickstart-load-data-66" name="__codelineno-quickstart-load-data-66" href="#__codelineno-quickstart-load-data-66"></a>        <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">teams_name_to_id_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+</span><span id="__span-quickstart-load-data-67"><a id="__codelineno-quickstart-load-data-67" name="__codelineno-quickstart-load-data-67" href="#__codelineno-quickstart-load-data-67"></a>    <span class="p">)</span>
+</span><span id="__span-quickstart-load-data-68"><a id="__codelineno-quickstart-load-data-68" name="__codelineno-quickstart-load-data-68" href="#__codelineno-quickstart-load-data-68"></a>
+</span><span id="__span-quickstart-load-data-69"><a id="__codelineno-quickstart-load-data-69" name="__codelineno-quickstart-load-data-69" href="#__codelineno-quickstart-load-data-69"></a>    <span class="k">return</span> <span class="n">data_all</span><span class="p">,</span> <span class="n">teams_id_to_name_dict</span><span class="p">,</span> <span class="n">teams_name_to_id_dict</span>
+</span></code></pre></div>
+</details>
+<p>We'll now load the data and convert it into JAX arrays - the format expected by
+<code>cuthbert</code> (we'll filter out very old matches and teams who play infrequently
+to make the example run faster).</p>
+<div id="quickstart-load-data-jax" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-load-data-jax-1"><a id="__codelineno-quickstart-load-data-jax-1" name="__codelineno-quickstart-load-data-jax-1" href="#__codelineno-quickstart-load-data-jax-1"></a><span class="n">football_data</span><span class="p">,</span> <span class="n">teams_id_to_name_dict</span><span class="p">,</span> <span class="n">teams_name_to_id_dict</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="__span-quickstart-load-data-jax-2"><a id="__codelineno-quickstart-load-data-jax-2" name="__codelineno-quickstart-load-data-jax-2" href="#__codelineno-quickstart-load-data-jax-2"></a>    <span class="n">load_international_football_data</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="s2">&quot;1990-01-01&quot;</span><span class="p">,</span> <span class="n">min_matches</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-jax-3"><a id="__codelineno-quickstart-load-data-jax-3" name="__codelineno-quickstart-load-data-jax-3" href="#__codelineno-quickstart-load-data-jax-3"></a><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-jax-4"><a id="__codelineno-quickstart-load-data-jax-4" name="__codelineno-quickstart-load-data-jax-4" href="#__codelineno-quickstart-load-data-jax-4"></a>
+</span><span id="__span-quickstart-load-data-jax-5"><a id="__codelineno-quickstart-load-data-jax-5" name="__codelineno-quickstart-load-data-jax-5" href="#__codelineno-quickstart-load-data-jax-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">football_data</span><span class="o">.</span><span class="n">tail</span><span class="p">())</span>
+</span><span id="__span-quickstart-load-data-jax-6"><a id="__codelineno-quickstart-load-data-jax-6" name="__codelineno-quickstart-load-data-jax-6" href="#__codelineno-quickstart-load-data-jax-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Num teams:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">teams_id_to_name_dict</span><span class="p">))</span>
+</span><span id="__span-quickstart-load-data-jax-7"><a id="__codelineno-quickstart-load-data-jax-7" name="__codelineno-quickstart-load-data-jax-7" href="#__codelineno-quickstart-load-data-jax-7"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Num matches:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">football_data</span><span class="p">))</span>
+</span><span id="__span-quickstart-load-data-jax-8"><a id="__codelineno-quickstart-load-data-jax-8" name="__codelineno-quickstart-load-data-jax-8" href="#__codelineno-quickstart-load-data-jax-8"></a>
+</span><span id="__span-quickstart-load-data-jax-9"><a id="__codelineno-quickstart-load-data-jax-9" name="__codelineno-quickstart-load-data-jax-9" href="#__codelineno-quickstart-load-data-jax-9"></a><span class="c1"># Extract data needed for filtering into JAX arrays</span>
+</span><span id="__span-quickstart-load-data-jax-10"><a id="__codelineno-quickstart-load-data-jax-10" name="__codelineno-quickstart-load-data-jax-10" href="#__codelineno-quickstart-load-data-jax-10"></a><span class="n">match_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">football_data</span><span class="p">[</span><span class="s2">&quot;timestamp_days&quot;</span><span class="p">])</span>
+</span><span id="__span-quickstart-load-data-jax-11"><a id="__codelineno-quickstart-load-data-jax-11" name="__codelineno-quickstart-load-data-jax-11" href="#__codelineno-quickstart-load-data-jax-11"></a><span class="n">match_team_indices</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">football_data</span><span class="p">[[</span><span class="s2">&quot;home_team_id&quot;</span><span class="p">,</span> <span class="s2">&quot;away_team_id&quot;</span><span class="p">]])</span>
+</span><span id="__span-quickstart-load-data-jax-12"><a id="__codelineno-quickstart-load-data-jax-12" name="__codelineno-quickstart-load-data-jax-12" href="#__codelineno-quickstart-load-data-jax-12"></a><span class="n">home_goals</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">football_data</span><span class="p">[</span><span class="s2">&quot;home_score&quot;</span><span class="p">])</span>
+</span><span id="__span-quickstart-load-data-jax-13"><a id="__codelineno-quickstart-load-data-jax-13" name="__codelineno-quickstart-load-data-jax-13" href="#__codelineno-quickstart-load-data-jax-13"></a><span class="n">away_goals</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">football_data</span><span class="p">[</span><span class="s2">&quot;away_score&quot;</span><span class="p">])</span>
+</span><span id="__span-quickstart-load-data-jax-14"><a id="__codelineno-quickstart-load-data-jax-14" name="__codelineno-quickstart-load-data-jax-14" href="#__codelineno-quickstart-load-data-jax-14"></a><span class="n">match_results</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span id="__span-quickstart-load-data-jax-15"><a id="__codelineno-quickstart-load-data-jax-15" name="__codelineno-quickstart-load-data-jax-15" href="#__codelineno-quickstart-load-data-jax-15"></a>    <span class="n">home_goals</span> <span class="o">&gt;</span> <span class="n">away_goals</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">home_goals</span> <span class="o">&lt;</span> <span class="n">away_goals</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-quickstart-load-data-jax-16"><a id="__codelineno-quickstart-load-data-jax-16" name="__codelineno-quickstart-load-data-jax-16" href="#__codelineno-quickstart-load-data-jax-16"></a><span class="p">)</span>  <span class="c1"># 0 for draw, 1 for home win, 2 for away win</span>
+</span></code></pre></div>
+<p><code>cuthbert</code> convention is to not include an observation at the initial time step.
+So we add dummy values to the start of the data
+<div id="quickstart-no-initial-obs" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-no-initial-obs-1"><a id="__codelineno-quickstart-no-initial-obs-1" name="__codelineno-quickstart-no-initial-obs-1" href="#__codelineno-quickstart-no-initial-obs-1"></a><span class="n">match_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]),</span> <span class="n">match_times</span><span class="p">])</span>
+</span><span id="__span-quickstart-no-initial-obs-2"><a id="__codelineno-quickstart-no-initial-obs-2" name="__codelineno-quickstart-no-initial-obs-2" href="#__codelineno-quickstart-no-initial-obs-2"></a><span class="n">match_team_indices</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">match_team_indices</span><span class="p">])</span>
+</span><span id="__span-quickstart-no-initial-obs-3"><a id="__codelineno-quickstart-no-initial-obs-3" name="__codelineno-quickstart-no-initial-obs-3" href="#__codelineno-quickstart-no-initial-obs-3"></a><span class="n">home_goals</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">home_goals</span><span class="p">])</span>
+</span><span id="__span-quickstart-no-initial-obs-4"><a id="__codelineno-quickstart-no-initial-obs-4" name="__codelineno-quickstart-no-initial-obs-4" href="#__codelineno-quickstart-no-initial-obs-4"></a><span class="n">away_goals</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">away_goals</span><span class="p">])</span>
+</span><span id="__span-quickstart-no-initial-obs-5"><a id="__codelineno-quickstart-no-initial-obs-5" name="__codelineno-quickstart-no-initial-obs-5" href="#__codelineno-quickstart-no-initial-obs-5"></a><span class="n">match_results</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">match_results</span><span class="p">])</span>
+</span></code></pre></div></p>
+<p>I said <code>cuthbert</code> expects JAX arrays, but more specifically and more generally,
+it expects <a href="https://docs.jax.dev/en/latest/working-with-pytrees.html"><code>pytrees</code></a> with
+<code>jax.Array</code> leaves (we call this an <code>ArrayTree</code>). Basically this allows us to
+use clearer Python structures as long as the underlying data is a JAX array.</p>
+<p>Here we'll use a <a href="https://docs.python.org/3/library/typing.html#typing.NamedTuple"><code>NamedTuple</code></a>
+to store all the information we'll need at each filtering step. Note that this includes
+the time of the current match but also the time of the previous match.</p>
+<div id="quickstart-model-inputs" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-model-inputs-1"><a id="__codelineno-quickstart-model-inputs-1" name="__codelineno-quickstart-model-inputs-1" href="#__codelineno-quickstart-model-inputs-1"></a><span class="c1"># Model inputs</span>
+</span><span id="__span-quickstart-model-inputs-2"><a id="__codelineno-quickstart-model-inputs-2" name="__codelineno-quickstart-model-inputs-2" href="#__codelineno-quickstart-model-inputs-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatchData</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+</span><span id="__span-quickstart-model-inputs-3"><a id="__codelineno-quickstart-model-inputs-3" name="__codelineno-quickstart-model-inputs-3" href="#__codelineno-quickstart-model-inputs-3"></a>    <span class="n">time</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># float with shape (,) at each time step</span>
+</span><span id="__span-quickstart-model-inputs-4"><a id="__codelineno-quickstart-model-inputs-4" name="__codelineno-quickstart-model-inputs-4" href="#__codelineno-quickstart-model-inputs-4"></a>    <span class="n">time_prev</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># float with shape (,) at each time step</span>
+</span><span id="__span-quickstart-model-inputs-5"><a id="__codelineno-quickstart-model-inputs-5" name="__codelineno-quickstart-model-inputs-5" href="#__codelineno-quickstart-model-inputs-5"></a>    <span class="n">team_indices</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># int with shape (2,) at each time step</span>
+</span><span id="__span-quickstart-model-inputs-6"><a id="__codelineno-quickstart-model-inputs-6" name="__codelineno-quickstart-model-inputs-6" href="#__codelineno-quickstart-model-inputs-6"></a>    <span class="n">result</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># {0, 1, 2} with shape (,) at each time step</span>
+</span><span id="__span-quickstart-model-inputs-7"><a id="__codelineno-quickstart-model-inputs-7" name="__codelineno-quickstart-model-inputs-7" href="#__codelineno-quickstart-model-inputs-7"></a>
+</span><span id="__span-quickstart-model-inputs-8"><a id="__codelineno-quickstart-model-inputs-8" name="__codelineno-quickstart-model-inputs-8" href="#__codelineno-quickstart-model-inputs-8"></a>
+</span><span id="__span-quickstart-model-inputs-9"><a id="__codelineno-quickstart-model-inputs-9" name="__codelineno-quickstart-model-inputs-9" href="#__codelineno-quickstart-model-inputs-9"></a><span class="n">match_times_prev</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">match_times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+</span><span id="__span-quickstart-model-inputs-10"><a id="__codelineno-quickstart-model-inputs-10" name="__codelineno-quickstart-model-inputs-10" href="#__codelineno-quickstart-model-inputs-10"></a>
+</span><span id="__span-quickstart-model-inputs-11"><a id="__codelineno-quickstart-model-inputs-11" name="__codelineno-quickstart-model-inputs-11" href="#__codelineno-quickstart-model-inputs-11"></a><span class="c1"># Load into NamedTuple</span>
+</span><span id="__span-quickstart-model-inputs-12"><a id="__codelineno-quickstart-model-inputs-12" name="__codelineno-quickstart-model-inputs-12" href="#__codelineno-quickstart-model-inputs-12"></a><span class="n">match_data</span> <span class="o">=</span> <span class="n">MatchData</span><span class="p">(</span><span class="n">match_times</span><span class="p">,</span> <span class="n">match_times_prev</span><span class="p">,</span> <span class="n">match_team_indices</span><span class="p">,</span> <span class="n">match_results</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="define-the-state-space-model">Define the state-space model</h2>
+<p>Now that we've got the data in a format we like, we can define the state-space model.</p>
+<p>We'll use the model from <a href="https://doi.org/10.1093/jrsssc/qlae035">Duffield et al</a>
+which is an Elo-style probabilistic state-space model for temporal result data.
+Here we'll just fix the static hyperparameters to the values from the paper
+(although these could also be learnt from the data - see <a href="#next-steps">next steps</a>).</p>
+<div id="quickstart-state-space-model" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-state-space-model-1"><a id="__codelineno-quickstart-state-space-model-1" name="__codelineno-quickstart-state-space-model-1" href="#__codelineno-quickstart-state-space-model-1"></a><span class="n">num_teams</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">teams_id_to_name_dict</span><span class="p">)</span>
+</span><span id="__span-quickstart-state-space-model-2"><a id="__codelineno-quickstart-state-space-model-2" name="__codelineno-quickstart-state-space-model-2" href="#__codelineno-quickstart-state-space-model-2"></a>
+</span><span id="__span-quickstart-state-space-model-3"><a id="__codelineno-quickstart-state-space-model-3" name="__codelineno-quickstart-state-space-model-3" href="#__codelineno-quickstart-state-space-model-3"></a><span class="c1"># Params from https://doi.org/10.1093/jrsssc/qlae035</span>
+</span><span id="__span-quickstart-state-space-model-4"><a id="__codelineno-quickstart-state-space-model-4" name="__codelineno-quickstart-state-space-model-4" href="#__codelineno-quickstart-state-space-model-4"></a><span class="n">init_sd</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">**</span><span class="mf">0.5</span>
+</span><span id="__span-quickstart-state-space-model-5"><a id="__codelineno-quickstart-state-space-model-5" name="__codelineno-quickstart-state-space-model-5" href="#__codelineno-quickstart-state-space-model-5"></a><span class="n">tau</span> <span class="o">=</span> <span class="mf">0.05</span>
+</span><span id="__span-quickstart-state-space-model-6"><a id="__codelineno-quickstart-state-space-model-6" name="__codelineno-quickstart-state-space-model-6" href="#__codelineno-quickstart-state-space-model-6"></a><span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.3</span>
+</span><span id="__span-quickstart-state-space-model-7"><a id="__codelineno-quickstart-state-space-model-7" name="__codelineno-quickstart-state-space-model-7" href="#__codelineno-quickstart-state-space-model-7"></a>
+</span><span id="__span-quickstart-state-space-model-8"><a id="__codelineno-quickstart-state-space-model-8" name="__codelineno-quickstart-state-space-model-8" href="#__codelineno-quickstart-state-space-model-8"></a>
+</span><span id="__span-quickstart-state-space-model-9"><a id="__codelineno-quickstart-state-space-model-9" name="__codelineno-quickstart-state-space-model-9" href="#__codelineno-quickstart-state-space-model-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_init_log_density</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">:</span> <span class="n">MatchData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">LogDensity</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-quickstart-state-space-model-10"><a id="__codelineno-quickstart-state-space-model-10" name="__codelineno-quickstart-state-space-model-10" href="#__codelineno-quickstart-state-space-model-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_log_density</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-quickstart-state-space-model-11"><a id="__codelineno-quickstart-state-space-model-11" name="__codelineno-quickstart-state-space-model-11" href="#__codelineno-quickstart-state-space-model-11"></a>        <span class="k">return</span> <span class="n">norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">init_sd</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</span><span id="__span-quickstart-state-space-model-12"><a id="__codelineno-quickstart-state-space-model-12" name="__codelineno-quickstart-state-space-model-12" href="#__codelineno-quickstart-state-space-model-12"></a>
+</span><span id="__span-quickstart-state-space-model-13"><a id="__codelineno-quickstart-state-space-model-13" name="__codelineno-quickstart-state-space-model-13" href="#__codelineno-quickstart-state-space-model-13"></a>    <span class="k">return</span> <span class="n">init_log_density</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_teams</span><span class="p">)</span>
+</span><span id="__span-quickstart-state-space-model-14"><a id="__codelineno-quickstart-state-space-model-14" name="__codelineno-quickstart-state-space-model-14" href="#__codelineno-quickstart-state-space-model-14"></a>
+</span><span id="__span-quickstart-state-space-model-15"><a id="__codelineno-quickstart-state-space-model-15" name="__codelineno-quickstart-state-space-model-15" href="#__codelineno-quickstart-state-space-model-15"></a>
+</span><span id="__span-quickstart-state-space-model-16"><a id="__codelineno-quickstart-state-space-model-16" name="__codelineno-quickstart-state-space-model-16" href="#__codelineno-quickstart-state-space-model-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_dynamics_log_density</span><span class="p">(</span>
+</span><span id="__span-quickstart-state-space-model-17"><a id="__codelineno-quickstart-state-space-model-17" name="__codelineno-quickstart-state-space-model-17" href="#__codelineno-quickstart-state-space-model-17"></a>    <span class="n">state</span><span class="p">:</span> <span class="n">taylor</span><span class="o">.</span><span class="n">LinearizedKalmanFilterState</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">:</span> <span class="n">MatchData</span>
+</span><span id="__span-quickstart-state-space-model-18"><a id="__codelineno-quickstart-state-space-model-18" name="__codelineno-quickstart-state-space-model-18" href="#__codelineno-quickstart-state-space-model-18"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">LogConditionalDensity</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-quickstart-state-space-model-19"><a id="__codelineno-quickstart-state-space-model-19" name="__codelineno-quickstart-state-space-model-19" href="#__codelineno-quickstart-state-space-model-19"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">dynamics_log_density</span><span class="p">(</span><span class="n">x_prev</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+</span><span id="__span-quickstart-state-space-model-20"><a id="__codelineno-quickstart-state-space-model-20" name="__codelineno-quickstart-state-space-model-20" href="#__codelineno-quickstart-state-space-model-20"></a>        <span class="k">return</span> <span class="n">norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span>
+</span><span id="__span-quickstart-state-space-model-21"><a id="__codelineno-quickstart-state-space-model-21" name="__codelineno-quickstart-state-space-model-21" href="#__codelineno-quickstart-state-space-model-21"></a>            <span class="n">x</span><span class="p">,</span>
+</span><span id="__span-quickstart-state-space-model-22"><a id="__codelineno-quickstart-state-space-model-22" name="__codelineno-quickstart-state-space-model-22" href="#__codelineno-quickstart-state-space-model-22"></a>            <span class="n">x_prev</span><span class="p">,</span>
+</span><span id="__span-quickstart-state-space-model-23"><a id="__codelineno-quickstart-state-space-model-23" name="__codelineno-quickstart-state-space-model-23" href="#__codelineno-quickstart-state-space-model-23"></a>            <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">tau</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">time</span> <span class="o">-</span> <span class="n">model_inputs</span><span class="o">.</span><span class="n">time_prev</span><span class="p">))</span>
+</span><span id="__span-quickstart-state-space-model-24"><a id="__codelineno-quickstart-state-space-model-24" name="__codelineno-quickstart-state-space-model-24" href="#__codelineno-quickstart-state-space-model-24"></a>            <span class="o">+</span> <span class="mf">1e-8</span><span class="p">,</span>  <span class="c1"># Add small nugget to avoid numerical issues when x = x_prev</span>
+</span><span id="__span-quickstart-state-space-model-25"><a id="__codelineno-quickstart-state-space-model-25" name="__codelineno-quickstart-state-space-model-25" href="#__codelineno-quickstart-state-space-model-25"></a>        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</span><span id="__span-quickstart-state-space-model-26"><a id="__codelineno-quickstart-state-space-model-26" name="__codelineno-quickstart-state-space-model-26" href="#__codelineno-quickstart-state-space-model-26"></a>
+</span><span id="__span-quickstart-state-space-model-27"><a id="__codelineno-quickstart-state-space-model-27" name="__codelineno-quickstart-state-space-model-27" href="#__codelineno-quickstart-state-space-model-27"></a>    <span class="k">return</span> <span class="n">dynamics_log_density</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_teams</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_teams</span><span class="p">)</span>
+</span><span id="__span-quickstart-state-space-model-28"><a id="__codelineno-quickstart-state-space-model-28" name="__codelineno-quickstart-state-space-model-28" href="#__codelineno-quickstart-state-space-model-28"></a>
+</span><span id="__span-quickstart-state-space-model-29"><a id="__codelineno-quickstart-state-space-model-29" name="__codelineno-quickstart-state-space-model-29" href="#__codelineno-quickstart-state-space-model-29"></a>
+</span><span id="__span-quickstart-state-space-model-30"><a id="__codelineno-quickstart-state-space-model-30" name="__codelineno-quickstart-state-space-model-30" href="#__codelineno-quickstart-state-space-model-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_observation_func</span><span class="p">(</span>
+</span><span id="__span-quickstart-state-space-model-31"><a id="__codelineno-quickstart-state-space-model-31" name="__codelineno-quickstart-state-space-model-31" href="#__codelineno-quickstart-state-space-model-31"></a>    <span class="n">state</span><span class="p">:</span> <span class="n">taylor</span><span class="o">.</span><span class="n">LinearizedKalmanFilterState</span><span class="p">,</span> <span class="n">model_inputs</span><span class="p">:</span> <span class="n">MatchData</span>
+</span><span id="__span-quickstart-state-space-model-32"><a id="__codelineno-quickstart-state-space-model-32" name="__codelineno-quickstart-state-space-model-32" href="#__codelineno-quickstart-state-space-model-32"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">taylor</span><span class="o">.</span><span class="n">LogPotential</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+</span><span id="__span-quickstart-state-space-model-33"><a id="__codelineno-quickstart-state-space-model-33" name="__codelineno-quickstart-state-space-model-33" href="#__codelineno-quickstart-state-space-model-33"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_potential</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span id="__span-quickstart-state-space-model-34"><a id="__codelineno-quickstart-state-space-model-34" name="__codelineno-quickstart-state-space-model-34" href="#__codelineno-quickstart-state-space-model-34"></a>        <span class="n">x_home</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">team_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</span><span id="__span-quickstart-state-space-model-35"><a id="__codelineno-quickstart-state-space-model-35" name="__codelineno-quickstart-state-space-model-35" href="#__codelineno-quickstart-state-space-model-35"></a>        <span class="n">x_away</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">team_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+</span><span id="__span-quickstart-state-space-model-36"><a id="__codelineno-quickstart-state-space-model-36" name="__codelineno-quickstart-state-space-model-36" href="#__codelineno-quickstart-state-space-model-36"></a>
+</span><span id="__span-quickstart-state-space-model-37"><a id="__codelineno-quickstart-state-space-model-37" name="__codelineno-quickstart-state-space-model-37" href="#__codelineno-quickstart-state-space-model-37"></a>        <span class="n">prob_home_win</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x_home</span> <span class="o">-</span> <span class="n">x_away</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span>
+</span><span id="__span-quickstart-state-space-model-38"><a id="__codelineno-quickstart-state-space-model-38" name="__codelineno-quickstart-state-space-model-38" href="#__codelineno-quickstart-state-space-model-38"></a>        <span class="n">prob_away_win</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x_home</span> <span class="o">-</span> <span class="n">x_away</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span>
+</span><span id="__span-quickstart-state-space-model-39"><a id="__codelineno-quickstart-state-space-model-39" name="__codelineno-quickstart-state-space-model-39" href="#__codelineno-quickstart-state-space-model-39"></a>        <span class="n">prob_draw</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">prob_home_win</span> <span class="o">-</span> <span class="n">prob_away_win</span>
+</span><span id="__span-quickstart-state-space-model-40"><a id="__codelineno-quickstart-state-space-model-40" name="__codelineno-quickstart-state-space-model-40" href="#__codelineno-quickstart-state-space-model-40"></a>
+</span><span id="__span-quickstart-state-space-model-41"><a id="__codelineno-quickstart-state-space-model-41" name="__codelineno-quickstart-state-space-model-41" href="#__codelineno-quickstart-state-space-model-41"></a>        <span class="n">prob_array</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">prob_draw</span><span class="p">,</span> <span class="n">prob_home_win</span><span class="p">,</span> <span class="n">prob_away_win</span><span class="p">])</span>
+</span><span id="__span-quickstart-state-space-model-42"><a id="__codelineno-quickstart-state-space-model-42" name="__codelineno-quickstart-state-space-model-42" href="#__codelineno-quickstart-state-space-model-42"></a>        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">prob_array</span><span class="p">[</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">result</span><span class="p">])</span>
+</span><span id="__span-quickstart-state-space-model-43"><a id="__codelineno-quickstart-state-space-model-43" name="__codelineno-quickstart-state-space-model-43" href="#__codelineno-quickstart-state-space-model-43"></a>
+</span><span id="__span-quickstart-state-space-model-44"><a id="__codelineno-quickstart-state-space-model-44" name="__codelineno-quickstart-state-space-model-44" href="#__codelineno-quickstart-state-space-model-44"></a>    <span class="k">return</span> <span class="n">log_potential</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">mean</span>
+</span></code></pre></div>
+<p>So what have we done here? We've defined the initial distribution, the dynamics, and the observation model
+by simply writing their log densities as JAX functions.</p>
+<p>Since the <code>taylor</code> method uses automatic differentiation to convert these into
+conditional Gaussian parameters, we also needed to specify the linearization point to
+use (the initial and dynamics distributions are Gaussian so we can actually use any
+linearization point we like and <code>taylor</code> will exactly recover the Gaussian parameters,
+the observation model is non-Gaussian so we tell <code>cuthbert</code> to linearize around the
+current mean). The linearization point is specified in the additional output of the
+<code>get_</code> functions - see the <a href="../cuthbert_api/gaussian/taylor/"><code>taylor</code> documentation</a>
+for more details.</p>
+<h2 id="build-the-filter">Build the filter</h2>
+<p>Now that we've defined the model, we can construct the <code>cuthbert</code> <a class="autorefs autorefs-internal" title="            Filter" href="../cuthbert_api/filtering/#cuthbert.inference.Filter">filter object</a>.</p>
+<div id="quickstart-build-filter" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-build-filter-1"><a id="__codelineno-quickstart-build-filter-1" name="__codelineno-quickstart-build-filter-1" href="#__codelineno-quickstart-build-filter-1"></a><span class="n">football_filter</span> <span class="o">=</span> <span class="n">taylor</span><span class="o">.</span><span class="n">build_filter</span><span class="p">(</span>
+</span><span id="__span-quickstart-build-filter-2"><a id="__codelineno-quickstart-build-filter-2" name="__codelineno-quickstart-build-filter-2" href="#__codelineno-quickstart-build-filter-2"></a>    <span class="n">get_init_log_density</span><span class="p">,</span>
+</span><span id="__span-quickstart-build-filter-3"><a id="__codelineno-quickstart-build-filter-3" name="__codelineno-quickstart-build-filter-3" href="#__codelineno-quickstart-build-filter-3"></a>    <span class="n">get_dynamics_log_density</span><span class="p">,</span>
+</span><span id="__span-quickstart-build-filter-4"><a id="__codelineno-quickstart-build-filter-4" name="__codelineno-quickstart-build-filter-4" href="#__codelineno-quickstart-build-filter-4"></a>    <span class="n">get_observation_func</span><span class="p">,</span>
+</span><span id="__span-quickstart-build-filter-5"><a id="__codelineno-quickstart-build-filter-5" name="__codelineno-quickstart-build-filter-5" href="#__codelineno-quickstart-build-filter-5"></a>    <span class="n">ignore_nan_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-quickstart-build-filter-6"><a id="__codelineno-quickstart-build-filter-6" name="__codelineno-quickstart-build-filter-6" href="#__codelineno-quickstart-build-filter-6"></a><span class="p">)</span>
+</span></code></pre></div>
+<details>
+<summary><code>ignore_nan_dims=True</code></summary>
+<p>The <code>ignore_nan_dims</code> argument tells <code>cuthbert</code> that we want to ignore any dimensions
+with NaN on the diagonal of the precision matrices when linearizing the observation model.
+This is because the observation model is local and only involves a small subset (two)
+of the teams at each filtering step. So <code>ignore_nan_dims=True</code> tells <code>taylor</code> to
+leave the other dimensions unchanged.</p>
+</details>
+<h2 id="run-the-filter">Run the filter</h2>
+<p>We'll use <a class="autorefs autorefs-internal" title="            filter(filter_obj, model_inputs, parallel=False, key=None)" href="../cuthbert_api/filtering/#cuthbert.filtering.filter"><code>cuthbert.filter</code></a> to easily run offline filtering on our data.</p>
+<div id="quickstart-run-filter" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-run-filter-1"><a id="__codelineno-quickstart-run-filter-1" name="__codelineno-quickstart-run-filter-1" href="#__codelineno-quickstart-run-filter-1"></a><span class="n">filter_states</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">football_filter</span><span class="p">,</span> <span class="n">match_data</span><span class="p">)</span>
+</span></code></pre></div>
+<p>That was easy wasn't it?</p>
+<details>
+<summary>Online filtering</summary>
+<p><code>cuthbert.filter</code> assumes that all data is passed at once. If you are in an
+online setting where you want to filter as you go, you can use
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Load initial state</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">filter_state</span> <span class="o">=</span> <span class="n">football_filter</span><span class="o">.</span><span class="n">init_prepare</span><span class="p">(</span><span class="n">init_match_data</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Filter next time point as new data arrives</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">filter_state</span> <span class="o">=</span> <span class="n">football_filter</span><span class="o">.</span><span class="n">filter_combine</span><span class="p">(</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">filter_state</span><span class="p">,</span> <span class="n">football_filter</span><span class="o">.</span><span class="n">filter_prepare</span><span class="p">(</span><span class="n">match_data</span><span class="p">)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">)</span>
+</span></code></pre></div></p>
+</details>
+<h2 id="ok-so-who-are-the-best-teams-right-now">Ok so who are the best teams right now?</h2>
+<p>Now that we've filtered the data, we can extract the mean and covariance of the
+filtered distribution which we can get from <code>filter_states.mean</code> and
+<code>filter_states.chol_cov</code>.</p>
+<details class="quote">
+<summary>Code to extract and plot the latest filtered distribution</summary>
+<div id="quickstart-extract-filtered-distribution" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-extract-filtered-distribution-1"><a id="__codelineno-quickstart-extract-filtered-distribution-1" name="__codelineno-quickstart-extract-filtered-distribution-1" href="#__codelineno-quickstart-extract-filtered-distribution-1"></a><span class="n">mean</span> <span class="o">=</span> <span class="n">filter_states</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-2"><a id="__codelineno-quickstart-extract-filtered-distribution-2" name="__codelineno-quickstart-extract-filtered-distribution-2" href="#__codelineno-quickstart-extract-filtered-distribution-2"></a><span class="n">top_team_inds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">mean</span><span class="p">)[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-3"><a id="__codelineno-quickstart-extract-filtered-distribution-3" name="__codelineno-quickstart-extract-filtered-distribution-3" href="#__codelineno-quickstart-extract-filtered-distribution-3"></a><span class="n">top_team_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">teams_id_to_name_dict</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">top_team_inds</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-4"><a id="__codelineno-quickstart-extract-filtered-distribution-4" name="__codelineno-quickstart-extract-filtered-distribution-4" href="#__codelineno-quickstart-extract-filtered-distribution-4"></a><span class="n">top_team_means</span> <span class="o">=</span> <span class="n">mean</span><span class="p">[</span><span class="n">top_team_inds</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-5"><a id="__codelineno-quickstart-extract-filtered-distribution-5" name="__codelineno-quickstart-extract-filtered-distribution-5" href="#__codelineno-quickstart-extract-filtered-distribution-5"></a><span class="n">cov</span> <span class="o">=</span> <span class="n">filter_states</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">filter_states</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-6"><a id="__codelineno-quickstart-extract-filtered-distribution-6" name="__codelineno-quickstart-extract-filtered-distribution-6" href="#__codelineno-quickstart-extract-filtered-distribution-6"></a><span class="n">top_team_stds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)[</span><span class="n">top_team_inds</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-7"><a id="__codelineno-quickstart-extract-filtered-distribution-7" name="__codelineno-quickstart-extract-filtered-distribution-7" href="#__codelineno-quickstart-extract-filtered-distribution-7"></a>
+</span><span id="__span-quickstart-extract-filtered-distribution-8"><a id="__codelineno-quickstart-extract-filtered-distribution-8" name="__codelineno-quickstart-extract-filtered-distribution-8" href="#__codelineno-quickstart-extract-filtered-distribution-8"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-9"><a id="__codelineno-quickstart-extract-filtered-distribution-9" name="__codelineno-quickstart-extract-filtered-distribution-9" href="#__codelineno-quickstart-extract-filtered-distribution-9"></a><span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">top_team_names</span><span class="p">,</span> <span class="n">top_team_means</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">top_team_stds</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;limegreen&quot;</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-10"><a id="__codelineno-quickstart-extract-filtered-distribution-10" name="__codelineno-quickstart-extract-filtered-distribution-10" href="#__codelineno-quickstart-extract-filtered-distribution-10"></a><span class="n">last_match_date</span> <span class="o">=</span> <span class="n">football_data</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-11"><a id="__codelineno-quickstart-extract-filtered-distribution-11" name="__codelineno-quickstart-extract-filtered-distribution-11" href="#__codelineno-quickstart-extract-filtered-distribution-11"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skill Rating </span><span class="si">{</span><span class="n">last_match_date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-12"><a id="__codelineno-quickstart-extract-filtered-distribution-12" name="__codelineno-quickstart-extract-filtered-distribution-12" href="#__codelineno-quickstart-extract-filtered-distribution-12"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-13"><a id="__codelineno-quickstart-extract-filtered-distribution-13" name="__codelineno-quickstart-extract-filtered-distribution-13" href="#__codelineno-quickstart-extract-filtered-distribution-13"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;docs/assets/international_football_latest_skill_rating.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-filtered-distribution-14"><a id="__codelineno-quickstart-extract-filtered-distribution-14" name="__codelineno-quickstart-extract-filtered-distribution-14" href="#__codelineno-quickstart-extract-filtered-distribution-14"></a><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></div>
+</details>
+<p><img alt="Best teams right now" src="../assets/international_football_latest_skill_rating.png" /></p>
+<h2 id="build-and-run-the-smoother">Build and run the smoother</h2>
+<p>The filtering distribution gives us live estimates with uncertainty. However,
+for historical evaluation we want to use smoothing so that information is passed
+backwards too.</p>
+<p>With <code>cuthbert</code> this is just as easy as filtering.</p>
+<div id="quickstart-build-smoother" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-build-smoother-1"><a id="__codelineno-quickstart-build-smoother-1" name="__codelineno-quickstart-build-smoother-1" href="#__codelineno-quickstart-build-smoother-1"></a><span class="n">football_smoother</span> <span class="o">=</span> <span class="n">taylor</span><span class="o">.</span><span class="n">build_smoother</span><span class="p">(</span><span class="n">get_dynamics_log_density</span><span class="p">)</span>
+</span><span id="__span-quickstart-build-smoother-2"><a id="__codelineno-quickstart-build-smoother-2" name="__codelineno-quickstart-build-smoother-2" href="#__codelineno-quickstart-build-smoother-2"></a><span class="n">smoother_states</span> <span class="o">=</span> <span class="n">smoother</span><span class="p">(</span><span class="n">football_smoother</span><span class="p">,</span> <span class="n">filter_states</span><span class="p">,</span> <span class="n">match_data</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="ok-so-who-are-the-best-teams-historically">Ok so who are the best teams historically?</h2>
+<details class="quote">
+<summary>Code to extract and plot the historical smoothed distribution</summary>
+<div id="quickstart-extract-historical-distribution" class="language-python highlight"><pre><span></span><code><span id="__span-quickstart-extract-historical-distribution-1"><a id="__codelineno-quickstart-extract-historical-distribution-1" name="__codelineno-quickstart-extract-historical-distribution-1" href="#__codelineno-quickstart-extract-historical-distribution-1"></a><span class="n">time_ind_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10000</span>
+</span><span id="__span-quickstart-extract-historical-distribution-2"><a id="__codelineno-quickstart-extract-historical-distribution-2" name="__codelineno-quickstart-extract-historical-distribution-2" href="#__codelineno-quickstart-extract-historical-distribution-2"></a><span class="n">top_teams_over_time_inds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">mean</span><span class="p">)[</span><span class="o">-</span><span class="mi">10</span><span class="p">:][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-3"><a id="__codelineno-quickstart-extract-historical-distribution-3" name="__codelineno-quickstart-extract-historical-distribution-3" href="#__codelineno-quickstart-extract-historical-distribution-3"></a><span class="n">top_team_names_over_time</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-quickstart-extract-historical-distribution-4"><a id="__codelineno-quickstart-extract-historical-distribution-4" name="__codelineno-quickstart-extract-historical-distribution-4" href="#__codelineno-quickstart-extract-historical-distribution-4"></a>    <span class="n">teams_id_to_name_dict</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">top_teams_over_time_inds</span>
+</span><span id="__span-quickstart-extract-historical-distribution-5"><a id="__codelineno-quickstart-extract-historical-distribution-5" name="__codelineno-quickstart-extract-historical-distribution-5" href="#__codelineno-quickstart-extract-historical-distribution-5"></a><span class="p">]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-6"><a id="__codelineno-quickstart-extract-historical-distribution-6" name="__codelineno-quickstart-extract-historical-distribution-6" href="#__codelineno-quickstart-extract-historical-distribution-6"></a><span class="n">match_dates_over_time</span> <span class="o">=</span> <span class="n">football_data</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">][</span><span class="n">time_ind_start</span><span class="p">:]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-7"><a id="__codelineno-quickstart-extract-historical-distribution-7" name="__codelineno-quickstart-extract-historical-distribution-7" href="#__codelineno-quickstart-extract-historical-distribution-7"></a><span class="n">top_team_means_over_time</span> <span class="o">=</span> <span class="n">smoother_states</span><span class="o">.</span><span class="n">mean</span><span class="p">[</span>
+</span><span id="__span-quickstart-extract-historical-distribution-8"><a id="__codelineno-quickstart-extract-historical-distribution-8" name="__codelineno-quickstart-extract-historical-distribution-8" href="#__codelineno-quickstart-extract-historical-distribution-8"></a>    <span class="n">time_ind_start</span><span class="p">:,</span> <span class="n">top_teams_over_time_inds</span>
+</span><span id="__span-quickstart-extract-historical-distribution-9"><a id="__codelineno-quickstart-extract-historical-distribution-9" name="__codelineno-quickstart-extract-historical-distribution-9" href="#__codelineno-quickstart-extract-historical-distribution-9"></a><span class="p">]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-10"><a id="__codelineno-quickstart-extract-historical-distribution-10" name="__codelineno-quickstart-extract-historical-distribution-10" href="#__codelineno-quickstart-extract-historical-distribution-10"></a><span class="n">all_covs_diag</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">x</span> <span class="o">@</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">))(</span>
+</span><span id="__span-quickstart-extract-historical-distribution-11"><a id="__codelineno-quickstart-extract-historical-distribution-11" name="__codelineno-quickstart-extract-historical-distribution-11" href="#__codelineno-quickstart-extract-historical-distribution-11"></a>    <span class="n">smoother_states</span><span class="o">.</span><span class="n">chol_cov</span><span class="p">[</span><span class="n">time_ind_start</span><span class="p">:]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-12"><a id="__codelineno-quickstart-extract-historical-distribution-12" name="__codelineno-quickstart-extract-historical-distribution-12" href="#__codelineno-quickstart-extract-historical-distribution-12"></a><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-13"><a id="__codelineno-quickstart-extract-historical-distribution-13" name="__codelineno-quickstart-extract-historical-distribution-13" href="#__codelineno-quickstart-extract-historical-distribution-13"></a><span class="n">top_team_stds_over_time</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">all_covs_diag</span><span class="p">[:,</span> <span class="n">top_teams_over_time_inds</span><span class="p">])</span>
+</span><span id="__span-quickstart-extract-historical-distribution-14"><a id="__codelineno-quickstart-extract-historical-distribution-14" name="__codelineno-quickstart-extract-historical-distribution-14" href="#__codelineno-quickstart-extract-historical-distribution-14"></a>
+</span><span id="__span-quickstart-extract-historical-distribution-15"><a id="__codelineno-quickstart-extract-historical-distribution-15" name="__codelineno-quickstart-extract-historical-distribution-15" href="#__codelineno-quickstart-extract-historical-distribution-15"></a><span class="n">interesting_dates</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-quickstart-extract-historical-distribution-16"><a id="__codelineno-quickstart-extract-historical-distribution-16" name="__codelineno-quickstart-extract-historical-distribution-16" href="#__codelineno-quickstart-extract-historical-distribution-16"></a>    <span class="s2">&quot;Spain 1</span><span class="se">\n</span><span class="s2">Netherlands 0&quot;</span><span class="p">:</span> <span class="s2">&quot;2010-07-11&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-17"><a id="__codelineno-quickstart-extract-historical-distribution-17" name="__codelineno-quickstart-extract-historical-distribution-17" href="#__codelineno-quickstart-extract-historical-distribution-17"></a>    <span class="s2">&quot;Germany 1</span><span class="se">\n</span><span class="s2">Argentina 0&quot;</span><span class="p">:</span> <span class="s2">&quot;2014-07-13&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-18"><a id="__codelineno-quickstart-extract-historical-distribution-18" name="__codelineno-quickstart-extract-historical-distribution-18" href="#__codelineno-quickstart-extract-historical-distribution-18"></a>    <span class="s2">&quot;France 4</span><span class="se">\n</span><span class="s2">Croatia 2&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-07-15&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-19"><a id="__codelineno-quickstart-extract-historical-distribution-19" name="__codelineno-quickstart-extract-historical-distribution-19" href="#__codelineno-quickstart-extract-historical-distribution-19"></a>    <span class="s2">&quot;Argentina 3(pens)</span><span class="se">\n</span><span class="s2">France 3&quot;</span><span class="p">:</span> <span class="s2">&quot;2022-12-18&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-20"><a id="__codelineno-quickstart-extract-historical-distribution-20" name="__codelineno-quickstart-extract-historical-distribution-20" href="#__codelineno-quickstart-extract-historical-distribution-20"></a><span class="p">}</span>
+</span><span id="__span-quickstart-extract-historical-distribution-21"><a id="__codelineno-quickstart-extract-historical-distribution-21" name="__codelineno-quickstart-extract-historical-distribution-21" href="#__codelineno-quickstart-extract-historical-distribution-21"></a>
+</span><span id="__span-quickstart-extract-historical-distribution-22"><a id="__codelineno-quickstart-extract-historical-distribution-22" name="__codelineno-quickstart-extract-historical-distribution-22" href="#__codelineno-quickstart-extract-historical-distribution-22"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span id="__span-quickstart-extract-historical-distribution-23"><a id="__codelineno-quickstart-extract-historical-distribution-23" name="__codelineno-quickstart-extract-historical-distribution-23" href="#__codelineno-quickstart-extract-historical-distribution-23"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+</span><span id="__span-quickstart-extract-historical-distribution-24"><a id="__codelineno-quickstart-extract-historical-distribution-24" name="__codelineno-quickstart-extract-historical-distribution-24" href="#__codelineno-quickstart-extract-historical-distribution-24"></a>    <span class="n">match_dates_over_time</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-25"><a id="__codelineno-quickstart-extract-historical-distribution-25" name="__codelineno-quickstart-extract-historical-distribution-25" href="#__codelineno-quickstart-extract-historical-distribution-25"></a>    <span class="n">top_team_means_over_time</span><span class="p">[:],</span>
+</span><span id="__span-quickstart-extract-historical-distribution-26"><a id="__codelineno-quickstart-extract-historical-distribution-26" name="__codelineno-quickstart-extract-historical-distribution-26" href="#__codelineno-quickstart-extract-historical-distribution-26"></a>    <span class="n">label</span><span class="o">=</span><span class="n">top_team_names_over_time</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-27"><a id="__codelineno-quickstart-extract-historical-distribution-27" name="__codelineno-quickstart-extract-historical-distribution-27" href="#__codelineno-quickstart-extract-historical-distribution-27"></a>    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-28"><a id="__codelineno-quickstart-extract-historical-distribution-28" name="__codelineno-quickstart-extract-historical-distribution-28" href="#__codelineno-quickstart-extract-historical-distribution-28"></a><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-29"><a id="__codelineno-quickstart-extract-historical-distribution-29" name="__codelineno-quickstart-extract-historical-distribution-29" href="#__codelineno-quickstart-extract-historical-distribution-29"></a>
+</span><span id="__span-quickstart-extract-historical-distribution-30"><a id="__codelineno-quickstart-extract-historical-distribution-30" name="__codelineno-quickstart-extract-historical-distribution-30" href="#__codelineno-quickstart-extract-historical-distribution-30"></a><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">interesting_dates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="__span-quickstart-extract-historical-distribution-31"><a id="__codelineno-quickstart-extract-historical-distribution-31" name="__codelineno-quickstart-extract-historical-distribution-31" href="#__codelineno-quickstart-extract-historical-distribution-31"></a>    <span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-32"><a id="__codelineno-quickstart-extract-historical-distribution-32" name="__codelineno-quickstart-extract-historical-distribution-32" href="#__codelineno-quickstart-extract-historical-distribution-32"></a>    <span class="c1"># Add name as little annotation at the date, vertical orientation</span>
+</span><span id="__span-quickstart-extract-historical-distribution-33"><a id="__codelineno-quickstart-extract-historical-distribution-33" name="__codelineno-quickstart-extract-historical-distribution-33" href="#__codelineno-quickstart-extract-historical-distribution-33"></a>    <span class="n">ylim_top</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+</span><span id="__span-quickstart-extract-historical-distribution-34"><a id="__codelineno-quickstart-extract-historical-distribution-34" name="__codelineno-quickstart-extract-historical-distribution-34" href="#__codelineno-quickstart-extract-historical-distribution-34"></a>    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+</span><span id="__span-quickstart-extract-historical-distribution-35"><a id="__codelineno-quickstart-extract-historical-distribution-35" name="__codelineno-quickstart-extract-historical-distribution-35" href="#__codelineno-quickstart-extract-historical-distribution-35"></a>        <span class="n">name</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-36"><a id="__codelineno-quickstart-extract-historical-distribution-36" name="__codelineno-quickstart-extract-historical-distribution-36" href="#__codelineno-quickstart-extract-historical-distribution-36"></a>        <span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">ylim_top</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">),</span>  <span class="c1"># type: ignore</span>
+</span><span id="__span-quickstart-extract-historical-distribution-37"><a id="__codelineno-quickstart-extract-historical-distribution-37" name="__codelineno-quickstart-extract-historical-distribution-37" href="#__codelineno-quickstart-extract-historical-distribution-37"></a>        <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-38"><a id="__codelineno-quickstart-extract-historical-distribution-38" name="__codelineno-quickstart-extract-historical-distribution-38" href="#__codelineno-quickstart-extract-historical-distribution-38"></a>        <span class="n">fontsize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-39"><a id="__codelineno-quickstart-extract-historical-distribution-39" name="__codelineno-quickstart-extract-historical-distribution-39" href="#__codelineno-quickstart-extract-historical-distribution-39"></a>        <span class="n">fontweight</span><span class="o">=</span><span class="s2">&quot;bold&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-40"><a id="__codelineno-quickstart-extract-historical-distribution-40" name="__codelineno-quickstart-extract-historical-distribution-40" href="#__codelineno-quickstart-extract-historical-distribution-40"></a>        <span class="n">va</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-41"><a id="__codelineno-quickstart-extract-historical-distribution-41" name="__codelineno-quickstart-extract-historical-distribution-41" href="#__codelineno-quickstart-extract-historical-distribution-41"></a>        <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span>
+</span><span id="__span-quickstart-extract-historical-distribution-42"><a id="__codelineno-quickstart-extract-historical-distribution-42" name="__codelineno-quickstart-extract-historical-distribution-42" href="#__codelineno-quickstart-extract-historical-distribution-42"></a>    <span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-43"><a id="__codelineno-quickstart-extract-historical-distribution-43" name="__codelineno-quickstart-extract-historical-distribution-43" href="#__codelineno-quickstart-extract-historical-distribution-43"></a>
+</span><span id="__span-quickstart-extract-historical-distribution-44"><a id="__codelineno-quickstart-extract-historical-distribution-44" name="__codelineno-quickstart-extract-historical-distribution-44" href="#__codelineno-quickstart-extract-historical-distribution-44"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">top_team_names_over_time</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-45"><a id="__codelineno-quickstart-extract-historical-distribution-45" name="__codelineno-quickstart-extract-historical-distribution-45" href="#__codelineno-quickstart-extract-historical-distribution-45"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Skill Rating&quot;</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-46"><a id="__codelineno-quickstart-extract-historical-distribution-46" name="__codelineno-quickstart-extract-historical-distribution-46" href="#__codelineno-quickstart-extract-historical-distribution-46"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-quickstart-extract-historical-distribution-47"><a id="__codelineno-quickstart-extract-historical-distribution-47" name="__codelineno-quickstart-extract-historical-distribution-47" href="#__codelineno-quickstart-extract-historical-distribution-47"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;docs/assets/international_football_historical_skill_rating.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="__span-quickstart-extract-historical-distribution-48"><a id="__codelineno-quickstart-extract-historical-distribution-48" name="__codelineno-quickstart-extract-historical-distribution-48" href="#__codelineno-quickstart-extract-historical-distribution-48"></a><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></div>
+</details>
+<p><img alt="Best teams historically" src="../assets/international_football_historical_skill_rating.png" /></p>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Flexible model specification</strong>: <code>cuthbert.gaussian.taylor</code> allows you to define
+  state-space models using simple log-density functions, making it easy to work
+  with complex, non-linear models like the Elo-style ranking model used here.</li>
+<li><strong>Filtering for online inference</strong>: <code>cuthbert.filter</code> can be used to offline
+  filtering on a full dataset, <code>filter_prepare</code> and <code>filter_combine</code> can be used
+  to perform online filtering as new data arrives.</li>
+<li><strong>Smoothing for historical analysis</strong>: While filtering provides online estimates,
+  smoothing gives more accurate historical estimates by incorporating future
+  information.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong>Parameter learning</strong>: We could learn the hyperparameters from the data using
+    gradient descent, expectation maximization or Bayesian sampling that all use
+    filtering and smoothing internally. Check out the <a href="../examples/parameter_estimation_em/">parameter estimation example</a> for more details.</li>
+<li><strong>Factorial state-space models</strong>: The technique here is actually inefficient for this
+    model because it treats all teams as a high-dimensional correlated state. A more
+    efficient approach would be to use a factorial state-space model where each team's
+    skill is assumed to evolve independently (aside from pairwsie interactions at matches).
+    See <a href="https://doi.org/10.1093/jrsssc/qlae035">Duffield et al</a> for more details, and
+    <code>cuthbert</code> support coming soon!</li>
+<li><strong>More examples!</strong>: Check out the other <a href="../examples/">examples</a> for more
+    techniques including exact Kalman inference, sequential Monte Carlo, interfacing
+    with probabilistic programming languages, and more.</li>
+</ul>
+<!--- entangled-tangle-block
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">imports</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">load</span><span class="o">-</span><span class="n">data</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">load</span><span class="o">-</span><span class="n">data</span><span class="o">-</span><span class="n">jax</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">no</span><span class="o">-</span><span class="n">initial</span><span class="o">-</span><span class="n">obs</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">model</span><span class="o">-</span><span class="n">inputs</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">state</span><span class="o">-</span><span class="n">space</span><span class="o">-</span><span class="n">model</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">run</span><span class="o">-</span><span class="nb">filter</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">extract</span><span class="o">-</span><span class="n">filtered</span><span class="o">-</span><span class="n">distribution</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">smoother</span><span class="o">&gt;&gt;</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="o">&lt;&lt;</span><span class="n">quickstart</span><span class="o">-</span><span class="n">extract</span><span class="o">-</span><span class="n">historical</span><span class="o">-</span><span class="n">distribution</span><span class="o">&gt;&gt;</span>
+</span></code></pre></div>
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "content.code.copy", "navigation.indexes"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>
