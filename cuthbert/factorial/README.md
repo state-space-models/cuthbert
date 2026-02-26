@@ -16,7 +16,7 @@ $$
 This motivates a factored approximation of filtering and smoothing distributions, e.g.
 
 $$
-p(x_t \mid y_{0:t}) = \prod_{f=1}^F p(x_t^f \mid y_{0:t}).
+p(x_t \mid y_{1:t}) = \prod_{f=1}^F p(x_t^f \mid y_{1:t}).
 $$
 
 A tutorial on factorial state-space models can be found in [Duffield et al](https://doi.org/10.1093/jrsssc/qlae035).
@@ -86,16 +86,15 @@ init_factorial_state, local_filter_states = cuthbert.factorial.filter(
 ## Factorial smoothing with `cuthbert`
 
 Smoothing in factorial state-space models can be performed embarrassingly parallel
-along the factors since the dynamics and factorial approximation are independent
+across factors since the dynamics and factorial approximation are independent
 across factors (the observations are fully absorbed in the filtering and
 are not accessed during smoothing).
 
 The model inputs and filter states require some preprocessing to convert from being
 single sequence with each state containing all factors into a sequence or multiple
 sequences with each state corresponding to a single factor. This can be
-fiddly but is left to the user for maximum freedom.
-
-TODO: Document some use cases in the examples.
+fiddly but is left to the user for maximum freedom. Oftentimes, it is easiest to
+specify different parameter functions for smoothing than filtering.
 
 After this preprocessing, smoothing can be performed as usual:
 
@@ -106,9 +105,9 @@ model_inputs_single_factor = ...
 # Similarly, we need to extract the filter states for the single factor we're smoothing.
 filter_states_single_factor = ...
 
-# Load smoother, with parameter extraction functions defined for factorial inference
+# Load smoother, with parameter extraction functions defined for a single factor
 kalman_smoother = cuthbert.gaussian.kalman.build_smoother(
-    get_dynamics_params=get_dynamics_params,  # Dynamics specified to act on joint local state
+    get_dynamics_params=get_dynamics_params,  # Dynamics specified to act on a single factor
 )
 
 smoother_state = kalman_smoother.convert_filter_to_smoother_state(
