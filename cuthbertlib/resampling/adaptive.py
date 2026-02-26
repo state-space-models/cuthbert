@@ -12,7 +12,7 @@ import jax.numpy as jnp
 
 from cuthbertlib.resampling.protocols import Resampling
 from cuthbertlib.smc.ess import log_ess
-from cuthbertlib.types import Array, ArrayLike, ArrayTreeLike
+from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 
 def ess_decorator(func: Resampling, threshold: float) -> Resampling:
@@ -44,7 +44,9 @@ def ess_decorator(func: Resampling, threshold: float) -> Resampling:
     """
 
     @wraps(func)
-    def _wrapped(key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int):
+    def _wrapped(
+        key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
+    ) -> tuple[Array, Array, ArrayTree]:
         logits_arr = jnp.asarray(logits)
         N = logits_arr.shape[0]
         if n != N:
