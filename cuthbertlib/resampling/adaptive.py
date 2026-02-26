@@ -46,7 +46,7 @@ def ess_decorator(func: Resampling, threshold: float) -> Resampling:
     @wraps(func)
     def _wrapped(key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int):
         logits_arr = jnp.asarray(logits)
-        N = logits.shape[0]
+        N = logits_arr.shape[0]
         if n != N:
             raise AssertionError(
                 "The number of sampled indices must be equal to the number of "
