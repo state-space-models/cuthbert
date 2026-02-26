@@ -1,7 +1,6 @@
 """Implements multinomial resampling."""
 
 from functools import partial
-from typing import Tuple
 
 import jax
 from jax import numpy as jnp
@@ -30,7 +29,7 @@ As a rule of thumb, you often don't."""
 @partial(resampling_decorator, name="Multinomial", desc=_DESCRIPTION)
 def resampling(
     key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     # In practice we don't have to sort the generated uniforms, but searchsorted
     # works faster and is more stable if both inputs are sorted, so we use the
     # _sorted_uniforms from N. Chopin, but still use searchsorted instead of his
@@ -54,7 +53,7 @@ def conditional_resampling(
     n: int,
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     pivot_in = jnp.asarray(pivot_in)
     pivot_out = jnp.asarray(pivot_out)
 

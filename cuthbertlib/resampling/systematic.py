@@ -1,7 +1,6 @@
 """Implements systematic resampling."""
 
 from functools import partial
-from typing import Tuple
 
 from jax import numpy as jnp
 from jax import random
@@ -30,7 +29,7 @@ uniform samples into the [0, 1] interval but only requires one uniform random.
 @partial(resampling_decorator, name="Systematic", desc=_DESCRIPTION)
 def resampling(
     key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     us = (random.uniform(key, ()) + jnp.arange(n)) / n
     idx = inverse_cdf(us, logits)
     logits_out = jnp.zeros_like(us)
@@ -45,7 +44,7 @@ def conditional_resampling(
     n: int,
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     logits = jnp.asarray(logits)
     pivot_in = jnp.asarray(pivot_in)
     pivot_out = jnp.asarray(pivot_out)
@@ -68,7 +67,7 @@ def conditional_resampling_0_to_0(
     key: Array,
     logits: ArrayLike,
     n: int,
-) -> Tuple[Array, Array]:
+) -> tuple[Array, Array]:
     logits = jnp.asarray(logits)
 
     N = logits.shape[0]

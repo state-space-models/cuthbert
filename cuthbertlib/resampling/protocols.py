@@ -1,6 +1,6 @@
 """Shared protocols for resampling algorithms."""
 
-from typing import Protocol, Tuple, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import jax
 
@@ -48,7 +48,7 @@ class Resampling(Protocol):
 
     def __call__(
         self, key: KeyArray, logits: ArrayLike, positions: ArrayTreeLike, n: int
-    ) -> Tuple[Array, Array, ArrayTree]:
+    ) -> tuple[Array, Array, ArrayTree]:
         f"""Computes resampling indices according to given logits.
         {_RESAMPLING_DOC}
         """
@@ -67,7 +67,7 @@ class ConditionalResampling(Protocol):
         n: int,
         pivot_in: ScalarArrayLike,
         pivot_out: ScalarArrayLike,
-    ) -> Tuple[Array, Array, ArrayTree]:
+    ) -> tuple[Array, Array, ArrayTree]:
         f"""Conditional resampling.
         {_CONDITIONAL_RESAMPLING_DOC}
         """

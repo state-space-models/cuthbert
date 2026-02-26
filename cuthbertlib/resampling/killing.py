@@ -1,7 +1,6 @@
 """Implements killing resampling."""
 
 from functools import partial
-from typing import Tuple
 
 from jax import numpy as jnp
 from jax import random
@@ -38,7 +37,7 @@ number of particles `logits.shape[0]`.
 @partial(resampling_decorator, name="Killing", desc=_DESCRIPTION)
 def resampling(
     key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     logits = jnp.asarray(logits)
     key_1, key_2 = random.split(key)
     N = logits.shape[0]
@@ -70,7 +69,7 @@ def conditional_resampling(
     n: int,
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
-) -> Tuple[Array, Array, ArrayTree]:
+) -> tuple[Array, Array, ArrayTree]:
     pivot_in = jnp.asarray(pivot_in)
     pivot_out = jnp.asarray(pivot_out)
 
