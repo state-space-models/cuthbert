@@ -1,5 +1,5 @@
 import itertools
-from typing import cast
+from typing import cast, Callable
 
 import chex
 import jax
@@ -12,6 +12,7 @@ from cuthbert import factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.types import ArrayTree
+from cuthbertlib.linalg import block_marginal_sqrt_cov
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 
@@ -34,8 +35,9 @@ def load_kalman_pairwise_factorial_inference(
     chol_Rs: Array,  # (T, d_y, d_y)
     ys: Array,  # (T, d_y)
     factorial_indices: Array,  # (T, 2)
-) -> tuple[Filter, Smoother, factorial.Factorializer, Array]:
-    """Builds Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
+    smoother_factorial_index: int,
+) -> tuple[Filter, factorial.Factorializer, Array, Smoother, Array]:
+    """Builds factorial Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
@@ -54,15 +56,52 @@ def load_kalman_pairwise_factorial_inference(
     filter = kalman.build_filter(
         get_init_params, get_dynamics_params, get_observation_params
     )
-    smoother = kalman.build_smoother(
-        get_dynamics_params, store_gain=True, store_chol_cov_given_next=True
-    )
 
     factorializer = factorial.gaussian.build_factorializer(
         get_factorial_indices=lambda model_inputs: factorial_indices[model_inputs - 1]
     )
-    model_inputs = jnp.arange(len(ys) + 1)
-    return filter, smoother, factorializer, model_inputs
+    filter_model_inputs = jnp.arange(len(ys) + 1)
+
+    # Some processing to get smoothing for a single factor
+    num_factors = len(m0)
+    d_x = m0.shape[1]
+    Fs_per_factor = [[] for _ in range(num_factors)]
+    cs_per_factor = [[] for _ in range(num_factors)]
+    chol_Qs_per_factor = [[] for _ in range(num_factors)]
+
+    for i in range(1, len(ys) + 1):
+        h, a = factorial_indices[i - 1]
+
+        F_h = Fs[i - 1][:d_x, :d_x]
+        F_a = Fs[i - 1][-d_x:, -d_x:]
+        c_h = cs[i - 1][:d_x]
+        c_a = cs[i - 1][-d_x:]
+        chol_Q_h, chol_Q_a = block_marginal_sqrt_cov(chol_Qs[i - 1], d_x)
+        Fs_per_factor[h].append(F_h)
+        cs_per_factor[h].append(c_h)
+        chol_Qs_per_factor[h].append(chol_Q_h)
+
+        Fs_per_factor[a].append(F_a)
+        cs_per_factor[a].append(c_a)
+        chol_Qs_per_factor[a].append(chol_Q_a)
+
+    def get_dynamics_params_single_factor(
+        model_inputs: int,
+    ) -> tuple[Array, Array, Array]:
+        return (
+            Fs_per_factor[smoother_factorial_index][model_inputs - 1],
+            cs_per_factor[smoother_factorial_index][model_inputs - 1],
+            chol_Qs_per_factor[smoother_factorial_index][model_inputs - 1],
+        )
+
+    smoother = kalman.build_smoother(
+        get_dynamics_params_single_factor,
+        store_gain=True,
+        store_chol_cov_given_next=True,
+    )
+    smoother_model_inputs = jnp.arange(len(Fs_per_factor[smoother_factorial_index]) + 1)
+
+    return filter, factorializer, filter_model_inputs, smoother, smoother_model_inputs
 
 
 seeds = [1, 43]
@@ -86,8 +125,10 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     model_params = generate_factorial_kalman_model(
         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
     )
-    filter_obj, _, factorializer, model_inputs = (
-        load_kalman_pairwise_factorial_inference(*model_params)
+    filter_obj, factorializer, model_inputs, _, _ = (
+        load_kalman_pairwise_factorial_inference(
+            *model_params, smoother_factorial_index=0
+        )
     )
 
     # True means, covs and log norm constants
@@ -163,7 +204,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
         ),
     )
 
-    # Check output_factorial = False
+    # Check output_factorial = True
     factorial_filtering_states = factorial.filter(
         filter_obj, factorializer, model_inputs, output_factorial=True
     )
@@ -180,3 +221,38 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     chex.assert_trees_all_close(
         ells, factorial_filtering_states.log_normalizing_constant[1:]
     )
+
+
+smoother_indices = [0, 1, 5]
+
+common_smoother_params = list(itertools.product(common_params, smoother_indices))
+
+
+@pytest.mark.parametrize(
+    "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps,smoother_factorial_index",
+    common_smoother_params,
+)
+def test_smoother(
+    seed,
+    x_dim,
+    y_dim,
+    num_factors,
+    num_factors_local,
+    num_time_steps,
+    smoother_factorial_index,
+):
+    model_params = generate_factorial_kalman_model(
+        seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
+    )
+    filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
+        load_kalman_pairwise_factorial_inference(
+            *model_params, smoother_factorial_index=smoother_factorial_index
+        )
+    )
+
+    # Check output_factorial = False
+    init_state, local_filter_states = factorial.filter(
+        filter_obj, factorializer, filter_model_inputs, output_factorial=False
+    )
+
+    # Convert to local smoother states
