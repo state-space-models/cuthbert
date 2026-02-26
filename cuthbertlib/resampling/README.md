@@ -35,3 +35,19 @@ adaptive_resampled_indices, _, adaptive_resampled_particles = adaptive_resamplin
     resampling_key, logits, particles, 100
 )
 ```
+
+For consistent gradient estimates with respect to model parameters, the [stop-gradient particle filter](https://arxiv.org/abs/2106.10314) is also implemented as a decorator.
+
+```python
+differentiable_resampling = resampling.stop_gradient.stop_gradient_decorator(
+    resampling.multinomial.resampling
+)
+# can be combined with adaptive resampling
+adaptive_and_differentiable_resampling = resampling.adaptive.ess_decorator(
+    differentiable_resampling,
+    threshold=0.5,
+)
+resampled_indices, _, resampled_particles = adaptive_and_differentiable_resampling(
+    resampling_key, logits, particles, 100
+)
+```

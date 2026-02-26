@@ -11,7 +11,7 @@ from cuthbert import filter
 from cuthbert.inference import Filter
 from cuthbert.smc import marginal_particle_filter, particle_filter
 from cuthbertlib.kalman.generate import generate_lgssm
-from cuthbertlib.resampling import ess_decorator, systematic
+from cuthbertlib.resampling import ess_decorator, stop_gradient_decorator, systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -23,15 +23,74 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
+def generate_random_walk_model(seed: int, x_dim: int, y_dim: int, num_time_steps: int):
+    r"""Generates data from the simple LTI SSM
+    x_t = x_{t-1} + \epsilon_t
+    y_t = x_t + \eta_t
+    where \epsilon_t ~ N(0, 0.05^2) and \eta_t ~ N(0, 0.5^2).
+    """
+    key = random.key(seed)
+
+    m0 = jnp.zeros((x_dim,))
+    chol_P0 = jnp.eye(x_dim)
+
+    F = jnp.eye(x_dim)
+    c = jnp.zeros((x_dim,))
+    chol_Q = 0.5 * jnp.eye(x_dim)
+
+    H = jnp.zeros((y_dim, x_dim))
+    diag_len = min(x_dim, y_dim)
+    H = H.at[jnp.arange(diag_len), jnp.arange(diag_len)].set(1.0)
+    d = jnp.zeros((y_dim,))
+    chol_R = 0.5 * jnp.eye(y_dim)
+
+    key, x0_key = random.split(key)
+    x0 = m0 + chol_P0 @ random.normal(x0_key, (x_dim,))
+
+    def body(x_prev, k):
+        k_state, k_obs = random.split(k)
+        x = F @ x_prev + c + chol_Q @ random.normal(k_state, (x_dim,))
+        y = H @ x + d + chol_R @ random.normal(k_obs, (y_dim,))
+        return x, y
+
+    scan_keys = random.split(key, num_time_steps)
+    _, ys = jax.lax.scan(body, x0, scan_keys)
+
+    # Broadcast the parameters to (N_t, ...) for use with, e.g., std_kalman_filter.
+    Fs = jnp.broadcast_to(F, (num_time_steps, x_dim, x_dim))
+    cs = jnp.broadcast_to(c, (num_time_steps, x_dim))
+    chol_Qs = jnp.broadcast_to(chol_Q, (num_time_steps, x_dim, x_dim))
+    Hs = jnp.broadcast_to(H, (num_time_steps, y_dim, x_dim))
+    ds = jnp.broadcast_to(d, (num_time_steps, y_dim))
+    chol_Rs = jnp.broadcast_to(chol_R, (num_time_steps, y_dim, y_dim))
+
+    return m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+
+
 def load_inference(
-    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method, noop=False
+    m0,
+    chol_P0,
+    Fs,
+    cs,
+    chol_Qs,
+    Hs,
+    ds,
+    chol_Rs,
+    ys,
+    method,
+    use_differentiable_resampling=True,
+    noop=False,
+    n_filter_particles=None,
+    ess_threshold=0.7,
 ):
     # Maybe make this more flexible in the future if we want to support other methods.
     if method == "bootstrap":
-        n_filter_particles = 1_000_000
+        if n_filter_particles is None:
+            n_filter_particles = 1_000_000
         algo = particle_filter
     elif method == "marginal":
-        n_filter_particles = 3_000
+        if n_filter_particles is None:
+            n_filter_particles = 3_000
 
         algo = marginal_particle_filter
     else:
@@ -61,9 +120,11 @@ def load_inference(
                 Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
             )
 
-    ess_threshold = 0.7
     # Decorate the resampling with adaptive behaviour and pass that to the filter
-    adaptive_systematic = ess_decorator(systematic.resampling, ess_threshold)
+    resampling_fn = systematic.resampling
+    if use_differentiable_resampling:
+        resampling_fn = stop_gradient_decorator(resampling_fn)
+    adaptive_systematic = ess_decorator(resampling_fn, ess_threshold)
 
     inference = Filter(
         init_prepare=partial(
@@ -97,15 +158,28 @@ class Test(chex.TestCase):
         y_dim=[2],
         num_time_steps=[20],
         method=["bootstrap", "marginal"],
+        use_differentiable_resampling=[True, False],
     )
-    def test(self, seed, x_dim, y_dim, num_time_steps, method):
+    def test(
+        self, seed, x_dim, y_dim, num_time_steps, method, use_differentiable_resampling
+    ):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
             seed, x_dim, y_dim, num_time_steps
         )
 
         # Run the particle filter.
         inference, model_inputs = load_inference(
-            m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method
+            m0,
+            chol_P0,
+            Fs,
+            cs,
+            chol_Qs,
+            Hs,
+            ds,
+            chol_Rs,
+            ys,
+            method,
+            use_differentiable_resampling,
         )
         key = random.key(seed + 1)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
@@ -207,6 +281,66 @@ class Test(chex.TestCase):
         assert isinstance(particles, tuple) and len(particles) == 2
         expected_shape = (num_time_steps + 1, n_filter_particles, 2)
         chex.assert_shape(particles, expected_shape)
+
+    @parameterized.product(
+        seed=[0, 41], x_dim=[2, 1], y_dim=[2, 1], num_time_steps=[10]
+    )
+    def test_stop_gradient_resampling(self, seed, x_dim, y_dim, num_time_steps):
+        """Tests that the stop-gradient DPF provides estimates of the gradient that are
+        close (within 20% relative error) of the gradient provided by the Kalman filter when the median
+        of 10 trials is taken.
+        """
+        y_dim = max(x_dim, y_dim)
+        m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_random_walk_model(
+            seed, x_dim, y_dim, num_time_steps
+        )
+
+        F = Fs[0]
+        n_particles = 10_000
+
+        P0 = chol_P0 @ chol_P0.T
+        Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
+        Rs = chol_Rs @ chol_Rs.transpose(0, 2, 1)
+
+        def kalman_mll(F_param):
+            Fs_param = jnp.tile(F_param[None, :, :], (num_time_steps, 1, 1))
+            _, _, ells = std_kalman_filter(m0, P0, Fs_param, cs, Qs, Hs, ds, Rs, ys)
+            return ells[-1]
+
+        def pf_mll(F_param, key):
+            Fs_param = jnp.tile(F_param[None, :, :], (num_time_steps, 1, 1))
+            filt, model_inputs = load_inference(
+                m0,
+                chol_P0,
+                Fs_param,
+                cs,
+                chol_Qs,
+                Hs,
+                ds,
+                chol_Rs,
+                ys,
+                "bootstrap",
+                use_differentiable_resampling=True,
+                n_filter_particles=n_particles,
+                ess_threshold=1.01,  # always resample
+            )
+            states = filter(filt, model_inputs, parallel=False, key=key)
+            return states.log_normalizing_constant[-1]
+
+        kalman_grad = jax.grad(kalman_mll)
+        pf_grad = jax.grad(pf_mll, argnums=0)
+
+        grad_key = random.key(seed + 1)
+        pf_grads = []
+        n_trials = 10
+        for _ in range(n_trials):
+            grad_key, trial_key = random.split(grad_key)
+            pf_grads.append(pf_grad(F, trial_key))
+
+        pf_grad_median = jnp.median(jnp.array(pf_grads), axis=0)
+        kf_grad = kalman_grad(F)
+        rel_err = jnp.linalg.norm(pf_grad_median - kf_grad) / jnp.linalg.norm(kf_grad)
+        assert rel_err < 0.2
 
 
 @pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])

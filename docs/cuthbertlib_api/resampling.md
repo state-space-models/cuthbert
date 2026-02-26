@@ -20,3 +20,7 @@
         - conditional_resampling
 
 ::: cuthbertlib.resampling.killing
+
+::: cuthbertlib.resampling.adaptive
+
+::: cuthbertlib.resampling.stop_gradient
