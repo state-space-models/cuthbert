@@ -124,8 +124,10 @@ kalman_grad = jax.grad(kalman_mll)
 
 To select differentiable or non-differentiable resampling, we simply wrap the corresponding resampling function in the `stop_gradient_decorator`, i.e.,
 ```python
+from cuthbertlib.resampling import autodiff
+
 resampling_fn = (
-    stop_gradient.stop_gradient_decorator(systematic.resampling)
+    autodiff.stop_gradient_decorator(systematic.resampling)
     if differentiable_resampling
     else systematic.resampling
 )
@@ -137,7 +139,7 @@ Putting this together, we can define our PF MLL function.
 ```{.python #pf_grad_bias-pf_mll}
 from cuthbertlib.resampling import systematic
 from cuthbertlib.resampling import adaptive
-from cuthbertlib.resampling import stop_gradient
+from cuthbertlib.resampling import autodiff
 
 def pf_mll(
     theta,
@@ -170,7 +172,7 @@ def pf_mll(
         return logpdf(H @ x + d, ys[idx], chol_R, nan_support=False)
 
     resampling_fn = (
-        stop_gradient.stop_gradient_decorator(systematic.resampling)
+        autodiff.stop_gradient_decorator(systematic.resampling)
         if differentiable_resampling
         else systematic.resampling
     )
@@ -507,7 +509,7 @@ Finally, we should be sure that the forward pass is not actually being modified 
             return logpdf(H @ x + d, ys[idx], chol_R, nan_support=False)
 
         resampling_fn = (
-            stop_gradient.stop_gradient_decorator(systematic.resampling)
+            autodiff.stop_gradient_decorator(systematic.resampling)
             if diff
             else systematic.resampling
         )
@@ -561,7 +563,7 @@ Finally, we should be sure that the forward pass is not actually being modified 
 ## Key Takeaways
 
 - **Gradient bias**: The default (non-differentiable) resampling in the particle filter yields biased score estimates when differentiated with autodiff; the bias is visible when compared to the exact Kalman score on a linear-Gaussian model.
-- **Differentiable resampling**: Using `cuthbertlib.resampling.stop_gradient` with systematic resampling gives a differentiable PF whose score estimates are much less biased, at similar computational cost.
+- **Differentiable resampling**: Using `cuthbertlib.resampling.autodiff.stop_gradient_decorator` with systematic resampling gives a differentiable PF whose score estimates are much less biased, at similar computational cost.
 - **Exact reference**: On linear-Gaussian SSMs, the Kalman filter provides exact log marginal likelihood and score; this example uses it as a ground truth to quantify PF gradient bias.
 
 ## Next Steps

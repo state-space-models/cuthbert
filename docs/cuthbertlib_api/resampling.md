@@ -23,4 +23,4 @@
 
 ::: cuthbertlib.resampling.adaptive
 
-::: cuthbertlib.resampling.stop_gradient
+::: cuthbertlib.resampling.autodiff

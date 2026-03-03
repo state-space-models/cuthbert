@@ -1,8 +1,9 @@
-"""Stop gradient resampling decorator.
+"""Implements decorators for automatic differentiation of resampling schemes.
 
-The stop_gradient resampling scheme provides the classical Fisher estimates for
-the score function via automatic differentiation. This can be wrapped around a
-resampling scheme such as multinomial or systematic resampling.
+Current supported is the stop_gradient resampling scheme, which provides the
+classical Fisher estimates for the score function via automatic differentiation.
+This can be wrapped around a resampling scheme such as multinomial or systematic
+resampling.
 
 See [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314) for more details.
 """

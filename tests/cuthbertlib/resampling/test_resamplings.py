@@ -9,7 +9,7 @@ from jax import random
 from jax.scipy.special import logsumexp
 
 from cuthbertlib.resampling import killing, multinomial, systematic
-from cuthbertlib.resampling.stop_gradient import stop_gradient_decorator
+from cuthbertlib.resampling.autodiff import stop_gradient_decorator
 from tests.cuthbertlib.resampling.utils import (
     conditional_resampling_tester,
     resampling_tester,
@@ -158,5 +158,4 @@ class TestResamplings(chex.TestCase):
             true_sigma
         )
 
-        print(grad_base, grad_plain, grad_stop, method)
         chex.assert_trees_all_close(grad_stop, grad_base, rtol=0.05, atol=0.05)
