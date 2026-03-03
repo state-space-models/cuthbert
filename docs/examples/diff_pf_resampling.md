@@ -1,8 +1,16 @@
 # Differentiable Resampling
 
-In the default implementation of a particle filter, particles are propagated through a Markov kernel $M(x_t \mid x_{t-1})$, reweighted according to a potential function $G_t(x_{t-1}, x_t)$, and potentially resampled. While [various resamplings strategies exist](../cuthbertlib_api/resampling.md), they are typically non-differentiable, leading to bias in estimates of the marginal log-likelihood's gradient, $\nabla_{\theta} \log p(y_{1:T})$. This is unfortunate, as unbiased gradients of the marginal log-likelihood are crucial for parameter estimation tasks.
+In the default implementation of a particle filter, particles are propagated through a Markov kernel $M(x_t \mid x_{t-1})$, reweighted according to a potential function $G_t(x_{t-1}, x_t)$, and potentially resampled. While [various resamplings strategies exist](../cuthbertlib_api/resampling.md), they are typically non-differentiable, leading to biased estimates of the marginal log-likelihood's gradient, $\nabla_{\theta} \log p(y_{1:T})$, if used directly within `jax.grad` autodifferentiation framework. This is unfortunate, as relying on these biased gradients of the marginal log-likelihood falsifies for parameter estimation tasks.
 
-Because this task is so important, many different approaches have been proposed for differentiable resampling. A simple implementation is that of the stop-gradient differentiable particle filter, which results in classical estimates of the gradients of the marginal log-likelihood via automatic differentation, as proposed by [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314). This implementation is cheap, results in identical results in the forward pass of the filter, and is effective for estimating the parameters of the dynamics or observation model in a state-space model (but not parameters of the proposal!). Here, we illustrate the bias of non-differentiable resampling, and show how to use the `stop_gradient_decorator` from `cuthbertlib.resampling` to achieve better gradient estimates. 
+Because of this, many different approaches have been proposed to make the resampling step differentiable. A simple implementation is that of [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314), which implements a stop-gradient trick recovering classical estimates of the gradients of the marginal log-likelihood via automatic differentation. 
+Formally, it is equivalent to computing 
+\begin{align}
+  \nabla_{\theta} \log p(y_{1:T}) 
+      &= \int \nabla_{\theta} \log p(x_{0:T}, y_{1:T}) \, p(x_{0:T} \mid y_{1:T}) \mathrm{d}x_{0:T}\\
+      &\approx \sum_{n=1}^N W_T^{n} \log p(X^{(n)}_{0:T}, y_{1:T})
+\end{align}
+under the high variance *[backward tracing](https://github.com/state-space-models/cuthbert/blob/main/cuthbertlib/smc/smoothing/tracing.py)* version of the smoothing distribution.
+However, this implementation is cheap, black-box, does not modify the forward pass of the filter when implement, and is therefore a reasonable start for estimating the parameters of the dynamics or observation model in a state-space model (but not parameters of the proposal!). Here, we illustrate the bias of non-differentiable resampling, and show how to use the `stop_gradient_decorator` from `cuthbertlib.resampling` to achieve better gradient estimates. 
 
 This is partially based on the [PFJax gradient comparisons](https://pfjax.readthedocs.io/en/latest/notebooks/gradient_comparisons.html).
 
