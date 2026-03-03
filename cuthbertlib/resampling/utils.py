@@ -12,6 +12,23 @@ from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 
 @jax.jit
+def normalize(log_w: Array, log_space: bool = False) -> Array:
+    """Normalizes a set of log-weights.
+
+    Args:
+        log_w: The log-weights to normalize.
+        log_space: Whether to return the normalized weights in log-space.
+
+    Returns:
+        The normalized weights.
+    """
+    log_w_norm = log_w - logsumexp(log_w)
+    if log_space:
+        return log_w_norm
+    return jnp.exp(log_w_norm)
+
+
+@jax.jit
 def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
     """Inverse CDF sampling for resampling algorithms.
 
