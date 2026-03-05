@@ -2,7 +2,9 @@
 
 import jax
 import jax.numpy as jnp
+
 from cuthbertlib.types import Array
+
 
 def _adj(x: Array) -> Array:
     """Conjugate transpose for batched matrices."""
