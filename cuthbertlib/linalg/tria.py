@@ -2,15 +2,15 @@
 
 import jax
 import jax.numpy as jnp
+from cuthbertlib.types import Array
 
-
-def _adj(x: jax.Array) -> jax.Array:
+def _adj(x: Array) -> Array:
     """Conjugate transpose for batched matrices."""
     return jnp.swapaxes(x.conj(), -1, -2)
 
 
 @jax.custom_jvp
-def tria(A: jax.Array) -> jax.Array:
+def tria(A: Array) -> Array:
     """A triangularization operator using QR decomposition.
 
     Args:
