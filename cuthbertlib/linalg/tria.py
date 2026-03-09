@@ -66,7 +66,7 @@ def _tria_jvp(primals, tangents):
     (dA,) = tangents
 
     A_T = jnp.swapaxes(A, -1, -2)
-    Q, R_qr = jax.numpy.linalg.qr(A_T, mode="reduced")
+    Q, R_qr = jnp.linalg.qr(A_T, mode="reduced")
 
     R = jnp.swapaxes(R_qr, -1, -2)
 
