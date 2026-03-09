@@ -64,23 +64,26 @@ def filter(
     def body_local(prev_factorial_state, prep_inp_and_k):
         prep_inp, k = prep_inp_and_k
         factorial_inds = factorializer.get_factorial_indices(prep_inp)
-        local_state = factorializer.extract_and_join(
+        factorial_inds = jnp.asarray(factorial_inds)
+
+        # Extract and join local factors into joint local state
+        local_factorial_state = factorializer.extract(
             prev_factorial_state, factorial_inds
         )
+        local_state = factorializer.join(local_factorial_state)
+
+        # Filter the joint local state
         prep_state = filter_obj.filter_prepare(prep_inp, key=k)
         filtered_joint_state = filter_obj.filter_combine(local_state, prep_state)
-        factorial_state = factorializer.marginalize_and_insert(
-            filtered_joint_state, prev_factorial_state, factorial_inds
+
+        # Marginalize and insert filtered joint local state into factorial state
+        local_factorial_filtered_state = factorializer.marginalize(
+            filtered_joint_state, len(factorial_inds)
         )
-
-        def extract(arr):
-            if arr.ndim >= 2:
-                return arr[factorial_inds]
-            else:
-                return arr
-
-        factorial_state_fac_inds_only = tree.map(extract, factorial_state)
-        return factorial_state, factorial_state_fac_inds_only
+        factorial_state = factorializer.insert(
+            local_factorial_filtered_state, prev_factorial_state, factorial_inds
+        )
+        return factorial_state, local_factorial_filtered_state
 
     if output_factorial:
 

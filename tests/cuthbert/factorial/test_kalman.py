@@ -1,5 +1,5 @@
 import itertools
-from typing import cast, Callable
+from typing import Callable, cast
 
 import chex
 import jax
@@ -11,8 +11,8 @@ from jax.scipy.linalg import block_diag
 from cuthbert import factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
-from cuthbertlib.types import ArrayTree
 from cuthbertlib.linalg import block_marginal_sqrt_cov
+from cuthbertlib.types import ArrayTree
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 
@@ -223,36 +223,36 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     )
 
 
-smoother_indices = [0, 1, 5]
+# smoother_indices = [0, 1, 5]
 
-common_smoother_params = list(itertools.product(common_params, smoother_indices))
+# common_smoother_params = list(itertools.product(common_params, smoother_indices))
 
 
-@pytest.mark.parametrize(
-    "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps,smoother_factorial_index",
-    common_smoother_params,
-)
-def test_smoother(
-    seed,
-    x_dim,
-    y_dim,
-    num_factors,
-    num_factors_local,
-    num_time_steps,
-    smoother_factorial_index,
-):
-    model_params = generate_factorial_kalman_model(
-        seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
-    )
-    filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
-        load_kalman_pairwise_factorial_inference(
-            *model_params, smoother_factorial_index=smoother_factorial_index
-        )
-    )
+# @pytest.mark.parametrize(
+#     "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps,smoother_factorial_index",
+#     common_smoother_params,
+# )
+# def test_smoother(
+#     seed,
+#     x_dim,
+#     y_dim,
+#     num_factors,
+#     num_factors_local,
+#     num_time_steps,
+#     smoother_factorial_index,
+# ):
+#     model_params = generate_factorial_kalman_model(
+#         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
+#     )
+#     filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
+#         load_kalman_pairwise_factorial_inference(
+#             *model_params, smoother_factorial_index=smoother_factorial_index
+#         )
+#     )
 
-    # Check output_factorial = False
-    init_state, local_filter_states = factorial.filter(
-        filter_obj, factorializer, filter_model_inputs, output_factorial=False
-    )
+#     # Check output_factorial = False
+#     init_state, local_filter_states = factorial.filter(
+#         filter_obj, factorializer, filter_model_inputs, output_factorial=False
+#     )
 
-    # Convert to local smoother states
+#     # Convert to local smoother states

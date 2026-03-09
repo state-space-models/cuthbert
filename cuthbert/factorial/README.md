@@ -66,11 +66,15 @@ factorial_state = kalman_filter.init_prepare(tree.map(lambda x: x[0], model_inpu
 for t in range(1, T):
     model_inputs_t = tree.map(lambda x: x[t], model_inputs)
     factorial_inds = get_factorial_indices(model_inputs_t)
-    local_state = factorializer.extract_and_join(factorial_state, factorial_inds)
+    local_factorial_state = factorializer.extract(factorial_state, factorial_inds)
+    local_state = factorializer.join(local_factorial_state)
     prepare_state = kalman_filter.filter_prepare(model_inputs_t)
-    filtered_local_state = kalman_filter.filter_combine(local_state, prepare_state)
-    factorial_state = factorializer.marginalize_and_insert(
-        filtered_local_state, factorial_state, factorial_inds
+    local_joint_filtered_state = kalman_filter.filter_combine(local_state, prepare_state)
+    local_factorial_filtered_state = factorializer.marginalize(
+        local_joint_filtered_state, len(factorial_inds)
+    )
+    factorial_state = factorializer.insert(
+        local_factorial_filtered_state, factorial_state, factorial_inds
     )
 ```
 
