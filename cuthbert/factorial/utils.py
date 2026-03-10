@@ -25,6 +25,8 @@ def serial_to_factorial(
             Each element has shape (T_i, ...) where T_i is the number of occurrences of
             index i in factorial_inds (which may be zero).
     """
+    # TODO: This function is not very JAX-like, we may want to improve it in time.
+
     factorial_inds = jnp.asarray(factorial_inds)
     num_factors = jnp.max(factorial_inds) + 1
     T = tree.leaves(serial_tree)[0].shape[0]
