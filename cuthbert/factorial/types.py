@@ -2,6 +2,8 @@
 
 from typing import NamedTuple, Protocol
 
+from jax import numpy as jnp
+
 from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
 
@@ -148,3 +150,43 @@ class Factorializer(NamedTuple):
     join: Join
     marginalize: Marginalize
     insert: Insert
+
+    def extract_and_join(
+        self, factorial_state: ArrayTreeLike, model_inputs: ArrayTreeLike
+    ) -> ArrayTree:
+        """Extract and join the relevant factors into a joint local state.
+
+        Args:
+            factorial_state: Factorial state with factorial index as the first dimension.
+            model_inputs: Model inputs, from which the factorial indices are extracted.
+
+        Returns:
+            Joint local state with no factorial index dimension.
+        """
+        factorial_inds = self.get_factorial_indices(model_inputs)
+        local_factorial_state = self.extract(factorial_state, factorial_inds)
+        return self.join(local_factorial_state)
+
+    def marginalize_and_insert(
+        self,
+        local_state: ArrayTree,
+        factorial_state: ArrayTree,
+        model_inputs: ArrayTreeLike,
+    ) -> ArrayTree:
+        """Marginalize and insert the relevant factors into a factorial state.
+
+        Args:
+            local_state: Joint local state with no factorial index dimension.
+            factorial_state: Factorial state with factorial index as the first dimension.
+            model_inputs: Model inputs, from which the factorial indices are extracted.
+
+        Returns:
+            Factorial state with factorial index as the first dimension.
+                The updated factors are inserted into the factorial state.
+                The remaining factors are left unchanged.
+        """
+        factorial_inds = self.get_factorial_indices(model_inputs)
+        factorial_inds = jnp.asarray(factorial_inds)
+        num_factors = len(factorial_inds)
+        local_factorial_state = self.marginalize(local_state, num_factors)
+        return self.insert(local_factorial_state, factorial_state, factorial_inds)

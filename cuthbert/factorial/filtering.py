@@ -67,10 +67,7 @@ def filter(
         factorial_inds = jnp.asarray(factorial_inds)
 
         # Extract and join local factors into joint local state
-        local_factorial_state = factorializer.extract(
-            prev_factorial_state, factorial_inds
-        )
-        local_state = factorializer.join(local_factorial_state)
+        local_state = factorializer.extract_and_join(prev_factorial_state, prep_inp)
 
         # Filter the joint local state
         prep_state = filter_obj.filter_prepare(prep_inp, key=k)
