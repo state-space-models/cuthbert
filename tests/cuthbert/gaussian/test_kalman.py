@@ -173,8 +173,8 @@ def test_check_gradient(seed, x_dim, y_dim, num_time_steps):
         get_loglikelihood_from_params,
         (m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs),
         order=1,
-        rtol=0.15,
-        atol=0.5,
+        rtol=0.01,
+        atol=0.01,
         eps=1e-5,
     )
 

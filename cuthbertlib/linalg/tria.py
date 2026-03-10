@@ -31,36 +31,40 @@ def tria(A: Array) -> Array:
 
 @tria.defjvp
 def _tria_jvp(primals, tangents):
-    # Derivation of the analytical JVP for the lower-triangularization operator:
+    # Derivation of the exact analytical JVP for the lower-triangularization operator:
     #
     # 1. The operation computes a lower triangular R such that:
     #    R @ R.T = A @ A.T
     #
-    # 2. Taking the differential of both sides yields:
+    # 2. Taking the differential of both sides yields the Gramian differential identity:
     #    dR @ R.T + R @ dR.T = dA @ A.T + A @ dA.T
     #
-    # 3. Multiply from the left by R^{-1} and from the right by R^{-T}:
-    #    R^{-1} @ dR + dR.T @ R^{-T} = R^{-1} @ dA @ A.T @ R^{-T} + R^{-1} @ A @ dA.T @ R^{-T}
+    # 3. For rank-deficient A, the exact lower-triangular tangent dR decomposes into
+    #    column-space and null-space components: dR = dR_col + dR_null.
     #
-    # 4. Let Q be the orthogonal factor such that A = R @ Q.T.
-    #    Substituting A @ R^{-T} = R @ Q.T @ R^{-T} = R @ (R^{-1} @ Q).T = R @ Q.T @ R^{-T} => A.T @ R^{-T} = Q
-    #    and R^{-1} @ A = R^{-1} @ R @ Q.T = Q.T:
-    #    R^{-1} @ dR + dR.T @ R^{-T} = R^{-1} @ dA @ Q + Q.T @ dA.T @ R^{-T}
+    # 4. To find dR_col, multiply the identity from the left by R^\dagger (pseudoinverse)
+    #    and from the right by R^{\dagger T}:
+    #    R^\dagger @ dR_col + dR_col.T @ R^{\dagger T} = R^\dagger @ dA @ A.T @ R^{\dagger T} + R^\dagger @ A @ dA.T @ R^{\dagger T}
     #
-    # 5. Define K = R^{-1} @ dA @ Q. The right hand side becomes K + K.T:
-    #    R^{-1} @ dR + (R^{-1} @ dR).T = K + K.T
+    # 5. Let Q be the active subspace orthogonal factor such that A = R @ Q.T.
+    #    Substituting A.T @ R^{\dagger T} = Q and R^\dagger @ A = Q.T:
+    #    R^\dagger @ dR_col + dR_col.T @ R^{\dagger T} = R^\dagger @ dA @ Q + Q.T @ dA.T @ R^{\dagger T}
     #
-    # 6. Define dM = R^{-1} @ dR. Since R is lower triangular, its inverse and dR
-    #    are lower triangular, meaning dM must also be lower triangular.
-    #    dM + dM.T = K + K.T
+    # 6. Define K = R^\dagger @ dA @ Q. The right hand side becomes K + K.T:
+    #    R^\dagger @ dR_col + (R^\dagger @ dR_col).T = K + K.T
     #
-    # 7. Because dM is lower triangular, we can solve for it by taking the lower
-    #    triangular part of K + K.T and subtracting the diagonal once to prevent
-    #    double counting:
-    #    dM = tril(K + K.T) - diag(K)
+    # 7. Define dM_col = R^\dagger @ dR_col. Solving for the lower-triangular dM_col:
+    #    dM_col = tril(K + K.T) - diag(K)
     #
-    # 8. Recover the differential dR by left-multiplying by R:
-    #    dR = R @ dM
+    # 8. Recover the column-space differential dR_col by left-multiplying by R:
+    #    dR_col = R @ dM_col
+    #
+    # 9. To satisfy the orthogonal cross-terms for arbitrary perturbations outside
+    #    the column space of A, add the null-space component projected via (I - R @ R^\dagger):
+    #    dR_null = (I - R @ R^\dagger) @ dA @ Q
+    #
+    # 10. The complete, exact JVP is the sum of both components:
+    #     dR = dR_col + dR_null
 
     (A,) = primals
     (dA,) = tangents
@@ -84,7 +88,10 @@ def _tria_jvp(primals, tangents):
     I = jnp.eye(K.shape[-1], dtype=K.dtype)
     dM = jnp.tril(K + K_T) - K * I
 
+    # Compute the null-space part
+    dR_null = (jnp.eye(R.shape[-2], dtype=R.dtype) - R @ R_pinv) @ dA @ Q
+
     # Apply to get the tangent at R
-    dR = R @ dM
+    dR = R @ dM + dR_null
 
     return R, dR
