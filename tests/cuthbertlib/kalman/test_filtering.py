@@ -56,7 +56,6 @@ def test_predict(seed, x_dim):
     pred_cov = pred_chol_cov @ pred_chol_cov.T
 
     des_m, des_cov = std_predict(m0, P0, F, c, Q)
-
     chex.assert_trees_all_close((pred_m, pred_cov), (des_m, des_cov), rtol=1e-10)
 
 
@@ -77,6 +76,10 @@ def test_update(seed, x_dim, y_dim):
 
     (m, chol_P), ell = update(m0, chol_P0, H, d, chol_R, y)
     P = chol_P @ chol_P.T
+
+    chex.assert_numerical_grads(
+        lambda *args: update(*args)[-1], (m0, chol_P0, H, d, chol_R, y), order=1
+    )
 
     des_m, des_P, des_ell = std_update(m0, P0, H, d, R, y)
 

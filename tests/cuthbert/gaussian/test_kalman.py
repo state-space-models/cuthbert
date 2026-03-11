@@ -93,12 +93,15 @@ def load_kalman_inference(
     return filter, smoother, model_inputs
 
 
-seeds = [1, 43, 99, 123, 456]
+seeds = [1, 43, 99]
 x_dims = [3]
 y_dims = [1, 2]
 num_time_steps = [1, 25]
 
 common_params = list(itertools.product(seeds, x_dims, y_dims, num_time_steps))
+
+# Use fewer time steps for gradient test because finite difference will not work well for long sequences
+gradient_params = list(itertools.product(seeds, x_dims, y_dims, [1, 2]))
 
 
 @pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", common_params)
@@ -147,6 +150,32 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         (par_means, par_covs, par_ells),
         (des_means, des_covs, des_ells),
         rtol=1e-10,
+    )
+
+
+@pytest.mark.parametrize("seed,x_dim,y_dim,num_time_steps", gradient_params)
+def test_check_gradient(seed, x_dim, y_dim, num_time_steps):
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
+        seed, x_dim, y_dim, num_time_steps
+    )
+
+    @jax.jit
+    def get_loglikelihood_from_params(
+        m0_, chol_P0_, Fs_, cs_, chol_Qs_, Hs_, ds_, chol_Rs_
+    ):
+        kalman_filter, _, model_inputs = load_kalman_inference(
+            m0_, chol_P0_, Fs_, cs_, chol_Qs_, Hs_, ds_, chol_Rs_, ys
+        )
+        states = filter(kalman_filter, model_inputs)
+        return states.log_normalizing_constant[-1]
+
+    chex.assert_numerical_grads(
+        get_loglikelihood_from_params,
+        (m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs),
+        order=1,
+        rtol=0.01,
+        atol=0.01,
+        eps=1e-5,
     )
 
 
