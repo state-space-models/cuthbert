@@ -4,6 +4,8 @@ from jax import tree
 
 from cuthbert.factorial.utils import serial_to_factorial, serial_to_single_factor
 
+### TODO: test init_state
+
 
 def extract(factorial_state, factorial_inds):
     return tree.map(lambda x: x[factorial_inds], factorial_state)

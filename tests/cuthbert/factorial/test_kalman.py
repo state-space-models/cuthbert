@@ -264,16 +264,11 @@ def test_smoother(
     # Convert to local smoother states
     factorial_inds = model_params[-1]
     local_filter_states_single_factor = serial_to_single_factor(
-        local_filter_states, factorial_inds, smoother_factorial_index
-    )
-
-    # Append initial state
-    local_filter_states_single_factor = tree.map(
-        lambda xi, xs: jnp.concatenate(
-            [xi[smoother_factorial_index][None], xs], axis=0
-        ),
-        init_state,
-        local_filter_states_single_factor,
+        factorializer.extract,
+        local_filter_states,
+        factorial_inds,
+        smoother_factorial_index,
+        init_factorial_tree=init_state,
     )
 
     # Smooth
