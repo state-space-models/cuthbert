@@ -6,6 +6,7 @@ factors into a product of independent distributions across factors
 $$
 p(x_t \mid x_{t-1}) = \prod_{f=1}^F p(x_t^f \mid x_{t-1}^f),
 $$
+
 for factorial index $f \in \{1, \ldots, F\}$. We additionally assume that observations
 act locally on some subset of factors $S_t \subseteq \{1, \ldots, F\}$.
 
