@@ -25,7 +25,7 @@ def serial_to_factorial(
             Each element has shape (T_i, ...) where T_i is the number of occurrences of
             index i in factorial_inds (which may be zero).
     """
-    # TODO: This function is not very JAX-like, we may want to improve it in time.
+    # TODO: This function is not very JAX-like or efficient, we may want to improve it in time.
 
     factorial_inds = jnp.asarray(factorial_inds)
     num_factors = jnp.max(factorial_inds) + 1
@@ -58,5 +58,20 @@ def serial_to_single_factor(
         factorial_inds: The indices of the factors used in each element of the serial
         factorial_index: The index of the factor to convert.
     """
-    factorial_trees = serial_to_factorial(serial_tree, factorial_inds)
-    return factorial_trees[factorial_index]  # TODO: This is a hack, we can do better
+    # TODO: As above, we can improve this and make it more JAX-like + efficient.
+    factorial_inds = jnp.asarray(factorial_inds)
+    T = tree.leaves(serial_tree)[0].shape[0]
+
+    factorial_tree = tree.map(lambda x: jnp.zeros((0,) + x.shape[2:]), serial_tree)
+
+    for t in range(T):
+        for j, ind in enumerate(factorial_inds[t]):
+            if ind == factorial_index:
+                serial_factor = tree.map(lambda x: x[t, j], serial_tree)
+                factorial_tree = tree.map(
+                    lambda x, y: jnp.concatenate([x, y[None]]),
+                    factorial_tree,
+                    serial_factor,
+                )
+
+    return factorial_tree
