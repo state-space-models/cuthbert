@@ -6,6 +6,9 @@ from jax.lax import scan
 
 from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
+### TODO: Need to support more flexible extraction! As not all elements of the tree will have a factorial dimension
+### TODO: Add support for an init factorial state
+
 
 def serial_to_factorial(
     serial_tree: ArrayTreeLike, factorial_inds: ArrayLike
@@ -55,8 +58,15 @@ def serial_to_single_factor(
 
     Args:
         serial_tree: The serial tree to convert.
+            Each leaf of the tree should have shape (T, F, ...) where T is the number of
+            time steps and F is the number of factors.
         factorial_inds: The indices of the factors used in each element of the serial
-        factorial_index: The index of the factor to convert.
+            tree. Shape (T, F).
+        factorial_index: Single integer index of the factor to extract.
+
+    Returns:
+        A single ArrayTree with shape (T_i, ...) where T_i is the number of occurrences of
+        the factorial index in factorial_inds.
     """
     # TODO: As above, we can improve this and make it more JAX-like + efficient.
     factorial_inds = jnp.asarray(factorial_inds)

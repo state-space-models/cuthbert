@@ -5,10 +5,12 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array
+from jax import Array, tree
 from jax.scipy.linalg import block_diag
 
+import cuthbert
 from cuthbert import factorial
+from cuthbert.factorial.utils import serial_to_single_factor
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.linalg import block_marginal_sqrt_cov
@@ -223,36 +225,60 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     )
 
 
-# smoother_indices = [0, 1, 5]
+smoother_indices = [0, 1, 5]
 
-# common_smoother_params = list(itertools.product(common_params, smoother_indices))
+common_smoother_params = [
+    (*params, smoother_idx)
+    for params in common_params
+    for smoother_idx in smoother_indices
+]
 
 
-# @pytest.mark.parametrize(
-#     "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps,smoother_factorial_index",
-#     common_smoother_params,
-# )
-# def test_smoother(
-#     seed,
-#     x_dim,
-#     y_dim,
-#     num_factors,
-#     num_factors_local,
-#     num_time_steps,
-#     smoother_factorial_index,
-# ):
-#     model_params = generate_factorial_kalman_model(
-#         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
-#     )
-#     filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
-#         load_kalman_pairwise_factorial_inference(
-#             *model_params, smoother_factorial_index=smoother_factorial_index
-#         )
-#     )
+@pytest.mark.parametrize(
+    "seed,x_dim,y_dim,num_factors,num_factors_local,num_time_steps,smoother_factorial_index",
+    common_smoother_params,
+)
+def test_smoother(
+    seed,
+    x_dim,
+    y_dim,
+    num_factors,
+    num_factors_local,
+    num_time_steps,
+    smoother_factorial_index,
+):
+    model_params = generate_factorial_kalman_model(
+        seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
+    )
+    filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
+        load_kalman_pairwise_factorial_inference(
+            *model_params, smoother_factorial_index=smoother_factorial_index
+        )
+    )
 
-#     # Check output_factorial = False
-#     init_state, local_filter_states = factorial.filter(
-#         filter_obj, factorializer, filter_model_inputs, output_factorial=False
-#     )
+    # Check output_factorial = False
+    init_state, local_filter_states = factorial.filter(
+        filter_obj, factorializer, filter_model_inputs, output_factorial=False
+    )
 
-#     # Convert to local smoother states
+    # Convert to local smoother states
+    factorial_inds = model_params[-1]
+    local_filter_states_single_factor = serial_to_single_factor(
+        local_filter_states, factorial_inds, smoother_factorial_index
+    )
+
+    # Append initial state
+    local_filter_states_single_factor = tree.map(
+        lambda xi, xs: jnp.concatenate(
+            [xi[smoother_factorial_index][None], xs], axis=0
+        ),
+        init_state,
+        local_filter_states_single_factor,
+    )
+
+    # Smooth
+    smoother_states = cuthbert.smoother(
+        smoother, local_filter_states_single_factor, smoother_model_inputs
+    )
+
+    ### TODO: Finish test
