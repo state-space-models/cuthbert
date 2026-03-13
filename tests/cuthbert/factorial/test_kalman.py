@@ -1,5 +1,5 @@
 import itertools
-from typing import Callable, cast
+from typing import cast
 
 import chex
 import jax

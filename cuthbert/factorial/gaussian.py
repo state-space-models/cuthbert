@@ -15,6 +15,10 @@ from cuthbertlib.types import Array, ArrayLike
 KalmanState = TypeVar("KalmanState", KalmanFilterState, LinearizedKalmanFilterState)
 
 
+## TODO: If factorial_inds is just an integer, i.e. shape (,) then factorial dimension
+# should be removed in extract
+
+
 def build_factorializer(
     get_factorial_indices: GetFactorialIndices,
 ) -> Factorializer:
