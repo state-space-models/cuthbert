@@ -31,7 +31,8 @@ theme:
 
 nav:
   - Home: index.md
-  - Quick Start: quickstart.md
+  - Quickstart: quickstart.md
+  - cuthbert conventions: conventions.md
   - Contributing: contributing.md
   - Examples:
     - examples/index.md
