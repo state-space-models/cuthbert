@@ -61,6 +61,8 @@ def extract(factorial_state: KalmanState, factorial_inds: ArrayLike) -> KalmanSt
     Returns:
         Factorial Kalman state storing means and chol_covs
             with shape (len(factorial_inds), d) and (len(factorial_inds), d, d).
+            If factorial_inds is a single integer, the returned local factorial state
+            will not have a factorial dimension.
     """
     factorial_inds = jnp.asarray(factorial_inds)
     new_elem = tree.map(lambda x: _extract_arr(x, factorial_inds), factorial_state.elem)

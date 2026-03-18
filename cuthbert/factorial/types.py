@@ -44,6 +44,8 @@ class Extract(Protocol):
 
         Returns:
             Local factorial state with factorial dimension of length len(factorial_inds).
+                If factorial_inds is a single integer, the local factorial state should
+                not have a factorial dimension.
         """
         ...
 

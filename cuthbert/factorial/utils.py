@@ -113,7 +113,7 @@ def serial_to_single_factor(
             lambda x: jnp.zeros((0,) + x.shape[1:]), init_single_factor_state
         )
     else:
-        factorial_tree = extract(init_factorial_tree, jnp.array([factorial_index]))
+        factorial_tree = extract(init_factorial_tree, factorial_index)
         factorial_tree = tree.map(lambda x: x[None], factorial_tree)
 
     for t in range(T):
