@@ -27,19 +27,25 @@ def config():
 
 
 def load_kalman_pairwise_factorial_inference(
-    m0: Array,  # (F, d)
-    chol_P0: Array,  # (F, d, d)
-    Fs: Array,  # (T, 2 * d, 2 * d)
-    cs: Array,  # (T, 2 * d)
-    chol_Qs: Array,  # (T, 2 * d, 2 * d)
-    Hs: Array,  # (T, d_y, 2 * d)
-    ds: Array,  # (T, d_y)
-    chol_Rs: Array,  # (T, d_y, d_y)
-    ys: Array,  # (T, d_y)
-    factorial_indices: Array,  # (T, 2)
+    model_params: tuple[Array, ...],
     smoother_factorial_index: int,
 ) -> tuple[Filter, factorial.Factorializer, Array, Smoother, Array]:
-    """Builds factorial Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
+    """Builds factorial Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM.
+
+    model_params is a tuple of:
+        m0: Array,  # (F, d).
+        chol_P0: Array,  # (F, d, d).
+        Fs: Array,  # (T, 2 * d, 2 * d).
+        cs: Array,  # (T, 2 * d).
+        chol_Qs: Array,  # (T, 2 * d, 2 * d).
+        Hs: Array,  # (T, d_y, 2 * d).
+        ds: Array,  # (T, d_y).
+        chol_Rs: Array,  # (T, d_y, d_y).
+        ys: Array,  # (T, d_y).
+        factorial_indices: Array,  # (T, 2).
+    """
+
+    m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, factorial_indices = model_params
 
     def get_init_params(model_inputs: int) -> tuple[Array, Array]:
         return m0, chol_P0
@@ -87,13 +93,17 @@ def load_kalman_pairwise_factorial_inference(
         cs_per_factor[a].append(c_a)
         chol_Qs_per_factor[a].append(chol_Q_a)
 
+    Fs_smoother_factor = jnp.array(Fs_per_factor[smoother_factorial_index])
+    cs_smoother_factor = jnp.array(cs_per_factor[smoother_factorial_index])
+    chol_Qs_smoother_factor = jnp.array(chol_Qs_per_factor[smoother_factorial_index])
+
     def get_dynamics_params_single_factor(
         model_inputs: int,
     ) -> tuple[Array, Array, Array]:
         return (
-            Fs_per_factor[smoother_factorial_index][model_inputs - 1],
-            cs_per_factor[smoother_factorial_index][model_inputs - 1],
-            chol_Qs_per_factor[smoother_factorial_index][model_inputs - 1],
+            Fs_smoother_factor[model_inputs - 1],
+            cs_smoother_factor[model_inputs - 1],
+            chol_Qs_smoother_factor[model_inputs - 1],
         )
 
     smoother = kalman.build_smoother(
@@ -129,7 +139,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     )
     filter_obj, factorializer, model_inputs, _, _ = (
         load_kalman_pairwise_factorial_inference(
-            *model_params, smoother_factorial_index=0
+            model_params, smoother_factorial_index=0
         )
     )
 
@@ -252,7 +262,7 @@ def test_smoother(
     )
     filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
         load_kalman_pairwise_factorial_inference(
-            *model_params, smoother_factorial_index=smoother_factorial_index
+            model_params, smoother_factorial_index=smoother_factorial_index
         )
     )
 
