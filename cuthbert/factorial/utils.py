@@ -6,8 +6,6 @@ from jax import tree, vmap
 from cuthbert.factorial.types import Extract
 from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
-### TODO: Add support for an init factorial state
-
 
 def serial_to_factorial(
     extract: Extract,
@@ -37,6 +35,8 @@ def serial_to_factorial(
             index i in factorial_inds (which may be zero).
     """
     # TODO: This function is not very JAX-like or efficient, we may want to improve it in time.
+    # although I'm not sure we can swap the for loop for a scan because the
+    # elements of the list will have different lengths
 
     factorial_inds = jnp.asarray(factorial_inds)
     num_factors = jnp.max(factorial_inds) + 1
@@ -101,6 +101,9 @@ def serial_to_single_factor(
         the factorial index in factorial_inds.
     """
     # TODO: As above, we can improve this and make it more JAX-like + efficient.
+    # This one we might be able to swap the for loop for a scan because there is only
+    # a single ArrayTree being returned
+
     factorial_inds = jnp.asarray(factorial_inds)
     T = tree.leaves(serial_tree)[0].shape[0]
 

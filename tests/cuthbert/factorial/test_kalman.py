@@ -71,6 +71,7 @@ def load_kalman_pairwise_factorial_inference(
     filter_model_inputs = jnp.arange(len(ys) + 1)
 
     # Some processing to get smoothing for a single factor
+    ### TODO: Check if this can be done more cleanly with serial_to_single_factor
     num_factors = len(m0)
     d_x = m0.shape[1]
     Fs_per_factor = [[] for _ in range(num_factors)]
@@ -286,4 +287,7 @@ def test_smoother(
         smoother, local_filter_states_single_factor, smoother_model_inputs
     )
 
-    ### TODO: Finish test
+    ### TODO: Think about when num_time_steps = 1
+    ### TODO: Think about when smoother_factorial_index doesn't appear in factorial_indices (related to num_time_steps = 1)
+
+    ### TODO: Finish test - check the actual smoother state values are correct
