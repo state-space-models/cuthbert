@@ -52,9 +52,7 @@ def serial_to_factorial(
             for _ in range(num_factors)
         ]
     else:
-        factorial_trees = [
-            extract(init_factorial_tree, jnp.array([i])) for i in range(num_factors)
-        ]
+        factorial_trees = [extract(init_factorial_tree, i) for i in range(num_factors)]
         # Add temporal dimension to init factorial trees
         factorial_trees = [tree.map(lambda x: x[None], tr) for tr in factorial_trees]
 
