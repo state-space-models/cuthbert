@@ -208,6 +208,42 @@ def filtering_operator(
 
     mu = cho_solve((U1, True), b1)
     t1 = b1 @ mu - (eta2 + mu) @ tmp_2
-    ell = ell1 + ell2 - 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
+
+    # Derivation for O(nx) log-determinant computation of D_inv:
+    # This is a long comment but I wanted to include the full derivation for clarity and future reference.
+    # The key idea is to express D_inv in terms of the blocks of Xi and then apply Sylvester's determinant theorem
+    # to compute its determinant efficiently.
+    #
+    # 1. Expand the blocks of Xi @ Xi.T:
+    #    (Xi @ Xi.T)[1,1] = I + U1.T @ Z2 @ Z2.T @ U1
+    #    (Xi @ Xi.T)[2,1] = Z2 @ Z2.T @ U1
+    #
+    # 2. Equate to the corresponding blocks of L @ L.T:
+    #    Xi11 @ Xi11.T = I + U1.T @ Z2 @ Z2.T @ U1
+    #    Xi21 @ Xi11.T = Z2 @ Z2.T @ U1
+    #
+    # 3. Expand D_inv using tmp_1 = Xi11^{-1} @ U1.T:
+    #    D_inv = I - tmp_1.T @ Xi21.T
+    #          = I - U1 @ Xi11^{-T} @ Xi21.T
+    #
+    # 4. Apply Sylvester's determinant theorem:
+    #    det(D_inv) = det(I - Xi11^{-T} @ Xi21.T @ U1)
+    #
+    # 5. Multiply interior by Xi11^{-1} @ Xi11 and substitute block identities:
+    #    Let P = U1.T @ Z2 @ Z2.T @ U1
+    #    det(D_inv) = det(I - (Xi11 @ Xi11.T)^{-1} @ (Xi21 @ Xi11.T).T @ U1)
+    #               = det(I - (I + P)^{-1} @ P)
+    #               = det((I + P)^{-1})
+    #               = 1 / det(Xi11 @ Xi11.T)
+    #               = det(Xi11)^{-2}
+    #
+    # 6. Simplify the log-determinant term in the log-likelihood:
+    #    0.5 * log(det(D_inv)) = -log(|det(Xi11)|)
+    #
+    # Since Xi11 is lower triangular, the log-determinant is the sum of the logs of its diagonal.
+    # Replace `0.5 * jnp.linalg.slogdet(D_inv)[1]` with:
+    # -jnp.sum(jnp.log(jnp.abs(jnp.diag(Xi11))))
+    # ell = ell1 + ell2 - 0.5 * t1 + 0.5 * jnp.linalg.slogdet(D_inv)[1]
+    ell = ell1 + ell2 - 0.5 * t1 - jnp.sum(jnp.log(jnp.abs(jnp.diag(Xi11))))
 
     return FilterScanElement(A, b, U, eta, Z, ell)

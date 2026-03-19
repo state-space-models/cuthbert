@@ -39,6 +39,7 @@ nav:
     - examples/temporal_parallelization_kalman.md
     - examples/online_stoch_vol.md
     - examples/parameter_estimation_em.md
+    - Differentiable Resampling in Particle Filters: examples/diff_pf_resampling.md
     - Dynamax Integration: examples/dynamax_integration.md
   - cuthbert API:
     - cuthbert_api/index.md

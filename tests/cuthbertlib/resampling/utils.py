@@ -7,7 +7,16 @@ from jax.scipy.special import logsumexp
 
 def resampling_tester(rng_key, log_weights, resampling, m, k):
     keys = jax.random.split(rng_key, k)
-    indices = jax.vmap(resampling, [0, None])(keys, log_weights)
+
+    # create dummy positions matching number of particles
+    n_particles = log_weights.shape[0]
+    positions = jax.random.normal(jax.random.key(0), (n_particles,))
+
+    def call_one(key):
+        idx, logits_out, _ = resampling(key, log_weights, positions)
+        return idx
+
+    indices = jax.vmap(call_one)(keys)
     _check_bincounts(indices, log_weights, m, k)
 
 
@@ -24,8 +33,11 @@ def conditional_resampling_tester(rng_key, log_weights, conditional_resampling, 
         p = jnp.exp(log_weights - logsumexp(log_weights))
         pivot_out = jax.random.choice(key_resampling, m, shape=(), p=p)
 
-        conditional_indices = conditional_resampling(
-            key_conditional, log_weights, pivot_in, pivot_out
+        # create dummy positions
+        positions = jax.random.normal(jax.random.key(0), (m,))
+
+        conditional_indices, _, _ = conditional_resampling(
+            key_conditional, log_weights, positions, pivot_in, pivot_out
         )
         return conditional_indices, pivot_out, conditional_indices[pivot_in]
 

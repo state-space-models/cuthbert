@@ -108,14 +108,19 @@ def convert_filter_to_smoother_state(
     dummy_model_inputs = dummy_tree_like(model_inputs)
 
     key, resampling_key = random.split(key)
-    indices = resampling(resampling_key, filter_state.log_weights, n_smoother_particles)
+    indices, log_weights, particles = resampling(
+        resampling_key,
+        filter_state.log_weights,
+        filter_state.particles,
+        n_smoother_particles,
+    )
 
     return ParticleSmootherState(
         key=cast(KeyArray, key),
-        particles=jax.tree.map(lambda z: z[indices], filter_state.particles),
+        particles=particles,
         ancestor_indices=filter_state.ancestor_indices[indices],
         model_inputs=dummy_model_inputs,
-        log_weights=-jnp.log(n_smoother_particles) * jnp.ones(n_smoother_particles),
+        log_weights=log_weights,
     )
 
 

@@ -11,8 +11,14 @@ from cuthbertlib.resampling.protocols import (
     conditional_resampling_decorator,
     resampling_decorator,
 )
-from cuthbertlib.resampling.utils import inverse_cdf
-from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
+from cuthbertlib.resampling.utils import apply_resampling_indices, inverse_cdf
+from cuthbertlib.types import (
+    Array,
+    ArrayLike,
+    ArrayTree,
+    ArrayTreeLike,
+    ScalarArrayLike,
+)
 
 _DESCRIPTION = """
 The Systematic resampling is a variance reduction which places marginally
@@ -21,19 +27,24 @@ uniform samples into the [0, 1] interval but only requires one uniform random.
 
 
 @partial(resampling_decorator, name="Systematic", desc=_DESCRIPTION)
-def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
+def resampling(
+    key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
+) -> tuple[Array, Array, ArrayTree]:
     us = (random.uniform(key, ()) + jnp.arange(n)) / n
-    return inverse_cdf(us, logits)
+    idx = inverse_cdf(us, logits)
+    logits_out = jnp.zeros_like(us)
+    return idx, logits_out, apply_resampling_indices(positions, idx)
 
 
 @partial(conditional_resampling_decorator, name="Systematic", desc=_DESCRIPTION)
 def conditional_resampling(
     key: Array,
     logits: ArrayLike,
+    positions: ArrayTreeLike,
     n: int,
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
-) -> Array:
+) -> tuple[Array, Array, ArrayTree]:
     logits = jnp.asarray(logits)
     pivot_in = jnp.asarray(pivot_in)
     pivot_out = jnp.asarray(pivot_out)
@@ -46,17 +57,17 @@ def conditional_resampling(
     logits = jnp.roll(logits, -pivot_out)
     arange = jnp.roll(arange, -pivot_out)
 
-    idx = conditional_resampling_0_to_0(key, logits, n)
+    idx, logits_out = conditional_resampling_0_to_0(key, logits, n)
     idx = arange[idx]
     idx = jnp.roll(idx, pivot_in)
-    return idx
+    return idx, logits_out, apply_resampling_indices(positions, idx)
 
 
 def conditional_resampling_0_to_0(
     key: Array,
     logits: ArrayLike,
     n: int,
-) -> Array:
+) -> tuple[Array, Array]:
     logits = jnp.asarray(logits)
 
     N = logits.shape[0]
@@ -81,4 +92,4 @@ def conditional_resampling_0_to_0(
     roll_idx = jnp.floor(n_zero * W).astype(int)
 
     idx = select(n_zero == 1, idx, jnp.roll(idx, -zero_loc[roll_idx]))
-    return jnp.clip(idx, 0, N - 1)
+    return jnp.clip(idx, 0, N - 1), jnp.zeros_like(linspace)

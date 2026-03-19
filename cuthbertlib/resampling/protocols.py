@@ -4,23 +4,53 @@ from typing import Protocol, runtime_checkable
 
 import jax
 
-from cuthbertlib.types import Array, ArrayLike, KeyArray, ScalarArrayLike
+from cuthbertlib.types import (
+    Array,
+    ArrayLike,
+    ArrayTree,
+    ArrayTreeLike,
+    KeyArray,
+    ScalarArrayLike,
+)
+
+_RESAMPLING_DOC = """
+Args:
+    key: JAX PRNG key.
+    logits: Logits.
+    positions: ArrayTreeLike
+    n: Number of indices to sample.
+
+Returns:
+    ancestors: Array of resampling indices.
+    logits: Array of log-weights after resampling.
+    positions: ArrayTreeLike of resampled positions.
+"""
+
+_CONDITIONAL_RESAMPLING_DOC = """
+Args:
+    key: JAX PRNG key.
+    logits: Log-weights, possibly unnormalized.
+    positions: ArrayTreeLike
+    n: Number of indices to sample.
+    pivot_in: Index of the particle to keep.
+    pivot_out: Value of the output at index `pivot_in`.
+
+Returns:
+    ancestors: Array of size n with indices to use for resampling.
+    logits: Array of log-weights after resampling.
+    positions: ArrayTreeLike of resampled positions.
+"""
 
 
 @runtime_checkable
 class Resampling(Protocol):
     """Protocol for resampling operations."""
 
-    def __call__(self, key: KeyArray, logits: ArrayLike, n: int) -> Array:
-        """Computes resampling indices according to given logits.
-
-        Args:
-            key: JAX PRNG key.
-            logits: Logits.
-            n: Number of indices to sample.
-
-        Returns:
-            Array of resampling indices.
+    def __call__(
+        self, key: KeyArray, logits: ArrayLike, positions: ArrayTreeLike, n: int
+    ) -> tuple[Array, Array, ArrayTree]:
+        f"""Computes resampling indices according to given logits.
+        {_RESAMPLING_DOC}
         """
         ...
 
@@ -33,21 +63,13 @@ class ConditionalResampling(Protocol):
         self,
         key: KeyArray,
         logits: ArrayLike,
+        positions: ArrayTreeLike,
         n: int,
         pivot_in: ScalarArrayLike,
         pivot_out: ScalarArrayLike,
-    ) -> Array:
-        """Conditional resampling.
-
-        Args:
-            key: JAX PRNG key.
-            logits: Log-weights, possibly unnormalized.
-            n: Number of indices to sample.
-            pivot_in: Index of the particle to keep.
-            pivot_out: Value of the output at index `pivot_in`.
-
-        Returns:
-            Array of size n with indices to use for resampling.
+    ) -> tuple[Array, Array, ArrayTree]:
+        f"""Conditional resampling.
+        {_CONDITIONAL_RESAMPLING_DOC}
         """
         ...
 
@@ -56,14 +78,7 @@ def resampling_decorator(func: Resampling, name: str, desc: str = "") -> Resampl
     """Decorate Resampling function with unified docstring."""
     doc = f"""
     {name} resampling. {desc}
-
-    Args:
-        key: PRNGKey to use in resampling
-        logits: Log-weights, possibly unnormalized.
-        n: Number of indices to sample.
-    
-    Returns:
-        Array of size n with indices to use for resampling.
+    {_RESAMPLING_DOC}
     """
 
     func.__doc__ = doc
@@ -76,16 +91,7 @@ def conditional_resampling_decorator(
     """Decorate ConditionalResampling function with unified docstring."""
     doc = f"""
     {name} conditional resampling. {desc}
-
-    Args:
-        key: PRNGKey to use in resampling
-        logits: Log-weights, possibly unnormalized.
-        n: Number of indices to sample
-        pivot_in: Index of the particle to keep
-        pivot_out: Value of the output at index `pivot_in`
-    
-    Returns:
-        Array of size n with indices to use for resampling.
+    {_CONDITIONAL_RESAMPLING_DOC}
     """
 
     func.__doc__ = doc

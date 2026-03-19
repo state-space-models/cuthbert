@@ -11,7 +11,14 @@ from cuthbertlib.resampling.protocols import (
     conditional_resampling_decorator,
     resampling_decorator,
 )
-from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
+from cuthbertlib.resampling.utils import apply_resampling_indices
+from cuthbertlib.types import (
+    Array,
+    ArrayLike,
+    ArrayTree,
+    ArrayTreeLike,
+    ScalarArrayLike,
+)
 
 _DESCRIPTION = """
 The Killing resampling is a simple resampling mechanism that checks if 
@@ -28,7 +35,9 @@ number of particles `logits.shape[0]`.
 
 
 @partial(resampling_decorator, name="Killing", desc=_DESCRIPTION)
-def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
+def resampling(
+    key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
+) -> tuple[Array, Array, ArrayTree]:
     logits = jnp.asarray(logits)
     key_1, key_2 = random.split(key)
     N = logits.shape[0]
@@ -43,27 +52,30 @@ def resampling(key: Array, logits: ArrayLike, n: int) -> Array:
 
     survived = log_uniforms <= logits - max_logit
     if_survived = jnp.arange(N)  # If the particle survives, it keeps its index
-    otherwise = multinomial.resampling(
-        key_2, logits, N
+    otherwise_idx, _, _ = multinomial.resampling(
+        key_2, logits, positions, N
     )  # otherwise, it is replaced by another particle
-    idx = jnp.where(survived, if_survived, otherwise)
-    return idx
+    idx = jnp.where(survived, if_survived, otherwise_idx)
+    # After resampling, all particles have equal weight
+    logits_out = jnp.zeros_like(logits)
+    return idx, logits_out, apply_resampling_indices(positions, idx)
 
 
 @partial(conditional_resampling_decorator, name="Killing", desc=_DESCRIPTION)
 def conditional_resampling(
     key: Array,
     logits: ArrayLike,
+    positions: ArrayTreeLike,
     n: int,
     pivot_in: ScalarArrayLike,
     pivot_out: ScalarArrayLike,
-) -> Array:
+) -> tuple[Array, Array, ArrayTree]:
     pivot_in = jnp.asarray(pivot_in)
     pivot_out = jnp.asarray(pivot_out)
 
     # Unconditional resampling
     key_resample, key_shuffle = random.split(key)
-    idx = resampling(key_resample, logits, n)
+    idx_uncond, _, _ = resampling(key_resample, logits, positions, n)
 
     # Conditional rolling pivot
     max_logit = jnp.max(logits)
@@ -76,9 +88,11 @@ def conditional_resampling(
 
     pivot_weights = jnp.exp(pivot_logits - logsumexp(pivot_logits))
     pivot = random.choice(key_shuffle, n, p=pivot_weights)
-    idx = jnp.roll(idx, pivot_in - pivot)
+    idx = jnp.roll(idx_uncond, pivot_in - pivot)
     idx = idx.at[pivot_in].set(pivot_out)
-    return idx
+    # After resampling, all particles have equal weight
+    logits_out = jnp.zeros_like(logits)
+    return idx, logits_out, apply_resampling_indices(positions, idx)
 
 
 def _log1mexp(x: ArrayLike) -> Array:

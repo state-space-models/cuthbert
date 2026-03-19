@@ -11,7 +11,7 @@ from cuthbert import filter
 from cuthbert.inference import Filter
 from cuthbert.smc import marginal_particle_filter, particle_filter
 from cuthbertlib.kalman.generate import generate_lgssm
-from cuthbertlib.resampling import systematic
+from cuthbertlib.resampling import ess_decorator, systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -62,6 +62,9 @@ def load_inference(
             )
 
     ess_threshold = 0.7
+    # Decorate the resampling with adaptive behaviour and pass that to the filter
+    adaptive_systematic = ess_decorator(systematic.resampling, ess_threshold)
+
     inference = Filter(
         init_prepare=partial(
             algo.init_prepare,
@@ -77,8 +80,7 @@ def load_inference(
             algo.filter_combine,
             propagate_sample=propagate_sample,
             log_potential=log_potential,
-            resampling_fn=systematic.resampling,
-            ess_threshold=ess_threshold,
+            resampling_fn=adaptive_systematic,
         ),
         associative=False,
     )
@@ -158,6 +160,8 @@ class Test(chex.TestCase):
             return jnp.zeros(())
 
         ess_threshold = 0.7
+        # Decorate the resampler for adaptive resampling behaviour
+        adaptive_systematic = ess_decorator(systematic.resampling, ess_threshold)
 
         if method == "bootstrap":
             n_filter_particles = 1_000
@@ -183,8 +187,7 @@ class Test(chex.TestCase):
                 algo.filter_combine,
                 propagate_sample=propagate_sample,
                 log_potential=log_potential,
-                resampling_fn=systematic.resampling,
-                ess_threshold=ess_threshold,
+                resampling_fn=adaptive_systematic,
             ),
             associative=False,
         )

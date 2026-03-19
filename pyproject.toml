@@ -12,7 +12,7 @@ override-dependencies = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F821", "E402", "D104"]
 "tests/**/*.py" = ["D"] # no docstring checking for tests
-"cuthbertlib/resampling/**/*.py" = ["D103"] # resampling uses decorator for docstrings
+"cuthbertlib/resampling/**/*.py" = ["D102", "D103"] # resampling uses decorator for docstrings
 [tool.ruff.lint]
 select = ["D"]
 [tool.ruff.lint.pydocstyle]

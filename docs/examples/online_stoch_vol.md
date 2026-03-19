@@ -27,7 +27,7 @@ import yfinance as yf
 
 from cuthbert import filter
 from cuthbert.smc import particle_filter
-from cuthbertlib.resampling import systematic
+from cuthbertlib.resampling import adaptive, systematic
 ```
 
 We'll use a simple bootstrap particle filter for inference since our model is
@@ -194,7 +194,9 @@ on how often to resample before constructing the filter object.
 
 ```{.python #online-stoch-vol-particle-filter-setup}
 n_particles = 1000
-ess_threshold = 0.5
+resampling = adaptive.ess_decorator(
+    systematic.resampling, 0.5
+)  # Resample when ESS drops below 50%
 
 pf = particle_filter.build_filter(
     init_sample=init_sample,
@@ -202,7 +204,6 @@ pf = particle_filter.build_filter(
     log_potential=log_potential,
     n_filter_particles=n_particles,
     resampling_fn=systematic.resampling,
-    ess_threshold=ess_threshold,
 )
 ```
 

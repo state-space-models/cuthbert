@@ -4,10 +4,11 @@ import jax
 import jax.numpy as jnp
 import numba as nb
 import numpy as np
-from jax.lax import platform_dependent
+from jax.lax import platform_dependent, stop_gradient
 from jax.scipy.special import logsumexp
+from jax.tree_util import tree_map
 
-from cuthbertlib.types import Array, ArrayLike
+from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 
 @jax.jit
@@ -31,7 +32,10 @@ def inverse_cdf(sorted_uniforms: ArrayLike, logits: ArrayLike) -> Array:
     """
     weights = jnp.exp(logits - logsumexp(logits))
     return platform_dependent(
-        sorted_uniforms, weights, cpu=_inverse_cdf_cpu, default=_inverse_cdf_default
+        sorted_uniforms,
+        stop_gradient(weights),
+        cpu=_inverse_cdf_cpu,
+        default=_inverse_cdf_default,
     )
 
 
@@ -80,3 +84,8 @@ def _inverse_cdf_numba(su, ws, idx):
             j += 1
             s += ws[j]
         idx[n] = j
+
+
+def apply_resampling_indices(positions: ArrayTreeLike, idx: Array) -> ArrayTree:
+    """Apply resampling indices to positions."""
+    return tree_map(lambda x: x[idx], positions)

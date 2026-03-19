@@ -55,8 +55,9 @@ def simulate(
         idx, x0_res, idx_log_p = carry
         key_prop, key_acc = keys_t
 
-        prop_idx = multinomial.resampling(key_prop, log_weight_x0_all, n_samples)
-        x0_prop = jax.tree.map(lambda z: z[prop_idx], x0_all)
+        prop_idx, _, x0_prop = multinomial.resampling(
+            key_prop, log_weight_x0_all, x0_all, n_samples
+        )
         prop_log_p = jax.vmap(log_density)(x0_prop, x1_all)
 
         log_alpha = prop_log_p - idx_log_p

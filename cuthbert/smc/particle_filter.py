@@ -8,14 +8,13 @@ from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
-from jax import Array, random, tree
+from jax import random, tree
 
 from cuthbert.inference import Filter
 from cuthbert.smc.types import InitSample, LogPotential, PropagateSample
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.resampling import Resampling
-from cuthbertlib.smc.ess import log_ess
-from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
 class ParticleFilterState(NamedTuple):
@@ -40,7 +39,6 @@ def build_filter(
     log_potential: LogPotential,
     n_filter_particles: int,
     resampling_fn: Resampling,
-    ess_threshold: float,
 ) -> Filter:
     r"""Builds a particle filter object.
 
@@ -50,9 +48,9 @@ def build_filter(
         log_potential: Function to compute the log potential $\log G_t(x_{t-1}, x_t)$.
         n_filter_particles: Number of particles for the filter.
         resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
-        ess_threshold: Fraction of particle count specifying when to resample.
-            Resampling is triggered when the
-            effective sample size (ESS) < ess_threshold * n_filter_particles.
+            The resampling function may be decorated with adaptive behaviour
+            (using cuthbertlib.resampling.adaptive.adaptive_resampling_decorator)
+            before being passed to the filter.
 
     Returns:
         Filter object for the particle filter.
@@ -73,7 +71,6 @@ def build_filter(
             propagate_sample=propagate_sample,
             log_potential=log_potential,
             resampling_fn=resampling_fn,
-            ess_threshold=ess_threshold,
         ),
         associative=False,
     )
@@ -170,7 +167,6 @@ def filter_combine(
     propagate_sample: PropagateSample,
     log_potential: LogPotential,
     resampling_fn: Resampling,
-    ess_threshold: float,
 ) -> ParticleFilterState:
     """Combine previous filter state with the state prepared for the current step.
 
@@ -183,8 +179,6 @@ def filter_combine(
         propagate_sample: Function to sample from the Markov kernel M_t(x_t | x_{t-1}).
         log_potential: Function to compute the log potential log G_t(x_{t-1}, x_t).
         resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
-        ess_threshold: Fraction of particle count specifying when to resample.
-            Resampling is triggered when the effective sample size (ESS) < ess_threshold * N.
 
     Returns:
         The filtered state at the current time step.
@@ -192,13 +186,10 @@ def filter_combine(
     N = state_1.log_weights.shape[0]
     keys = random.split(state_1.key, N + 1)
 
-    # Resample
-    ancestor_indices, log_weights = jax.lax.cond(
-        log_ess(state_1.log_weights) < jnp.log(ess_threshold * N),
-        lambda: (resampling_fn(keys[0], state_1.log_weights, N), jnp.zeros(N)),
-        lambda: (jnp.arange(N), state_1.log_weights),
+    # Resample - resampling_fn is expected to handle adaptivity if desired
+    ancestor_indices, log_weights, ancestors = resampling_fn(
+        keys[0], state_1.log_weights, state_1.particles, N
     )
-    ancestors = tree.map(lambda x: x[ancestor_indices], state_1.particles)
 
     # Propagate
     next_particles = jax.vmap(propagate_sample, (0, 0, None))(

@@ -11,7 +11,7 @@ from cuthbert import filter, smoother
 from cuthbert.smc.backward_sampler import build_smoother
 from cuthbert.smc.particle_filter import build_filter
 from cuthbertlib.kalman.generate import generate_lgssm
-from cuthbertlib.resampling import systematic
+from cuthbertlib.resampling import ess_decorator, systematic
 from cuthbertlib.smc.smoothing.exact_sampling import simulate as exact
 from cuthbertlib.smc.smoothing.mcmc import simulate as mcmc
 from cuthbertlib.smc.smoothing.tracing import simulate as tracing
@@ -45,13 +45,13 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     n_filter_particles = 5000
     resampling_fn = systematic.resampling
     ess_threshold = 0.7
+    adaptive_resampler = ess_decorator(resampling_fn, ess_threshold)
     filter_obj = build_filter(
         init_sample,
         propagate_sample,
         log_potential,
         n_filter_particles,
-        resampling_fn,
-        ess_threshold,
+        adaptive_resampler,
     )
     model_inputs = jnp.arange(len(ys) + 1)
     return filter_obj, model_inputs, log_potential
@@ -136,13 +136,13 @@ class Test(chex.TestCase):
         n_filter_particles = 1000
         resampling_fn = systematic.resampling
         ess_threshold = 0.7
+        adaptive_resampler = ess_decorator(resampling_fn, ess_threshold)
         filter_obj = build_filter(
             init_sample,
             propagate_sample,
             log_potential,
             n_filter_particles,
-            resampling_fn,
-            ess_threshold,
+            adaptive_resampler,
         )
 
         if method == "tracing":

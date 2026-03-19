@@ -2,10 +2,14 @@ import itertools
 
 import chex
 import jax
+import jax.numpy as jnp
 import pytest
 from absl.testing import parameterized
+from jax import random
+from jax.scipy.special import logsumexp
 
 from cuthbertlib.resampling import killing, multinomial, systematic
+from cuthbertlib.resampling.autodiff import stop_gradient_decorator
 from tests.cuthbertlib.resampling.utils import (
     conditional_resampling_tester,
     resampling_tester,
@@ -86,7 +90,12 @@ class TestResamplings(chex.TestCase):
         method = get_resampling(test_case["method"])
 
         for M, N in MNs:
-            resampling = self.variant(lambda k_, lw_: method(k_, lw_, M))
+            # create dummy positions in the wrapper; accept the positions arg from tester and ignore it
+            resampling = self.variant(
+                lambda k_, lw_, positions: method(
+                    k_, lw_, jax.random.normal(jax.random.key(0), (N,)), M
+                )
+            )
             log_weights = jax.random.uniform(key_weights, (N,))
             resampling_tester(key_test, log_weights, resampling, M, self.K)
 
@@ -102,8 +111,14 @@ class TestResamplings(chex.TestCase):
         conditional_method = get_conditional_resampling(test_case["method"])
         for M in Ms:
             conditional_resampling = self.variant(
-                lambda k_, lw_, pivot_in, pivot_out: conditional_method(
-                    k_, lw_, M, pivot_in, pivot_out
+                # accept positions arg from tester and ignore it
+                lambda k_, lw_, positions, pivot_in, pivot_out: conditional_method(
+                    k_,
+                    lw_,
+                    jax.random.normal(jax.random.key(0), (M,)),
+                    M,
+                    pivot_in,
+                    pivot_out,
                 )
             )
 
@@ -111,3 +126,36 @@ class TestResamplings(chex.TestCase):
             conditional_resampling_tester(
                 key_test, log_weights, conditional_resampling, M, self.K
             )
+
+    @pytest.mark.xdist_group(name="resampling")  # Serialize to avoid OOM
+    @parameterized.parameters(
+        itertools.product([0, 42, 1337], ["systematic", "multinomial", "killing"])
+    )
+    def test_stop_gradient_resampling(self, seed, method):
+        """Tests that gradient estimates are approximately correct under the stop-gradient decorator."""
+        xs = jnp.linspace(-2.0, 2.0, 2_000)
+        n = xs.shape[0]
+        key = random.key(seed)
+        true_sigma = 1.0
+        resampling_fn = get_resampling(method)
+
+        def _gaussian_log_weights(xs: jnp.ndarray, sigma: float) -> jnp.ndarray:
+            return -0.5 * (xs / sigma) ** 2
+
+        def base_lse(sigma):
+            return logsumexp(_gaussian_log_weights(xs, sigma))
+
+        def resampled_lse(sigma, resampling_fn):
+            logws = _gaussian_log_weights(xs, sigma)
+            _, logits_out, _ = resampling_fn(key, logws, xs, n)
+            return logsumexp(logits_out)
+
+        grad_base = jax.grad(base_lse)(true_sigma)
+        grad_stop = jax.grad(
+            lambda sigma: resampled_lse(sigma, stop_gradient_decorator(resampling_fn))
+        )(true_sigma)
+        grad_plain = jax.grad(lambda sigma: resampled_lse(sigma, resampling_fn))(
+            true_sigma
+        )
+
+        chex.assert_trees_all_close(grad_stop, grad_base, rtol=0.05, atol=0.05)
