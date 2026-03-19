@@ -17,6 +17,7 @@ from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbertlib.types import ArrayTree
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
+from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -26,11 +27,10 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_kalman_pairwise_factorial_inference(
+def build_pairwise_factorial_filter(
     model_params: tuple[Array, ...],
-    smoother_factorial_index: int,
-) -> tuple[Filter, factorial.Factorializer, Array, Smoother, Array]:
-    """Builds factorial Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM.
+) -> tuple[Filter, factorial.Factorializer, Array]:
+    """Builds factorial Kalman filter objects and model inputs for a linear-Gaussian SSM.
 
     model_params is a tuple of:
         m0: Array,  # (F, d).
@@ -68,43 +68,51 @@ def load_kalman_pairwise_factorial_inference(
     factorializer = factorial.gaussian.build_factorializer(
         get_factorial_indices=lambda model_inputs: factorial_indices[model_inputs - 1]
     )
-    filter_model_inputs = jnp.arange(len(ys) + 1)
+    model_inputs = jnp.arange(len(ys) + 1)
 
-    # Some processing to get smoothing for a single factor
-    ### TODO: Check if this can be done more cleanly with serial_to_single_factor
-    num_factors = len(m0)
+    return filter, factorializer, model_inputs
+
+
+def project_single_factor_smoothing_problem(
+    model_params: tuple[Array, ...],
+    smoother_factorial_index: int,
+) -> tuple[Smoother, Array, Array, Array, Array]:
+    """Projects pairwise dynamics onto a single factor smoothing problem."""
+
+    m0, _, Fs, cs, chol_Qs, _, _, _, ys, factorial_indices = model_params
+
     d_x = m0.shape[1]
-    Fs_per_factor = [[] for _ in range(num_factors)]
-    cs_per_factor = [[] for _ in range(num_factors)]
-    chol_Qs_per_factor = [[] for _ in range(num_factors)]
+    projected_Fs = []
+    projected_cs = []
+    projected_chol_Qs = []
 
-    for i in range(1, len(ys) + 1):
-        h, a = factorial_indices[i - 1]
+    for t, local_factorial_indices in enumerate(factorial_indices):
+        local_chol_Qs = block_marginal_sqrt_cov(chol_Qs[t], d_x)
+        for local_idx, factorial_index in enumerate(local_factorial_indices):
+            if int(factorial_index) != smoother_factorial_index:
+                continue
 
-        F_h = Fs[i - 1][:d_x, :d_x]
-        F_a = Fs[i - 1][-d_x:, -d_x:]
-        c_h = cs[i - 1][:d_x]
-        c_a = cs[i - 1][-d_x:]
-        chol_Q_h, chol_Q_a = block_marginal_sqrt_cov(chol_Qs[i - 1], d_x)
-        Fs_per_factor[h].append(F_h)
-        cs_per_factor[h].append(c_h)
-        chol_Qs_per_factor[h].append(chol_Q_h)
+            state_slice = slice(local_idx * d_x, (local_idx + 1) * d_x)
+            projected_Fs.append(Fs[t][state_slice, state_slice])
+            projected_cs.append(cs[t][state_slice])
+            projected_chol_Qs.append(local_chol_Qs[local_idx])
 
-        Fs_per_factor[a].append(F_a)
-        cs_per_factor[a].append(c_a)
-        chol_Qs_per_factor[a].append(chol_Q_a)
-
-    Fs_smoother_factor = jnp.array(Fs_per_factor[smoother_factorial_index])
-    cs_smoother_factor = jnp.array(cs_per_factor[smoother_factorial_index])
-    chol_Qs_smoother_factor = jnp.array(chol_Qs_per_factor[smoother_factorial_index])
+    if projected_Fs:
+        projected_Fs = jnp.stack(projected_Fs)
+        projected_cs = jnp.stack(projected_cs)
+        projected_chol_Qs = jnp.stack(projected_chol_Qs)
+    else:
+        projected_Fs = jnp.zeros((0, d_x, d_x), dtype=Fs.dtype)
+        projected_cs = jnp.zeros((0, d_x), dtype=cs.dtype)
+        projected_chol_Qs = jnp.zeros((0, d_x, d_x), dtype=chol_Qs.dtype)
 
     def get_dynamics_params_single_factor(
         model_inputs: int,
     ) -> tuple[Array, Array, Array]:
         return (
-            Fs_smoother_factor[model_inputs - 1],
-            cs_smoother_factor[model_inputs - 1],
-            chol_Qs_smoother_factor[model_inputs - 1],
+            projected_Fs[model_inputs - 1],
+            projected_cs[model_inputs - 1],
+            projected_chol_Qs[model_inputs - 1],
         )
 
     smoother = kalman.build_smoother(
@@ -112,9 +120,15 @@ def load_kalman_pairwise_factorial_inference(
         store_gain=True,
         store_chol_cov_given_next=True,
     )
-    smoother_model_inputs = jnp.arange(len(Fs_per_factor[smoother_factorial_index]) + 1)
+    smoother_model_inputs = jnp.arange(len(projected_Fs) + 1)
 
-    return filter, factorializer, filter_model_inputs, smoother, smoother_model_inputs
+    return (
+        smoother,
+        smoother_model_inputs,
+        projected_Fs,
+        projected_cs,
+        projected_chol_Qs,
+    )
 
 
 seeds = [1, 43]
@@ -138,10 +152,8 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     model_params = generate_factorial_kalman_model(
         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
     )
-    filter_obj, factorializer, model_inputs, _, _ = (
-        load_kalman_pairwise_factorial_inference(
-            model_params, smoother_factorial_index=0
-        )
+    filter_obj, factorializer, model_inputs = build_pairwise_factorial_filter(
+        model_params
     )
 
     # True means, covs and log norm constants
@@ -261,18 +273,24 @@ def test_smoother(
     model_params = generate_factorial_kalman_model(
         seed, x_dim, y_dim, num_factors, num_factors_local, num_time_steps
     )
-    filter_obj, factorializer, filter_model_inputs, smoother, smoother_model_inputs = (
-        load_kalman_pairwise_factorial_inference(
-            model_params, smoother_factorial_index=smoother_factorial_index
-        )
+    filter_obj, factorializer, filter_model_inputs = build_pairwise_factorial_filter(
+        model_params
+    )
+    (
+        smoother,
+        smoother_model_inputs,
+        projected_Fs,
+        projected_cs,
+        projected_chol_Qs,
+    ) = project_single_factor_smoothing_problem(
+        model_params,
+        smoother_factorial_index=smoother_factorial_index,
     )
 
-    # Check output_factorial = False
     init_state, local_filter_states = factorial.filter(
         filter_obj, factorializer, filter_model_inputs, output_factorial=False
     )
 
-    # Convert to local smoother states
     factorial_inds = model_params[-1]
     local_filter_states_single_factor = serial_to_single_factor(
         factorializer.extract,
@@ -282,12 +300,71 @@ def test_smoother(
         init_factorial_tree=init_state,
     )
 
-    # Smooth
+    if len(projected_Fs) == 0:
+        expected_initial_state = tree.map(
+            lambda x: x[None],
+            factorializer.extract(init_state, smoother_factorial_index),
+        )
+        chex.assert_trees_all_close(
+            local_filter_states_single_factor, expected_initial_state
+        )
+        return
+
     smoother_states = cuthbert.smoother(
         smoother, local_filter_states_single_factor, smoother_model_inputs
     )
 
-    ### TODO: Think about when num_time_steps = 1
-    ### TODO: Think about when smoother_factorial_index doesn't appear in factorial_indices (related to num_time_steps = 1)
+    filter_covs = (
+        local_filter_states_single_factor.chol_cov
+        @ local_filter_states_single_factor.chol_cov.transpose(0, 2, 1)
+    )
+    projected_Qs = projected_chol_Qs @ projected_chol_Qs.transpose(0, 2, 1)
+    (des_means, des_covs), des_cross_covs = std_kalman_smoother(
+        local_filter_states_single_factor.mean,
+        filter_covs,
+        projected_Fs,
+        projected_cs,
+        projected_Qs,
+    )
 
-    ### TODO: Finish test - check the actual smoother state values are correct
+    smoother_covs = smoother_states.chol_cov @ smoother_states.chol_cov.transpose(
+        0, 2, 1
+    )
+    smoother_cross_covs = smoother_states.gain[:-1] @ smoother_covs[1:]
+    chex.assert_trees_all_close(
+        (smoother_states.mean, smoother_covs, smoother_cross_covs),
+        (des_means, des_covs, des_cross_covs),
+        rtol=1e-10,
+    )
+
+    def construct_joint_cov(cov_t_plus_1, cov_t, cross_cov_t):
+        return jnp.block(
+            [
+                [cov_t_plus_1, cross_cov_t.T],
+                [cross_cov_t, cov_t],
+            ]
+        )
+
+    des_joint_covs = jax.vmap(construct_joint_cov)(
+        des_covs[1:],
+        des_covs[:-1],
+        des_cross_covs,
+    )
+
+    def construct_joint_chol_cov(chol_cov_t_plus_1, gain_t, chol_cov_given_next_t):
+        return jnp.block(
+            [
+                [chol_cov_t_plus_1, jnp.zeros_like(chol_cov_t_plus_1)],
+                [gain_t @ chol_cov_t_plus_1, chol_cov_given_next_t],
+            ]
+        )
+
+    smoother_joint_chol_covs = jax.vmap(construct_joint_chol_cov)(
+        smoother_states.chol_cov[1:],
+        smoother_states.gain[:-1],
+        smoother_states.chol_cov_given_next[:-1],
+    )
+    smoother_joint_covs = smoother_joint_chol_covs @ smoother_joint_chol_covs.transpose(
+        0, 2, 1
+    )
+    chex.assert_trees_all_close(des_joint_covs, smoother_joint_covs, rtol=1e-10)
