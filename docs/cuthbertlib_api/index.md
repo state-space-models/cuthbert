@@ -3,6 +3,7 @@
 %}
 
 - [Discrete hidden Markov models](discrete.md)
+- [Ensemble Kalman Filter](enkf.md)
 - [Kalman filtering and smoothing](kalman.md)
 - [Linear algebra](linalg.md)
 - [Linearization with autodiff](linearize.md)

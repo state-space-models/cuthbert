@@ -46,6 +46,7 @@ nav:
     - cuthbert_api/filtering.md
     - cuthbert_api/smoothing.md
     - Discrete HMMs: cuthbert_api/discrete.md
+    - Ensemble Kalman Filter: cuthbert_api/enkf.md
     - Gaussian filters and smoothers:
       - cuthbert_api/gaussian/index.md
       - Exact Kalman: cuthbert_api/gaussian/kalman.md
@@ -60,6 +61,7 @@ nav:
   - cuthbertlib API:
     - cuthbertlib_api/index.md
     - cuthbertlib_api/discrete.md
+    - cuthbertlib_api/enkf.md
     - cuthbertlib_api/kalman.md
     - cuthbertlib_api/linalg.md
     - cuthbertlib_api/linearize.md
