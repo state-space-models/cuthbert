@@ -28,6 +28,7 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
 
     if noop:
         x_dim = m0.shape[0]
+        y_dim = ys.shape[1] if ys.ndim > 1 else 1
 
         def dynamics_fn(x, model_inputs):
             return x
@@ -36,10 +37,10 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
             return jnp.zeros((x_dim, x_dim))
 
         def observation_fn(x, model_inputs):
-            return jnp.zeros(1)
+            return jnp.zeros(y_dim)
 
         def get_observation_params(model_inputs):
-            return (jnp.eye(1), jnp.zeros(1))
+            return (jnp.zeros((y_dim, y_dim)), jnp.full(y_dim, jnp.nan))
 
     else:
 
@@ -199,6 +200,6 @@ def test_filter_noop(seed, x_dim, y_dim):
     chex.assert_trees_all_close(
         filtered_state.mean,
         init_state.mean,
-        rtol=1e-1,
-        atol=1e-1,
+        rtol=1e-10,
+        atol=1e-10,
     )

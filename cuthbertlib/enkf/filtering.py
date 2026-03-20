@@ -53,7 +53,7 @@ def predict(
     return propagated
 
 
-def update(
+def _update_observed(
     key: KeyArray,
     predicted_ensemble: Array,
     observation_fn: Callable,
@@ -62,21 +62,7 @@ def update(
     model_inputs: ArrayTreeLike,
     perturbed_obs: bool = True,
 ) -> tuple[Array, ScalarArray]:
-    """Update ensemble members with an observation using the EnKF update.
-
-    Args:
-        key: JAX PRNG key.
-        predicted_ensemble: Predicted ensemble, shape (N, x_dim).
-        observation_fn: Observation function mapping (state, model_inputs) -> obs.
-        chol_R: Cholesky factor of the observation noise covariance, shape (y_dim, y_dim).
-        y: Observation vector, shape (y_dim,).
-        model_inputs: Model inputs passed to observation_fn.
-        perturbed_obs: If True, use perturbed observations (stochastic EnKF).
-            If False, use deterministic update.
-
-    Returns:
-        Tuple of (updated_ensemble, log_likelihood).
-    """
+    """EnKF update when an observation is present (no NaNs)."""
     N, x_dim = predicted_ensemble.shape
     y_dim = y.shape[0]
 
@@ -113,3 +99,46 @@ def update(
     ll = multivariate_normal.logpdf(y, y_mean, chol_S, nan_support=False)
 
     return updated, jnp.asarray(ll)
+
+
+def update(
+    key: KeyArray,
+    predicted_ensemble: Array,
+    observation_fn: Callable,
+    chol_R: Array,
+    y: Array,
+    model_inputs: ArrayTreeLike,
+    perturbed_obs: bool = True,
+) -> tuple[Array, ScalarArray]:
+    """Update ensemble members with an observation using the EnKF update.
+
+    When ``y`` is entirely NaN, the update is a no-op: the predicted ensemble
+    is returned unchanged with zero log-likelihood contribution.
+
+    Args:
+        key: JAX PRNG key.
+        predicted_ensemble: Predicted ensemble, shape (N, x_dim).
+        observation_fn: Observation function mapping (state, model_inputs) -> obs.
+        chol_R: Cholesky factor of the observation noise covariance, shape (y_dim, y_dim).
+        y: Observation vector, shape (y_dim,). Pass all-NaN to skip the update.
+        model_inputs: Model inputs passed to observation_fn.
+        perturbed_obs: If True, use perturbed observations (stochastic EnKF).
+            If False, use deterministic update.
+
+    Returns:
+        Tuple of (updated_ensemble, log_likelihood).
+    """
+    all_nan = jnp.all(jnp.isnan(y))
+    return jax.lax.cond(
+        all_nan,
+        lambda: (predicted_ensemble, jnp.asarray(0.0)),
+        lambda: _update_observed(
+            key,
+            predicted_ensemble,
+            observation_fn,
+            chol_R,
+            y,
+            model_inputs,
+            perturbed_obs,
+        ),
+    )
