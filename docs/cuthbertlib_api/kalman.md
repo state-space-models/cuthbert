@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/kalman/README.md"
-%}
+--8<-- "cuthbertlib/kalman/README.md"
 
 ::: cuthbertlib.kalman.filtering
 

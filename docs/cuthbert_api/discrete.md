@@ -1,10 +1,6 @@
 # Discrete Hidden Markov Models
 
-{%
-    include-markdown "../../cuthbert/discrete/README.md"
-    start="<!--discrete-hidden-markov-models-start-->"
-    end="<!--discrete-hidden-markov-models-end-->"
-%}
+--8<-- "cuthbert/discrete/README.md:discrete_hidden_markov_models"
 
 
 The core atomic functions can be found in

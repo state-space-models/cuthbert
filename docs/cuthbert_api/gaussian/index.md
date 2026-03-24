@@ -13,8 +13,4 @@ The core atomic functions can be found in [`cuthbertlib.kalman`](../../cuthbertl
 
 ## Gaussian Filters and Smoothers in `cuthbert`
 
-{%
-    include-markdown "../../../cuthbert/gaussian/README.md"
-    start="<!--gaussian-filters-and-smoothers-start-->"
-    end="<!--gaussian-filters-and-smoothers-end-->"
-%}
+--8<-- "cuthbert/gaussian/README.md:gaussian_filters_and_smoothers"

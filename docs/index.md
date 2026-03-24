@@ -1,32 +1,12 @@
 #
 
-{%
-    include-markdown "../README.md"
-    start="<!--intro-start-->"
-    end="<!--intro-end-->"
-%}
+--8<-- "README.md:intro"
 
-{%
-    include-markdown "../README.md"
-    start="<!--codebase-structure-start-->"
-    end="<!--codebase-structure-end-->"
-%}
+--8<-- "README.md:codebase_structure"
 
 
-{%
-    include-markdown "../README.md"
-    start="<!--goals-start-->"
-    end="<!--goals-end-->"
-%}
+--8<-- "README.md:goals"
 
-{%
-    include-markdown "../README.md"
-    start="<!--installation-start-->"
-    end="<!--installation-end-->"
-%}
+--8<-- "README.md:installation"
 
-{%
-    include-markdown "../README.md"
-    start="<!--ecosystem-start-->"
-    end="<!--ecosystem-end-->"
-%}
+--8<-- "README.md:ecosystem"

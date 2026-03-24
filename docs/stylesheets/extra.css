@@ -1,6 +1,12 @@
 /* Import Comfortaa font */
 @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap');
 
+/* Modern theme: header bar (cuthbert docs badge green) */
+.md-header {
+  background-color: #b6d7a8;
+}
+
+
 /* Set Comfortaa as the default font */
 body {
   font-family: 'Comfortaa', sans-serif !important;

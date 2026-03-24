@@ -6,7 +6,6 @@ exclude_docs: |
   README.md
 
 theme:
-  name: material
   logo: assets/cuthbert.png
   favicon: assets/cuthbert_c.png
   palette:
@@ -70,7 +69,6 @@ nav:
     - cuthbertlib_api/types.md
 
 plugins:
-  - include-markdown
   - mkdocstrings:
       handlers:
         python:

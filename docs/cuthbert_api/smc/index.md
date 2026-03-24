@@ -8,8 +8,4 @@ The core atomic functions can be found in [`cuthbertlib.smc`](../../cuthbertlib_
 
 ## Feynman-Kac Models
 
-{%
-    include-markdown "../../../cuthbert/smc/README.md"
-    start="<!--feynman-kac-start-->"
-    end="<!--feynman-kac-end-->"
-%}
+--8<-- "cuthbert/smc/README.md:feynman_kac"

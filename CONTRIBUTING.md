@@ -37,7 +37,7 @@ pre-commit install
 
 4. If you have made changes to the docs, check that they render nicely:
 ```bash
-mkdocs serve
+zensical serve
 ```
 
 5. Make sure to run the linter, type checker, tests and check coverage:

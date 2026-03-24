@@ -1,5 +1,3 @@
-{%
-    include-markdown "../../cuthbertlib/stats/README.md"
-%}
+--8<-- "cuthbertlib/stats/README.md"
 
 ::: cuthbertlib.stats.multivariate_normal

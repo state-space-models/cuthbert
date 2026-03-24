@@ -2,7 +2,7 @@
 
 The core atomic functions can be found in [`cuthbertlib.smc`](../../cuthbertlib/smc).
 
-<!--feynman-kac-start-->
+<!-- --8<-- [start:feynman_kac] -->
 Sequential Monte Carlo methods provide particle approximations to general Feynman-Kac models:
 
 $$
@@ -10,4 +10,4 @@ $$
 $$
 
 where $M_{s}$ are probability kernels and $G_{s}$ are positive and bounded functions.
-<!--feynman-kac-end-->
+<!-- --8<-- [end:feynman_kac] -->

@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/README.md"
-%}
+--8<-- "cuthbertlib/README.md"
 
 - [Discrete hidden Markov models](discrete.md)
 - [Kalman filtering and smoothing](kalman.md)

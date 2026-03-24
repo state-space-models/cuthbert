@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/resampling/README.md"
-%}
+--8<-- "cuthbertlib/resampling/README.md"
 
 ::: cuthbertlib.resampling.protocols
     options:
