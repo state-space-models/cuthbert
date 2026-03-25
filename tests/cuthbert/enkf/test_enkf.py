@@ -195,11 +195,19 @@ def test_filter_noop(seed, x_dim, y_dim):
     prep_state = inference.filter_prepare(jnp.array(1), key=random.key(seed + 2))
     filtered_state = inference.filter_combine(init_state, prep_state)
 
-    # With identity dynamics and zero-information observations,
-    # the ensemble mean and covariance should be approximately preserved
+    # With identity dynamics, zero noise, and NaN observations,
+    # the ensemble, covariance, and log-likelihood should be exactly preserved
     chex.assert_trees_all_close(
-        filtered_state.mean,
-        init_state.mean,
+        (
+            filtered_state.mean,
+            filtered_state.cov,
+            filtered_state.log_normalizing_constant,
+        ),
+        (
+            init_state.mean,
+            init_state.cov,
+            init_state.log_normalizing_constant,
+        ),
         rtol=1e-10,
         atol=1e-10,
     )

@@ -176,3 +176,33 @@ def test_update_log_likelihood(seed, x_dim, y_dim):
     _, kalman_ll = kalman_update(m0, chol_P0, H, d, chol_R, y)
 
     chex.assert_trees_all_close(ll, kalman_ll, atol=2e-2)
+
+
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+@pytest.mark.parametrize("y_dim", [1, 2])
+def test_update_nan_observation(seed, x_dim, y_dim):
+    """NaN observation should return ensemble unchanged with zero log-likelihood."""
+    key = random.key(seed)
+    N = 100
+
+    lgssm = generate_lgssm(seed, x_dim, y_dim, 1)
+    m0, chol_P0 = lgssm[0], lgssm[1]
+    H, d, chol_R = lgssm[5][0], lgssm[6][0], lgssm[7][0]
+    y_nan = jnp.full(y_dim, jnp.nan)
+
+    keys = random.split(key, N)
+    ensemble = jax.vmap(lambda k: m0 + chol_P0 @ random.normal(k, (x_dim,)))(keys)
+
+    updated, ll = update(
+        random.key(seed + 500),
+        ensemble,
+        lambda x, _: H @ x + d,
+        chol_R,
+        y_nan,
+        None,
+        perturbed_obs=True,
+    )
+
+    chex.assert_trees_all_close(updated, ensemble, atol=1e-12)
+    chex.assert_trees_all_close(ll, jnp.array(0.0), atol=1e-12)
