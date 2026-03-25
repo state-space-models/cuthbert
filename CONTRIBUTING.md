@@ -87,7 +87,7 @@ To add an example, you can use the following steps:
 ```
 Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
 
-4. Add a reference to your new example in the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`mkdocs.yml`](https://github.com/state-space-models/cuthbert/blob/main/mkdocs.yml) file.  
+4. Add a reference to your new example in the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`zensical.toml`](https://github.com/state-space-models/cuthbert/blob/main/zensical.toml) file.
 You may need to add any new dependencies to the [`pyproject.toml`](https://github.com/state-space-models/cuthbert/blob/main/pyproject.toml) file under `examples`.
 5. Make sure your example ends with "Key Takeaways" and "Next Steps" sections,
 linking to other documentation and examples where appropriate.
