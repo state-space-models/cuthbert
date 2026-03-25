@@ -4,7 +4,6 @@ site_url = "https://state-space-models.github.io/cuthbert"
 repo_url = "https://github.com/state-space-models/cuthbert"
 docs_dir = "docs"
 site_dir = "site"
-use_directory_urls = false
 nav = [
   { "Home" = "index.md" },
   { "Quick Start" = "quickstart.md" },
@@ -60,10 +59,7 @@ extra_css = [
   "stylesheets/extra.css",
 ]
 
-# `exclude_docs` from MkDocs is not supported in Zensical yet.
-
 [project.theme]
-# variant = "classic"
 logo = "assets/cuthbert.png"
 favicon = "assets/cuthbert_c.png"
 features = [
