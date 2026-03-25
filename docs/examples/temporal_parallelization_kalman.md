@@ -160,7 +160,7 @@ higher compilation cost and use the parallel implementation.
 ## Next Steps
 
 - **Smoothing**: Apply temporal parallelization to smoothing with
-  [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for backward pass
+  [`cuthbert.smoother`](../api_cuthbert/smoothing.md) for backward pass
   efficiency.
 - **More examples**: Explore other [examples](index.md) including [Kalman
   tracking](kalman_tracking.md) and [dynamax integration](dynamax_integration.md).

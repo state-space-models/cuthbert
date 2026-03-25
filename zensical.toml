@@ -1,0 +1,117 @@
+[project]
+site_name = "cuthbert"
+site_url = "https://state-space-models.github.io/cuthbert"
+repo_url = "https://github.com/state-space-models/cuthbert"
+docs_dir = "docs"
+site_dir = "site"
+use_directory_urls = false
+nav = [
+  { "Home" = "index.md" },
+  { "Quick Start" = "quickstart.md" },
+  { "Contributing" = "contributing.md" },
+  { "Examples" = [
+    "examples/index.md",
+    { "Kalman Tracking" = "examples/kalman_tracking.md" },
+    "examples/temporal_parallelization_kalman.md",
+    "examples/online_stoch_vol.md",
+    "examples/parameter_estimation_em.md",
+    { "Differentiable Resampling in Particle Filters" = "examples/diff_pf_resampling.md" },
+    { "Dynamax Integration" = "examples/dynamax_integration.md" },
+  ] },
+  { "cuthbert API" = [
+    "api_cuthbert/index.md",
+    "api_cuthbert/filtering.md",
+    "api_cuthbert/smoothing.md",
+    { "Discrete HMMs" = "api_cuthbert/discrete.md" },
+    { "Gaussian filters and smoothers" = [
+      "api_cuthbert/gaussian/index.md",
+      { "Exact Kalman" = "api_cuthbert/gaussian/kalman.md" },
+      { "Moments" = "api_cuthbert/gaussian/moments.md" },
+      { "Taylor" = "api_cuthbert/gaussian/taylor.md" },
+    ] },
+    { "Sequential Monte Carlo" = [
+      "api_cuthbert/smc/index.md",
+      "api_cuthbert/smc/backward_sampler.md",
+      "api_cuthbert/smc/marginal_particle_filter.md",
+      "api_cuthbert/smc/particle_filter.md",
+      "api_cuthbert/smc/types.md",
+    ] },
+  ] },
+  { "cuthbertlib API" = [
+    "api_cuthbertlib/index.md",
+    "api_cuthbertlib/discrete.md",
+    "api_cuthbertlib/kalman.md",
+    "api_cuthbertlib/linalg.md",
+    "api_cuthbertlib/linearize.md",
+    { "Quadrature Methods" = "api_cuthbertlib/quadrature.md" },
+    "api_cuthbertlib/resampling.md",
+    "api_cuthbertlib/smc.md",
+    "api_cuthbertlib/stats.md",
+    "api_cuthbertlib/types.md",
+  ] },
+]
+extra_javascript = [
+  "javascripts/katex.js",
+  "https://unpkg.com/katex@0/dist/katex.min.js",
+  "https://unpkg.com/katex@0/dist/contrib/auto-render.min.js",
+]
+extra_css = [
+  "https://unpkg.com/katex@0/dist/katex.min.css",
+  "stylesheets/extra.css",
+]
+
+# `exclude_docs` from MkDocs is not supported in Zensical yet.
+
+[project.theme]
+# variant = "classic"
+logo = "assets/cuthbert.png"
+favicon = "assets/cuthbert_c.png"
+features = [
+  "navigation.instant",
+  "content.code.copy",
+  "navigation.indexes",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "green"
+accent = "green"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "green"
+accent = "green"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.plugins.mkdocstrings.handlers.python.options]
+show_root_heading = true
+show_symbol_type_heading = true
+members_order = "source"
+show_if_no_docstring = true
+merge_init_into_class = true
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.pymdownx.details]
+
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+
+[project.markdown_extensions.pymdownx.inlinehilite]
+
+[project.markdown_extensions.pymdownx.snippets]
+
+[project.markdown_extensions.pymdownx.superfences]
+
+[project.markdown_extensions.toc]
+toc_depth = 3

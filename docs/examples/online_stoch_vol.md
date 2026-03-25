@@ -325,7 +325,7 @@ This time the filter sees the actual log-return rather than `jnp.nan`.
 
 ## Next Steps
 
-- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) to
+- **Smoothing**: Use [`cuthbert.smoother`](../api_cuthbert/smoothing.md) to
   perform backward smoothing for more accurate historical state estimates.
 - **Parameter learning**: Learn the hyperparameters from the data using gradient
   descent, expectation maximization (see the [parameter estimation

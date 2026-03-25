@@ -239,7 +239,7 @@ car's position.
 
 ## Next Steps
 
-- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) for
+- **Smoothing**: Use [`cuthbert.smoother`](../api_cuthbert/smoothing.md) for
   backward pass smoothing.
 - **Parameter Learning**: Combine with optimization libraries like
   [`optax`](https://github.com/google-deepmind/optax). Check out the [parameter

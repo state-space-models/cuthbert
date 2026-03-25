@@ -4,7 +4,7 @@
 
 
 The core atomic functions can be found in
-[`cuthbertlib.discrete`](../cuthbertlib_api/discrete.md).
+[`cuthbertlib.discrete`](../api_cuthbertlib/discrete.md).
 
 ::: cuthbert.discrete.filter
     options:
