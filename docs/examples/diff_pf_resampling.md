@@ -1,6 +1,6 @@
 # Differentiable Resampling
 
-In the default implementation of a particle filter, particles are propagated through a Markov kernel $M(x_t \mid x_{t-1})$, reweighted according to a potential function $G_t(x_{t-1}, x_t)$, and potentially resampled. While [various resamplings strategies exist](../cuthbertlib_api/resampling.md), they are typically non-differentiable, leading to biased estimates of the marginal log-likelihood's gradient, $\nabla_{\theta} \log p(y_{1:T})$, if used directly within `jax.grad` autodifferentiation framework. This is unfortunate, as relying on these biased gradients of the marginal log-likelihood falsifies for parameter estimation tasks.
+In the default implementation of a particle filter, particles are propagated through a Markov kernel $M(x_t \mid x_{t-1})$, reweighted according to a potential function $G_t(x_{t-1}, x_t)$, and potentially resampled. While [various resamplings strategies exist](../api_cuthbertlib/resampling.md), they are typically non-differentiable, leading to biased estimates of the marginal log-likelihood's gradient, $\nabla_{\theta} \log p(y_{1:T})$, if used directly within `jax.grad` autodifferentiation framework. This is unfortunate, as relying on these biased gradients of the marginal log-likelihood falsifies for parameter estimation tasks.
 
 Because of this, many different approaches have been proposed to make the resampling step differentiable. A simple implementation is that of [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314), which implements a stop-gradient trick recovering classical estimates of the gradients of the marginal log-likelihood via automatic differentation. 
 Formally, it is equivalent to computing 
@@ -568,8 +568,8 @@ Finally, we should be sure that the forward pass is not actually being modified 
 
 ## Next Steps
 
-- **More SMC docs**: See [`cuthbert.smc`](../cuthbert_api/smc/index.md) for particle filtering and smoothing APIs.
-- **More resampling docs**: See [`cuthbertlib.resampling`](../cuthbertlib_api/resampling.md) for resampling APIs.
+- **More SMC docs**: See [`cuthbert.smc`](../api_cuthbert/smc/index.md) for particle filtering and smoothing APIs.
+- **More resampling docs**: See [`cuthbertlib.resampling`](../api_cuthbertlib/resampling.md) for resampling APIs.
 - **More info on differentiable particle filters**: See the [PyDPF paper](https://arxiv.org/abs/2510.25693) for an overview of different differentiable particle filter algorithms in the literature.
 
 <!--- entangled-tangle-block

@@ -2,7 +2,7 @@
 
 This folder contains the code for the main `cuthbert` package.
 
-<!--unified-interface-start-->
+<!-- --8<-- [start:unified_interface] -->
 All inference methods are implemented with the following unified interface:
 
 ```python
@@ -36,4 +36,4 @@ kalman_smoother = cuthbert.gaussian.kalman.build_smoother(get_dynamics_params)
 filter_states = cuthbert.filter(kalman_filter, model_inputs)
 smoother_states = cuthbert.smoother(kalman_smoother, filter_states, model_inputs)
 ```
-<!--unified-interface-end-->
+<!-- --8<-- [end:unified_interface] -->

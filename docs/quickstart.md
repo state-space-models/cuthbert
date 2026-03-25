@@ -21,7 +21,7 @@ from cuthbert.gaussian import taylor
 from cuthbertlib.types import LogConditionalDensity, LogDensity
 ```
 
-Nothing too surprising there I hope. We'll be using the [`taylor`](cuthbert_api/gaussian/taylor.md)
+Nothing too surprising there I hope. We'll be using the [`taylor`](api_cuthbert/gaussian/taylor.md)
 module which will let us generate Gaussian approximations to the filtering and smoothing
 distributions whilst handling the discrete nature of the observations.
 
@@ -236,7 +236,7 @@ use (the initial and dynamics distributions are Gaussian so we can actually use 
 linearization point we like and `taylor` will exactly recover the Gaussian parameters,
 the observation model is non-Gaussian so we tell `cuthbert` to linearize around the
 current mean). The linearization point is specified in the additional output of the
-`get_` functions - see the [`taylor` documentation](cuthbert_api/gaussian/taylor.md)
+`get_` functions - see the [`taylor` documentation](api_cuthbert/gaussian/taylor.md)
 for more details.
 
 

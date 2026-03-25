@@ -2,7 +2,7 @@
 
 The core atomic functions can be found in [`cuthbertlib.kalman`](../../cuthbertlib/kalman).
 
-<!--gaussian-filters-and-smoothers-start-->
+<!-- --8<-- [start:gaussian_filters_and_smoothers] -->
 Gaussian filters in `cuthbert` provide filtering distributions of the form:
 
 $$
@@ -58,4 +58,4 @@ G_{t|T} L_{t+1|T} & V_{t|T}
 \end{pmatrix}.
 $$
 
-<!--gaussian-filters-and-smoothers-end-->
+<!-- --8<-- [end:gaussian_filters_and_smoothers] -->

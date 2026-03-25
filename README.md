@@ -1,4 +1,4 @@
-<!--intro-start-->
+<!-- --8<-- [start:intro] -->
 <div align="center">
 <img src="https://raw.githubusercontent.com/state-space-models/cuthbert/main/docs/assets/cuthbert.png" alt="cuthbert logo"></img>
 </div>
@@ -16,10 +16,10 @@ A JAX library for state-space model inference
 [![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/W9BA4Aj7Rx)
 [![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/state-space-models/cuthbert)
 [![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)
-[![Docs](https://img.shields.io/badge/Docs-b6d7a8?logo=materialformkdocs&logoColor=black&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
-<!--intro-end-->
+[![Docs](https://img.shields.io/badge/Docs-b6d7a8?logo=readme&logoColor=black&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
+<!-- --8<-- [end:intro] -->
 
-<!--goals-start-->
+<!-- --8<-- [start:goals] -->
 ### Goals
 - Simple, flexible and performant interface for state-space model inference.
 - Decoupling of model specification and inference. `cuthbert` is built to swap between
@@ -39,9 +39,9 @@ Kalman filtering (+ extended/unscented/ensemble), expectation-maximization and m
 But can easily compose with [`dynamax`](https://github.com/probml/dynamax), [`distrax`](https://github.com/google-deepmind/distrax), [`numpyro`](https://github.com/pyro-ppl/numpyro) and [`pymc`](https://github.com/pymc-devs/pymc) in a similar way to how [`blackjax` does](https://blackjax-devs.github.io/blackjax/).
 - ["SMC Samplers"](https://www.stats.ox.ac.uk/~doucet/delmoral_doucet_jasra_sequentialmontecarlosamplersJRSSB.pdf) which sample from a posterior
 distribution which is not (necessarily) a state-space model - [`blackjax` is great for this](https://github.com/blackjax-devs/blackjax/tree/main/blackjax/smc).
-<!--goals-end-->
+<!-- --8<-- [end:goals] -->
 
-<!--codebase-structure-start-->
+<!-- --8<-- [start:codebase_structure] -->
 ### Codebase structure
 
 The codebase is structured as follows:
@@ -49,13 +49,13 @@ The codebase is structured as follows:
 - `cuthbert`: The main package with unified interface for filtering and smoothing.
 - `cuthbertlib`: A collection of atomic, smaller-scoped tools useful for state-space model inference,
 that represent the building blocks that power the main `cuthbert` package.
-<!--codebase-structure-end-->
+<!-- --8<-- [end:codebase_structure] -->
 - `docs`: Source code for the documentation for `cuthbert` and `cuthbertlib`.
 - `pkg`: Packaging configuration for publishing `cuthbert` and `cuthbertlib` to PyPI.
 - `tests`: Tests for the `cuthbert` and `cuthbertlib` packages.
 
 
-<!--installation-start-->
+<!-- --8<-- [start:installation] -->
 ## Installation
 
 `cuthbert` depends on JAX, so you'll need to [install JAX](https://docs.jax.dev/en/latest/installation.html) for the available hardware (CPU, GPU, or TPU).
@@ -95,9 +95,9 @@ pip install -e ./pkg/cuthbertlib
 pip install -e "./pkg/cuthbert[tests]"
 ```
 
-<!--installation-end-->
+<!-- --8<-- [end:installation] -->
 
-<!--ecosystem-start-->
+<!-- --8<-- [start:ecosystem] -->
 ## Ecosystem
 - `cuthbert` is built on top of [`jax`](https://github.com/google/jax) and composes
 easily with other JAX packages, e.g. [`optax`](https://github.com/google-deepmind/optax)
@@ -117,7 +117,7 @@ mentioned [above](#non-goals).
     are wonderful learning materials for state-space models and SMC.
     `cuthbert` is more focused on performance and composability with the JAX ecosystem.
 - Much of the code in `cuthbert` is built on work from [`sqrt-parallel-smoothers`](https://github.com/EEA-sensors/sqrt-parallel-smoothers), [`mocat`](https://github.com/SamDuffield/mocat) and [`abile`](https://github.com/SamDuffield/abile).
-<!--ecosystem-end-->
+<!-- --8<-- [end:ecosystem] -->
 
 ## Contributing
 

@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/linalg/README.md"
-%}
+--8<-- "cuthbertlib/linalg/README.md"
 
 ::: cuthbertlib.linalg.tria
 
