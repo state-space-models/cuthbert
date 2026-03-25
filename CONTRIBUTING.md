@@ -35,12 +35,7 @@ pre-commit install
 
 3. **Add your code. Add your tests. Update the docs if needed.**
 
-4. If you have made changes to the docs, check that they render nicely:
-```bash
-zensical serve
-```
-
-5. Make sure to run the linter, type checker, tests and check coverage:
+4. Make sure to run the linter, type checker, tests and check coverage:
 ```bash
 pre-commit run --all-files
 python -m pytest --cov=cuthbert --cov-report term-missing
@@ -52,9 +47,26 @@ python -m pytest --cov=cuthbert --cov-report term-missing
         (with Type Checking Mode: standard)
         extensions for assistance with linting and type checking during development.
 
-6. Commit your changes and push your new branch to your fork.
+5. Commit your changes and push your new branch to your fork.
 
-7. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
+6. Open a [pull request on GitHub](https://github.com/state-space-models/cuthbert/pulls).
+
+
+## Updating the docs
+
+The documentation site is built with [Zensical](https://zensical.org/).
+
+You can render locally with:
+```bash
+zensical serve
+```
+The live preview should be available at `http://localhost:8000`.
+
+Pages under `docs/` often pull shared copy from repository `README.md` files via
+[PyMdown Snippets](https://facelessuser.github.io/pymdown-extensions/extensions/snippets/)
+(`--8<-- "path"` and named sections in HTML comments). See that guide for syntax and
+options. We recommend using Snippets where possible, to avoid duplication,
+with source text in an appropriate `README.md` file and then linked to in `docs/` files.
 
 
 ## Adding an example
