@@ -6,11 +6,11 @@ Because of this, many different approaches have been proposed to make the resamp
 Formally, it is equivalent to computing 
 
 $$
-\begin{align}
+\begin{align*}
   \nabla_{\theta} \log p(y_{1:T}) 
       &= \int \nabla_{\theta} \log p(x_{0:T}, y_{1:T}) \, p(x_{0:T} \mid y_{1:T}) \mathrm{d}x_{0:T}\\
       &\approx \sum_{n=1}^N W_T^{n} \log p(X^{(n)}_{0:T}, y_{1:T})
-\end{align}
+\end{align*}
 $$
 
 under the high variance *[backward tracing](https://github.com/state-space-models/cuthbert/blob/main/cuthbertlib/smc/smoothing/tracing.py)* version of the smoothing distribution.
