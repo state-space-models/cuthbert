@@ -59,9 +59,9 @@ class Join(Protocol):
     ) -> ArrayTree:
         """Extract factors from factorial state and combine into a joint local state.
 
-        E.g. local_factorial_state might encode factorial `means` with shape (2, d) and
-        `chol_covs` with shape (2, d, d).
-        Which is then combined into a joint state with shape (2 * d,)
+        E.g., local_factorial_state might encode factorial `means` with shape (2, d)
+        and `chol_covs` with shape (2, d, d),
+        which is then combined into a joint state with shape (2 * d,)
         and block diagonal `joint_chol_cov` with shape (2 * d, 2 * d).
 
         Args:
