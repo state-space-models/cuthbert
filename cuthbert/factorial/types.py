@@ -173,6 +173,12 @@ class Factorializer(NamedTuple):
             Joint local state with no factorial index dimension.
         """
         factorial_inds = self.get_factorial_indices(model_inputs)
+        factorial_inds = jnp.asarray(factorial_inds)
+
+        assert factorial_inds.ndim == 1, (
+            "factorial_inds must be a 1D array to be used with join"
+        )
+
         local_factorial_state = self.extract(factorial_state, factorial_inds)
         return self.join(local_factorial_state)
 
