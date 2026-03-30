@@ -133,7 +133,7 @@ Since the SSM in (1)-(3) is nonlinear, the true posterior $p_{\theta}(x_{0:T}
 \mid y_{1:T})$ is not tractable, and so must be approximated for the E-step.
 We will use one of the Gaussian-approximated filters and smoothers
 provided in `cuthbert`, in particular the moment-based extended Kalman filter
-from [`cuthbert.gaussian.moments`](../cuthbert_api/gaussian/moments.md).
+from [`cuthbert.gaussian.moments`](../api_cuthbert/gaussian/moments.md).
 Let's build the filter and smoother objects below that correspond to the SSM:
 
 ```{.python #em-model}
@@ -198,7 +198,7 @@ smoothing distribution), we need to compute
 $Q(\theta; q^{\star})$ for the M-step. However, the integral in (4) is
 intractable, and hence must also be approximated. Conveniently, since we're
 using a Gaussian approximation for the posterior, we can use one of the
-Gaussian quadrature methods provided in [`cuthbertlib.quadrature`](../cuthbertlib_api/quadrature.md)
+Gaussian quadrature methods provided in [`cuthbertlib.quadrature`](../api_cuthbertlib/quadrature.md)
 to estimate the integral. Here we use the [Gauss-Hermite
 quadrature](https://en.wikipedia.org/wiki/Gauss%E2%80%93Hermite_quadrature)
 method, available in `cuthbertlib.quadrature.gauss_hermite`.
@@ -358,7 +358,7 @@ that EM converges to the vicinity of the true value but not exactly, because
 both our E and M-steps are approximated. Both these approximations can be
 improved, say by replacing the Gaussian-approximated filter and smoother with
 asymptotically unbiased particle approximations (see
-[`cuthbert.smc`](../cuthbert_api/smc/index.md)), or by
+[`cuthbert.smc`](../api_cuthbert/smc/index.md)), or by
 increasing the order of the Gauss-Hermite quadrature.
 
 ## Key Takeaways
@@ -382,7 +382,7 @@ increasing the order of the Gauss-Hermite quadrature.
 ## Next Steps
 
 - **Particle-based EM**: Replace the Gaussian approximation with particle filters
-  and smoothers from [`cuthbert.smc`](../cuthbert_api/smc/index.md) for
+  and smoothers from [`cuthbert.smc`](../api_cuthbert/smc/index.md) for
   asymptotically unbiased parameter estimates.
 - **Other optimization methods**: Explore gradient-based optimization with
   [`optax`](https://github.com/google-deepmind/optax) for the M-step, or use

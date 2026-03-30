@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/linearize/README.md"
-%}
+--8<-- "cuthbertlib/linearize/README.md"
 
 ::: cuthbertlib.linearize.log_density
 

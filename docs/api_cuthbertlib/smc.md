@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/smc/README.md"
-%}
+--8<-- "cuthbertlib/smc/README.md"
 
 ::: cuthbertlib.smc.smoothing.protocols
 
