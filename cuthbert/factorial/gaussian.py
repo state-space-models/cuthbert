@@ -194,7 +194,10 @@ def insert(
         local_factorial_state.elem,
         factorial_state.elem,
     )
-    new_state = factorial_state._replace(elem=new_elem)
+    new_state = factorial_state._replace(
+        elem=new_elem,
+        model_inputs=local_factorial_state.model_inputs,
+    )
 
     if isinstance(local_factorial_state, LinearizedKalmanFilterState) and isinstance(
         factorial_state, LinearizedKalmanFilterState
