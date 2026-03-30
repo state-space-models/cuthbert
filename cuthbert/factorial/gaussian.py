@@ -53,6 +53,10 @@ def extract(factorial_state: KalmanState, factorial_inds: ArrayLike) -> KalmanSt
         factorial_state: Factorial Kalman state storing means and chol_covs
             with shape (F, d) and (F, d, d) respectively.
         factorial_inds: Indices of the factors to extract. Integer array.
+            factorial_inds.ndim == 0 removes the factorial dimension and extracts
+                a single factor.
+            factorial_inds.ndim == 1 retains the factorial dimension,
+                even if len(factorial_inds) == 1.
 
     Returns:
         Factorial Kalman state storing means and chol_covs
@@ -189,6 +193,7 @@ def insert(
         Joint local Kalman state with no factorial index dimension.
     """
     factorial_inds = jnp.asarray(factorial_inds)
+    factorial_inds = jnp.atleast_1d(factorial_inds)
     new_elem = tree.map(
         lambda loc, glob: _insert_arr(loc, glob, factorial_inds),
         local_factorial_state.elem,

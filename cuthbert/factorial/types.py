@@ -38,9 +38,13 @@ class Extract(Protocol):
         `chol_covs[j]`. Thus we return `means` with shape (2, d) and `chol_covs` with
         shape (2, d, d).
 
-        Args:
-            factorial_state: Factorial state with factorial index as the first dimension.
-            factorial_inds: Indices of the factors to extract. Integer array.
+        factorial_state: Factorial Kalman state storing means and chol_covs
+            with shape (F, d) and (F, d, d) respectively.
+        factorial_inds: Indices of the factors to extract. Integer array.
+            factorial_inds.ndim == 0 removes the factorial dimension and extracts
+                a single factor.
+            factorial_inds.ndim == 1 retains the factorial dimension,
+                even if len(factorial_inds) == 1.
 
         Returns:
             Local factorial state with factorial dimension of length len(factorial_inds).
@@ -124,6 +128,9 @@ class Insert(Protocol):
                 dimension and `len(factorial_inds)` factors (length of first dimension).
             factorial_state: Factorial state with factorial index as the first dimension.
             factorial_inds: Indices of the factors to insert. Integer array.
+                factorial_inds.ndim == 0 will be treated the same as
+                factorial_inds.ndim == 1 with len(factorial_inds) == 1
+                (i.e. insert a single factor).
 
         Returns:
             Factorial state with factorial index as the first dimension.
