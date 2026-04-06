@@ -206,3 +206,45 @@ def test_update_nan_observation(seed, x_dim, y_dim):
 
     chex.assert_trees_all_close(updated, ensemble, atol=1e-12)
     chex.assert_trees_all_close(ll, jnp.array(0.0), atol=1e-12)
+
+
+@pytest.mark.parametrize("seed", [0, 42, 99, 123, 456])
+@pytest.mark.parametrize("x_dim", [3])
+@pytest.mark.parametrize("y_dim", [2, 3])
+def test_update_partial_nan_observation(seed, x_dim, y_dim):
+    """Partially-NaN observations should match Kalman missing-dimension behavior."""
+    key = random.key(seed)
+    N = 100_000
+
+    lgssm = generate_lgssm(seed, x_dim, y_dim, 1)
+    m0, chol_P0 = lgssm[0], lgssm[1]
+    H, d, chol_R, y = lgssm[5][0], lgssm[6][0], lgssm[7][0], lgssm[8][0]
+    y = y.at[0].set(jnp.nan)
+
+    keys = random.split(key, N)
+    ensemble = jax.vmap(lambda k: m0 + chol_P0 @ random.normal(k, (x_dim,)))(keys)
+
+    updated, ll = update(
+        random.key(seed + 600),
+        ensemble,
+        lambda x, _: H @ x + d,
+        chol_R,
+        y,
+        None,
+        perturbed_obs=True,
+    )
+    assert jnp.isfinite(ll)
+    assert jnp.all(jnp.isfinite(updated))
+
+    enkf_mean = jnp.mean(updated, axis=0)
+    enkf_dev = updated - enkf_mean
+    enkf_cov = enkf_dev.T @ enkf_dev / (N - 1)
+
+    (kalman_mean, kalman_chol_cov), kalman_ll = kalman_update(
+        m0, chol_P0, H, d, chol_R, y
+    )
+    kalman_cov = kalman_chol_cov @ kalman_chol_cov.T
+
+    chex.assert_trees_all_close(enkf_mean, kalman_mean, atol=2e-2)
+    chex.assert_trees_all_close(enkf_cov, kalman_cov, atol=3e-2)
+    chex.assert_trees_all_close(ll, kalman_ll, atol=3e-2)

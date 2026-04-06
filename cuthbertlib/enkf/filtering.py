@@ -11,7 +11,7 @@ import jax.numpy as jnp
 from jax import random
 from jax.scipy.linalg import cho_solve
 
-from cuthbertlib.linalg import tria
+from cuthbertlib.linalg import collect_nans_chol, tria
 from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray, ScalarArray
 
@@ -62,12 +62,18 @@ def _update_observed(
     model_inputs: ArrayTreeLike,
     perturbed_obs: bool = True,
 ) -> tuple[Array, ScalarArray]:
-    """EnKF update when an observation is present (no NaNs)."""
+    """EnKF update when at least one observation dimension is present."""
     N, x_dim = predicted_ensemble.shape
-    y_dim = y.shape[0]
 
     # Map ensemble to observation space
     y_pred = jax.vmap(observation_fn, (0, None))(predicted_ensemble, model_inputs)
+
+    # Handle partially-missing observations by reordering and zeroing missing dims.
+    # Use y_pred.T because y_pred is (N, y_dim) and we want to reorder along axis 0.
+    flag = jnp.isnan(y)
+    flag, chol_R, y, y_pred = collect_nans_chol(flag, chol_R, y, y_pred.T)
+    y_pred = y_pred.T
+    y_dim = y.shape[0]
 
     # Ensemble means
     x_mean = jnp.mean(predicted_ensemble, axis=0)
@@ -112,15 +118,16 @@ def update(
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
 
-    When ``y`` is entirely NaN, the update is a no-op: the predicted ensemble
-    is returned unchanged with zero log-likelihood contribution.
+    NaNs in ``y`` are treated as missing dimensions and are excluded from the
+    update. When ``y`` is entirely NaN, the update is a no-op: the predicted
+    ensemble is returned unchanged with zero log-likelihood contribution.
 
     Args:
         key: JAX PRNG key.
         predicted_ensemble: Predicted ensemble, shape (N, x_dim).
         observation_fn: Observation function mapping (state, model_inputs) -> obs.
         chol_R: Cholesky factor of the observation noise covariance, shape (y_dim, y_dim).
-        y: Observation vector, shape (y_dim,). Pass all-NaN to skip the update.
+        y: Observation vector, shape (y_dim,). NaNs indicate missing dimensions.
         model_inputs: Model inputs passed to observation_fn.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
             If False, use deterministic update.
