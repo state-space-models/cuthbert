@@ -23,6 +23,11 @@ nav = [
     "api_cuthbert/filtering.md",
     "api_cuthbert/smoothing.md",
     { "Discrete HMMs" = "api_cuthbert/discrete.md" },
+    { "Ensemble Kalman Filter" = [
+      "api_cuthbert/enkf.md",
+      "api_cuthbert/enkf/ensemble_kalman_filter.md",
+      "api_cuthbert/enkf/types.md",
+    ] },
     { "Gaussian filters and smoothers" = [
       "api_cuthbert/gaussian/index.md",
       { "Exact Kalman" = "api_cuthbert/gaussian/kalman.md" },
@@ -40,6 +45,10 @@ nav = [
   { "cuthbertlib API" = [
     "api_cuthbertlib/index.md",
     "api_cuthbertlib/discrete.md",
+    { "Ensemble Kalman Filter" = [
+      "api_cuthbertlib/enkf.md",
+      "api_cuthbertlib/enkf/filtering.md",
+    ] },
     "api_cuthbertlib/kalman.md",
     "api_cuthbertlib/linalg.md",
     "api_cuthbertlib/linearize.md",

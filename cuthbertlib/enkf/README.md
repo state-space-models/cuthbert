@@ -11,5 +11,4 @@ Together, `predict` and `update` can be used to perform an online EnKF filtering
 
 The EnKF uses an ensemble of particles with a Kalman-style measurement update based on
 empirical covariances. Unlike the EKF, it does not require Jacobians, while naturally
-handling nonlinear dynamics. Noise covariance matrices are provided in **square-root
-(Cholesky) form** for numerical stability.
+handling nonlinear dynamics. 
