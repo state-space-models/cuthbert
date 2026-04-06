@@ -10,8 +10,4 @@
 
 ## Unified Interface
 
-{%
-    include-markdown "../../cuthbert/README.md"
-    start="<!--unified-interface-start-->"
-    end="<!--unified-interface-end-->"
-%}
+--8<-- "cuthbert/README.md:unified_interface"

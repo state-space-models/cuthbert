@@ -1,6 +1,4 @@
-{%
-    include-markdown "../../cuthbertlib/quadrature/README.md"
-%}
+--8<-- "cuthbertlib/quadrature/README.md"
 
 ::: cuthbertlib.quadrature.cubature
 

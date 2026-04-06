@@ -306,7 +306,7 @@ filters.
 
 ## Next Steps
 
-- **Smoothing**: Use [`cuthbert.smoother`](../cuthbert_api/smoothing.md) to
+- **Smoothing**: Use [`cuthbert.smoother`](../api_cuthbert/smoothing.md) to
   perform backward smoothing for more accurate state estimates.
 - **Temporal parallelization**: Enable parallel-in-time filtering for faster
   computation on longer time series - see the [temporal parallelization
