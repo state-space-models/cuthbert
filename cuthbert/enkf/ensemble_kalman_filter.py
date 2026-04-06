@@ -75,7 +75,13 @@ def build_filter(
 
     Returns:
         Filter object for the EnKF.
+
+    Raises:
+        ValueError: If ``n_particles`` is less than 2.
     """
+    if n_particles < 2:
+        raise ValueError("n_particles must be at least 2 for EnKF.")
+
     return Filter(
         init_prepare=partial(
             init_prepare,
