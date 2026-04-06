@@ -14,6 +14,7 @@ nav = [
     "examples/temporal_parallelization_kalman.md",
     "examples/online_stoch_vol.md",
     "examples/parameter_estimation_em.md",
+    { "Ensemble Kalman Filtering for Lorenz-63" = "examples/enkf_comparison.md" },
     { "Differentiable Resampling in Particle Filters" = "examples/diff_pf_resampling.md" },
     { "Dynamax Integration" = "examples/dynamax_integration.md" },
   ] },
