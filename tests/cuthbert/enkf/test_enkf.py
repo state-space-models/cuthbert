@@ -109,8 +109,8 @@ class Test(chex.TestCase):
         chex.assert_trees_all_close(
             (ells, means, covs),
             (des_ells, des_means, des_covs),
-            rtol=2e-2,
-            atol=2e-2,
+            rtol=1e-2,
+            atol=1e-2,
         )
 
     @chex.variants(with_jit=True, without_jit=True)
