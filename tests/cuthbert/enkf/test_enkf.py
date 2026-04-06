@@ -211,3 +211,20 @@ def test_filter_noop(seed, x_dim, y_dim):
         rtol=1e-10,
         atol=1e-10,
     )
+
+
+def test_build_filter_requires_at_least_two_particles():
+    """EnKF should fail fast when configured with fewer than two particles."""
+
+    def get_init_params(_):
+        return (jnp.zeros(1), jnp.eye(1))
+
+    with pytest.raises(ValueError, match="at least 2"):
+        ensemble_kalman_filter.build_filter(
+            get_init_params=get_init_params,
+            dynamics_fn=lambda x, _: x,
+            get_dynamics_params=lambda _: jnp.eye(1),
+            observation_fn=lambda x, _: x,
+            get_observation_params=lambda _: (jnp.eye(1), jnp.zeros(1)),
+            n_particles=1,
+        )
