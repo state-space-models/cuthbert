@@ -11,7 +11,7 @@ d\mathbf{x} = \begin{pmatrix} \sigma(x_2 - x_1) \\ x_1(\rho - x_3) - x_2 \\ x_1 
 $$
 
 with the standard chaotic parameters $\sigma = 10$, $\rho = 28$, $\beta = 8/3$.
-We discretize the drift with Heun's method using a fine inner step size $\delta t = 0.01$ and assimilate every 25 inner steps ($\Delta t = 0.25$). This large assimilation interval makes EKF linearization of the composed multi-step map inaccurate, while the EnKF simply propagates ensemble members through the same nonlinear map without any Jacobian.
+We discretize the drift with Heun's method using a fine inner step size $\delta t = 0.01$ and assimilate every 35 inner steps ($\Delta t = 0.35$). This large assimilation interval makes EKF linearization of the composed multi-step map inaccurate, while the EnKF simply propagates ensemble members through the same nonlinear map without any Jacobian.
 
 $$
 y_t = \begin{pmatrix} 1 & 0 & 0 \end{pmatrix} \mathbf{x}_t + \varepsilon_t, \quad \varepsilon_t \sim \mathcal{N}(0, \sigma_{\text{obs}}^2).
@@ -49,7 +49,7 @@ lorenz_beta = 8.0 / 3.0
 
 # Discretization and noise
 dt_inner = 0.01
-n_inner_steps = 25
+n_inner_steps = 35
 dt = dt_inner * n_inner_steps
 diff_std = 1.0  # Diffusion noise standard deviation
 obs_std = 0.3   # Observation noise standard deviation
@@ -181,14 +181,13 @@ ekf_chol_covs = ekf_states.chol_cov
 
 ## EnKF
 
-The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF.
+The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF. We need to specify a function that generates initial samples, and functions to return dynamics and observation parameters.
 
 ```{.python #enkf-comparison-enkf}
 enkf = ensemble_kalman_filter.build_filter(
-    init_sample=lambda key, mi: m0 + chol_P0 @ random.normal(key, m0.shape),
-    dynamics_fn=lambda x, mi: lorenz_step(x),
-    get_dynamics=lambda mi: (lambda x, _: lorenz_step(x), chol_Q),
-    get_observations=lambda mi: (lambda x, _: H @ x + d_obs, chol_R, ys[mi - 1]),
+    init_sample=lambda key: m0 + chol_P0 @ random.normal(key, m0.shape),
+    get_dynamics=lambda mi: (lambda x: lorenz_step(x), chol_Q),
+    get_observations=lambda mi: (lambda x: H @ x + d_obs, chol_R, ys[mi - 1]),
     n_particles=25,
     inflation=0.05,
     perturbed_obs=True,
@@ -312,7 +311,7 @@ observed — the filters must infer $x_2$ and $x_3$ from the dynamics alone.
 ![Lorenz-63 filtering comparison](../assets/enkf_comparison.png)
 
 
-From these results, we can clearly see that the PF struggled, despite the larger number of particles. In this example, using ~250 particles would have helped, but with higher computational cost. The EKF and EnKF perform similarly, despite the low-dimensional setting being relatively well-suited for the EKF.
+From these results, we can clearly see that the EKF and PF struggled, despite the larger number of particles for the latter. In this example, using ~250 particles would have helped the PF, but with higher computational cost. The EKF would also have performed well given lower observation noise or smaller inter-observation time (and erego less non-linear transitions). The EnKF is the only filter out of the three that does not completely fail at some point.
 
 ## Metric Comparison
 
@@ -400,7 +399,7 @@ The cumulative log-likelihood (log normalizing constant) is a probabilistic esti
 
 ![Log-likelihood comparison](../assets/enkf_comparison_loglik.png)
 
-In both metrics, the EnKF slightly outperformed the EKF, whilst the PF suffers.
+In both metrics, the EKF and PF completely collapse in performance at some point, whilst EnKF maintains good state estimates. Once again, this example is somewhat cherry-picked, in that small modifications to the data-generating process would have resulted in strong performance from the EKF or PF, but illustrates the robustness of the EnKF. 
 
 ## Runtime comparison
 
@@ -425,12 +424,12 @@ One benefit of the EnKF is its ability to handle nonlinear dynamics with relativ
 
 ![Runtime comparison](../assets/enkf_comparison_timing.png)
 
-
+Under the settings that we used, the EnKF has comparable computational demand to the EKF, and is significantly cheaper than the PF.
 
 ## Key Takeaways
 
-- **Lorenz-63 with a large assimilation interval** ($\Delta t = 0.25$) is a regime where the EKF breaks down: the
-  linearization of the 25-step composed map is highly inaccurate near the
+- **Lorenz-63 with a large assimilation interval** ($\Delta t = 0.35$) is a regime where the EKF breaks down: the
+  linearization of the 35-step composed map is highly inaccurate near the
   attractor's saddle points.
 - **EnKF** handles this naturally — each ensemble member is propagated through
   the same nonlinear multi-step integrator, with no Jacobian required. The ensemble covariances capture the true non-Gaussian predictive uncertainty.
@@ -440,6 +439,7 @@ One benefit of the EnKF is its ability to handle nonlinear dynamics with relativ
 ## Next Steps
 
 - **Play With `dt`**: Shrink `n_inner_steps` toward 1–2 steps to see the EKF recover as linearization becomes accurate again, or raise it further and see EKF completely collapse.
+- **Play With Particles**: Increase `n_filter_particles` for the particle filter and see the PF avoid collapse across a longer time horizon.
 - **Parameter learning**: Use `jax.grad` through the EnKF's differentiable log-likelihood to learn Lorenz-63 parameters ($\sigma$, $\rho$, $\beta$) from data.
 - **More examples**: Check out the other [examples](index.md).
 
