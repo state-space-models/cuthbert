@@ -21,6 +21,7 @@ from cuthbert.enkf.types import (
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib import enkf as enkf_lib
+from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
@@ -43,12 +44,12 @@ class EnKFState(NamedTuple):
         return jnp.mean(self.ensemble, axis=-2)
 
     @property
-    def cov(self) -> Array:
+    def chol_cov(self) -> Array:
         """Ensemble sample covariance."""
         mean = self.mean
         # Handle both single state (..., N, x_dim) and batched (T, N, x_dim)
         dev = self.ensemble - mean[..., None, :]
-        return jnp.einsum("...ni,...nj->...ij", dev, dev) / (self.n_particles - 1)
+        return tria(dev.T / jnp.sqrt(self.n_particles - 1))
 
 
 def build_filter(
