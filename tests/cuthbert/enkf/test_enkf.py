@@ -10,6 +10,7 @@ from jax import random
 from cuthbert import filter
 from cuthbert.enkf import ensemble_kalman_filter
 from cuthbertlib.kalman.generate import generate_lgssm
+from cuthbertlib.linalg import tria
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
 
@@ -95,7 +96,8 @@ class Test(chex.TestCase):
             inference, model_inputs, parallel=False, key=key
         )
         means = states.mean
-        covs = states.cov
+        chol_covs = states.chol_cov
+        covs = chol_covs @ chol_covs.transpose(0, 2, 1)
         ells = states.log_normalizing_constant
 
         # Run the standard Kalman filter.
@@ -160,7 +162,7 @@ class Test(chex.TestCase):
 
         # Check shapes
         chex.assert_shape(states.mean, (num_time_steps + 1, x_dim))
-        chex.assert_shape(states.cov, (num_time_steps + 1, x_dim, x_dim))
+        chex.assert_shape(states.chol_cov, (num_time_steps + 1, x_dim, x_dim))
         assert jnp.all(jnp.isfinite(states.log_normalizing_constant))
 
         # Check autodiff works (differentiate w.r.t. a parameter)
@@ -195,17 +197,20 @@ def test_filter_noop(seed, x_dim, y_dim):
     prep_state = inference.filter_prepare(jnp.array(1), key=random.key(seed + 2))
     filtered_state = inference.filter_combine(init_state, prep_state)
 
+    filtered_cov = filtered_state.chol_cov @ filtered_state.chol_cov.T
+    init_cov = init_state.chol_cov @ init_state.chol_cov.T
+
     # With identity dynamics, zero noise, and NaN observations,
     # the ensemble, covariance, and log-likelihood should be exactly preserved
     chex.assert_trees_all_close(
         (
             filtered_state.mean,
-            filtered_state.cov,
+            filtered_cov,
             filtered_state.log_normalizing_constant,
         ),
         (
             init_state.mean,
-            init_state.cov,
+            init_cov,
             init_state.log_normalizing_constant,
         ),
         rtol=1e-10,
