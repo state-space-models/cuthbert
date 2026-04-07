@@ -34,14 +34,14 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
         def dynamics_fn(x, model_inputs):
             return x
 
-        def get_dynamics_params(model_inputs):
-            return jnp.zeros((x_dim, x_dim))
+        def get_dynamics(model_inputs):
+            return dynamics_fn, jnp.zeros((x_dim, x_dim))
 
         def observation_fn(x, model_inputs):
             return jnp.zeros(y_dim)
 
-        def get_observation_params(model_inputs):
-            return (jnp.zeros((y_dim, y_dim)), jnp.full(y_dim, jnp.nan))
+        def get_observations(model_inputs):
+            return observation_fn, jnp.zeros((y_dim, y_dim)), jnp.full(y_dim, jnp.nan)
 
     else:
 
@@ -49,24 +49,23 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
             idx = model_inputs - 1
             return Fs[idx] @ x + cs[idx]
 
-        def get_dynamics_params(model_inputs):
+        def get_dynamics(model_inputs):
             idx = model_inputs - 1
-            return chol_Qs[idx]
+            return dynamics_fn, chol_Qs[idx]
 
         def observation_fn(x, model_inputs):
             idx = model_inputs - 1
             return Hs[idx] @ x + ds[idx]
 
-        def get_observation_params(model_inputs):
+        def get_observations(model_inputs):
             idx = model_inputs - 1
-            return (chol_Rs[idx], ys[idx])
+            return observation_fn, chol_Rs[idx], ys[idx]
 
     inference = ensemble_kalman_filter.build_filter(
         init_sample=init_sample,
         dynamics_fn=dynamics_fn,
-        get_dynamics_params=get_dynamics_params,
-        observation_fn=observation_fn,
-        get_observation_params=get_observation_params,
+        get_dynamics=get_dynamics,
+        get_observations=get_observations,
         n_particles=n_particles,
     )
 
@@ -132,24 +131,23 @@ class Test(chex.TestCase):
         def dynamics_fn(x, model_inputs):
             return jnp.tanh(x)
 
-        def get_dynamics_params(model_inputs):
+        def get_dynamics(model_inputs):
             idx = model_inputs - 1
-            return chol_Qs[idx]
+            return dynamics_fn, chol_Qs[idx]
 
         def observation_fn(x, model_inputs):
             idx = model_inputs - 1
             return Hs[idx] @ x + ds[idx]
 
-        def get_observation_params(model_inputs):
+        def get_observations(model_inputs):
             idx = model_inputs - 1
-            return (chol_Rs[idx], ys[idx])
+            return observation_fn, chol_Rs[idx], ys[idx]
 
         inference = ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
             dynamics_fn=dynamics_fn,
-            get_dynamics_params=get_dynamics_params,
-            observation_fn=observation_fn,
-            get_observation_params=get_observation_params,
+            get_dynamics=get_dynamics,
+            get_observations=get_observations,
             n_particles=1_000,
         )
 
@@ -173,9 +171,8 @@ class Test(chex.TestCase):
             inference_ = ensemble_kalman_filter.build_filter(
                 init_sample=init_sample_,
                 dynamics_fn=dynamics_fn,
-                get_dynamics_params=get_dynamics_params,
-                observation_fn=observation_fn,
-                get_observation_params=get_observation_params,
+                get_dynamics=get_dynamics,
+                get_observations=get_observations,
                 n_particles=1_000,
             )
             states = filter(inference_, model_inputs, parallel=False, key=key)
@@ -228,8 +225,7 @@ def test_build_filter_requires_at_least_two_particles():
         ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
             dynamics_fn=lambda x, _: x,
-            get_dynamics_params=lambda _: jnp.eye(1),
-            observation_fn=lambda x, _: x,
-            get_observation_params=lambda _: (jnp.eye(1), jnp.zeros(1)),
+            get_dynamics=lambda _: (lambda x, __: x, jnp.eye(1)),
+            get_observations=lambda _: (lambda x, __: x, jnp.eye(1), jnp.zeros(1)),
             n_particles=1,
         )

@@ -187,9 +187,8 @@ The EnKF propagates an ensemble of particles through the nonlinear dynamics dire
 enkf = ensemble_kalman_filter.build_filter(
     init_sample=lambda key, mi: m0 + chol_P0 @ random.normal(key, m0.shape),
     dynamics_fn=lambda x, mi: lorenz_step(x),
-    get_dynamics_params=lambda mi: chol_Q,
-    observation_fn=lambda x, mi: H @ x + d_obs,
-    get_observation_params=lambda mi: (chol_R, ys[mi - 1]),
+    get_dynamics=lambda mi: (lambda x, _: lorenz_step(x), chol_Q),
+    get_observations=lambda mi: (lambda x, _: H @ x + d_obs, chol_R, ys[mi - 1]),
     n_particles=25,
     inflation=0.05,
     perturbed_obs=True,

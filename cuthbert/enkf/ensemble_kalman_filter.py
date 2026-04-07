@@ -10,13 +10,13 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 from jax import random, tree
+from jax._src.basearray import Array
 
 from cuthbert.enkf.types import (
     DynamicsFn,
-    GetEnKFDynamicsParams,
-    GetEnKFObservationParams,
+    GetEnKFDynamics,
+    GetEnKFObservations,
     InitSample,
-    ObservationFn,
 )
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
@@ -61,9 +61,8 @@ class EnKFState(NamedTuple):
 def build_filter(
     init_sample: InitSample,
     dynamics_fn: DynamicsFn,
-    get_dynamics_params: GetEnKFDynamicsParams,
-    observation_fn: ObservationFn,
-    get_observation_params: GetEnKFObservationParams,
+    get_dynamics: GetEnKFDynamics,
+    get_observations: GetEnKFObservations,
     n_particles: int,
     inflation: float = 0.0,
     perturbed_obs: bool = True,
@@ -73,9 +72,8 @@ def build_filter(
     Args:
         init_sample: Function to sample from the initial distribution.
         dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
-        get_dynamics_params: Function to get chol_Q from model inputs.
-        observation_fn: Observation function mapping (state, model_inputs) -> obs.
-        get_observation_params: Function to get (chol_R, y) from model inputs.
+        get_dynamics: Function to get dynamics function and chol_Q from model inputs.
+        get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
         inflation: Multiplicative inflation factor for ensemble deviations.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
@@ -97,15 +95,14 @@ def build_filter(
         ),
         filter_prepare=partial(
             filter_prepare,
-            get_dynamics_params=get_dynamics_params,
+            get_dynamics=get_dynamics,
             n_particles=n_particles,
         ),
         filter_combine=partial(
             filter_combine,
             dynamics_fn=dynamics_fn,
-            get_dynamics_params=get_dynamics_params,
-            observation_fn=observation_fn,
-            get_observation_params=get_observation_params,
+            get_dynamics=get_dynamics,
+            get_observations=get_observations,
             inflation=inflation,
             perturbed_obs=perturbed_obs,
         ),
@@ -151,7 +148,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_dynamics_params: GetEnKFDynamicsParams,
+    get_dynamics: GetEnKFDynamics,
     n_particles: int,
     key: KeyArray | None = None,
 ) -> EnKFState:
@@ -159,7 +156,7 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_dynamics_params: Function to get chol_Q from model inputs
+        get_dynamics: Function to get dynamics function and chol_Q from model inputs
             (used to infer state shape).
         n_particles: Number of particles.
         key: JAX random key.
@@ -174,8 +171,9 @@ def filter_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    # Infer state shape from get_dynamics_params
-    dummy_chol_Q = jax.eval_shape(get_dynamics_params, model_inputs)
+    # Infer state shape from get_dynamics
+    # We need to index into get_dynamics so that we don't eval_shape over dynamics_fn
+    dummy_chol_Q = jax.eval_shape(lambda mi: get_dynamics(mi)[1], model_inputs)
     x_dim = dummy_chol_Q.shape[0]
     ensemble = jnp.empty((n_particles, x_dim))
     ensemble = dummy_tree_like(ensemble)
@@ -192,9 +190,8 @@ def filter_combine(
     state_1: EnKFState,
     state_2: EnKFState,
     dynamics_fn: DynamicsFn,
-    get_dynamics_params: GetEnKFDynamicsParams,
-    observation_fn: ObservationFn,
-    get_observation_params: GetEnKFObservationParams,
+    get_dynamics: GetEnKFDynamics,
+    get_observations: GetEnKFObservations,
     inflation: float = 0.0,
     perturbed_obs: bool = True,
 ) -> EnKFState:
@@ -206,9 +203,8 @@ def filter_combine(
         state_1: EnKF state from the previous time step.
         state_2: EnKF state prepared for the current step.
         dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
-        get_dynamics_params: Function to get chol_Q from model inputs.
-        observation_fn: Observation function mapping (state, model_inputs) -> obs.
-        get_observation_params: Function to get (chol_R, y) from model inputs.
+        get_dynamics: Function to get dynamics function and chol_Q from model inputs.
+        get_observations: Function to get observation function, chol_R, and y from model inputs.
         inflation: Multiplicative inflation factor.
         perturbed_obs: If True, use perturbed observations.
 
@@ -218,7 +214,7 @@ def filter_combine(
     key_pred, key_update, key_next = random.split(state_1.key, 3)
 
     # Predict
-    chol_Q = get_dynamics_params(state_2.model_inputs)
+    dynamics_fn, chol_Q = get_dynamics(state_2.model_inputs)
     predicted = enkf_lib.predict(
         key_pred,
         state_1.ensemble,
@@ -229,7 +225,7 @@ def filter_combine(
     )
 
     # Update
-    chol_R, y = get_observation_params(state_2.model_inputs)
+    observation_fn, chol_R, y = get_observations(state_2.model_inputs)
     updated, ll = enkf_lib.update(
         key_update,
         predicted,
