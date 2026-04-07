@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from cuthbertlib.types import Array, ArrayTreeLike
+from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
 class DynamicsFn(Protocol):
@@ -37,18 +37,18 @@ class ObservationFn(Protocol):
         ...
 
 
-class GetEnKFInitParams(Protocol):
-    """Protocol for getting initial distribution parameters for an EnKF."""
+class InitSample(Protocol):
+    """Protocol for sampling from the initial distribution."""
 
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array]:
-        """Get initial parameters (m0, chol_P0) from model inputs.
+    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> Array:
+        """Sample from the initial distribution.
 
         Args:
+            key: JAX PRNG key.
             model_inputs: Model inputs.
 
         Returns:
-            Tuple of (m0, chol_P0) where m0 is the initial mean and
-            chol_P0 is the Cholesky factor of the initial covariance.
+            Sample from the initial distribution, shape (x_dim,).
         """
         ...
 

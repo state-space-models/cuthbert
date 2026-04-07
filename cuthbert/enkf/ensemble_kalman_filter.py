@@ -14,8 +14,8 @@ from jax import random, tree
 from cuthbert.enkf.types import (
     DynamicsFn,
     GetEnKFDynamicsParams,
-    GetEnKFInitParams,
     GetEnKFObservationParams,
+    InitSample,
     ObservationFn,
 )
 from cuthbert.inference import Filter
@@ -59,7 +59,7 @@ class EnKFState(NamedTuple):
 
 
 def build_filter(
-    get_init_params: GetEnKFInitParams,
+    init_sample: InitSample,
     dynamics_fn: DynamicsFn,
     get_dynamics_params: GetEnKFDynamicsParams,
     observation_fn: ObservationFn,
@@ -71,7 +71,7 @@ def build_filter(
     """Builds an Ensemble Kalman Filter object.
 
     Args:
-        get_init_params: Function to get (m0, chol_P0) from model inputs.
+        init_sample: Function to sample from the initial distribution.
         dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
         get_dynamics_params: Function to get chol_Q from model inputs.
         observation_fn: Observation function mapping (state, model_inputs) -> obs.
@@ -92,12 +92,12 @@ def build_filter(
     return Filter(
         init_prepare=partial(
             init_prepare,
-            get_init_params=get_init_params,
+            init_sample=init_sample,
             n_particles=n_particles,
         ),
         filter_prepare=partial(
             filter_prepare,
-            get_init_params=get_init_params,
+            get_dynamics_params=get_dynamics_params,
             n_particles=n_particles,
         ),
         filter_combine=partial(
@@ -115,7 +115,7 @@ def build_filter(
 
 def init_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_params: GetEnKFInitParams,
+    init_sample: InitSample,
     n_particles: int,
     key: KeyArray | None = None,
 ) -> EnKFState:
@@ -123,7 +123,7 @@ def init_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_params: Function to get (m0, chol_P0) from model inputs.
+        init_sample: Function to sample from the initial distribution.
         n_particles: Number of particles.
         key: JAX random key.
 
@@ -137,12 +137,9 @@ def init_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    m0, chol_P0 = get_init_params(model_inputs)
-    x_dim = m0.shape[0]
-
-    # Sample ensemble from N(m0, P0)
+    # Sample ensemble from initial distribution
     keys = random.split(key, n_particles)
-    ensemble = jax.vmap(lambda k: m0 + chol_P0 @ random.normal(k, (x_dim,)))(keys)
+    ensemble = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
     return EnKFState(
         key=key,
@@ -154,7 +151,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_params: GetEnKFInitParams,
+    get_dynamics_params: GetEnKFDynamicsParams,
     n_particles: int,
     key: KeyArray | None = None,
 ) -> EnKFState:
@@ -162,7 +159,7 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_params: Function to get (m0, chol_P0) from model inputs
+        get_dynamics_params: Function to get chol_Q from model inputs
             (used to infer state shape).
         n_particles: Number of particles.
         key: JAX random key.
@@ -177,9 +174,9 @@ def filter_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    # Infer state shape from get_init_params
-    dummy_m0, _ = jax.eval_shape(get_init_params, model_inputs)
-    x_dim = dummy_m0.shape[0]
+    # Infer state shape from get_dynamics_params
+    dummy_chol_Q = jax.eval_shape(get_dynamics_params, model_inputs)
+    x_dim = dummy_chol_Q.shape[0]
     ensemble = jnp.empty((n_particles, x_dim))
     ensemble = dummy_tree_like(ensemble)
 
