@@ -45,11 +45,17 @@ class EnKFState(NamedTuple):
 
     @property
     def chol_cov(self) -> Array:
-        """Ensemble sample covariance."""
+        """Generalised Cholesky factor of the ensemble sample covariance."""
         mean = self.mean
         # Handle both single state (..., N, x_dim) and batched (T, N, x_dim)
         dev = self.ensemble - mean[..., None, :]
-        return tria(dev.T / jnp.sqrt(self.n_particles - 1))
+        n_minus_1 = jnp.asarray(self.n_particles - 1, dtype=dev.dtype)
+        scaled_dev_t = jnp.swapaxes(dev, -1, -2) / jnp.sqrt(n_minus_1)
+
+        if scaled_dev_t.ndim == 2:
+            return tria(scaled_dev_t)
+
+        return jax.lax.map(tria, scaled_dev_t)
 
 
 def build_filter(
