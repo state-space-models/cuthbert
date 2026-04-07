@@ -10,10 +10,8 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 from jax import random, tree
-from jax._src.basearray import Array
 
 from cuthbert.enkf.types import (
-    DynamicsFn,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
@@ -60,7 +58,6 @@ class EnKFState(NamedTuple):
 
 def build_filter(
     init_sample: InitSample,
-    dynamics_fn: DynamicsFn,
     get_dynamics: GetEnKFDynamics,
     get_observations: GetEnKFObservations,
     n_particles: int,
@@ -71,7 +68,6 @@ def build_filter(
 
     Args:
         init_sample: Function to sample from the initial distribution.
-        dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
         get_dynamics: Function to get dynamics function and chol_Q from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
@@ -100,7 +96,6 @@ def build_filter(
         ),
         filter_combine=partial(
             filter_combine,
-            dynamics_fn=dynamics_fn,
             get_dynamics=get_dynamics,
             get_observations=get_observations,
             inflation=inflation,
@@ -136,7 +131,7 @@ def init_prepare(
 
     # Sample ensemble from initial distribution
     keys = random.split(key, n_particles)
-    ensemble = jax.vmap(init_sample, (0, None))(keys, model_inputs)
+    ensemble = jax.vmap(init_sample)(keys)
 
     return EnKFState(
         key=key,
@@ -189,7 +184,6 @@ def filter_prepare(
 def filter_combine(
     state_1: EnKFState,
     state_2: EnKFState,
-    dynamics_fn: DynamicsFn,
     get_dynamics: GetEnKFDynamics,
     get_observations: GetEnKFObservations,
     inflation: float = 0.0,
@@ -202,7 +196,6 @@ def filter_combine(
     Args:
         state_1: EnKF state from the previous time step.
         state_2: EnKF state prepared for the current step.
-        dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
         get_dynamics: Function to get dynamics function and chol_Q from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         inflation: Multiplicative inflation factor.
@@ -220,7 +213,6 @@ def filter_combine(
         state_1.ensemble,
         dynamics_fn,
         chol_Q,
-        state_2.model_inputs,
         inflation,
     )
 
@@ -232,7 +224,6 @@ def filter_combine(
         observation_fn,
         chol_R,
         y,
-        state_2.model_inputs,
         perturbed_obs,
     )
 

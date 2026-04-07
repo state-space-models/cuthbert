@@ -15,13 +15,15 @@ from cuthbertlib.linalg import collect_nans_chol, tria
 from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray, ScalarArray
 
+ObservationFn = Callable[[Array], Array]
+DynamicsFn = Callable[[Array], Array]
+
 
 def predict(
     key: KeyArray,
     ensemble: Array,
-    dynamics_fn: Callable,
+    dynamics_fn: DynamicsFn,
     chol_Q: Array,
-    model_inputs: ArrayTreeLike,
     inflation: float = 0.0,
 ) -> Array:
     """Propagate ensemble members through nonlinear dynamics with additive Gaussian noise.
@@ -29,9 +31,8 @@ def predict(
     Args:
         key: JAX PRNG key.
         ensemble: Ensemble of state vectors, shape (N, x_dim).
-        dynamics_fn: Dynamics function mapping (state, model_inputs) -> state.
+        dynamics_fn: Dynamics function mapping (state) -> state.
         chol_Q: Cholesky factor of the dynamics noise covariance, shape (x_dim, x_dim).
-        model_inputs: Model inputs passed to dynamics_fn.
         inflation: Multiplicative inflation factor applied to ensemble deviations.
 
     Returns:
@@ -40,7 +41,7 @@ def predict(
     N, x_dim = ensemble.shape
 
     # Propagate each member through the dynamics
-    propagated = jax.vmap(dynamics_fn, (0, None))(ensemble, model_inputs)
+    propagated = jax.vmap(dynamics_fn, (0,))(ensemble)
 
     # Add dynamics noise
     noise = (chol_Q @ random.normal(key, (x_dim, N))).T
@@ -56,10 +57,9 @@ def predict(
 def update(
     key: KeyArray,
     predicted_ensemble: Array,
-    observation_fn: Callable,
+    observation_fn: ObservationFn,
     chol_R: Array,
     y: Array,
-    model_inputs: ArrayTreeLike,
     perturbed_obs: bool = True,
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
@@ -71,10 +71,9 @@ def update(
     Args:
         key: JAX PRNG key.
         predicted_ensemble: Predicted ensemble, shape (N, x_dim).
-        observation_fn: Observation function mapping (state, model_inputs) -> obs.
+        observation_fn: Observation function mapping state -> obs.
         chol_R: Cholesky factor of the observation noise covariance, shape (y_dim, y_dim).
         y: Observation vector, shape (y_dim,). NaNs indicate missing dimensions.
-        model_inputs: Model inputs passed to observation_fn.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
             If False, use deterministic update.
 
@@ -84,7 +83,7 @@ def update(
     N, x_dim = predicted_ensemble.shape
 
     # Map ensemble to observation space
-    y_pred = jax.vmap(observation_fn, (0, None))(predicted_ensemble, model_inputs)
+    y_pred = jax.vmap(observation_fn, (0,))(predicted_ensemble)
 
     # Handle partially-missing observations by reordering and zeroing missing dims.
     # Use y_pred.T because y_pred is (N, y_dim) and we want to reorder along axis 0.

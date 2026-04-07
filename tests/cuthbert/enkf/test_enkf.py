@@ -24,20 +24,20 @@ def config():
 def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=False):
     n_particles = 100_000
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     if noop:
         x_dim = m0.shape[0]
         y_dim = ys.shape[1] if ys.ndim > 1 else 1
 
-        def dynamics_fn(x, model_inputs):
+        def dynamics_fn(x):
             return x
 
         def get_dynamics(model_inputs):
             return dynamics_fn, jnp.zeros((x_dim, x_dim))
 
-        def observation_fn(x, model_inputs):
+        def observation_fn(x):
             return jnp.zeros(y_dim)
 
         def get_observations(model_inputs):
@@ -45,25 +45,16 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
 
     else:
 
-        def dynamics_fn(x, model_inputs):
-            idx = model_inputs - 1
-            return Fs[idx] @ x + cs[idx]
-
         def get_dynamics(model_inputs):
             idx = model_inputs - 1
-            return dynamics_fn, chol_Qs[idx]
-
-        def observation_fn(x, model_inputs):
-            idx = model_inputs - 1
-            return Hs[idx] @ x + ds[idx]
+            return lambda x: Fs[idx] @ x + cs[idx], chol_Qs[idx]
 
         def get_observations(model_inputs):
             idx = model_inputs - 1
-            return observation_fn, chol_Rs[idx], ys[idx]
+            return lambda x: Hs[idx] @ x + ds[idx], chol_Rs[idx], ys[idx]
 
     inference = ensemble_kalman_filter.build_filter(
         init_sample=init_sample,
-        dynamics_fn=dynamics_fn,
         get_dynamics=get_dynamics,
         get_observations=get_observations,
         n_particles=n_particles,
@@ -125,27 +116,22 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        def init_sample(key, model_inputs):
+        def init_sample(key):
             return m0 + chol_P0 @ random.normal(key, m0.shape)
 
-        def dynamics_fn(x, model_inputs):
+        def dynamics_fn(x):
             return jnp.tanh(x)
 
         def get_dynamics(model_inputs):
             idx = model_inputs - 1
             return dynamics_fn, chol_Qs[idx]
 
-        def observation_fn(x, model_inputs):
-            idx = model_inputs - 1
-            return Hs[idx] @ x + ds[idx]
-
         def get_observations(model_inputs):
             idx = model_inputs - 1
-            return observation_fn, chol_Rs[idx], ys[idx]
+            return lambda x: Hs[idx] @ x + ds[idx], chol_Rs[idx], ys[idx]
 
         inference = ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
-            dynamics_fn=dynamics_fn,
             get_dynamics=get_dynamics,
             get_observations=get_observations,
             n_particles=1_000,
@@ -165,12 +151,11 @@ class Test(chex.TestCase):
 
         # Check autodiff works (differentiate w.r.t. a parameter)
         def log_nc(m0_):
-            def init_sample_(key, model_inputs):
+            def init_sample_(key):
                 return m0_ + chol_P0 @ random.normal(key, m0_.shape)
 
             inference_ = ensemble_kalman_filter.build_filter(
                 init_sample=init_sample_,
-                dynamics_fn=dynamics_fn,
                 get_dynamics=get_dynamics,
                 get_observations=get_observations,
                 n_particles=1_000,
@@ -218,14 +203,13 @@ def test_filter_noop(seed, x_dim, y_dim):
 def test_build_filter_requires_at_least_two_particles():
     """EnKF should fail fast when configured with fewer than two particles."""
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return jnp.zeros(1) + jnp.eye(1) @ random.normal(key, (1,))
 
     with pytest.raises(ValueError, match="at least 2"):
         ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
-            dynamics_fn=lambda x, _: x,
-            get_dynamics=lambda _: (lambda x, __: x, jnp.eye(1)),
-            get_observations=lambda _: (lambda x, __: x, jnp.eye(1), jnp.zeros(1)),
+            get_dynamics=lambda _: (lambda x: x, jnp.eye(1)),
+            get_observations=lambda _: (lambda x: x, jnp.eye(1), jnp.zeros(1)),
             n_particles=1,
         )

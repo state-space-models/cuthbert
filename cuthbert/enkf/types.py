@@ -2,50 +2,18 @@
 
 from typing import Protocol
 
+from cuthbertlib.enkf.filtering import DynamicsFn, ObservationFn
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
-
-
-class DynamicsFn(Protocol):
-    """Protocol for the dynamics function of an EnKF."""
-
-    def __call__(self, state: Array, model_inputs: ArrayTreeLike) -> Array:
-        """Apply dynamics to a single state vector. i.e., for state space x_{t+1} = f(state, model_inputs) + Q_t, where Q_t ~ N(0, chol_Q), return f(x_t, model_inputs).
-
-        Args:
-            state: State vector, shape (x_dim,).
-            model_inputs: Model inputs.
-
-        Returns:
-            Propagated state vector, shape (x_dim,).
-        """
-        ...
-
-
-class ObservationFn(Protocol):
-    """Protocol for the observation function of an EnKF. i.e., for state space x_t, y_t = h(x_t, model_inputs) + R_t, where R_t ~ N(0, chol_R), return h(x_t, model_inputs)."""
-
-    def __call__(self, state: Array, model_inputs: ArrayTreeLike) -> Array:
-        """Map a single state vector to observation space.
-
-        Args:
-            state: State vector, shape (x_dim,).
-            model_inputs: Model inputs.
-
-        Returns:
-            Observation vector, shape (y_dim,).
-        """
-        ...
 
 
 class InitSample(Protocol):
     """Protocol for sampling from the initial distribution."""
 
-    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> Array:
+    def __call__(self, key: KeyArray) -> Array:
         """Sample from the initial distribution.
 
         Args:
             key: JAX PRNG key.
-            model_inputs: Model inputs.
 
         Returns:
             Sample from the initial distribution, shape (x_dim,).

@@ -25,7 +25,7 @@ def test_predict_identity(seed, x_dim):
     ensemble = random.normal(key, (N, x_dim))
     chol_Q = jnp.zeros((x_dim, x_dim))
 
-    predicted = predict(key, ensemble, lambda x, _: x, chol_Q, None, inflation=0.0)
+    predicted = predict(key, ensemble, lambda x: x, chol_Q, inflation=0.0)
     chex.assert_trees_all_close(predicted, ensemble, atol=1e-12)
 
 
@@ -47,9 +47,8 @@ def test_predict_linear(seed, x_dim):
     predicted = predict(
         random.key(seed + 100),
         ensemble,
-        lambda x, _: F @ x + c,
+        lambda x: F @ x + c,
         chol_Q,
-        None,
         inflation=0.0,
     )
 
@@ -69,7 +68,7 @@ def test_predict_inflation(seed, x_dim):
     chol_Q = jnp.zeros((x_dim, x_dim))
     delta = 0.05
 
-    predicted = predict(key, ensemble, lambda x, _: x, chol_Q, None, inflation=delta)
+    predicted = predict(key, ensemble, lambda x: x, chol_Q, inflation=delta)
 
     mean = jnp.mean(ensemble, axis=0)
     expected = mean + (1 + delta) * (ensemble - mean)
@@ -96,10 +95,9 @@ def test_update_linear_gaussian(seed, x_dim, y_dim):
     updated, ll = update(
         random.key(seed + 200),
         ensemble,
-        lambda x, _: H @ x + d,
+        lambda x: H @ x + d,
         chol_R,
         y,
-        None,
         perturbed_obs=True,
     )
 
@@ -136,10 +134,9 @@ def test_update_perturbed_vs_unperturbed(seed, x_dim, y_dim):
         updated, ll = update(
             random.key(seed + 300),
             ensemble,
-            lambda x, _: H @ x + d,
+            lambda x: H @ x + d,
             chol_R,
             y,
-            None,
             perturbed_obs=perturbed,
         )
         chex.assert_shape(updated, (N, x_dim))
@@ -165,10 +162,9 @@ def test_update_log_likelihood(seed, x_dim, y_dim):
     _, ll = update(
         random.key(seed + 400),
         ensemble,
-        lambda x, _: H @ x + d,
+        lambda x: H @ x + d,
         chol_R,
         y,
-        None,
         perturbed_obs=True,
     )
 
@@ -197,10 +193,9 @@ def test_update_nan_observation(seed, x_dim, y_dim):
     updated, ll = update(
         random.key(seed + 500),
         ensemble,
-        lambda x, _: H @ x + d,
+        lambda x: H @ x + d,
         chol_R,
         y_nan,
-        None,
         perturbed_obs=True,
     )
 
@@ -227,10 +222,9 @@ def test_update_partial_nan_observation(seed, x_dim, y_dim):
     updated, ll = update(
         random.key(seed + 600),
         ensemble,
-        lambda x, _: H @ x + d,
+        lambda x: H @ x + d,
         chol_R,
         y,
-        None,
         perturbed_obs=True,
     )
     assert jnp.isfinite(ll)
