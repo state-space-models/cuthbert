@@ -36,6 +36,7 @@ class BackwardSampling(Protocol):
             x1_all: A collection of current states $x_1$.
             log_weight_x0_all: The log weights of $x_0$.
             log_density: The log density function of $x_1$ given $x_0$.
+                $x_0$ must be the first argument and $x_1$ the second.
             x1_ancestor_indices: The ancestor indices of $x_1$.
 
         Returns:
