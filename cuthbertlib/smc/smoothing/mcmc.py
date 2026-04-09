@@ -33,6 +33,7 @@ def simulate(
         x1_all: A collection of current states $x_1$.
         log_weight_x0_all: The log weights of $x_0$.
         log_density: The log density function of $x_1$ given $x_0$.
+            $x_0$ must be the first argument and $x_1$ the second.
         x1_ancestor_indices: The ancestor indices of $x_1$.
         n_steps: Number of MCMC steps to perform.
 
@@ -71,7 +72,7 @@ def simulate(
         return (idx, x0_res, idx_log_p), None
 
     x0_init = jax.tree.map(lambda z: z[x1_ancestor_indices], x0_all)
-    init_log_p = jax.vmap(log_density)(x1_all, x0_init)
+    init_log_p = jax.vmap(log_density)(x0_init, x1_all)
     init = (x1_ancestor_indices, x0_init, init_log_p)
     (out_index, out_samples, _), _ = jax.lax.scan(body, init, keys)
     return out_samples, out_index

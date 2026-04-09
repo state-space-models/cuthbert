@@ -63,6 +63,7 @@ def linearize_log_density(
 
     Args:
         log_density: A conditional log density of y given x. Returns a scalar.
+            x must be the first argument and y the second.
         x: The input points.
         y: The output points.
         has_aux: Whether `log_density` returns an auxiliary value.
@@ -137,6 +138,7 @@ def linearize_log_density_given_chol_cov(
 
     Args:
         log_density: A conditional log density of y given x. Returns a scalar.
+            x must be the first argument and y the second.
         x: The input points.
         y: The output points.
         chol_cov: The Cholesky factor of the covariance matrix of the Gaussian.
