@@ -67,8 +67,8 @@ def build_filter(
     """Builds an Ensemble Kalman Filter object.
 
     Args:
-        init_sample: Function to sample from the initial distribution.
-        get_dynamics: Function to get dynamics function and chol_Q from model inputs.
+        init_sample: Function to sample from the initial distribution from key and model inputs.
+        get_dynamics: Function to get dynamics function (x_t, key) -> x_{t+1} ~ p(x_{t+1} | x_t) from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
         inflation: Multiplicative inflation factor for ensemble deviations.
@@ -91,7 +91,7 @@ def build_filter(
         ),
         filter_prepare=partial(
             filter_prepare,
-            get_dynamics=get_dynamics,
+            init_sample=init_sample,
             n_particles=n_particles,
         ),
         filter_combine=partial(
@@ -115,7 +115,7 @@ def init_prepare(
 
     Args:
         model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution.
+        init_sample: Function to sample from the initial distribution from key and model inputs.
         n_particles: Number of particles.
         key: JAX random key.
 
@@ -131,7 +131,7 @@ def init_prepare(
 
     # Sample ensemble from initial distribution
     keys = random.split(key, n_particles)
-    ensemble = jax.vmap(init_sample)(keys)
+    ensemble = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
     return EnKFState(
         key=key,
@@ -143,7 +143,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_dynamics: GetEnKFDynamics,
+    init_sample: InitSample,
     n_particles: int,
     key: KeyArray | None = None,
 ) -> EnKFState:
@@ -151,8 +151,7 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_dynamics: Function to get dynamics function and chol_Q from model inputs
-            (used to infer state shape).
+        init_sample: Function to sample from the initial distribution from key and model inputs.
         n_particles: Number of particles.
         key: JAX random key.
 
@@ -166,10 +165,9 @@ def filter_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    # Infer state shape from get_dynamics
-    # We need to index into get_dynamics so that we don't eval_shape over dynamics_fn
-    dummy_chol_Q = jax.eval_shape(lambda mi: get_dynamics(mi)[1], model_inputs)
-    x_dim = dummy_chol_Q.shape[0]
+    # Infer state shape from init_sample
+    dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
+    x_dim = dummy_particle.shape[0]
     ensemble = jnp.empty((n_particles, x_dim))
     ensemble = dummy_tree_like(ensemble)
 
@@ -207,12 +205,11 @@ def filter_combine(
     key_pred, key_update, key_next = random.split(state_1.key, 3)
 
     # Predict
-    dynamics_fn, chol_Q = get_dynamics(state_2.model_inputs)
+    dynamics_fn = get_dynamics(state_2.model_inputs)
     predicted = enkf_lib.predict(
         key_pred,
         state_1.ensemble,
         dynamics_fn,
-        chol_Q,
         inflation,
     )
 

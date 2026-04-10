@@ -23,19 +23,19 @@ def config():
 
 def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=False):
     n_particles = 100_000
+    x_dim = m0.shape[0]
 
-    def init_sample(key):
+    def init_sample(key, model_inputs):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     if noop:
-        x_dim = m0.shape[0]
         y_dim = ys.shape[1] if ys.ndim > 1 else 1
 
-        def dynamics_fn(x):
+        def dynamics_fn(x, key):
             return x
 
         def get_dynamics(model_inputs):
-            return dynamics_fn, jnp.zeros((x_dim, x_dim))
+            return dynamics_fn
 
         def observation_fn(x):
             return jnp.zeros(y_dim)
@@ -47,7 +47,11 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
 
         def get_dynamics(model_inputs):
             idx = model_inputs - 1
-            return lambda x: Fs[idx] @ x + cs[idx], chol_Qs[idx]
+            return (
+                lambda x, key: Fs[idx] @ x
+                + cs[idx]
+                + chol_Qs[idx] @ random.normal(key, (x_dim,))
+            )
 
         def get_observations(model_inputs):
             idx = model_inputs - 1
@@ -116,15 +120,14 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        def init_sample(key):
+        def init_sample(key, model_inputs):
             return m0 + chol_P0 @ random.normal(key, m0.shape)
 
-        def dynamics_fn(x):
+        def dynamics_fn(x, key):
             return jnp.tanh(x)
 
         def get_dynamics(model_inputs):
-            idx = model_inputs - 1
-            return dynamics_fn, chol_Qs[idx]
+            return dynamics_fn
 
         def get_observations(model_inputs):
             idx = model_inputs - 1
@@ -151,7 +154,7 @@ class Test(chex.TestCase):
 
         # Check autodiff works (differentiate w.r.t. a parameter)
         def log_nc(m0_):
-            def init_sample_(key):
+            def init_sample_(key, model_inputs):
                 return m0_ + chol_P0 @ random.normal(key, m0_.shape)
 
             inference_ = ensemble_kalman_filter.build_filter(
@@ -203,13 +206,13 @@ def test_filter_noop(seed, x_dim, y_dim):
 def test_build_filter_requires_at_least_two_particles():
     """EnKF should fail fast when configured with fewer than two particles."""
 
-    def init_sample(key):
+    def init_sample(key, model_inputs):
         return jnp.zeros(1) + jnp.eye(1) @ random.normal(key, (1,))
 
     with pytest.raises(ValueError, match="at least 2"):
         ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
-            get_dynamics=lambda _: (lambda x: x, jnp.eye(1)),
+            get_dynamics=lambda _: (lambda x, key: x),
             get_observations=lambda _: (lambda x: x, jnp.eye(1), jnp.zeros(1)),
             n_particles=1,
         )

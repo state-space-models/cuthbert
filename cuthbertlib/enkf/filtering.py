@@ -16,23 +16,21 @@ from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray, ScalarArray
 
 ObservationFn = Callable[[Array], Array]
-DynamicsFn = Callable[[Array], Array]
+DynamicsFn = Callable[[Array, KeyArray], Array]
 
 
 def predict(
     key: KeyArray,
     ensemble: Array,
     dynamics_fn: DynamicsFn,
-    chol_Q: Array,
     inflation: float = 0.0,
 ) -> Array:
-    """Propagate ensemble members through nonlinear dynamics with additive Gaussian noise.
+    """Propagate ensemble members through an arbitrary simulator p(x_{t+1} | x_t).
 
     Args:
         key: JAX PRNG key.
         ensemble: Ensemble of state vectors, shape (N, x_dim).
-        dynamics_fn: Dynamics function mapping (state) -> state.
-        chol_Q: Cholesky factor of the dynamics noise covariance, shape (x_dim, x_dim).
+        dynamics_fn: Dynamics function mapping (state, key) -> state.
         inflation: Multiplicative inflation factor applied to ensemble deviations.
 
     Returns:
@@ -41,11 +39,8 @@ def predict(
     N, x_dim = ensemble.shape
 
     # Propagate each member through the dynamics
-    propagated = jax.vmap(dynamics_fn, (0,))(ensemble)
-
-    # Add dynamics noise
-    noise = (chol_Q @ random.normal(key, (x_dim, N))).T
-    propagated = propagated + noise
+    keys = random.split(key, N)
+    propagated = jax.vmap(dynamics_fn, (0, 0))(ensemble, keys)
 
     # Apply multiplicative inflation
     mean = jnp.mean(propagated, axis=0)

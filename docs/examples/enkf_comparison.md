@@ -181,12 +181,13 @@ ekf_chol_covs = ekf_states.chol_cov
 
 ## EnKF
 
-The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF. We need to specify a function that generates initial samples, and functions to return dynamics and observation parameters.
+The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF. We need to specify a function that generates initial samples `(key, model_inputs) -> x_0`, a stochastic dynamics simulator `(x, key) -> x_next`, and observation parameters.
 
 ```{.python #enkf-comparison-enkf}
 enkf = ensemble_kalman_filter.build_filter(
-    init_sample=lambda key: m0 + chol_P0 @ random.normal(key, m0.shape),
-    get_dynamics=lambda mi: (lambda x: lorenz_step(x), chol_Q),
+    init_sample=lambda key, mi: m0 + chol_P0 @ random.normal(key, m0.shape),
+    get_dynamics=lambda mi: lambda x, key: lorenz_step(x)
+    + chol_Q @ random.normal(key, (x_dim,)),
     get_observations=lambda mi: (lambda x: H @ x + d_obs, chol_R, ys[mi - 1]),
     n_particles=25,
     inflation=0.05,
