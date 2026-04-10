@@ -23,9 +23,7 @@ def test_predict_identity(seed, x_dim):
     key = random.key(seed)
     N = 100
     ensemble = random.normal(key, (N, x_dim))
-    chol_Q = jnp.zeros((x_dim, x_dim))
-
-    predicted = predict(key, ensemble, lambda x: x, chol_Q, inflation=0.0)
+    predicted = predict(key, ensemble, lambda x, key: x, inflation=0.0)
     chex.assert_trees_all_close(predicted, ensemble, atol=1e-12)
 
 
@@ -34,7 +32,7 @@ def test_predict_identity(seed, x_dim):
 def test_predict_linear(seed, x_dim):
     """Linear dynamics should shift the ensemble mean correctly."""
     key = random.key(seed)
-    N = 100_000
+    N = 1_000_000
 
     lgssm = generate_lgssm(seed, x_dim, 1, 1)
     F, c, chol_Q = lgssm[2][0], lgssm[3][0], lgssm[4][0]
@@ -47,8 +45,7 @@ def test_predict_linear(seed, x_dim):
     predicted = predict(
         random.key(seed + 100),
         ensemble,
-        lambda x: F @ x + c,
-        chol_Q,
+        lambda x, key: F @ x + c + chol_Q @ random.normal(key, (x_dim,)),
         inflation=0.0,
     )
 
@@ -65,10 +62,9 @@ def test_predict_inflation(seed, x_dim):
     key = random.key(seed)
     N = 100
     ensemble = random.normal(key, (N, x_dim))
-    chol_Q = jnp.zeros((x_dim, x_dim))
     delta = 0.05
 
-    predicted = predict(key, ensemble, lambda x: x, chol_Q, inflation=delta)
+    predicted = predict(key, ensemble, lambda x, key: x, inflation=delta)
 
     mean = jnp.mean(ensemble, axis=0)
     expected = mean + (1 + delta) * (ensemble - mean)
