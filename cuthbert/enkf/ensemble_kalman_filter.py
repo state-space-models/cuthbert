@@ -67,7 +67,7 @@ def build_filter(
     """Builds an Ensemble Kalman Filter object.
 
     Args:
-        init_sample: Function to sample from the initial distribution.
+        init_sample: Function to sample from the initial distribution from key and model inputs.
         get_dynamics: Function to get dynamics function (x_t, key) -> x_{t+1} ~ p(x_{t+1} | x_t) from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
@@ -115,7 +115,7 @@ def init_prepare(
 
     Args:
         model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution.
+        init_sample: Function to sample from the initial distribution from key and model inputs.
         n_particles: Number of particles.
         key: JAX random key.
 
@@ -131,7 +131,7 @@ def init_prepare(
 
     # Sample ensemble from initial distribution
     keys = random.split(key, n_particles)
-    ensemble = jax.vmap(init_sample)(keys)
+    ensemble = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
     return EnKFState(
         key=key,
@@ -151,7 +151,7 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution.
+        init_sample: Function to sample from the initial distribution from key and model inputs.
         n_particles: Number of particles.
         key: JAX random key.
 
@@ -166,7 +166,7 @@ def filter_prepare(
         raise ValueError("A JAX PRNG key must be provided.")
 
     # Infer state shape from init_sample
-    dummy_particle = jax.eval_shape(init_sample, key)
+    dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
     x_dim = dummy_particle.shape[0]
     ensemble = jnp.empty((n_particles, x_dim))
     ensemble = dummy_tree_like(ensemble)
