@@ -51,6 +51,9 @@ def process_observation(
         observation = jnp.where(
             jnp.isnan(jnp.diag(chol_R)) * ignore_nan_dims, jnp.nan, 0.0
         )  # Tell the cuthbertlib.kalman to skip these dimensions
+        observation = jnp.where(
+            jnp.isnan(linearization_point).all(), jnp.nan, observation
+        )  # If both linearization points are all NaN, skip the observation
     return H, d, chol_R, observation
 
 

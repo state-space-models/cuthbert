@@ -234,6 +234,7 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
             jnp.full_like(m0, jnp.nan),
         )  # For Taylor we indicate noop dynamics by setting both linearization points to NaNs
 
+    # Log density
     def get_noop_observation_log_density(
         state: LinearizedKalmanFilterState, model_inputs: int
     ) -> tuple[LogConditionalDensity, Array, Array]:
@@ -265,6 +266,38 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
             filtered_state.chol_cov @ filtered_state.chol_cov.T,
             filtered_state.log_normalizing_constant,
         ),
+        rtol=1e-10,
+    )  # Test covs rather than chol_covs because signs can be different
+
+    # Log potential
+    def get_noop_observation_log_potential(
+        state: LinearizedKalmanFilterState, model_inputs: int
+    ) -> tuple[LogPotential, Array]:
+        return (
+            lambda x: multivariate_normal.logpdf(x, m0, chol_P0),
+            jnp.full_like(m0, jnp.nan),
+        )
+
+    filter_log_potential_obj = taylor.build_filter(
+        get_init_log_density=get_init_log_density,
+        get_dynamics_log_density=get_noop_dynamics_log_density,
+        get_observation_func=get_noop_observation_log_potential,
+        associative=associative,
+    )
+
+    filtered_log_potential_state = filter_log_potential_obj.filter_combine(
+        state, prep_state
+    )
+
+    chex.assert_trees_all_close(
+        (state.mean, state.chol_cov @ state.chol_cov.T, state.log_normalizing_constant),
+        (
+            filtered_log_potential_state.mean,
+            filtered_log_potential_state.chol_cov
+            @ filtered_log_potential_state.chol_cov.T,
+            filtered_log_potential_state.log_normalizing_constant,
+        ),
+        atol=1e-10,
         rtol=1e-10,
     )  # Test covs rather than chol_covs because signs can be different
 
