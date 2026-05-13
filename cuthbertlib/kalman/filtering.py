@@ -62,6 +62,7 @@ def update(
     chol_R: ArrayLike,
     y: ArrayLike,
     log_normalizing_constant: ArrayLike = 0.0,
+    steady_state_params: "SteadyStateFilterParams | None" = None,
 ) -> tuple[tuple[Array, Array], Array]:
     """Update the mean and square root covariance with a linear Gaussian observation.
 
@@ -74,6 +75,14 @@ def update(
         y: Observation.
         log_normalizing_constant: Optional input of log normalizing constant to be added to
             log normalizing constant of the Bayesian update.
+        steady_state_params: Optional precomputed steady-state parameters
+            (see :class:`SteadyStateFilterParams`).  When provided the QR
+            decomposition is skipped; ``elem.U`` is used as the posterior
+            Cholesky covariance and ``K`` as the Kalman gain.  For the
+            sequential filter the caller is responsible for supplying a
+            ``SteadyStateFilterParams`` whose ``K`` and ``elem.U`` reflect the
+            Riccati steady state, not the parallel-scan values produced by
+            :func:`~cuthbert.gaussian.kalman.compute_steady_state_filter_params`.
 
     Returns:
         Updated mean and square root covariance as well as the log marginal likelihood.
@@ -95,26 +104,36 @@ def update(
     y_hat = H @ m + d
     y_diff = y - y_hat
 
-    M = jnp.block(
-        [
-            [H @ chol_P, chol_R],
-            [chol_P, jnp.zeros((n_x, n_y), dtype=chol_P.dtype)],
-        ]
-    )
-    chol_S = tria(M)
-    chol_Py = chol_S[n_y:, n_y:]
-
-    Gmat = chol_S[n_y:, :n_y]
-    Imat = chol_S[:n_y, :n_y]
-
-    my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
+    if steady_state_params is None:
+        M = jnp.block(
+            [
+                [H @ chol_P, chol_R],
+                [chol_P, jnp.zeros((n_x, n_y), dtype=chol_P.dtype)],
+            ]
+        )
+        chol_S = tria(M)
+        chol_Py = chol_S[n_y:, n_y:]
+        Gmat = chol_S[n_y:, :n_y]
+        Imat = chol_S[:n_y, :n_y]
+        my = m + Gmat @ solve_triangular(Imat, y_diff, lower=True)
+    else:
+        Imat = steady_state_params.chol_S
+        chol_Py = steady_state_params.elem.U
+        my = m + steady_state_params.K @ y_diff
 
     ell = multivariate_normal.logpdf(y, y_hat, Imat, nan_support=False)
     return (my, chol_Py), jnp.asarray(ell + log_normalizing_constant)
 
 
 def associative_params_single(
-    F: Array, c: Array, chol_Q: Array, H: Array, d: Array, chol_R: Array, y: Array
+    F: Array,
+    c: Array,
+    chol_Q: Array,
+    H: Array,
+    d: Array,
+    chol_R: Array,
+    y: Array,
+    steady_state_params: "SteadyStateFilterParams | None" = None,
 ) -> FilterScanElement:
     """Single time step for scan element for square root parallel Kalman filter.
 
@@ -126,6 +145,12 @@ def associative_params_single(
         d: Observation shift.
         chol_R: Generalized Cholesky factor of the observation noise covariance.
         y: Observation.
+        steady_state_params: Optional precomputed steady-state parameters
+            (see :class:`SteadyStateFilterParams`).  When provided the QR
+            decomposition is skipped; ``A``, ``U``, and ``Z`` are reused from
+            the stored element and only the observation-dependent ``b``,
+            ``eta``, and ``ell`` are evaluated, replacing the expensive
+            per-step QR with cheap matrix–vector products.
 
     Returns:
         Prepared scan element for the square root parallel Kalman filter.
@@ -136,41 +161,160 @@ def associative_params_single(
 
     ny, nx = H.shape
 
-    # joint over the predictive and the observation
-    Psi_ = jnp.block([[H @ chol_Q, chol_R], [chol_Q, jnp.zeros((nx, ny))]])
+    inn = y - H @ c - d  # innovation relative to the prior prediction
 
-    Tria_Psi_ = tria(Psi_)
+    if steady_state_params is None:
+        # joint over the predictive and the observation
+        Psi_ = jnp.block([[H @ chol_Q, chol_R], [chol_Q, jnp.zeros((nx, ny))]])
+        Tria_Psi_ = tria(Psi_)
 
-    Psi11 = Tria_Psi_[:ny, :ny]
-    Psi21 = Tria_Psi_[ny : ny + nx, :ny]
-    U = Tria_Psi_[ny : ny + nx, ny:]
+        Psi11 = Tria_Psi_[:ny, :ny]
+        Psi21 = Tria_Psi_[ny : ny + nx, :ny]
+        U = Tria_Psi_[ny : ny + nx, ny:]
 
-    # pre-compute inverse of Psi11: we apply it to matrices and vectors alike.
-    Psi11_inv = solve_triangular(Psi11, jnp.eye(ny), lower=True)
+        # pre-compute inverse of Psi11: we apply it to matrices and vectors alike.
+        Psi11_inv = solve_triangular(Psi11, jnp.eye(ny), lower=True)
 
-    # predictive model given one observation
-    K = Psi21 @ Psi11_inv  # local Kalman gain
-    HF = H @ F  # temporary variable
-    A = F - K @ HF  # corrected transition matrix
+        K = Psi21 @ Psi11_inv  # local Kalman gain
+        HF = H @ F
+        A = F - K @ HF  # corrected transition matrix
 
-    b = c + K @ (y - H @ c - d)  # corrected transition offset
-
-    # information filter
-    Z = HF.T @ Psi11_inv.T
-    eta = Psi11_inv @ (y - H @ c - d)
-    eta = Z @ eta
-
-    if nx > ny:
-        Z = jnp.concatenate([Z, jnp.zeros((nx, nx - ny))], axis=1)
+        # information filter (Z_filter is the pre-padded (nx, ny) version)
+        Z_filter = HF.T @ Psi11_inv.T
+        if nx > ny:
+            Z = jnp.concatenate([Z_filter, jnp.zeros((nx, nx - ny))], axis=1)
+        else:
+            Z = tria(Z_filter)
     else:
-        Z = tria(Z)
+        A, _, U, _, Z, _ = steady_state_params.elem
+        K = steady_state_params.K
+        Psi11 = steady_state_params.chol_S
+        Psi11_inv = steady_state_params.Psi11_inv
+        Z_filter = steady_state_params.Z_filter
 
-    # local log marginal likelihood
+    b = c + K @ inn  # corrected transition offset
+    eta = Z_filter @ (Psi11_inv @ inn)
     ell = jnp.asarray(
         multivariate_normal.logpdf(y, H @ c + d, Psi11, nan_support=False)
     )
 
     return FilterScanElement(A, b, U, eta, Z, ell)
+
+
+class SteadyStateFilterParams(NamedTuple):
+    """Precomputed, time-invariant quantities for a steady-state Kalman filter.
+
+    In a time-invariant linear Gaussian SSM the filter gain and posterior
+    covariance converge to constants.  Passing an instance of this class as the
+    ``steady_state_params`` argument to :func:`associative_params_single` or
+    :func:`update` skips the expensive per-step QR decomposition and reuses the
+    constant ``A``, ``U``, and ``Z`` blocks.
+
+    Fields:
+        elem: A ``FilterScanElement`` whose ``A``, ``U``, and ``Z`` fields hold
+            the steady-state values.  The ``b``, ``eta``, and ``ell`` fields are
+            unused (they depend on the observation).
+        K: Steady-state Kalman gain matrix, shape ``(nx, ny)``.
+        chol_S: Lower-triangular Cholesky factor of the steady-state innovation
+            covariance ``S = H P_pred H^T + R``, shape ``(ny, ny)``.
+        Psi11_inv: Inverse of ``chol_S``, shape ``(ny, ny)``.  Precomputed so
+            that the per-step cost is pure matrix–vector products with no
+            triangular solve.
+        Z_filter: Pre-padded information gain matrix ``(H F)^T S^{-T}``,
+            shape ``(nx, ny)``.  Used to form ``eta`` without the QR
+            decomposition; distinct from the square ``Z`` in ``elem`` which is
+            used by the associative combine operator.
+    """
+
+    elem: FilterScanElement
+    K: Array
+    chol_S: Array
+    Psi11_inv: Array
+    Z_filter: Array
+
+
+def compute_steady_state_filter_params(
+    F: Array,
+    chol_Q: Array,
+    H: Array,
+    chol_R: Array,
+) -> SteadyStateFilterParams:
+    """Compute steady-state filter parameters for a time-invariant linear Gaussian SSM.
+
+    For a time-invariant model the ``A``, ``U``, and ``Z`` fields of each
+    associative scan element are identical at every time step — they depend
+    only on ``F``, ``chol_Q``, ``H``, and ``chol_R``, not on the observation.
+    This function extracts those constant fields once (along with the Kalman
+    gain ``K`` and the innovation Cholesky ``chol_S``) by performing the same
+    block-triangularization as :func:`associative_params_single` but without
+    evaluating the observation-dependent terms.
+
+    The returned :class:`SteadyStateFilterParams` can be passed to
+    :func:`associative_params_single` or :func:`update` to skip the per-step
+    QR decomposition and only recompute the cheap observation-dependent
+    quantities ``b``, ``eta``, and ``ell`` at every step.
+
+    This function is intended to be called **outside of JIT** as a one-off
+    pre-computation.  The returned params can then be passed into a JIT-compiled
+    filter call for all subsequent runs.
+
+    Note:
+        The ``K`` stored here is the *parallel-scan* gain, derived from
+        ``chol_Q`` alone (see :func:`associative_params_single`).  When using
+        :func:`update` in a sequential filter, supply a
+        :class:`SteadyStateFilterParams` whose ``K`` and ``elem.U`` reflect the
+        Riccati steady state instead.
+
+    Args:
+        F: State transition matrix, shape ``(nx, nx)``.
+        chol_Q: Generalized Cholesky factor of the transition noise covariance,
+            shape ``(nx, nx)``.
+        H: Observation matrix, shape ``(ny, nx)``.
+        chol_R: Generalized Cholesky factor of the observation noise covariance,
+            shape ``(ny, ny)``.
+
+    Returns:
+        :class:`SteadyStateFilterParams` containing the constant ``A``, ``U``,
+        ``Z``, gain ``K``, innovation Cholesky ``chol_S``, precomputed
+        ``Psi11_inv``, and pre-padded information gain ``Z_filter``.
+    """
+    F = jnp.asarray(F)
+    chol_Q = jnp.asarray(chol_Q)
+    H = jnp.asarray(H)
+    chol_R = jnp.asarray(chol_R)
+
+    ny, nx = H.shape
+
+    # Mirrors the block-triangularization in associative_params_single,
+    # stopping before the observation-dependent b, eta, ell.
+    Psi_ = jnp.block([[H @ chol_Q, chol_R], [chol_Q, jnp.zeros((nx, ny))]])
+    Tria_Psi_ = tria(Psi_)
+
+    chol_S = Tria_Psi_[:ny, :ny]  # innovation Cholesky
+    Psi21 = Tria_Psi_[ny : ny + nx, :ny]
+    U = Tria_Psi_[ny : ny + nx, ny:]  # posterior sqrt covariance
+
+    Psi11_inv = solve_triangular(chol_S, jnp.eye(ny), lower=True)
+    K = Psi21 @ Psi11_inv  # Kalman gain
+
+    HF = H @ F
+    A = F - K @ HF
+
+    Z_filter = HF.T @ Psi11_inv.T  # (nx, ny); used for eta, before padding
+    Z = Z_filter
+    if nx > ny:
+        Z = jnp.concatenate([Z, jnp.zeros((nx, nx - ny))], axis=1)
+    else:
+        Z = tria(Z)
+
+    dummy_b = jnp.zeros(nx)
+    dummy_eta = jnp.zeros(nx)
+    dummy_ell = jnp.array(0.0)
+
+    elem = FilterScanElement(A=A, b=dummy_b, U=U, eta=dummy_eta, Z=Z, ell=dummy_ell)
+    return SteadyStateFilterParams(
+        elem=elem, K=K, chol_S=chol_S, Psi11_inv=Psi11_inv, Z_filter=Z_filter
+    )
 
 
 def filtering_operator(

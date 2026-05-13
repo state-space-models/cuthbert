@@ -17,7 +17,15 @@ from cuthbert.gaussian.types import (
 from cuthbert.inference import Filter, Smoother
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering, smoothing
+from cuthbertlib.kalman.filtering import (
+    SteadyStateFilterParams,
+    compute_steady_state_filter_params,
+)
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
+
+# Expose this function at the top level of the module,
+# as it can be useful for users to precompute steady-state parameters.
+_ = compute_steady_state_filter_params
 
 
 class KalmanFilterState(NamedTuple):
@@ -65,6 +73,7 @@ def build_filter(
     get_init_params: GetInitParams,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
+    steady_state_params: SteadyStateFilterParams | None = None,
 ) -> Filter:
     """Builds an exact Kalman filter object for linear Gaussian SSMs.
 
@@ -77,6 +86,11 @@ def build_filter(
         get_observation_params: Function to get observation parameters, H, d, chol_R, y
             given model inputs sufficient to define
             p(y_t | x_t) = N(H @ x_t + d, chol_R @ chol_R^T).
+        steady_state_params: Optional precomputed steady-state filter parameters
+            (see :func:`compute_steady_state_filter_params`).  When provided the
+            per-step QR decomposition is skipped and only the observation-dependent
+            quantities are recomputed, giving a significant speed-up for long
+            time series with time-invariant models.
 
     Returns:
         Filter object for exact Kalman filter. Suitable for associative scan.
@@ -90,6 +104,7 @@ def build_filter(
             filter_prepare,
             get_dynamics_params=get_dynamics_params,
             get_observation_params=get_observation_params,
+            steady_state_params=steady_state_params,
         ),
         filter_combine=filter_combine,
         associative=True,
@@ -164,6 +179,7 @@ def filter_prepare(
     model_inputs: ArrayTreeLike,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
+    steady_state_params: SteadyStateFilterParams | None = None,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """Prepare a state for an exact Kalman filter step.
@@ -172,6 +188,10 @@ def filter_prepare(
         model_inputs: Model inputs.
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q.
         get_observation_params: Function to get observation parameters, H, d, chol_R, y.
+        steady_state_params: Optional precomputed steady-state filter parameters
+            (see :func:`compute_steady_state_filter_params`).  When provided the
+            per-step QR decomposition is skipped and only the observation-dependent
+            quantities are recomputed.
         key: JAX random key - not used.
 
     Returns:
@@ -180,7 +200,9 @@ def filter_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     F, c, chol_Q = get_dynamics_params(model_inputs)
     H, d, chol_R, y = get_observation_params(model_inputs)
-    elem = filtering.associative_params_single(F, c, chol_Q, H, d, chol_R, y)
+    elem = filtering.associative_params_single(
+        F, c, chol_Q, H, d, chol_R, y, steady_state_params
+    )
     return KalmanFilterState(elem=elem, model_inputs=model_inputs)
 
 
