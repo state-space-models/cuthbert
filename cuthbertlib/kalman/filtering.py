@@ -76,13 +76,15 @@ def update(
         log_normalizing_constant: Optional input of log normalizing constant to be added to
             log normalizing constant of the Bayesian update.
         steady_state_params: Optional precomputed steady-state parameters
-            (see :class:`SteadyStateFilterParams`).  When provided the QR
+            (see
+            [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]).
+            When provided the QR
             decomposition is skipped; ``elem.U`` is used as the posterior
             Cholesky covariance and ``K`` as the Kalman gain.  For the
             sequential filter the caller is responsible for supplying a
             ``SteadyStateFilterParams`` whose ``K`` and ``elem.U`` reflect the
             Riccati steady state, not the parallel-scan values produced by
-            :func:`~cuthbert.gaussian.kalman.compute_steady_state_filter_params`.
+            [`compute_steady_state_filter_params`][cuthbert.gaussian.kalman.compute_steady_state_filter_params].
 
     Returns:
         Updated mean and square root covariance as well as the log marginal likelihood.
@@ -146,7 +148,9 @@ def associative_params_single(
         chol_R: Generalized Cholesky factor of the observation noise covariance.
         y: Observation.
         steady_state_params: Optional precomputed steady-state parameters
-            (see :class:`SteadyStateFilterParams`).  When provided the QR
+            (see
+            [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]).
+            When provided the QR
             decomposition is skipped; ``A``, ``U``, and ``Z`` are reused from
             the stored element and only the observation-dependent ``b``,
             ``eta``, and ``ell`` are evaluated, replacing the expensive
@@ -206,8 +210,10 @@ class SteadyStateFilterParams(NamedTuple):
 
     In a time-invariant linear Gaussian SSM the filter gain and posterior
     covariance converge to constants.  Passing an instance of this class as the
-    ``steady_state_params`` argument to :func:`associative_params_single` or
-    :func:`update` skips the expensive per-step QR decomposition and reuses the
+    ``steady_state_params`` argument to
+    [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
+    or [`update`][cuthbertlib.kalman.filtering.update] skips the expensive
+    per-step QR decomposition and reuses the
     constant ``A``, ``U``, and ``Z`` blocks.
 
     Fields:
@@ -246,12 +252,17 @@ def compute_steady_state_filter_params(
     only on ``F``, ``chol_Q``, ``H``, and ``chol_R``, not on the observation.
     This function extracts those constant fields once (along with the Kalman
     gain ``K`` and the innovation Cholesky ``chol_S``) by performing the same
-    block-triangularization as :func:`associative_params_single` but without
+    block-triangularization as
+    [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
+    but without
     evaluating the observation-dependent terms.
 
-    The returned :class:`SteadyStateFilterParams` can be passed to
-    :func:`associative_params_single` or :func:`update` to skip the per-step
-    QR decomposition and only recompute the cheap observation-dependent
+    The returned
+    [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]
+    can be passed to
+    [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
+    or [`update`][cuthbertlib.kalman.filtering.update] to skip the per-step QR
+    decomposition and only recompute the cheap observation-dependent
     quantities ``b``, ``eta``, and ``ell`` at every step.
 
     This function is intended to be called **outside of JIT** as a one-off
@@ -260,10 +271,12 @@ def compute_steady_state_filter_params(
 
     Note:
         The ``K`` stored here is the *parallel-scan* gain, derived from
-        ``chol_Q`` alone (see :func:`associative_params_single`).  When using
-        :func:`update` in a sequential filter, supply a
-        :class:`SteadyStateFilterParams` whose ``K`` and ``elem.U`` reflect the
-        Riccati steady state instead.
+        ``chol_Q`` alone (see
+        [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]).
+        When using [`update`][cuthbertlib.kalman.filtering.update] in a
+        sequential filter, supply a
+        [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]
+        whose ``K`` and ``elem.U`` reflect the Riccati steady state instead.
 
     Args:
         F: State transition matrix, shape ``(nx, nx)``.
@@ -274,7 +287,8 @@ def compute_steady_state_filter_params(
             shape ``(ny, ny)``.
 
     Returns:
-        :class:`SteadyStateFilterParams` containing the constant ``A``, ``U``,
+        [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]
+        containing the constant ``A``, ``U``,
         ``Z``, gain ``K``, innovation Cholesky ``chol_S``, precomputed
         ``Psi11_inv``, and pre-padded information gain ``Z_filter``.
     """

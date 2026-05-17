@@ -87,10 +87,11 @@ def build_filter(
             given model inputs sufficient to define
             p(y_t | x_t) = N(H @ x_t + d, chol_R @ chol_R^T).
         steady_state_params: Optional precomputed steady-state filter parameters
-            (see :func:`compute_steady_state_filter_params`).  When provided the
-            per-step QR decomposition is skipped and only the observation-dependent
-            quantities are recomputed, giving a significant speed-up for long
-            time series with time-invariant models.
+            (see
+            [`compute_steady_state_filter_params`][cuthbert.gaussian.kalman.compute_steady_state_filter_params]).
+            When provided the per-step QR decomposition is skipped and only the
+            observation-dependent quantities are recomputed, giving a significant
+            speed-up for long time series with time-invariant models.
 
     Returns:
         Filter object for exact Kalman filter. Suitable for associative scan.
@@ -189,9 +190,10 @@ def filter_prepare(
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q.
         get_observation_params: Function to get observation parameters, H, d, chol_R, y.
         steady_state_params: Optional precomputed steady-state filter parameters
-            (see :func:`compute_steady_state_filter_params`).  When provided the
-            per-step QR decomposition is skipped and only the observation-dependent
-            quantities are recomputed.
+            (see
+            [`compute_steady_state_filter_params`][cuthbert.gaussian.kalman.compute_steady_state_filter_params]).
+            When provided the per-step QR decomposition is skipped and only the
+            observation-dependent quantities are recomputed.
         key: JAX random key - not used.
 
     Returns:
