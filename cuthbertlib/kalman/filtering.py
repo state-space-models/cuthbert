@@ -79,10 +79,10 @@ def update(
             (see
             [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]).
             When provided the QR
-            decomposition is skipped; ``elem.U`` is used as the posterior
-            Cholesky covariance and ``K`` as the Kalman gain.  For the
+            decomposition is skipped; `elem.U` is used as the posterior
+            Cholesky covariance and `K` as the Kalman gain.  For the
             sequential filter the caller is responsible for supplying a
-            ``SteadyStateFilterParams`` whose ``K`` and ``elem.U`` reflect the
+            `SteadyStateFilterParams` whose `K` and `elem.U` reflect the
             Riccati steady state, not the parallel-scan values produced by
             [`compute_steady_state_filter_params`][cuthbert.gaussian.kalman.compute_steady_state_filter_params].
 
@@ -151,9 +151,9 @@ def associative_params_single(
             (see
             [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]).
             When provided the QR
-            decomposition is skipped; ``A``, ``U``, and ``Z`` are reused from
-            the stored element and only the observation-dependent ``b``,
-            ``eta``, and ``ell`` are evaluated, replacing the expensive
+            decomposition is skipped; `A`, `U`, and `Z` are reused from
+            the stored element and only the observation-dependent `b`,
+            `eta`, and `ell` are evaluated, replacing the expensive
             per-step QR with cheap matrix–vector products.
 
     Returns:
@@ -210,25 +210,25 @@ class SteadyStateFilterParams(NamedTuple):
 
     In a time-invariant linear Gaussian SSM the filter gain and posterior
     covariance converge to constants.  Passing an instance of this class as the
-    ``steady_state_params`` argument to
+    `steady_state_params` argument to
     [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
     or [`update`][cuthbertlib.kalman.filtering.update] skips the expensive
     per-step QR decomposition and reuses the
-    constant ``A``, ``U``, and ``Z`` blocks.
+    constant `A`, `U`, and `Z` blocks.
 
     Fields:
-        elem: A ``FilterScanElement`` whose ``A``, ``U``, and ``Z`` fields hold
-            the steady-state values.  The ``b``, ``eta``, and ``ell`` fields are
+        elem: A `FilterScanElement` whose `A`, `U`, and `Z` fields hold
+            the steady-state values.  The `b`, `eta`, and `ell` fields are
             unused (they depend on the observation).
-        K: Steady-state Kalman gain matrix, shape ``(nx, ny)``.
+        K: Steady-state Kalman gain matrix, shape `(nx, ny)`.
         chol_S: Lower-triangular Cholesky factor of the steady-state innovation
-            covariance ``S = H P_pred H^T + R``, shape ``(ny, ny)``.
-        Psi11_inv: Inverse of ``chol_S``, shape ``(ny, ny)``.  Precomputed so
+            covariance `S = H P_pred H^T + R`, shape `(ny, ny)`.
+        Psi11_inv: Inverse of `chol_S`, shape `(ny, ny)`.  Precomputed so
             that the per-step cost is pure matrix–vector products with no
             triangular solve.
-        Z_filter: Pre-padded information gain matrix ``(H F)^T S^{-T}``,
-            shape ``(nx, ny)``.  Used to form ``eta`` without the QR
-            decomposition; distinct from the square ``Z`` in ``elem`` which is
+        Z_filter: Pre-padded information gain matrix `(H F)^T S^{-T}`,
+            shape `(nx, ny)`.  Used to form `eta` without the QR
+            decomposition; distinct from the square `Z` in `elem` which is
             used by the associative combine operator.
     """
 
@@ -247,11 +247,11 @@ def compute_steady_state_filter_params(
 ) -> SteadyStateFilterParams:
     """Compute steady-state filter parameters for a time-invariant linear Gaussian SSM.
 
-    For a time-invariant model the ``A``, ``U``, and ``Z`` fields of each
+    For a time-invariant model the `A`, `U`, and `Z` fields of each
     associative scan element are identical at every time step — they depend
-    only on ``F``, ``chol_Q``, ``H``, and ``chol_R``, not on the observation.
+    only on `F`, `chol_Q`, `H`, and `chol_R`, not on the observation.
     This function extracts those constant fields once (along with the Kalman
-    gain ``K`` and the innovation Cholesky ``chol_S``) by performing the same
+    gain `K` and the innovation Cholesky `chol_S`) by performing the same
     block-triangularization as
     [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
     but without
@@ -263,34 +263,34 @@ def compute_steady_state_filter_params(
     [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]
     or [`update`][cuthbertlib.kalman.filtering.update] to skip the per-step QR
     decomposition and only recompute the cheap observation-dependent
-    quantities ``b``, ``eta``, and ``ell`` at every step.
+    quantities `b`, `eta`, and `ell` at every step.
 
     This function is intended to be called **outside of JIT** as a one-off
     pre-computation.  The returned params can then be passed into a JIT-compiled
     filter call for all subsequent runs.
 
     Note:
-        The ``K`` stored here is the *parallel-scan* gain, derived from
-        ``chol_Q`` alone (see
+        The `K` stored here is the *parallel-scan* gain, derived from
+        `chol_Q` alone (see
         [`associative_params_single`][cuthbertlib.kalman.filtering.associative_params_single]).
         When using [`update`][cuthbertlib.kalman.filtering.update] in a
         sequential filter, supply a
         [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]
-        whose ``K`` and ``elem.U`` reflect the Riccati steady state instead.
+        whose `K` and `elem.U` reflect the Riccati steady state instead.
 
     Args:
-        F: State transition matrix, shape ``(nx, nx)``.
+        F: State transition matrix, shape `(nx, nx)`.
         chol_Q: Generalized Cholesky factor of the transition noise covariance,
-            shape ``(nx, nx)``.
-        H: Observation matrix, shape ``(ny, nx)``.
+            shape `(nx, nx)`.
+        H: Observation matrix, shape `(ny, nx)`.
         chol_R: Generalized Cholesky factor of the observation noise covariance,
-            shape ``(ny, ny)``.
+            shape `(ny, ny)`.
 
     Returns:
         [`SteadyStateFilterParams`][cuthbertlib.kalman.filtering.SteadyStateFilterParams]
-        containing the constant ``A``, ``U``,
-        ``Z``, gain ``K``, innovation Cholesky ``chol_S``, precomputed
-        ``Psi11_inv``, and pre-padded information gain ``Z_filter``.
+        containing the constant `A`, `U`,
+        `Z`, gain `K`, innovation Cholesky `chol_S`, precomputed
+        `Psi11_inv`, and pre-padded information gain `Z_filter`.
     """
     F = jnp.asarray(F)
     chol_Q = jnp.asarray(chol_Q)

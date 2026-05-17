@@ -194,11 +194,11 @@ def test_compute_steady_state_filter_params_closed_form(seed, nx, ny):
 def _riccati_steady_state_params(F, Q, H, R):
     """Build SteadyStateFilterParams from the DARE solution (Riccati K).
 
-    ``scipy.linalg.solve_discrete_are(a, b, q, r)`` solves
-    ``a.T X a - X - (a.T X b) inv(r + b.T X b) (b.T X a) + q = 0``,
+    `scipy.linalg.solve_discrete_are(a, b, q, r)` solves
+    `a.T X a - X - (a.T X b) inv(r + b.T X b) (b.T X a) + q = 0`,
     so to obtain the Kalman predictive-covariance DARE
-    ``P = F P_post F.T + Q - F P_post H.T inv(S) H P_post F.T``
-    the first argument must be ``F.T``, not ``F``.
+    `P = F P_post F.T + Q - F P_post H.T inv(S) H P_post F.T`
+    the first argument must be `F.T`, not `F`.
     """
     # DARE: solve_discrete_are(F.T, H.T, Q, R) returns P_pred_ss
     P_pred = solve_discrete_are(F.T, H.T, Q, R)
