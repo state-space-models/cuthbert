@@ -216,7 +216,7 @@ class SteadyStateFilterParams(NamedTuple):
     per-step QR decomposition and reuses the
     constant `A`, `U`, and `Z` blocks.
 
-    Fields:
+    Attributes:
         elem: A `FilterScanElement` whose `A`, `U`, and `Z` fields hold
             the steady-state values.  The `b`, `eta`, and `ell` fields are
             unused (they depend on the observation).
