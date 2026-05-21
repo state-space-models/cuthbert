@@ -9,9 +9,7 @@ from cuthbert.factorial.types import Factorializer, GetFactorialIndices
 from cuthbertlib.types import Array, ArrayLike
 
 
-def build_factorializer(
-    get_factorial_indices: GetFactorialIndices,
-) -> Factorializer:
+def build_factorializer(get_factorial_indices: GetFactorialIndices) -> Factorializer:
     """Build a factorializer for discrete HMM filter states.
 
     Args:
@@ -103,8 +101,7 @@ def _join_log_vectors(log_vecs: Array) -> Array:
 
 
 def marginalize(
-    local_state: DiscreteFilterState,
-    num_factors: int,
+    local_state: DiscreteFilterState, num_factors: int
 ) -> DiscreteFilterState:
     """Marginalize a joint local discrete state into a local factorial state.
 
