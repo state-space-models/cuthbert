@@ -36,13 +36,11 @@ def extract(
 ) -> DiscreteFilterState:
     """Extract the relevant factors from a factorial discrete filter state.
 
-    Single dimensional arrays will be treated as scalars or vectors without
-        a factorial axis (e.g. a local log normalizing vector with shape (K,)).
-    Multidimensional arrays will be treated as arrays with shape (F, *).
-        In this case the factorial_inds indices will be extracted from the first
-        dimension and then the remaining dimensions will be preserved.
-
     Here F is the number of factors and K is the number of states per factor.
+    The relevant leaves are:
+        - elem.f with shape (F, K, K)
+        - elem.log_g with shape (F, K)
+    Both leaves are indexed on the leading factorial axis.
 
     Args:
         factorial_state: Factorial discrete filter state storing transition-like
@@ -54,8 +52,9 @@ def extract(
                 even if len(factorial_inds) == 1.
 
     Returns:
-        Factorial discrete filter state with leading dimension
-            len(factorial_inds) on leaves that carry a factorial axis.
+        Factorial discrete filter state with:
+            - elem.f of shape (len(factorial_inds), K, K)
+            - elem.log_g of shape (len(factorial_inds), K)
             If factorial_inds is a single integer, the returned local factorial
             state will not have a factorial dimension.
     """
@@ -70,12 +69,12 @@ def extract(
 def join(local_factorial_state: DiscreteFilterState) -> DiscreteFilterState:
     """Convert a local factorial discrete state into a joint local state.
 
-    Single dimensional arrays will be treated as vectors with no factorial axis.
-    Two dimensional arrays will be treated as local log-normalizer vectors
-    with shape (F, K), which become a joint vector with shape (K**F,).
-    Three dimensional arrays will be treated as local transition-like matrices
-    with shape (F, K, K), which become a joint matrix with shape (K**F, K**F)
-    via Kronecker products.
+    This operation is applied to:
+        - elem.f with shape (F, K, K), combined into a joint transition matrix
+          of shape (K**F, K**F) via Kronecker products.
+        - elem.log_g with shape (F, K), mapped to a joint vector of shape (K**F,).
+          In this implementation, log_g is treated as a shared log-normalizing
+          scalar and broadcast to the joint state dimension.
 
     Here F is the number of local factors and K is the number of states per factor.
 
@@ -109,8 +108,12 @@ def marginalize(
 ) -> DiscreteFilterState:
     """Marginalize a joint local discrete state into a local factorial state.
 
-    A joint local state stores arrays over the product state space of size K**F.
-    This function returns per-factor arrays by summing over all other factors.
+    A joint local state stores:
+        - elem.f with shape (K**F, K**F)
+        - elem.log_g with shape (K**F,)
+    This function returns:
+        - elem.f with shape (F, K, K) by summing out all non-target factors.
+        - elem.log_g with shape (F, K) by broadcasting the shared log-normalizer.
 
     Args:
         local_state: Joint local discrete state with no factorial index dimension.
@@ -166,10 +169,10 @@ def insert(
 ) -> DiscreteFilterState:
     """Insert a local factorial discrete state into a factorial discrete state.
 
-    Single dimensional arrays will be treated as vectors with no factorial axis.
-    Multidimensional arrays will be treated as arrays with shape (F, *).
-        In this case factorial_inds indices will be inserted into the first
-        dimension and the remaining dimensions will be preserved.
+    This operation is applied to:
+        - elem.f: local factors are inserted at factorial_inds in the leading axis.
+        - elem.log_g: treated as a shared scalar log-normalizer and broadcast
+          across all global factors/states.
 
     Here F is the number of factors and K is the number of states per factor.
 
