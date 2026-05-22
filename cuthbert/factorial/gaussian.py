@@ -15,9 +15,7 @@ from cuthbertlib.types import Array, ArrayLike
 KalmanState = TypeVar("KalmanState", KalmanFilterState, LinearizedKalmanFilterState)
 
 
-def build_factorializer(
-    get_factorial_indices: GetFactorialIndices,
-) -> Factorializer:
+def build_factorializer(get_factorial_indices: GetFactorialIndices) -> Factorializer:
     """Build a factorializer for Kalman states.
 
     Args:
@@ -126,10 +124,7 @@ def _join_arr(arr: Array) -> Array:
         raise ValueError(f"Array must be 3D or lower, got {arr.ndim}D")
 
 
-def marginalize(
-    local_state: KalmanState,
-    num_factors: int,
-) -> KalmanState:
+def marginalize(local_state: KalmanState, num_factors: int) -> KalmanState:
     """Marginalize a joint local Kalman state into a factorial Kalman state.
 
     Args:
