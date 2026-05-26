@@ -169,7 +169,7 @@ def marginalize(
     particles = tree.map(
         lambda x: _marginalize_particles_arr(x, num_factors), local_state.particles
     )
-    log_weights = local_state.log_weights.repeat(num_factors, axis=0)
+    log_weights = jnp.tile(local_state.log_weights[None], (num_factors, 1))
     return local_state._replace(
         particles=particles,
         log_weights=log_weights,
