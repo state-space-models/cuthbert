@@ -1,5 +1,5 @@
 import itertools
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import chex
 import jax
@@ -101,6 +101,11 @@ def build_deterministic_filter(init_particles, num_particles):
     )
 
 
+def noop_resampling(key, logits, positions, n):
+    ancestors = jnp.arange(n)
+    return ancestors, logits, positions
+
+
 def reference_factorial_smc(init_particles, model_inputs):
     num_time_steps = model_inputs.t.shape[0] - 1
     num_factors = init_particles.shape[0]
@@ -129,20 +134,18 @@ def reference_factorial_smc(init_particles, model_inputs):
         local_joint = local_joint + drift.reshape(1, -1)
         obs_score = jnp.sum(local_joint * obs_scale.reshape(1, -1), axis=1)
         ell_inc = jax.nn.logsumexp(obs_score) - jnp.log(num_particles)
-        local_ell = ell + ell_inc
+        local_ell = ell_inc
         local_log_weights = jnp.zeros((len(inds), num_particles))
-        local_ancestor_indices = jnp.tile(
-            jnp.arange(num_particles)[None], (len(inds), 1)
-        )
+        local_ancestor_indices = jnp.arange(num_particles)
 
         local_next = local_joint.reshape(local.shape[1], local.shape[0], 1).transpose(
             1, 0, 2
         )
         particles = particles.at[inds].set(local_next)
         log_weights = jnp.zeros_like(log_weights)
-        ancestor_indices = ancestor_indices.at[inds].set(local_ancestor_indices)
-        ell = local_ell
-
+        ancestor_indices = ancestor_indices.at[inds].set(
+            jnp.tile(local_ancestor_indices[None], (len(inds), 1))
+        )
         local_particles_all.append(local_next)
         local_log_weights_all.append(local_log_weights)
         local_ancestor_indices_all.append(local_ancestor_indices)
@@ -178,7 +181,9 @@ def test_factorial_smc_filter(
         seed, num_factors, local_num_factors, num_particles, num_time_steps
     )
     filter_obj = build_deterministic_filter(init_particles, num_particles)
-    factorializer = factorial.smc.build_factorializer(lambda mi: mi.factorial_inds)
+    factorializer = factorial.smc.build_factorializer(
+        lambda model_inputs: model_inputs.factorial_inds, resampling_fn=noop_resampling
+    )
     (
         local_particles_ref,
         local_log_weights_ref,
@@ -209,8 +214,11 @@ def test_factorial_smc_filter(
         local_states.log_normalizing_constant, local_ells_ref, rtol=1e-10, atol=0.0
     )
 
-    factorial_states = factorial.filter(
-        filter_obj, factorializer, model_inputs, output_factorial=True
+    factorial_states = cast(
+        ParticleFilterState,
+        factorial.filter(
+            filter_obj, factorializer, model_inputs, output_factorial=True
+        ),
     )
     chex.assert_trees_all_close(
         factorial_states.particles, factorial_particles_ref, rtol=1e-10, atol=0.0
