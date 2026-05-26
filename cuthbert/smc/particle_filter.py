@@ -161,6 +161,49 @@ def filter_prepare(
     )
 
 
+def pf_step(
+    key: KeyArray,
+    particles: ArrayTree,
+    log_weights: Array,
+    log_normalizing_constant: ScalarArray,
+    model_inputs: ArrayTree,
+    propagate_sample: PropagateSample,
+    log_potential: LogPotential,
+    resampling_fn: Resampling,
+):
+    """Performs a single particle filter step."""
+    N = log_weights.shape[0]
+    keys = random.split(key, N + 1)
+
+    # Resample - resampling_fn is expected to handle adaptivity if desired
+    ancestor_indices, log_weights, ancestors = resampling_fn(
+        keys[0], log_weights, particles, N
+    )
+
+    # Propagate
+    next_particles = jax.vmap(propagate_sample, (0, 0, None))(
+        keys[1:], ancestors, model_inputs
+    )
+
+    # Reweight
+    log_potentials = jax.vmap(log_potential, (0, 0, None))(
+        ancestors, next_particles, model_inputs
+    )
+    next_log_weights = log_potentials + log_weights
+
+    # Compute the log normalizing constant
+    logsum_weights = jax.nn.logsumexp(next_log_weights)
+    log_normalizing_constant_incr = logsum_weights - jax.nn.logsumexp(log_weights)
+    log_normalizing_constant = log_normalizing_constant_incr + log_normalizing_constant
+
+    return {
+        "particles": next_particles,
+        "log_weights": next_log_weights,
+        "ancestor_indices": ancestor_indices,
+        "log_normalizing_constant": log_normalizing_constant,
+    }
+
+
 def filter_combine(
     state_1: ParticleFilterState,
     state_2: ParticleFilterState,
@@ -183,37 +226,22 @@ def filter_combine(
     Returns:
         The filtered state at the current time step.
     """
-    N = state_1.log_weights.shape[0]
-    keys = random.split(state_1.key, N + 1)
-
-    # Resample - resampling_fn is expected to handle adaptivity if desired
-    ancestor_indices, log_weights, ancestors = resampling_fn(
-        keys[0], state_1.log_weights, state_1.particles, N
-    )
-
-    # Propagate
-    next_particles = jax.vmap(propagate_sample, (0, 0, None))(
-        keys[1:], ancestors, state_2.model_inputs
-    )
-
-    # Reweight
-    log_potentials = jax.vmap(log_potential, (0, 0, None))(
-        ancestors, next_particles, state_2.model_inputs
-    )
-    next_log_weights = log_potentials + log_weights
-
-    # Compute the log normalizing constant
-    logsum_weights = jax.nn.logsumexp(next_log_weights)
-    log_normalizing_constant_incr = logsum_weights - jax.nn.logsumexp(log_weights)
-    log_normalizing_constant = (
-        log_normalizing_constant_incr + state_1.log_normalizing_constant
+    next_state = pf_step(
+        key=state_1.key,
+        particles=state_1.particles,
+        log_weights=state_1.log_weights,
+        log_normalizing_constant=state_1.log_normalizing_constant,
+        model_inputs=state_2.model_inputs,
+        propagate_sample=propagate_sample,
+        log_potential=log_potential,
+        resampling_fn=resampling_fn,
     )
 
     return ParticleFilterState(
         state_2.key,
-        next_particles,
-        next_log_weights,
-        ancestor_indices,
+        next_state["particles"],
+        next_state["log_weights"],
+        next_state["ancestor_indices"],
         state_2.model_inputs,
-        log_normalizing_constant,
+        next_state["log_normalizing_constant"],
     )
