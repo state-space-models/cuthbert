@@ -1,20 +1,44 @@
 """Factorial utilities for SMC particle-filter states."""
 
+from typing import TypeVar
+
+import jax
 from jax import numpy as jnp
-from jax import tree
+from jax import random, tree
 
 from cuthbert.factorial.types import Factorializer, GetFactorialIndices
+from cuthbert.smc.marginal_particle_filter import MarginalParticleFilterState
 from cuthbert.smc.particle_filter import ParticleFilterState
+from cuthbertlib.resampling import Resampling, ess_decorator
 from cuthbertlib.types import Array, ArrayLike
+
+GeneralParticleFilterState = TypeVar(
+    "GeneralParticleFilterState", ParticleFilterState, MarginalParticleFilterState
+)
 
 
 def build_factorializer(
     get_factorial_indices: GetFactorialIndices,
+    resampling_fn: Resampling,
 ) -> Factorializer:
     """Build a factorializer for particle-filter states.
 
+    In `cuthbert.smc`, resampling happens before propagation/reweighting.
+    Factorial `join` needs unweighted particles, so `resampling_fn` is required
+    and applied in `join` whenever local factor weights are not constant.
+
+    Any weights passed to marginalize will be duplicated across factors.
+
     Args:
         get_factorial_indices: Function to extract factorial indices from model inputs.
+        resampling_fn: Resampling function used in `join` when local factor
+            weights are not constant.
+            Consider setting the main SMC filter's `resampling_fn` to a no-op
+            policy to avoid redundant resampling, since `join` handles this
+            pre-join resampling step when needed.
+            Any adaptive ESS threshold will be overwritten, and resampling will be
+            applied with a threshold of 1.
+            # TODO: explicit reference to resampling no-op
 
     Returns:
         Factorializer for SMC states with extract, join, marginalize, and insert.
@@ -22,21 +46,21 @@ def build_factorializer(
     return Factorializer(
         get_factorial_indices=get_factorial_indices,
         extract=extract,
-        join=join,
+        join=lambda local_factorial_state: join(local_factorial_state, resampling_fn),
         marginalize=marginalize,
         insert=insert,
     )
 
 
 def extract(
-    factorial_state: ParticleFilterState,
+    factorial_state: GeneralParticleFilterState,
     factorial_inds: ArrayLike,
-) -> ParticleFilterState:
+) -> GeneralParticleFilterState:
     """Extract selected factors from a factorial particle-filter state.
 
     Args:
         factorial_state: Factorial particle-filter state with factorized fields
-            on leading axis F (`particles`, `log_weights`, `ancestor_indices`).
+            on leading axis F (`particles`, `log_weights`).
         factorial_inds: Indices of factors to extract.
 
     Returns:
@@ -46,51 +70,74 @@ def extract(
     factorial_inds = jnp.asarray(factorial_inds)
     particles = tree.map(lambda x: x[factorial_inds], factorial_state.particles)
     log_weights = factorial_state.log_weights[factorial_inds]
-    ancestor_indices = factorial_state.ancestor_indices[factorial_inds]
-    return factorial_state._replace(
+
+    new_state = factorial_state._replace(
         particles=particles,
         log_weights=log_weights,
-        ancestor_indices=ancestor_indices,
     )
 
+    if isinstance(factorial_state, ParticleFilterState):
+        new_state = new_state._replace(
+            ancestor_indices=factorial_state.ancestor_indices[factorial_inds]
+        )
 
-def join(local_factorial_state: ParticleFilterState) -> ParticleFilterState:
+    return new_state
+
+
+def join(
+    local_factorial_state: GeneralParticleFilterState,
+    resampling_fn: Resampling,
+) -> GeneralParticleFilterState:
     """Join local factorial state into a single joint local particle-filter state.
 
-    Factorial SMC doesn't work nicely with log_weights or ancestor_indices.
-    So we assume the log_weights are constant (i.e. always-resampled),
-    and reset the ancestor_indices to identity indices.
+    Resampling is applied first, independently over factors, when local
+    factor weights are not constant (detected via effective sample size).
+    Then factorized particles are stacked into a local joint particle state.
+    Joined bookkeeping uses always-resampled conventions: zero log weights.
+
+    Ancestor indices are valid for the resampling but ignored for the join
+    i.e. retain the factorial axis (F, n_particles) and assumed not used in the
+    particle filter.
 
     Args:
         local_factorial_state: Local factorial particle-filter state.
+        resampling_fn: Resampling function for factor-wise pre-join resampling.
 
     Returns:
         Joint local particle-filter state with no factorial axis on particle values.
     """
-    particles = tree.map(_join_particles_arr, local_factorial_state.particles)
-    n_particles = local_factorial_state.log_weights.shape[-1]
+    n_factors, n_particles = local_factorial_state.log_weights.shape
 
-    # Set log_weights to zeros if they are constant, otherwise set to NaN.
-    weights_constant = jnp.allclose(
-        local_factorial_state.log_weights, local_factorial_state.log_weights[:1]
-    )
-    log_weights = jnp.where(
-        weights_constant,
-        jnp.zeros((n_particles,), dtype=local_factorial_state.log_weights.dtype),
-        jnp.full(
-            (n_particles,), jnp.nan, dtype=local_factorial_state.log_weights.dtype
-        ),
+    # Resample independently over factors
+    # Applied if logits are not constant (i.e. ess_threshold = 1)
+    resampling_fn = ess_decorator(resampling_fn, threshold=1 - 1e-6)
+    keys = random.split(local_factorial_state.key, n_factors + 1)
+    key = keys[0]
+    resampling_keys = keys[1:]
+    ancestor_indices, _, particles = jax.vmap(resampling_fn, in_axes=(0, 0, 0, None))(
+        resampling_keys,
+        local_factorial_state.log_weights,
+        local_factorial_state.particles,
+        n_particles,
+    )  # log_weights ignored, all zeros
+
+    # Combine factorial particles into joint
+    # resampled_local_factorial_state.particles is shape e.g (F, n_particles, d)
+    # resampled_local_factorial_state.particles is shape (F, n_particles)
+    joint_state = local_factorial_state._replace(
+        key=key,
+        particles=tree.map(_join_particles_arr, particles),
+        log_weights=jnp.zeros(
+            (n_particles,), dtype=local_factorial_state.log_weights.dtype
+        ),  # all zeros
     )
 
-    # Set ancestor_indices to identity indices.
-    ancestor_indices = jnp.arange(
-        n_particles, dtype=local_factorial_state.ancestor_indices.dtype
-    )
-    return local_factorial_state._replace(
-        particles=particles,
-        log_weights=log_weights,
-        ancestor_indices=ancestor_indices,
-    )
+    if isinstance(joint_state, ParticleFilterState):
+        joint_state = joint_state._replace(
+            ancestor_indices=ancestor_indices
+        )  # ancestor_indices retain factorial axis (F, n_particles) - assumed not used in particle filter
+
+    return joint_state
 
 
 def _join_particles_arr(arr: Array) -> Array:
@@ -101,10 +148,13 @@ def _join_particles_arr(arr: Array) -> Array:
 
 
 def marginalize(
-    local_state: ParticleFilterState,
+    local_state: GeneralParticleFilterState,
     num_factors: int,
-) -> ParticleFilterState:
+) -> GeneralParticleFilterState:
     """Marginalize a joint local particle state back to factorial form.
+
+    Weights are duplicated across factors.
+    Ancestor indices are ignored for marginalization.
 
     Args:
         local_state: Joint local particle-filter state with particle leaves
@@ -113,42 +163,31 @@ def marginalize(
 
     Returns:
         Local factorial particle-filter state where particle leaves are shaped
-        `(F, N, D_local)` and bookkeeping follows always-resampled semantics.
+        `(F, N, D_local)` and bookkeeping follows always-resampled semantics
+        with missing ancestor indices (`-1`).
     """
     particles = tree.map(
         lambda x: _marginalize_particles_arr(x, num_factors), local_state.particles
     )
-    n_particles = local_state.log_weights.shape[-1]
-    log_weights = jnp.zeros(
-        (num_factors, n_particles), dtype=local_state.log_weights.dtype
-    )
-    ancestor_indices = _identity_ancestor_indices(
-        num_factors, n_particles, local_state.ancestor_indices.dtype
-    )
+    log_weights = local_state.log_weights.repeat(num_factors, axis=0)
     return local_state._replace(
         particles=particles,
         log_weights=log_weights,
-        ancestor_indices=ancestor_indices,
     )
 
 
 def _marginalize_particles_arr(arr: Array, num_factors: int) -> Array:
     """Split one joined particle leaf `(N, D_joint)` into `(F, N, D_local)`."""
     n_particles, joint_dim = arr.shape[0], arr.shape[1]
-    if joint_dim % num_factors != 0:
-        raise ValueError(
-            f"Cannot split joint particle dimension {joint_dim} into "
-            f"{num_factors} factors."
-        )
     local_dim = joint_dim // num_factors
     return arr.reshape(n_particles, num_factors, local_dim).transpose(1, 0, 2)
 
 
 def insert(
-    local_factorial_state: ParticleFilterState,
-    factorial_state: ParticleFilterState,
+    local_factorial_state: GeneralParticleFilterState,
+    factorial_state: GeneralParticleFilterState,
     factorial_inds: ArrayLike,
-) -> ParticleFilterState:
+) -> GeneralParticleFilterState:
     """Insert local factorial update into the global factorial state.
 
     Args:
@@ -167,23 +206,24 @@ def insert(
         local_factorial_state.particles,
         factorial_state.particles,
     )
-    # Keep bookkeeping consistent with always-resampled convention.
-    log_weights = jnp.zeros_like(factorial_state.log_weights)
-    ancestor_indices = _identity_ancestor_indices(
-        factorial_state.ancestor_indices.shape[0],
-        factorial_state.ancestor_indices.shape[-1],
-        factorial_state.ancestor_indices.dtype,
+    log_weights = factorial_state.log_weights.at[factorial_inds].set(
+        local_factorial_state.log_weights
     )
-    return factorial_state._replace(
+
+    new_factorial_state = factorial_state._replace(
         key=local_factorial_state.key,
         particles=particles,
         log_weights=log_weights,
-        ancestor_indices=ancestor_indices,
-        model_inputs=local_factorial_state.model_inputs,
-        log_normalizing_constant=local_factorial_state.log_normalizing_constant,
     )
 
+    if isinstance(factorial_state, ParticleFilterState) and isinstance(
+        local_factorial_state, ParticleFilterState
+    ):
+        ancestor_indices = factorial_state.ancestor_indices.at[factorial_inds].set(
+            local_factorial_state.ancestor_indices
+        )
+        new_factorial_state = new_factorial_state._replace(
+            ancestor_indices=ancestor_indices
+        )
 
-def _identity_ancestor_indices(num_factors: int, n_particles: int, dtype) -> Array:
-    """Create identity ancestor-index rows with shape `(F, N)`."""
-    return jnp.tile(jnp.arange(n_particles, dtype=dtype)[None], (num_factors, 1))
+    return new_factorial_state
