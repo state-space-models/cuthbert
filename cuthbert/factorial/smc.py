@@ -26,6 +26,8 @@ def build_factorializer(
     In `cuthbert.smc`, resampling happens before propagation/reweighting.
     Factorial `join` needs unweighted particles, so `resampling_fn` is required
     and applied in `join` whenever local factor weights are not constant.
+    It is therefore recommended to set the main SMC filter's `resampling_fn` to
+    `cuthbertlib.resampling.no_resampling.resampling` to avoid redundant resampling.
 
     Any weights passed to marginalize will be duplicated across factors.
 
@@ -33,12 +35,10 @@ def build_factorializer(
         get_factorial_indices: Function to extract factorial indices from model inputs.
         resampling_fn: Resampling function used in `join` when local factor
             weights are not constant.
-            Consider setting the main SMC filter's `resampling_fn` to a no-op
-            policy to avoid redundant resampling, since `join` handles this
-            pre-join resampling step when needed.
+            Consider setting the main SMC filter's `resampling_fn` to
+            `cuthbertlib.resampling.no_resampling.resampling`.
             Any adaptive ESS threshold will be overwritten, and resampling will be
             applied with a threshold of 1.
-            # TODO: explicit reference to resampling no-op
 
     Returns:
         Factorializer for SMC states with extract, join, marginalize, and insert.

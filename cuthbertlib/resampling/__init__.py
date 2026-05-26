@@ -3,6 +3,7 @@ from cuthbertlib.resampling import (
     autodiff,
     killing,
     multinomial,
+    no_resampling,
     systematic,
 )
 from cuthbertlib.resampling.adaptive import ess_decorator
