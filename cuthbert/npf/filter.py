@@ -146,6 +146,10 @@ def init_prepare(
     # Sample states
     state_keys = random.split(state_key, n_param_particles * n_state_particles)
     state_particles = jax.vmap(init_state_sample, (0, None))(state_keys, model_inputs)
+    state_particles = tree.map(
+        lambda x: x.reshape((n_param_particles, n_state_particles) + x.shape[1:]),
+        state_particles,
+    )
     state_log_weights = jnp.zeros((n_param_particles, n_state_particles))
 
     return NPFState(
@@ -202,6 +206,7 @@ def filter_prepare(
         lambda x: jnp.empty((n_param_particles, n_state_particles) + x.shape),
         dummy_state_particle,
     )
+    state_particles = dummy_tree_like(state_particles)
 
     return NPFState(
         key=key,
@@ -263,7 +268,8 @@ def filter_combine(
 ) -> NPFState:
     r"""Combines previous filter state with the state prepared for the current step.
 
-    See Algorithm 3 in Crisan and Miguez (2018) for details.
+    This is Algorithm 3 from Crisan and Miguez (2018) with one difference: we
+    perform resampling before jittering and return weighted particles.
 
     Args:
         state_1: Nested particle filter state from the previous time step.
@@ -284,8 +290,12 @@ def filter_combine(
 
     # Resample
     key, sub_key = random.split(state_1.key)
-    _, log_weights, ancestors = resampling_fn(
+    ancestor_indices, log_weights, ancestors = resampling_fn(
         sub_key, state_1.param_log_weights, state_1.param_particles, N
+    )
+    state_particles, state_log_weights = tree.map(
+        lambda x: x[ancestor_indices],
+        (state_1.state_particles, state_1.state_log_weights),
     )
 
     # Jitter
@@ -297,8 +307,8 @@ def filter_combine(
     keys = random.split(keys[0], N)
     next_inner_state = jax.vmap(_pf_step, (0, 0, 0, 0, None, None, None, None))(
         keys,
-        state_1.state_particles,
-        state_1.state_log_weights,
+        state_particles,
+        state_log_weights,
         param_particles,
         state_2.model_inputs,
         propagate_sample,
@@ -316,7 +326,7 @@ def filter_combine(
 
     return NPFState(
         key=state_2.key,
-        param_particles=ancestors,
+        param_particles=param_particles,
         state_particles=next_inner_state["particles"],
         param_log_weights=next_log_weights,
         state_log_weights=next_inner_state["log_weights"],
