@@ -210,8 +210,7 @@ def insert(
         local_factorial_state.log_weights
     )
 
-    new_factorial_state = factorial_state._replace(
-        key=local_factorial_state.key,
+    new_factorial_state = local_factorial_state._replace(
         particles=particles,
         log_weights=log_weights,
     )

@@ -8,7 +8,7 @@ from jax import Array, random
 
 from cuthbert import factorial
 from cuthbert.inference import Filter
-from cuthbert.smc.particle_filter import ParticleFilterState
+from cuthbert.smc.particle_filter import ParticleFilterState, build_filter
 from cuthbertlib.resampling import no_resampling, systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
 from cuthbertlib.types import ArrayTree
@@ -34,71 +34,30 @@ def build_factorial_smc_filter(
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, factorial_indices = model_params
     num_factors, x_dim = m0.shape
 
-    def init_prepare(model_inputs, key=None):
-        if key is None:
-            raise ValueError("A JAX PRNG key must be provided.")
-        eps = random.normal(key, (num_factors, n_particles, x_dim))
-        particles = m0[:, None, :] + jnp.einsum("fij,fnj->fni", chol_P0, eps)
-        return ParticleFilterState(
-            key=key,
-            particles=particles,
-            log_weights=jnp.zeros((num_factors, n_particles)),
-            ancestor_indices=jnp.tile(jnp.arange(n_particles)[None], (num_factors, 1)),
-            model_inputs=model_inputs,
-            log_normalizing_constant=jnp.array(0.0),
-        )
+    def init_sample(key, model_inputs):
+        # Generates a single particle for all factors
+        eps = random.normal(key, (num_factors, x_dim))
+        return m0 + jax.vmap(lambda chol_P, e: chol_P @ e)(chol_P0, eps)
 
-    def filter_prepare(model_inputs, key=None):
-        if key is None:
-            raise ValueError("A JAX PRNG key must be provided.")
-        local_dim = model_inputs.factorial_inds.shape[0] * x_dim
-        return ParticleFilterState(
-            key=key,
-            particles=jnp.empty((n_particles, local_dim)),
-            log_weights=jnp.zeros((n_particles,)),
-            ancestor_indices=jnp.arange(n_particles),
-            model_inputs=model_inputs,
-            log_normalizing_constant=jnp.array(0.0),
-        )
+    def propagate_sample(key, state, model_inputs):
+        t = model_inputs.t - 1
+        mean_particle = Fs[t] @ state + cs[t]
+        return mean_particle + chol_Qs[t] @ random.normal(key, mean_particle.shape)
 
-    def filter_combine(state_1, state_2):
-        n = state_1.n_particles
-        key_resample, key_propagate = random.split(state_1.key)
-        ancestor_indices, log_weights, ancestors = no_resampling.resampling(
-            key_resample, state_1.log_weights, state_1.particles, n
-        )
+    def log_potential(state_prev, state, model_inputs):
+        t = model_inputs.t - 1
+        return logpdf(Hs[t] @ state + ds[t], ys[t], chol_Rs[t], nan_support=False)
 
-        t = state_2.model_inputs.t - 1
-        F, c, chol_Q = Fs[t], cs[t], chol_Qs[t]
-        H, d, chol_R, y = Hs[t], ds[t], chol_Rs[t], ys[t]
-        keys = random.split(key_propagate, n + 1)
-        mean_particles = ancestors @ F.T + c
-        noise = jax.vmap(
-            lambda k: chol_Q @ random.normal(k, (mean_particles.shape[-1],))
-        )(keys[1:])
-        next_particles = mean_particles + noise
-        log_potentials = jax.vmap(
-            lambda x: logpdf(H @ x + d, y, chol_R, nan_support=False)
-        )(next_particles)
-        next_log_weights = log_weights + log_potentials
-        log_normalizing_constant = state_1.log_normalizing_constant + (
-            jax.nn.logsumexp(next_log_weights) - jax.nn.logsumexp(log_weights)
-        )
-
-        return ParticleFilterState(
-            key=keys[0],
-            particles=next_particles,
-            log_weights=next_log_weights,
-            ancestor_indices=ancestor_indices,
-            model_inputs=state_2.model_inputs,
-            log_normalizing_constant=log_normalizing_constant,
-        )
-
-    filter_obj = Filter(
-        init_prepare=init_prepare,
-        filter_prepare=filter_prepare,
-        filter_combine=filter_combine,
-        associative=False,
+    # `init_sample` returns a per-factor sample `(F, x_dim)`, so `init_particle_axis=1`
+    # makes the factorial machinery's factor axis lead the particle axis in the
+    # initial state, i.e. particles `(F, N, x_dim)` and weights `(F, N)`.
+    filter_obj = build_filter(
+        init_sample,
+        propagate_sample,
+        log_potential,
+        n_filter_particles=n_particles,
+        resampling_fn=no_resampling.resampling,
+        init_particle_axis=1,
     )
     smc_model_inputs = SMCModelInputs(
         t=jnp.arange(factorial_indices.shape[0] + 1),
@@ -115,6 +74,15 @@ def build_factorial_smc_filter(
         resampling_fn=systematic.resampling,
     )
     return filter_obj, factorializer, smc_model_inputs
+
+
+def weighted_mean_and_var(states: ParticleFilterState) -> tuple[Array, Array]:
+    """Weighted particle mean and variance of the (1D) state, over the particle axis."""
+    weights = jax.nn.softmax(states.log_weights, axis=-1)
+    particles = states.particles[..., 0]
+    mean = jnp.sum(particles * weights, axis=-1)
+    var = jnp.sum((particles - mean[..., None]) ** 2 * weights, axis=-1)
+    return mean, var
 
 
 params = [(0, 8, 2, 8, 3000), (1, 8, 2, 8, 3000)]
@@ -172,33 +140,33 @@ def test_factorial_smc_filter(
         output_factorial=False,
         key=random.key(seed + 123),
     )
-    smc_weights = jax.nn.softmax(smc_states.log_weights, axis=-1)
-    smc_means = jnp.sum(smc_states.particles[..., 0] * smc_weights, axis=-1)
-    smc_vars = jnp.sum(
-        (smc_states.particles[..., 0] - smc_means[..., None]) ** 2 * smc_weights,
-        axis=-1,
+    kalman_local_covs = (
+        kalman_local_states.chol_cov
+        @ kalman_local_states.chol_cov.transpose(0, 1, 3, 2)
     )
 
-    kalman_means = kalman_states.mean[..., 0]
-    kalman_vars = kalman_covs[..., 0, 0]
-    kalman_ells = kalman_local_states.log_normalizing_constant
-    smc_ells = smc_local_states.log_normalizing_constant
-    smc_ells_cumulative = jnp.cumsum(smc_ells)
+    # Factorial states hold all factors at every time step; local states hold the
+    # factors updated at each time step. Check means, variances and (cumulative)
+    # log normalizing constants agree with the Kalman reference for both.
+    smc_means, smc_vars = weighted_mean_and_var(smc_states)
+    smc_local_means, smc_local_vars = weighted_mean_and_var(smc_local_states)
     chex.assert_trees_all_close(
-        smc_means,
-        kalman_means,
-        rtol=1e-1,
-        atol=1e-1,
-    )
-    chex.assert_trees_all_close(
-        smc_vars,
-        kalman_vars,
-        rtol=1e-1,
-        atol=1e-1,
-    )
-    chex.assert_trees_all_close(
-        smc_ells_cumulative,
-        kalman_ells,
+        (
+            smc_means,
+            smc_vars,
+            smc_states.log_normalizing_constant,
+            smc_local_means,
+            smc_local_vars,
+            smc_local_states.log_normalizing_constant,
+        ),
+        (
+            kalman_states.mean[..., 0],
+            kalman_covs[..., 0, 0],
+            kalman_states.log_normalizing_constant,
+            kalman_local_states.mean[..., 0],
+            kalman_local_covs[..., 0, 0],
+            kalman_local_states.log_normalizing_constant,
+        ),
         rtol=1e-1,
         atol=1e-1,
     )
