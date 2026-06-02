@@ -160,6 +160,15 @@ class Factorializer(NamedTuple):
     marginalize: Marginalize
     insert: Insert
 
+    def factorize_initial_state(self, initial_state: ArrayTreeLike) -> ArrayTreeLike:
+        """Convert an initial filter state to factorial layout if needed.
+
+        Most inference methods already construct initial states in factorial
+        layout. Inference-specific factorializers can override this when their
+        generic initial state layout differs from the factorial convention.
+        """
+        return initial_state
+
     def extract_and_join(
         self, factorial_state: ArrayTreeLike, model_inputs: ArrayTreeLike
     ) -> ArrayTree:

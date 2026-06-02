@@ -17,6 +17,40 @@ GeneralParticleFilterState = TypeVar(
 )
 
 
+class SMCFactorializer(Factorializer):
+    """Factorializer for particle filter states."""
+
+    def factorize_initial_state(
+        self, initial_state: GeneralParticleFilterState
+    ) -> GeneralParticleFilterState:
+        """Convert initial SMC state particles from `(N, F, ...)` to `(F, N, ...)`.
+
+        Generic SMC filters sample initial particles with a leading particle axis.
+        The factorial SMC machinery expects the factor axis to lead instead.
+        Initial weights and particle filter ancestor indices are broadcast from
+        `(N,)` to `(F, N)`, matching the factorial SMC state layout.
+        """
+        particles = tree.map(lambda x: jnp.moveaxis(x, 0, 1), initial_state.particles)
+        n_factors = tree.leaves(particles)[0].shape[0]
+        n_particles = initial_state.log_weights.shape[0]
+
+        new_state = initial_state._replace(
+            particles=particles,
+            log_weights=jnp.broadcast_to(
+                initial_state.log_weights, (n_factors, n_particles)
+            ),
+        )
+
+        if isinstance(initial_state, ParticleFilterState):
+            new_state = new_state._replace(
+                ancestor_indices=jnp.broadcast_to(
+                    initial_state.ancestor_indices, (n_factors, n_particles)
+                )
+            )
+
+        return new_state
+
+
 def build_factorializer(
     get_factorial_indices: GetFactorialIndices,
     resampling_fn: Resampling,
@@ -43,7 +77,7 @@ def build_factorializer(
     Returns:
         Factorializer for SMC states with extract, join, marginalize, and insert.
     """
-    return Factorializer(
+    return SMCFactorializer(
         get_factorial_indices=get_factorial_indices,
         extract=extract,
         join=lambda local_factorial_state: join(local_factorial_state, resampling_fn),
