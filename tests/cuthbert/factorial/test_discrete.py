@@ -9,7 +9,7 @@ from jax import random
 from jax.nn import logsumexp
 
 from cuthbert import factorial
-from cuthbert.discrete.filter import DiscreteFilterState, filter_combine, filter_prepare
+from cuthbert.discrete.filter import build_filter
 from cuthbert.inference import Filter
 from cuthbertlib.discrete.filtering import FilterScanElement
 
@@ -67,16 +67,9 @@ def generate_factorial_hmm(
 
 def build_factorial_discrete_filter(model_params):
     init_dist, trans_matrices, local_obs_lls, factorial_indices = model_params
-    num_states = init_dist.shape[-1]
 
-    def get_init_state(model_inputs, key=None):
-        model_inputs = jnp.asarray(model_inputs)
-        f = jnp.tile(init_dist[:, None, :], (1, num_states, 1))
-        log_g = jnp.zeros((init_dist.shape[0], num_states))
-        return DiscreteFilterState(
-            elem=FilterScanElement(f=f, log_g=log_g),
-            model_inputs=model_inputs,
-        )
+    def get_factorial_init_dist(model_inputs):
+        return init_dist
 
     def get_local_trans_matrix(model_inputs):
         inds = factorial_indices[model_inputs - 1]
@@ -86,15 +79,8 @@ def build_factorial_discrete_filter(model_params):
     def get_local_obs_lls(model_inputs):
         return local_obs_lls[model_inputs - 1]
 
-    filter_obj = Filter(
-        init_prepare=get_init_state,
-        filter_prepare=partial(
-            filter_prepare,
-            get_trans_matrix=get_local_trans_matrix,
-            get_obs_lls=get_local_obs_lls,
-        ),
-        filter_combine=filter_combine,
-        associative=False,
+    filter_obj = build_filter(
+        get_factorial_init_dist, get_local_trans_matrix, get_local_obs_lls
     )
     factorializer = factorial.discrete.build_factorializer(
         lambda model_inputs: factorial_indices[model_inputs - 1]
