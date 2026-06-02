@@ -58,6 +58,9 @@ def filter(
     init_factorial_state = filter_obj.init_prepare(
         init_model_input, key=prepare_keys[0]
     )
+    init_factorial_state = factorializer.factorialize_init_state(
+        init_factorial_state, init_model_input
+    )
 
     prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
