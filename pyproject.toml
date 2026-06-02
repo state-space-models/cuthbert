@@ -14,7 +14,7 @@ override-dependencies = [
 "tests/**/*.py" = ["D"] # no docstring checking for tests
 "cuthbertlib/resampling/**/*.py" = ["D102", "D103"] # resampling uses decorator for docstrings
 [tool.ruff.lint]
-select = ["D"]
+extend-select = ["D"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 

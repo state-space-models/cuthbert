@@ -13,7 +13,7 @@ from jax.scipy.linalg import cho_solve
 
 from cuthbertlib.linalg import collect_nans_chol, tria
 from cuthbertlib.stats import multivariate_normal
-from cuthbertlib.types import Array, ArrayTreeLike, KeyArray, ScalarArray
+from cuthbertlib.types import Array, KeyArray, ScalarArray
 
 ObservationFn = Callable[[Array], Array]
 DynamicsFn = Callable[[Array, KeyArray], Array]
