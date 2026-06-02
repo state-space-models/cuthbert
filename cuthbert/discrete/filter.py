@@ -83,8 +83,9 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_dist = get_init_dist(model_inputs)
     N = init_dist.shape[-1]
-    f = init_dist * jnp.ones((N, N))
-    log_g = jnp.zeros(N)
+    f = init_dist[..., None, :] * jnp.ones((N, N))
+    # repeat init_dist N times onto newly added penultimate axis
+    log_g = jnp.zeros_like(init_dist)
     return DiscreteFilterState(
         elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
     )
