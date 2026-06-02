@@ -14,7 +14,7 @@ from cuthbert.inference import Filter
 from cuthbert.smc.types import InitSample, LogPotential, PropagateSample
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.resampling import Resampling
-from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
+from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
 
 class MarginalParticleFilterState(NamedTuple):

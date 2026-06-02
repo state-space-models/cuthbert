@@ -154,5 +154,8 @@ class TestResamplings(chex.TestCase):
         grad_stop = jax.grad(
             lambda sigma: resampled_lse(sigma, stop_gradient_decorator(resampling_fn))
         )(true_sigma)
+        grad_plain = jax.grad(lambda sigma: resampled_lse(sigma, resampling_fn))(
+            true_sigma
+        )
 
         chex.assert_trees_all_close(grad_stop, grad_base, rtol=0.05, atol=0.05)
