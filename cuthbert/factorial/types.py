@@ -4,7 +4,6 @@ from typing import NamedTuple, Protocol
 
 from jax import numpy as jnp
 
-from cuthbert.inference import FilterCombine, FilterPrepare, InitPrepare
 from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
 
