@@ -190,7 +190,6 @@ def insert(
     new_log_g = jnp.full_like(
         factorial_state.elem.log_g, local_factorial_state.elem.log_g[0, 0]
     )
-    return factorial_state._replace(
+    return local_factorial_state._replace(
         elem=factorial_state.elem._replace(f=new_f, log_g=new_log_g),
-        model_inputs=local_factorial_state.model_inputs,
     )

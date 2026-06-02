@@ -82,7 +82,7 @@ def init_prepare(
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_dist = get_init_dist(model_inputs)
-    N = init_dist.shape[0]
+    N = init_dist.shape[-1]
     f = init_dist * jnp.ones((N, N))
     log_g = jnp.zeros(N)
     return DiscreteFilterState(
