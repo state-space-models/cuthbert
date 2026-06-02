@@ -236,7 +236,7 @@ def insert(
     factorial_inds = jnp.atleast_1d(factorial_inds)
 
     particles = tree.map(
-        lambda loc, glob: glob.at[factorial_inds].set(loc),
+        lambda loc, glob: _insert_particles_arr(loc, glob, factorial_inds),
         local_factorial_state.particles,
         factorial_state.particles,
     )
@@ -260,3 +260,13 @@ def insert(
         )
 
     return new_factorial_state
+
+
+def _insert_particles_arr(
+    local_factorial_arr: Array, factorial_arr: Array, factorial_inds: Array
+) -> Array:
+    """Insert one particle leaf, preserving scalar particle leaves."""
+    update_shape = (factorial_inds.shape[0],) + factorial_arr.shape[1:]
+    if local_factorial_arr.shape == update_shape + (1,):
+        local_factorial_arr = local_factorial_arr[..., 0]
+    return factorial_arr.at[factorial_inds].set(local_factorial_arr)

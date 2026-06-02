@@ -84,6 +84,34 @@ def weighted_mean_and_var(states: ParticleFilterState) -> tuple[Array, Array]:
 params = [(0, 8, 2, 8, 3000), (1, 8, 2, 8, 3000)]
 
 
+def test_factorial_smc_scalar_particle_leaf():
+    """Checks whether the factorial filter works for scalar particles (i.e., no x_dim axis)."""
+    n_factors, n_particles = 3, 4
+    factorial_inds = jnp.array([0, 2])
+    particles = jnp.arange(n_factors * n_particles).reshape(n_factors, n_particles)
+    state = ParticleFilterState(
+        key=random.key(0),
+        particles=particles,
+        log_weights=jnp.zeros((n_factors, n_particles)),
+        ancestor_indices=jnp.tile(jnp.arange(n_particles), (n_factors, 1)),
+        model_inputs=None,
+        log_normalizing_constant=jnp.array(0.0),
+    )
+
+    local_state = factorial.smc.extract(state, factorial_inds)
+    joined_state = factorial.smc.join(local_state, no_resampling.resampling)
+    local_factorial_state = factorial.smc.marginalize(joined_state, len(factorial_inds))
+    inserted_state = factorial.smc.insert(local_factorial_state, state, factorial_inds)
+
+    chex.assert_shape(joined_state.particles, (n_particles, len(factorial_inds)))
+    chex.assert_shape(inserted_state.particles, particles.shape)
+    chex.assert_trees_all_equal(
+        inserted_state.particles[factorial_inds],
+        local_factorial_state.particles[..., 0],
+    )
+    chex.assert_trees_all_equal(inserted_state.particles[1], particles[1])
+
+
 @pytest.mark.parametrize(
     "seed,num_factors,local_num_factors,num_time_steps,num_particles",
     params,
