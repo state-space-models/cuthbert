@@ -1,5 +1,3 @@
-from functools import partial
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -10,7 +8,6 @@ from jax import random
 from cuthbert import filter
 from cuthbert.enkf import ensemble_kalman_filter
 from cuthbertlib.kalman.generate import generate_lgssm
-from cuthbertlib.linalg import tria
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
 
@@ -47,10 +44,8 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
 
         def get_dynamics(model_inputs):
             idx = model_inputs - 1
-            return (
-                lambda x, key: Fs[idx] @ x
-                + cs[idx]
-                + chol_Qs[idx] @ random.normal(key, (x_dim,))
+            return lambda x, key: (
+                Fs[idx] @ x + cs[idx] + chol_Qs[idx] @ random.normal(key, (x_dim,))
             )
 
         def get_observations(model_inputs):
@@ -212,7 +207,7 @@ def test_build_filter_requires_at_least_two_particles():
     with pytest.raises(ValueError, match="at least 2"):
         ensemble_kalman_filter.build_filter(
             init_sample=init_sample,
-            get_dynamics=lambda _: (lambda x, key: x),
+            get_dynamics=lambda _: lambda x, key: x,
             get_observations=lambda _: (lambda x: x, jnp.eye(1), jnp.zeros(1)),
             n_particles=1,
         )
