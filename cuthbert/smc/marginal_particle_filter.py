@@ -34,7 +34,6 @@ def build_filter(
     log_potential: LogPotential,
     n_filter_particles: int,
     resampling_fn: Resampling,
-    init_particle_axis: int = 0,
 ) -> Filter:
     r"""Builds a marginal particle filter object.
 
@@ -47,15 +46,6 @@ def build_filter(
             The resampling function may be decorated with adaptive behaviour
             (using cuthbertlib.resampling.adaptive.adaptive_resampling_decorator)
             before being passed to the filter.
-        init_particle_axis: Axis at which `init_prepare` inserts the particle axis
-            into the initial state. The leading `init_particle_axis` dimensions of
-            `init_sample`'s output are treated as batch (e.g. factor) dimensions and
-            are carried through to `log_weights`. Defaults to `0` (a flat particle
-            set). Set to `1` for factorial filtering, where `init_sample` returns a
-            per-factor sample `(F, ...)` and the factor axis must lead the particle
-            axis. Only the initial state is affected: after the factor axis is
-            collapsed (e.g. by the factorial `join`), the per-step `filter_prepare`/
-            `filter_combine` operate on a flat particle set.
 
     Returns:
         Filter object for the particle filter.
@@ -65,7 +55,6 @@ def build_filter(
             init_prepare,
             init_sample=init_sample,
             n_filter_particles=n_filter_particles,
-            particle_axis=init_particle_axis,
         ),
         filter_prepare=partial(
             filter_prepare,
@@ -87,7 +76,6 @@ def init_prepare(
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
-    particle_axis: int = 0,
 ) -> MarginalParticleFilterState:
     """Prepare the initial state for the marginal particle filter.
 
@@ -96,10 +84,6 @@ def init_prepare(
         init_sample: Function to sample from the initial distribution M_0(x_0).
         n_filter_particles: Number of particles to sample.
         key: JAX random key.
-        particle_axis: Axis at which the particle axis is inserted. The leading
-            `particle_axis` dimensions of `init_sample`'s output are treated as
-            batch (e.g. factor) dimensions and carried through to `log_weights`.
-            Defaults to `0` (a flat particle set).
 
     Returns:
         Initial state for the filter.
@@ -111,18 +95,17 @@ def init_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
-    # Sample, placing the particle axis after any leading batch (factor) dimensions
+    # Sample
     keys = random.split(key, n_filter_particles)
-    particles = jax.vmap(init_sample, (0, None), out_axes=particle_axis)(
-        keys, model_inputs
-    )
+    particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
 
-    # Weight (uniform), preserving the leading batch dimensions
-    batch_shape = tree.leaves(particles)[0].shape[:particle_axis]
-    log_weights = jnp.zeros((*batch_shape, n_filter_particles))
+    # Weight
+    log_weights = jnp.zeros(n_filter_particles)
 
     # Compute the log normalizing constant
-    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(log_weights.size)
+    log_normalizing_constant = jax.nn.logsumexp(log_weights) - jnp.log(
+        n_filter_particles
+    )
 
     return MarginalParticleFilterState(
         key=key,

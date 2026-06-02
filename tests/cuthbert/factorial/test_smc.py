@@ -48,16 +48,12 @@ def build_factorial_smc_filter(
         t = model_inputs.t - 1
         return logpdf(Hs[t] @ state + ds[t], ys[t], chol_Rs[t], nan_support=False)
 
-    # `init_sample` returns a per-factor sample `(F, x_dim)`, so `init_particle_axis=1`
-    # makes the factorial machinery's factor axis lead the particle axis in the
-    # initial state, i.e. particles `(F, N, x_dim)` and weights `(F, N)`.
     filter_obj = build_filter(
         init_sample,
         propagate_sample,
         log_potential,
         n_filter_particles=n_particles,
         resampling_fn=no_resampling.resampling,
-        init_particle_axis=1,
     )
     smc_model_inputs = SMCModelInputs(
         t=jnp.arange(factorial_indices.shape[0] + 1),
