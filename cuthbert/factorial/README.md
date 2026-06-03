@@ -1,5 +1,7 @@
 # Factorial State-Space Models
 
+<!-- --8<-- [start:body] -->
+
 A factorial state-space model is a state-space model where the dynamics distribution
 factors into a product of independent distributions across factors
 
@@ -62,7 +64,9 @@ kalman_filter = cuthbert.gaussian.kalman.build_filter(
 )
 
 # Online inference
-factorial_state = kalman_filter.init_prepare(tree.map(lambda x: x[0], model_inputs))
+init_model_inputs = tree.map(lambda x: x[0], model_inputs)
+factorial_state = kalman_filter.init_prepare(init_model_inputs)
+factorial_state = factorializer.factorialize_init_state(factorial_state, init_model_inputs)
 
 for t in range(1, T):
     model_inputs_t = tree.map(lambda x: x[t], model_inputs)
@@ -131,3 +135,4 @@ smoother_states = cuthbert.smoother(
     kalman_smoother, filter_states_single_factor, model_inputs_single_factor
 )
 ```
+<!-- --8<-- [end:body] -->

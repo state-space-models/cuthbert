@@ -98,7 +98,6 @@ def join(local_factorial_state: KalmanState) -> KalmanState:
     Args:
         local_factorial_state: Factorial Kalman state storing means and chol_covs
             with shape (F, d) and (F, d, d) respectively.
-        factorial_inds: Indices of the factors to extract. Integer array.
 
     Returns:
         Joint local Kalman state with no factorial index dimension.

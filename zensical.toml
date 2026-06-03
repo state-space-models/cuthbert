@@ -28,6 +28,14 @@ nav = [
       "api_cuthbert/enkf/ensemble_kalman_filter.md",
       "api_cuthbert/enkf/types.md",
     ] },
+    { "Factorial state-space models" = [
+      "api_cuthbert/factorial/index.md",
+      "api_cuthbert/factorial/discrete.md",
+      "api_cuthbert/factorial/gaussian.md",
+      "api_cuthbert/factorial/smc.md",
+      "api_cuthbert/factorial/types.md",
+      "api_cuthbert/factorial/utils.md",
+    ] },
     { "Gaussian filters and smoothers" = [
       "api_cuthbert/gaussian/index.md",
       { "Exact Kalman" = "api_cuthbert/gaussian/kalman.md" },
