@@ -1,5 +1,4 @@
 import itertools
-from functools import partial
 
 import chex
 import jax
@@ -10,8 +9,6 @@ from jax.nn import logsumexp
 
 from cuthbert import factorial
 from cuthbert.discrete.filter import build_filter
-from cuthbert.inference import Filter
-from cuthbertlib.discrete.filtering import FilterScanElement
 
 
 @pytest.fixture(scope="module", autouse=True)
