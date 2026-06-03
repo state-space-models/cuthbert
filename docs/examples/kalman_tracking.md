@@ -238,7 +238,7 @@ car's position.
   transformations like `jit`, `vmap`, and automatic differentiation.
 
 ## Next Steps
-
+- **Steady-state Kalman filtering**: Explore the [steady-state Kalman filter](steady_state_kalman.md) for time-invariant systems, which can be more efficient for long time series.
 - **Smoothing**: Use [`cuthbert.smoother`](../api_cuthbert/smoothing.md) for
   backward pass smoothing.
 - **Parameter Learning**: Combine with optimization libraries like
