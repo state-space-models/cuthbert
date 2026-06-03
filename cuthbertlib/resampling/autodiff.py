@@ -15,7 +15,6 @@ import jax.numpy as jnp
 
 from cuthbertlib.resampling.protocols import Resampling
 from cuthbertlib.resampling.utils import apply_resampling_indices
-from cuthbertlib.smc.ess import log_ess
 from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 

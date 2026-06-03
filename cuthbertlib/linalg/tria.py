@@ -85,8 +85,8 @@ def _tria_jvp(primals, tangents):
     K_T = jnp.swapaxes(K, -1, -2)
 
     # Solve for lower triangular perturbation dM + dM^T = K + K^T
-    I = jnp.eye(K.shape[-1], dtype=K.dtype)
-    dM = jnp.tril(K + K_T) - K * I
+    Id = jnp.eye(K.shape[-1], dtype=K.dtype)
+    dM = jnp.tril(K + K_T) - K * Id
 
     # Compute the null-space part
     dR_null = (jnp.eye(R.shape[-2], dtype=R.dtype) - R @ R_pinv) @ dA @ Q
