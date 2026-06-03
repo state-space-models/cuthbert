@@ -4,6 +4,7 @@
 - [General smoothing API](smoothing.md)
 - [Discrete hidden Markov models](discrete.md)
 - [Ensemble Kalman Filter](enkf.md)
+- [Factorial state-space models](factorial/index.md)
 - [Gaussian filters and smoothers](gaussian/index.md)
 - [Sequential Monte Carlo](smc/index.md)
 
