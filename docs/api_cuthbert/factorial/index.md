@@ -10,4 +10,4 @@
 
 Factorial state-space models factorize the dynamics distribution into independent factors:
 
---8<-- "cuthbert/factorial/README.md"
+--8<-- "cuthbert/factorial/README.md:body"

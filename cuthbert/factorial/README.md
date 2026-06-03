@@ -1,5 +1,7 @@
 # Factorial State-Space Models
 
+<!-- --8<-- [start:body] -->
+
 A factorial state-space model is a state-space model where the dynamics distribution
 factors into a product of independent distributions across factors
 
@@ -133,3 +135,4 @@ smoother_states = cuthbert.smoother(
     kalman_smoother, filter_states_single_factor, model_inputs_single_factor
 )
 ```
+<!-- --8<-- [end:body] -->
