@@ -3,7 +3,7 @@
 from jax import eval_shape, tree
 from jax import numpy as jnp
 
-from cuthbert.gaussian.taylor.non_associative_filter import process_observation
+from cuthbert.gaussian.taylor import non_associative_filter
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
@@ -45,16 +45,11 @@ def init_prepare(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_normalizing_constant.
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    init_log_density, linearization_point = get_init_log_density(model_inputs)
-
-    _, m0, chol_P0 = linearize_log_density(
-        lambda _, x: init_log_density(x),
-        linearization_point,
-        linearization_point,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
+    non_assoc_init_state = non_associative_filter.init_prepare(
+        model_inputs, get_init_log_density, rtol, ignore_nan_dims, key
     )
+    m0 = non_assoc_init_state.mean
+    chol_P0 = non_assoc_init_state.chol_cov
 
     prior_state = LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
@@ -149,7 +144,7 @@ def filter_prepare(
     chol_Q = jnp.where(skip_predict_flag, jnp.zeros_like(chol_Q), chol_Q)
 
     observation_output = get_observation_func(dummy_state, model_inputs)
-    H, d, chol_R, observation = process_observation(
+    H, d, chol_R, observation = non_associative_filter.process_observation(
         observation_output,
         rtol=rtol,
         ignore_nan_dims=ignore_nan_dims,
