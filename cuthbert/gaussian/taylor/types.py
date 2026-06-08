@@ -21,6 +21,9 @@ class GetInitLogDensity(Protocol):
     def __call__(self, model_inputs: ArrayTreeLike) -> tuple[LogDensity, Array]:
         """Get the initial log density and initial linearization point.
 
+        If the state-space model is a factorial model, this should return the
+        sum of the log densities for each factor.
+
         Args:
             model_inputs: Model inputs.
 
