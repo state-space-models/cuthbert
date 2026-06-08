@@ -108,7 +108,9 @@ def filter_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
     dummy_mean = dummy_tree_like(dummy_mean_struct)
-    dummy_chol_cov = dummy_tree_like(jnp.cov(dummy_mean[..., None]))
+    dummy_chol_cov = dummy_tree_like(
+        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+    )
 
     dummy_state = LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
