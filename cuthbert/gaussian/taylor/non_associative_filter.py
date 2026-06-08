@@ -1,6 +1,6 @@
 """Implements the non-associative linearized Taylor Kalman filter."""
 
-from jax import eval_shape, tree, vmap
+from jax import eval_shape, tree
 from jax import numpy as jnp
 
 from cuthbert.gaussian.taylor.types import (
@@ -14,6 +14,7 @@ from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
+from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
@@ -89,23 +90,23 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_log_density, linearization_point = get_init_log_density(model_inputs)
 
-    # Handle factorial axis if present
-    lin_point_dim = linearization_point.ndim
-    linearization_point = jnp.atleast_2d(linearization_point)
+    linearization_shape = linearization_point.shape
+    flat_linearization_point = linearization_point.reshape(-1)
 
-    _, m0, chol_P0 = vmap(
-        lambda lp: linearize_log_density(
-            lambda _, x: init_log_density(x),
-            lp,
-            lp,
-            rtol=rtol,
-            ignore_nan_dims=ignore_nan_dims,
-        )
-    )(linearization_point)
+    def flat_init_log_density(_, flat_x):
+        return init_log_density(flat_x.reshape(linearization_shape))
 
-    if lin_point_dim == 1:
-        m0 = jnp.squeeze(m0, 0)
-        chol_P0 = jnp.squeeze(chol_P0, 0)
+    _, m0, chol_P0 = linearize_log_density(
+        flat_init_log_density,
+        flat_linearization_point,
+        flat_linearization_point,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
+    )
+    m0 = m0.reshape(linearization_shape)
+
+    if linearization_point.ndim > 1:
+        chol_P0 = block_marginal_sqrt_cov(chol_P0, linearization_point.shape[-1])
 
     prior_state = linearized_kalman_filter_state_dummy_elem(
         mean=m0,
