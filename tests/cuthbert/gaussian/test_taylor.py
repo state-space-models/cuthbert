@@ -488,7 +488,10 @@ def test_factorial_init(seed, x_dim, num_factors):
 
     def get_init_log_density(model_inputs):
         def init_log_density(x):
-            return multivariate_normal.logpdf(x, m0, chol_P0)
+            factor_log_densities = jax.vmap(
+                lambda factor_x: multivariate_normal.logpdf(factor_x, m0, chol_P0)
+            )(x)
+            return jnp.sum(factor_log_densities)
 
         return init_log_density, lin_p
 
