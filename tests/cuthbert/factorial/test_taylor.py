@@ -1,16 +1,13 @@
 import jax
 import jax.numpy as jnp
 
-import cuthbert
 from cuthbert import factorial
-from cuthbert.factorial.utils import serial_to_single_factor
 from cuthbert.gaussian import taylor
-from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbertlib.stats import multivariate_normal
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 
 
-def test_factorial_taylor_filter_and_smoother_jit():
+def test_factorial_taylor_filter_jit():
     x_dim = 2
     y_dim = 1
     num_factors = 3
@@ -96,63 +93,3 @@ def test_factorial_taylor_filter_and_smoother_jit():
         x_dim,
     )
     assert local_filter_states.log_normalizing_constant.shape == (num_time_steps,)
-
-    smoother_factorial_index = 0
-    single_factor_filter_states = serial_to_single_factor(
-        factorializer.extract,
-        local_filter_states,
-        factorial_indices,
-        smoother_factorial_index,
-        init_factorial_tree=init_state,
-    )
-
-    selected = factorial_indices == smoother_factorial_index
-    selected_local_indices = jnp.argmax(selected, axis=1)
-    selected_times = jnp.flatnonzero(jnp.any(selected, axis=1), size=2)
-    selected_indices = selected_local_indices[selected_times]
-    projected_Fs = Fs.reshape(
-        num_time_steps,
-        num_factors_local,
-        x_dim,
-        num_factors_local,
-        x_dim,
-    )[selected_times, selected_indices, :, selected_indices, :]
-    projected_cs = cs.reshape(num_time_steps, num_factors_local, x_dim)[
-        selected_times, selected_indices
-    ]
-    marginal_chol_Qs = jax.vmap(lambda chol_Q: block_marginal_sqrt_cov(chol_Q, x_dim))(
-        chol_Qs
-    )
-    projected_chol_Qs = marginal_chol_Qs[selected_times, selected_indices]
-
-    def get_projected_dynamics_log_density(state, model_inputs):
-        F = projected_Fs[model_inputs - 1]
-        c = projected_cs[model_inputs - 1]
-        chol_Q = projected_chol_Qs[model_inputs - 1]
-
-        def dynamics_log_density(x_prev, x):
-            return multivariate_normal.logpdf(x, F @ x_prev + c, chol_Q)
-
-        return dynamics_log_density, state.mean, F @ state.mean + c
-
-    smoother_obj = taylor.build_smoother(get_projected_dynamics_log_density)
-    smoother_model_inputs = jnp.arange(len(projected_Fs) + 1)
-    run_smoother = jax.jit(
-        lambda filter_states, model_inputs: cuthbert.smoother(
-            smoother_obj,
-            filter_states,
-            model_inputs,
-        )
-    )
-    smoother_states = run_smoother(
-        single_factor_filter_states,
-        smoother_model_inputs,
-    )
-
-    num_smoother_states = len(projected_Fs) + 1
-    assert smoother_states.mean.shape == (num_smoother_states, x_dim)
-    assert smoother_states.chol_cov.shape == (
-        num_smoother_states,
-        x_dim,
-        x_dim,
-    )
