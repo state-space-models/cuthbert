@@ -1,6 +1,6 @@
 """Implements the non-associative linearized Taylor Kalman filter."""
 
-from jax import eval_shape, tree
+from jax import eval_shape, tree, vmap
 from jax import numpy as jnp
 
 from cuthbert.gaussian.taylor.types import (
@@ -89,13 +89,23 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_log_density, linearization_point = get_init_log_density(model_inputs)
 
-    _, m0, chol_P0 = linearize_log_density(
-        lambda _, x: init_log_density(x),
-        linearization_point,
-        linearization_point,
-        rtol=rtol,
-        ignore_nan_dims=ignore_nan_dims,
-    )
+    # Handle factorial axis if present
+    lin_point_dim = linearization_point.ndim
+    linearization_point = jnp.atleast_2d(linearization_point)
+
+    _, m0, chol_P0 = vmap(
+        lambda lp: linearize_log_density(
+            lambda _, x: init_log_density(x),
+            lp,
+            lp,
+            rtol=rtol,
+            ignore_nan_dims=ignore_nan_dims,
+        )
+    )(linearization_point)
+
+    if lin_point_dim == 1:
+        m0 = jnp.squeeze(m0, 0)
+        chol_P0 = jnp.squeeze(chol_P0, 0)
 
     prior_state = linearized_kalman_filter_state_dummy_elem(
         mean=m0,
@@ -128,7 +138,9 @@ def filter_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
     dummy_mean = dummy_tree_like(dummy_mean_struct)
-    dummy_chol_cov = dummy_tree_like(jnp.cov(dummy_mean[..., None]))
+    dummy_chol_cov = dummy_tree_like(
+        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+    )
 
     return linearized_kalman_filter_state_dummy_elem(
         mean=dummy_mean,

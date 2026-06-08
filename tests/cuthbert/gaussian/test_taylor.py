@@ -4,7 +4,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array
+from jax import Array, random
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import taylor
@@ -466,6 +466,52 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         (seq_ass_means, seq_ass_covs, seq_ass_ells),
         (par_ass_means, par_ass_covs, par_ass_ells),
         (des_means, des_covs, des_ells),
+        rtol=1e-5,
+        atol=1e-8,
+    )
+
+
+num_factors = [3, 10]
+common_params_factorial_init = list(itertools.product(seeds, x_dims, num_factors))
+
+
+@pytest.mark.parametrize("seed,x_dim,num_factors", common_params_factorial_init)
+def test_factorial_init(seed, x_dim, num_factors):
+    key = random.PRNGKey(seed)
+    mean_key, chol_cov_key, lin_p_key = random.split(key, 3)
+
+    m0 = random.normal(mean_key, shape=(x_dim,))
+    sqrt_P0 = random.normal(chol_cov_key, shape=(x_dim, x_dim))
+    P0 = sqrt_P0 @ sqrt_P0.T
+    chol_P0 = jnp.linalg.cholesky(P0)
+    lin_p = random.normal(lin_p_key, shape=(num_factors, x_dim))
+
+    def get_init_log_density(model_inputs):
+        def init_log_density(x):
+            return multivariate_normal.logpdf(x, m0, chol_P0)
+
+        return init_log_density, lin_p
+
+    init_state = taylor.non_associative_filter.init_prepare(None, get_init_log_density)
+    init_state_assoc = taylor.associative_filter.init_prepare(
+        None, get_init_log_density
+    )
+
+    factorial_mean = jnp.tile(m0[None], (num_factors, 1))
+    factorial_P0 = jnp.tile(P0[None], (num_factors, 1, 1))
+
+    chex.assert_trees_all_close(
+        (factorial_mean, factorial_P0, 0.0),
+        (
+            init_state.mean,
+            init_state.chol_cov @ init_state.chol_cov.transpose(0, 2, 1),
+            init_state.log_normalizing_constant,
+        ),
+        (
+            init_state_assoc.mean,
+            init_state_assoc.chol_cov @ init_state_assoc.chol_cov.transpose(0, 2, 1),
+            init_state_assoc.log_normalizing_constant,
+        ),
         rtol=1e-5,
         atol=1e-8,
     )
