@@ -62,15 +62,10 @@ def test_factorial_taylor_filter_jit():
     )
     filter_model_inputs = jnp.arange(num_time_steps + 1)
 
-    run_filter = jax.jit(
-        lambda model_inputs: factorial.filter(
-            filter_obj,
-            factorializer,
-            model_inputs,
-            output_factorial=False,
-        )
-    )
-    init_state, local_filter_states = run_filter(filter_model_inputs)
+    init_state, local_filter_states = jax.jit(
+        factorial.filter,
+        static_argnames=("filter_obj", "factorializer", "output_factorial"),
+    )(filter_obj, factorializer, filter_model_inputs, output_factorial=False)
 
     assert init_state.mean.shape == (num_factors, x_dim)
     assert init_state.chol_cov.shape == (num_factors, x_dim, x_dim)

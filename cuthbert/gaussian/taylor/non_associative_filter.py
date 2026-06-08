@@ -90,6 +90,7 @@ def init_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     init_log_density, linearization_point = get_init_log_density(model_inputs)
 
+    # Handle factorial axis if present
     linearization_shape = linearization_point.shape
     flat_linearization_point = linearization_point.reshape(-1)
 
