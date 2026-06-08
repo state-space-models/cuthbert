@@ -143,7 +143,7 @@ def build_filter(
 
 def infer_shape_from_init_log_density(
     model_inputs: ArrayTreeLike, get_init_log_density
-) -> tuple[int]:
+) -> tuple[int, ...]:
     """Infer latent shape from `get_init_log_density`'s lineatization point.
 
     Args:

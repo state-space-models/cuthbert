@@ -89,7 +89,7 @@ class GetObservationFunc(Protocol):
 class InferStateShape(Protocol):
     """Protocol for inferring the latent state shape from model_inputs."""
 
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[int]:
+    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[int, ...]:
         """Extract shape of latent state (e.g mean) from model_inputs.
 
         Args:
