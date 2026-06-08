@@ -29,19 +29,24 @@ I.e. the linearization points are pre-defined or extracted from model inputs.
 
 from functools import partial
 
+from jax import eval_shape
+
 from cuthbert.gaussian.taylor import associative_filter, non_associative_filter
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
     GetObservationFunc,
+    InferStateShape,
 )
 from cuthbert.inference import Filter
+from cuthbertlib.types import ArrayTreeLike
 
 
 def build_filter(
     get_init_log_density: GetInitLogDensity,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
+    infer_state_shape: InferStateShape | None = None,
     associative: bool = False,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
@@ -67,6 +72,10 @@ def build_filter(
             log density or log potential), linearization point and optional observation
             (not required for log potential functions).
             If `associative` is True, the `state` argument should be ignored.
+        infer_state_shape: Function to infer latent shape.
+            Used to infer shape of mean and chol_cov.
+            Defaults to extracting from the linearization point in `get_init_log_density`
+            using `jax.eval_shape`.
         associative: If True, then the filter is suitable for associative scan, but
             assumes that the `state` is ignored in `get_dynamics_log_density` and
             `get_observation_func`.
@@ -85,6 +94,11 @@ def build_filter(
     Returns:
         Linearized Taylor Kalman filter object.
     """
+    if infer_state_shape is None:
+        infer_state_shape = partial(
+            infer_shape_from_init_log_density, get_init_log_density=get_init_log_density
+        )
+
     if associative:
         return Filter(
             init_prepare=partial(
@@ -95,9 +109,9 @@ def build_filter(
             ),
             filter_prepare=partial(
                 associative_filter.filter_prepare,
-                get_init_log_density=get_init_log_density,
                 get_dynamics_log_density=get_dynamics_log_density,
                 get_observation_func=get_observation_func,
+                infer_state_shape=infer_state_shape,
                 rtol=rtol,
                 ignore_nan_dims=ignore_nan_dims,
             ),
@@ -114,7 +128,7 @@ def build_filter(
             ),
             filter_prepare=partial(
                 non_associative_filter.filter_prepare,
-                get_init_log_density=get_init_log_density,
+                infer_state_shape=infer_state_shape,
             ),
             filter_combine=partial(
                 non_associative_filter.filter_combine,
@@ -125,3 +139,20 @@ def build_filter(
             ),
             associative=False,
         )
+
+
+def infer_shape_from_init_log_density(
+    model_inputs: ArrayTreeLike, get_init_log_density
+) -> tuple[int]:
+    """Infer latent shape from `get_init_log_density`'s lineatization point.
+
+    Args:
+        model_inputs: Model inputs.
+        get_init_log_density: Function to get log density log p(x_0)
+            and linearization point.
+
+    Returns:
+        Tuple of integer dimensions. Typically (x_dim,)
+    """
+    dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
+    return dummy_mean_struct.shape

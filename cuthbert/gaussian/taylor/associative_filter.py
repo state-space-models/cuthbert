@@ -1,13 +1,14 @@
 """Implements the associative linearized Taylor Kalman filter."""
 
-from jax import eval_shape, tree
 from jax import numpy as jnp
+from jax import tree
 
 from cuthbert.gaussian.taylor import non_associative_filter
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
     GetInitLogDensity,
     GetObservationFunc,
+    InferStateShape,
 )
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
@@ -68,9 +69,9 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
+    infer_state_shape: InferStateShape,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
@@ -82,8 +83,6 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point. Only used to infer shape of mean and chol_cov.
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
             `associative_scan` only supported when `state` is ignored.
@@ -91,6 +90,8 @@ def filter_prepare(
             log density or log potential), linearization point and optional observation
             (not required for log potential functions).
             `associative_scan` only supported when `state` is ignored.
+        infer_state_shape: Function to infer latent shape.
+            Used to infer shape of mean and chol_cov.
         rtol: The relative tolerance for the singular values of precision matrices
             when passed to `symmetric_inv_sqrt` during linearization.
             Cutoff for small singular values; singular values smaller than
@@ -106,9 +107,9 @@ def filter_prepare(
         Prepared state for linearized Taylor Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
-    dummy_mean = dummy_tree_like(dummy_mean_struct)
-    dummy_chol_cov = dummy_tree_like(jnp.cov(dummy_mean[..., None]))
+    latent_shape = infer_state_shape(model_inputs)
+    dummy_mean = dummy_tree_like(jnp.empty(latent_shape))
+    dummy_chol_cov = dummy_tree_like(jnp.empty(latent_shape + latent_shape[-1:]))
 
     dummy_state = LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
