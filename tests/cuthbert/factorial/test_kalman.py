@@ -210,7 +210,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     fac_covs_t_all = jnp.stack(fac_covs_t_all)
 
     # Check output_factorial = False
-    init_state, local_filter_states = factorial.filter(
+    init_state, local_filter_states, final_state = factorial.filter(
         filter_obj, factorializer, model_inputs, output_factorial=False
     )
     local_filter_covs = (
@@ -227,6 +227,16 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
             local_filter_covs,
             local_filter_states.log_normalizing_constant,
         ),
+    )
+    chex.assert_trees_all_close(
+        (
+            final_state.mean,
+            final_state.chol_cov @ final_state.chol_cov.transpose(0, 2, 1),
+            final_state.log_normalizing_constant,
+        ),
+        (fac_means_t_all[-1], fac_covs_t_all[-1], ells[-1]),
+        rtol=1e-10,
+        atol=0.0,
     )
 
     # Check output_factorial = True
@@ -287,7 +297,7 @@ def test_smoother(
         smoother_factorial_index=smoother_factorial_index,
     )
 
-    init_state, local_filter_states = factorial.filter(
+    init_state, local_filter_states, _ = factorial.filter(
         filter_obj, factorializer, filter_model_inputs, output_factorial=False
     )
 

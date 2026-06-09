@@ -139,7 +139,7 @@ def test_factorial_smc_filter(
             output_factorial=True,
         ),
     )
-    _, kalman_local_states = factorial.filter(
+    _, kalman_local_states, _ = factorial.filter(
         kalman_filter, kalman_factorializer, kalman_model_inputs, output_factorial=False
     )
     kalman_covs = kalman_states.chol_cov @ kalman_states.chol_cov.transpose(0, 1, 3, 2)
@@ -157,7 +157,7 @@ def test_factorial_smc_filter(
             key=random.key(seed + 123),
         ),
     )
-    _, smc_local_states = factorial.filter(
+    _, smc_local_states, _ = factorial.filter(
         smc_filter,
         smc_factorializer,
         smc_model_inputs,

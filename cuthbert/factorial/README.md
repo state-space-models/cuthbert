@@ -82,8 +82,10 @@ You can also use `cuthbert.factorial.filter` for convenient offline filtering.
 Note that associative/parallel filtering is not supported for factorial filtering.
 
 ```python
-init_factorial_state, local_filter_states = cuthbert.factorial.filter(
-    kalman_filter, factorializer, model_inputs, output_factorial=False
+init_factorial_state, local_filter_states, final_factorial_state = (
+    cuthbert.factorial.filter(
+        kalman_filter, factorializer, model_inputs, output_factorial=False
+    )
 )
 ```
 
