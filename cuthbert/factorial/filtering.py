@@ -16,7 +16,7 @@ def filter(
     output_factorial: bool = False,
     key: KeyArray | None = None,
 ) -> (
-    ArrayTree | tuple[ArrayTree, ArrayTree]
+    ArrayTree | tuple[ArrayTree, ArrayTree, ArrayTree]
 ):  # TODO: Can overload this function so the type checker knows that the output is a ArrayTree if output_factorial is True and a tuple[ArrayTree, ArrayTree] if output_factorial is False
     """Applies offline factorial filtering for given model inputs.
 
@@ -40,10 +40,15 @@ def filter(
             with first dimension of length F and temporal dimension.
             The second being the local states for each time step, i.e. first
             dimension of length T and no factorial dimension.
+            The third being the final factorial state.
         key: The key for the random number generator.
 
     Returns:
-        The filtered states (NamedTuple with leading temporal dimension of length T + 1).
+        If output_factorial is True, returns a single state with first temporal dimension
+            of length T + 1 and second factorial dimension of length F.
+        If output_factorial is False, returns a tuple of
+            (initial factorial state, local states for each time step,
+            final factorial state).
     """
     T = tree.leaves(model_inputs)[0].shape[0] - 1
 
@@ -105,9 +110,9 @@ def filter(
         return factorial_states
 
     else:
-        _, local_states = scan(
+        final_factorial_state, local_states = scan(
             body_local,
             init_factorial_state,
             (prep_model_inputs, prepare_keys[1:]),
         )
-        return init_factorial_state, local_states
+        return init_factorial_state, local_states, final_factorial_state
