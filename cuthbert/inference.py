@@ -11,6 +11,7 @@ class InitPrepare(Protocol):
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
+        *,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Prepare the initial state for the inference.
@@ -34,6 +35,7 @@ class FilterPrepare(Protocol):
     def __call__(
         self,
         model_inputs: ArrayTreeLike,
+        *,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Prepare the state for the filter at the next time point.
@@ -87,6 +89,7 @@ class SmootherPrepare(Protocol):
         self,
         filter_state: ArrayTreeLike,
         model_inputs: ArrayTreeLike,
+        *,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Prepare the state for the smoother at the next time point.
@@ -155,6 +158,7 @@ class ConvertFilterToSmootherState(Protocol):
         self,
         filter_state: ArrayTreeLike,
         model_inputs: ArrayTreeLike | None = None,
+        *,
         key: KeyArray | None = None,
     ) -> ArrayTree:
         """Convert the filter state to a smoother state.

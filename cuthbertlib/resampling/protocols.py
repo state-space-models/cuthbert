@@ -1,3 +1,6 @@
+# ty: ignore[invalid-return-type]
+# f-strings are not supported docstrings and ty is confused about this
+# See https://github.com/state-space-models/cuthbert/issues/261
 """Shared protocols for resampling algorithms."""
 
 from typing import Protocol, runtime_checkable

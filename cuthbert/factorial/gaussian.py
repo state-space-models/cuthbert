@@ -1,3 +1,6 @@
+# ty: ignore[invalid-return-type, unknown-argument]
+# ty cannot unify NamedTuple `_replace`/`Self` with the constrained `KalmanState`
+# TypeVar; the proper fix would be @overload instead of the TypeVar.
 """Factorial utilities for Kalman states."""
 
 from typing import TypeVar
@@ -66,7 +69,7 @@ def extract(factorial_state: KalmanState, factorial_inds: ArrayLike) -> KalmanSt
     new_elem = tree.map(lambda x: _extract_arr(x, factorial_inds), factorial_state.elem)
     new_state = factorial_state._replace(elem=new_elem)
 
-    if isinstance(factorial_state, LinearizedKalmanFilterState):
+    if isinstance(new_state, LinearizedKalmanFilterState):
         new_mean_prev = _extract_arr(factorial_state.mean_prev, factorial_inds)
         new_state = new_state._replace(mean_prev=new_mean_prev)
 

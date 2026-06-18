@@ -70,8 +70,9 @@ def build_smoother(
 
 def smoother_prepare(
     filter_state: LinearizedKalmanFilterState,
-    get_dynamics_params: GetDynamicsMoments,
     model_inputs: ArrayTreeLike,
+    *,
+    get_dynamics_params: GetDynamicsMoments,
     store_gain: bool = False,
     store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,

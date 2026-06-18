@@ -63,14 +63,14 @@ def linearize_moments(
         - [sqrt-parallel-smoothers](https://github.com/EEA-sensors/sqrt-parallel-smoothers/blob/main/parsmooth/linearization/_extended.py)
     """
     if has_aux:
-        mean_and_chol_cov_function = cast(
+        mean_and_chol_cov_function_with_aux = cast(
             MeanAndCholCovFuncAux, mean_and_chol_cov_function
         )
 
         def mean_and_chol_cov_function_wrapper_aux(
             x: ArrayLike,
         ) -> tuple[Array, tuple[Array, Array, ArrayTree]]:
-            mean, chol_cov, aux = mean_and_chol_cov_function(x)
+            mean, chol_cov, aux = mean_and_chol_cov_function_with_aux(x)
             return mean, (mean, chol_cov, aux)
 
         F, (m, *extra) = jax.jacfwd(

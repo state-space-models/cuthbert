@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
     "chex",
-    "pre-commit", "ruff", "pyright",
+    "pre-commit", "ruff", "ty",
     "pytest", "pytest-xdist",
     "entangled-cli; python_version >= '3.12'",
 ]

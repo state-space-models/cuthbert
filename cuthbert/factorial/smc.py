@@ -1,3 +1,7 @@
+# ty: ignore[invalid-return-type, unknown-argument]
+# ty cannot unify NamedTuple `_replace`/`Self` with the constrained
+# `GeneralParticleFilterState` TypeVar; the proper fix would be @overload
+# instead of the TypeVar.
 """Factorial utilities for SMC particle-filter states."""
 
 from typing import TypeVar

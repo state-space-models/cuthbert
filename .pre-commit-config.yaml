@@ -8,19 +8,8 @@ repos:
       args: [ --extend-select, I, --fix ]
     # Run the formatter.
     - id: ruff-format
-- repo: https://github.com/RobertCraigie/pyright-python
-  rev: v1.1.405
+- repo: https://github.com/astral-sh/ty-pre-commit
+  # ty version.
+  rev: v0.0.50
   hooks:
-  - id: pyright
-    additional_dependencies: [jax>=0.4.35, numba>=0.60.0]
-    exclude: ^tests/
-    # Change this to automatically get from pyproject.toml or a requirements.txt?
-    # Seemingly there are good reasons why pre-commit cannot do this https://github.com/pre-commit/pre-commit/issues/730
-    # So we have to duplicate the dependencies here, but suggestions are welcome on how to improve this pyright integration!
-
-
-
-
-
-
-
+    - id: ty

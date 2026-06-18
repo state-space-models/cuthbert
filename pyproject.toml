@@ -18,6 +18,9 @@ extend-select = ["D"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ty.src]
+exclude = ["tests"]
+
 [tool.pytest]
 [tool.pytest.ini_options]
 markers = "examples: Run tangled example scripts as tests"

@@ -53,8 +53,9 @@ def build_smoother(get_trans_matrix: GetTransitionMatrix) -> Smoother:
 
 def smoother_prepare(
     filter_state: DiscreteFilterState,
-    get_trans_matrix: GetTransitionMatrix,
     model_inputs: ArrayTreeLike,
+    *,
+    get_trans_matrix: GetTransitionMatrix,
     key: KeyArray | None = None,
 ) -> DiscreteSmootherState:
     """Prepare a state for a smoother step.

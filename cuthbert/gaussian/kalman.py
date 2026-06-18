@@ -211,8 +211,9 @@ def filter_combine(
 
 def smoother_prepare(
     filter_state: KalmanFilterState,
-    get_dynamics_params: GetDynamicsParams,
     model_inputs: ArrayTreeLike,
+    *,
+    get_dynamics_params: GetDynamicsParams,
     store_gain: bool = False,
     store_chol_cov_given_next: bool = False,
     key: KeyArray | None = None,

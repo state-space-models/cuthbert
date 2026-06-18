@@ -74,9 +74,10 @@ def build_smoother(
 
 def convert_filter_to_smoother_state(
     filter_state: ParticleFilterState,
+    model_inputs: ArrayTreeLike | None = None,
+    *,
     resampling: Resampling,
     n_smoother_particles: int,
-    model_inputs: ArrayTreeLike | None = None,
     key: KeyArray | None = None,
 ) -> ParticleSmootherState:
     """Convert a particle filter state to a particle smoother state.

@@ -97,8 +97,9 @@ def build_smoother(
 
 def smoother_prepare(
     filter_state: LinearizedKalmanFilterState,
-    get_dynamics_log_density: GetDynamicsLogDensity,
     model_inputs: ArrayTreeLike,
+    *,
+    get_dynamics_log_density: GetDynamicsLogDensity,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
     store_gain: bool = False,
