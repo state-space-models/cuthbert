@@ -13,6 +13,7 @@ def filter(
     filter_obj: Filter,
     factorializer: Factorializer,
     model_inputs: ArrayTreeLike,
+    init_state: ArrayTreeLike | None = None,
     output_factorial: bool = False,
     key: KeyArray | None = None,
 ) -> (
@@ -20,7 +21,8 @@ def filter(
 ):  # TODO: Can overload this function so the type checker knows that the output is an ArrayTree if output_factorial is True and a tuple[ArrayTree, ArrayTree, ArrayTree] if output_factorial is False
     """Applies offline factorial filtering for given model inputs.
 
-    `model_inputs` should have leading temporal dimension of length T + 1,
+    `model_inputs` should have leading temporal dimension of
+    length T if `init_state` is provided, or T + 1 if `init_state` is not provided,
     where T is the number of time steps excluding the initial state.
 
     Parallel associative filtering is not supported for factorial filtering.
@@ -34,6 +36,9 @@ def filter(
         filter_obj: The filter inference object.
         factorializer: The factorializer object for the inference method.
         model_inputs: The model inputs (with leading temporal dimension of length T + 1).
+        init_state: The initial state for the filter. If not provided,
+            `filter_obj.init_prepare` will be called on the first `model_inputs` to
+            generate the initial state.
         output_factorial: If True, return a single state with first temporal dimension
             of length T + 1 and second factorial dimension of length F.
             If False, return a tuple of states. The first being the initial state
@@ -51,7 +56,8 @@ def filter(
             (initial factorial state, local states for each time step,
             final factorial state).
     """
-    T = tree.leaves(model_inputs)[0].shape[0] - 1
+    len_model_inputs = tree.leaves(model_inputs)[0].shape[0]
+    T = len_model_inputs if init_state else len_model_inputs - 1
 
     if key is None:
         # This will throw error if used as a key, which is desired behavior
@@ -60,15 +66,19 @@ def filter(
     else:
         prepare_keys = random.split(key, T + 1)
 
-    init_model_input = tree.map(lambda x: x[0], model_inputs)
-    init_factorial_state = filter_obj.init_prepare(
-        init_model_input, key=prepare_keys[0]
-    )
-    init_factorial_state = factorializer.factorialize_init_state(
-        init_factorial_state, init_model_input
-    )
+    if init_state:
+        init_factorial_state = init_state
+        prep_model_inputs = model_inputs
+    else:
+        init_model_input = tree.map(lambda x: x[0], model_inputs)
+        init_factorial_state = filter_obj.init_prepare(
+            init_model_input, key=prepare_keys[0]
+        )
+        init_factorial_state = factorializer.factorialize_init_state(
+            init_factorial_state, init_model_input
+        )
 
-    prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
+        prep_model_inputs = tree.map(lambda x: x[1:], model_inputs)
 
     def body_local(prev_factorial_state, prep_inp_and_k):
         prep_inp, k = prep_inp_and_k

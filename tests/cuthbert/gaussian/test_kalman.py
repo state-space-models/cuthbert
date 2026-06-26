@@ -4,7 +4,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array, vmap
+from jax import Array, tree, vmap
 
 from cuthbert import filter, smoother
 from cuthbert.gaussian import kalman
@@ -119,21 +119,20 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
+    def states_to_mean_cov_ell(states):
+        return (
+            states.mean,
+            states.chol_cov @ states.chol_cov.transpose(0, 2, 1),
+            states.log_normalizing_constant,
+        )
+
     # Run sequential sqrt filter
     seq_states = filter(kalman_filter, model_inputs, parallel=False)
-    seq_means, seq_chol_covs, seq_ells = (
-        seq_states.mean,
-        seq_states.chol_cov,
-        seq_states.log_normalizing_constant,
-    )
+    seq_means, seq_covs, seq_ells = states_to_mean_cov_ell(seq_states)
 
     # Run parallel sqrt filter
     par_states = filter(kalman_filter, model_inputs, parallel=True)
-    par_means, par_chol_covs, par_ells = (
-        par_states.mean,
-        par_states.chol_cov,
-        par_states.log_normalizing_constant,
-    )
+    par_means, par_covs, par_ells = states_to_mean_cov_ell(par_states)
 
     # Run the standard Kalman filter.
     P0 = chol_P0 @ chol_P0.T
@@ -143,11 +142,26 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
     )
 
-    seq_covs = seq_chol_covs @ seq_chol_covs.transpose(0, 2, 1)
-    par_covs = par_chol_covs @ par_chol_covs.transpose(0, 2, 1)
     chex.assert_trees_all_close(
         (seq_means, seq_covs, seq_ells),
         (par_means, par_covs, par_ells),
+        (des_means, des_covs, des_ells),
+        rtol=1e-10,
+    )
+
+    # Test filter with init_state provided
+    init_model_inputs = tree.map(lambda x: x[0], model_inputs)
+    other_model_inputs = tree.map(lambda x: x[1:], model_inputs)
+    init_state = kalman_filter.init_prepare(init_model_inputs)
+    seq_states_init_given = filter(
+        kalman_filter, other_model_inputs, init_state=init_state, parallel=False
+    )
+    par_states_init_given = filter(
+        kalman_filter, other_model_inputs, init_state=init_state, parallel=True
+    )
+    chex.assert_trees_all_close(
+        states_to_mean_cov_ell(seq_states_init_given),
+        states_to_mean_cov_ell(par_states_init_given),
         (des_means, des_covs, des_ells),
         rtol=1e-10,
     )

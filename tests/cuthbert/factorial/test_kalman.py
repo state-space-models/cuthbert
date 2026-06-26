@@ -1,5 +1,4 @@
 import itertools
-from typing import cast
 
 import chex
 import jax
@@ -14,7 +13,6 @@ from cuthbert.factorial.utils import serial_to_single_factor
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.linalg import block_marginal_sqrt_cov
-from cuthbertlib.types import ArrayTree
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbertlib.kalman.test_filtering import std_predict, std_update
 from tests.cuthbertlib.kalman.test_smoothing import std_kalman_smoother
@@ -244,7 +242,6 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
         filter_obj, factorializer, model_inputs, output_factorial=True
     )
 
-    factorial_filtering_states = cast(ArrayTree, factorial_filtering_states)
     factorial_filtering_covs = (
         factorial_filtering_states.chol_cov
         @ factorial_filtering_states.chol_cov.transpose(0, 1, 3, 2)
@@ -255,6 +252,46 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     )
     chex.assert_trees_all_close(
         ells, factorial_filtering_states.log_normalizing_constant[1:]
+    )
+
+    # Check with init_state provided
+    init_model_inputs = tree.map(lambda x: x[0], model_inputs)
+    other_model_inputs = tree.map(lambda x: x[1:], model_inputs)
+    init_state_init_prepare = filter_obj.init_prepare(init_model_inputs)
+    init_state_init_given, local_filter_states_init_given, final_state_init_given = (
+        factorial.filter(
+            filter_obj, factorializer, other_model_inputs, init_state=init_state
+        )
+    )
+    # Check init_state unchanged
+    chex.assert_trees_all_close(
+        init_state_init_prepare, init_state_init_given, init_state, rtol=1e-10
+    )
+    # Check local_filter_states unchanged
+    chex.assert_trees_all_close(
+        (local_means, local_covs, ells),
+        (
+            local_filter_states_init_given.mean,
+            local_filter_states_init_given.chol_cov
+            @ local_filter_states_init_given.chol_cov.transpose(0, 1, 3, 2),
+            local_filter_states_init_given.log_normalizing_constant,
+        ),
+        rtol=1e-10,
+    )
+    # Check final_state unchanged
+    chex.assert_trees_all_close(
+        (
+            final_state.mean,
+            final_state.chol_cov @ final_state.chol_cov.transpose(0, 2, 1),
+            final_state.log_normalizing_constant,
+        ),
+        (
+            final_state_init_given.mean,
+            final_state_init_given.chol_cov
+            @ final_state_init_given.chol_cov.transpose(0, 2, 1),
+            final_state_init_given.log_normalizing_constant,
+        ),
+        rtol=1e-10,
     )
 
 
