@@ -35,10 +35,10 @@ def filter(
     Args:
         filter_obj: The filter inference object.
         factorializer: The factorializer object for the inference method.
-        model_inputs: The model inputs (with leading temporal dimension of length T + 1).
-        init_state: The initial state for the filter. If not provided,
-            `filter_obj.init_prepare` will be called on the first `model_inputs` to
-            generate the initial state.
+        model_inputs: The model inputs (with leading temporal dimension of length T if init_state is provided, or T + 1 otherwise).
+        init_state: The initial factorial state for the filter. If not provided,
+            `filter_obj.init_prepare` will be called on the first `model_inputs` and then
+            passed through `factorializer.factorialize_init_state` to generate the initial state.
         output_factorial: If True, return a single state with first temporal dimension
             of length T + 1 and second factorial dimension of length F.
             If False, return a tuple of states. The first being the initial state
@@ -57,7 +57,7 @@ def filter(
             final factorial state).
     """
     len_model_inputs = tree.leaves(model_inputs)[0].shape[0]
-    T = len_model_inputs if init_state else len_model_inputs - 1
+    T = len_model_inputs if init_state is not None else len_model_inputs - 1
 
     if key is None:
         # This will throw error if used as a key, which is desired behavior
@@ -66,7 +66,7 @@ def filter(
     else:
         prepare_keys = random.split(key, T + 1)
 
-    if init_state:
+    if init_state is not None:
         init_factorial_state = init_state
         prep_model_inputs = model_inputs
     else:

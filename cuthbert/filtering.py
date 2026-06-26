@@ -28,7 +28,7 @@ def filter(
 
     Args:
         filter_obj: The filter inference object.
-        model_inputs: The model inputs (with leading temporal dimension of length T + 1).
+        model_inputs: The model inputs (with leading temporal dimension of length T if init_state is provided, or T + 1 otherwise).
         init_state: The initial state for the filter. If not provided,
             `filter_obj.init_prepare` will be called on the first `model_inputs` to
             generate the initial state.
@@ -38,7 +38,7 @@ def filter(
 
     Returns:
         The filtered states (NamedTuple with leading temporal dimension of length T + 1).
-        `init_state` is include as the first element of the output.
+        `init_state` is included as the first element of the output.
     """
     if parallel and not filter_obj.associative:
         warnings.warn(
@@ -46,7 +46,7 @@ def filter(
         )
 
     len_model_inputs = tree.leaves(model_inputs)[0].shape[0]
-    T = len_model_inputs if init_state else len_model_inputs - 1
+    T = len_model_inputs if init_state is not None else len_model_inputs - 1
 
     if key is None:
         # This will throw error if used as a key, which is desired behavior
@@ -55,7 +55,7 @@ def filter(
     else:
         prepare_keys = random.split(key, T + 1)
 
-    if init_state:
+    if init_state is not None:
         prep_model_inputs = model_inputs
     else:
         init_model_input = tree.map(lambda x: x[0], model_inputs)
