@@ -13,6 +13,7 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 def filter(
     filter_obj: Filter,
     model_inputs: ArrayTreeLike,
+    *,
     init_state: ArrayTreeLike | None = None,
     parallel: bool = False,
     key: KeyArray | None = None,

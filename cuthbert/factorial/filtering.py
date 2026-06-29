@@ -13,6 +13,7 @@ def filter(
     filter_obj: Filter,
     factorializer: Factorializer,
     model_inputs: ArrayTreeLike,
+    *,
     init_state: ArrayTreeLike | None = None,
     output_factorial: bool = False,
     key: KeyArray | None = None,
