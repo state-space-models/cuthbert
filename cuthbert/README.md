@@ -10,7 +10,8 @@ from jax import tree
 import cuthbert
 
 # Define model_inputs
-model_inputs = ...
+init_model_inputs = ...
+filtering_model_inputs = ...
 
 # Load inference method
 kalman_filter = cuthbert.gaussian.kalman.build_filter(
@@ -20,10 +21,10 @@ kalman_filter = cuthbert.gaussian.kalman.build_filter(
 )   # build_filter function takes all inference-specific arguments, swap this out for different inference methods.
 
 # Online inference
-state = kalman_filter.init_prepare(tree.map(lambda x: x[0], model_inputs))
+state = kalman_filter.init_prepare(init_model_inputs)
 
-for t in range(1, T):
-    model_inputs_t = tree.map(lambda x: x[t], model_inputs)
+for t in range(T):
+    model_inputs_t = tree.map(lambda x: x[t], filtering_model_inputs)
     prepare_state = kalman_filter.filter_prepare(model_inputs_t)
     state = kalman_filter.filter_combine(state, prepare_state)
 ```
@@ -33,7 +34,8 @@ Or for offline inference:
 ```python
 kalman_smoother = cuthbert.gaussian.kalman.build_smoother(get_dynamics_params)
 
-filter_states = cuthbert.filter(kalman_filter, model_inputs)
+init_state = kalman_filter.init_prepare(init_model_inputs)
+filter_states = cuthbert.filter(kalman_filter, filtering_model_inputs, init_state)
 smoother_states = cuthbert.smoother(kalman_smoother, filter_states, model_inputs)
 ```
 <!-- --8<-- [end:unified_interface] -->
