@@ -47,7 +47,8 @@ from jax import tree
 import cuthbert
 
 # Define model_inputs
-model_inputs = ...
+init_model_inputs = ...
+filter_model_inputs = ...
 
 # Define function to extract the factorial indices from model inputs
 # Here we assume model_inputs is a NamedTuple with a field `factorial_inds`
@@ -64,12 +65,11 @@ kalman_filter = cuthbert.gaussian.kalman.build_filter(
 )
 
 # Online inference
-init_model_inputs = tree.map(lambda x: x[0], model_inputs)
 factorial_state = kalman_filter.init_prepare(init_model_inputs)
 factorial_state = factorializer.factorialize_init_state(factorial_state, init_model_inputs)
 
-for t in range(1, T):
-    model_inputs_t = tree.map(lambda x: x[t], model_inputs)
+for t in range(T):
+    model_inputs_t = tree.map(lambda x: x[t], filter_model_inputs)
     local_state = factorializer.extract_and_join(prev_factorial_state, model_inputs_t)
     prepare_state = kalman_filter.filter_prepare(model_inputs_t)
     local_joint_filtered_state = kalman_filter.filter_combine(local_state, prepare_state)
@@ -82,9 +82,12 @@ You can also use `cuthbert.factorial.filter` for convenient offline filtering.
 Note that associative/parallel filtering is not supported for factorial filtering.
 
 ```python
-init_factorial_state, local_filter_states, final_factorial_state = (
+init_factorial_state = kalman_filter.init_prepare(init_model_inputs)
+init_factorial_state = factorializer.factorialize_init_state(init_factorial_state, init_model_inputs)
+
+local_filter_states, final_factorial_state = (
     cuthbert.factorial.filter(
-        kalman_filter, factorializer, model_inputs, output_factorial=False
+        kalman_filter, factorializer, init_factorial_state, filter_model_inputs, output_factorial=False
     )
 )
 ```
