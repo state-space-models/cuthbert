@@ -11,7 +11,7 @@ from typing import NamedTuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from jax import Array, vmap
+from jax import Array, tree, vmap
 from jax import numpy as jnp
 from jax.nn import sigmoid
 from jax.scipy.stats import norm
@@ -266,7 +266,10 @@ football_filter = taylor.build_filter(
 We'll use [`cuthbert.filter`][cuthbert.filtering.filter] to easily run offline filtering on our data.
 
 ```{.python #quickstart-run-filter}
-filter_states = filter(football_filter, match_data)
+init_match_data = tree.map(lambda x: x[0], match_data)
+filter_match_data = tree.map(lambda x: x[1:], match_data)
+init_state = football_filter.init_prepare(init_match_data)
+filter_states = filter(football_filter, filter_match_data, init_state)
 ```
 
 That was easy wasn't it?

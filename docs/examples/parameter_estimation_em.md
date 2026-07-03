@@ -298,7 +298,8 @@ n_epochs = 30
 
 for epoch in range(n_epochs):
     filter_obj, smoother_obj = model_factory(params)
-    filtered_states = filter(filter_obj, model_inputs)
+    init_state = filter_obj.init_prepare(model_inputs[0])
+    filtered_states = filter(filter_obj, model_inputs[1:], init_state)
     log_marginal_likelihood_track.append(filtered_states.log_normalizing_constant[-1])
     smoother_states = smoother(smoother_obj, filtered_states)
 

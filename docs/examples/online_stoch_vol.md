@@ -211,8 +211,11 @@ We'll then use the `cuthbert.filter` offline filtering function to run on the pr
 data.
 
 ```{.python #online-stoch-vol-particle-filter-run-previous}
-key, previous_key = random.split(random.key(0))
-previous_states = filter(pf, previous_data, key=key)
+key, init_key, previous_key = random.split(random.key(0), 3)
+init_data = tree.map(lambda x: x[0], previous_data)
+filter_data = tree.map(lambda x: x[1:], previous_data)
+init_state = pf.init_prepare(init_data, key=init_key)
+previous_states = filter(pf, filter_data, init_state, key=previous_key)
 filter_state = tree.map(lambda x: x[-1], previous_states)
 ```
 

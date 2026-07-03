@@ -67,15 +67,17 @@ sequential and parallel implementations.
 
 ```{.python #parallel-kalman-compiletime}
 jitted_filter = jax.jit(filter, static_argnames=("filter_obj", "parallel"))
+init_state = filter_obj.init_prepare(model_inputs[0])
+filter_model_inputs = model_inputs[1:]
 
 seq_compile_time = timeit.Timer(
     lambda: jax.block_until_ready(
-        jitted_filter(filter_obj, model_inputs, parallel=False)
+        jitted_filter(filter_obj, filter_model_inputs, init_state, parallel=False)
     )
 ).timeit(number=1)
 par_compile_time = timeit.Timer(
     lambda: jax.block_until_ready(
-        jitted_filter(filter_obj, model_inputs, parallel=True)
+        jitted_filter(filter_obj, filter_model_inputs, init_state, parallel=True)
     )
 ).timeit(number=1)
 ```
@@ -88,12 +90,12 @@ num_runs = 10
 
 seq_runtimes = timeit.Timer(
     lambda: jax.block_until_ready(
-        jitted_filter(filter_obj, model_inputs, parallel=False)
+        jitted_filter(filter_obj, filter_model_inputs, init_state, parallel=False)
     )
 ).repeat(repeat=num_runs, number=1)
 par_runtimes = timeit.Timer(
     lambda: jax.block_until_ready(
-        jitted_filter(filter_obj, model_inputs, parallel=True)
+        jitted_filter(filter_obj, filter_model_inputs, init_state, parallel=True)
     )
 ).repeat(repeat=num_runs, number=1)
 

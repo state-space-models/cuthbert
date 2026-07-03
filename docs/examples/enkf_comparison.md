@@ -164,14 +164,16 @@ ekf = taylor.build_filter(
 )
 
 jitted_filter = jit(run_filter, static_argnames=["filter_obj"])
+filter_model_inputs = model_inputs[1:]
 
 n_timing = 20
-ekf_states = jitted_filter(ekf, model_inputs)  # warm up
+ekf_init_state = ekf.init_prepare(model_inputs[0])
+ekf_states = jitted_filter(ekf, filter_model_inputs, ekf_init_state)  # warm up
 jax.block_until_ready(ekf_states)
 _times = []
 for _ in range(n_timing):
     _t0 = time.perf_counter()
-    jax.block_until_ready(jitted_filter(ekf, model_inputs))
+    jax.block_until_ready(jitted_filter(ekf, filter_model_inputs, ekf_init_state))
     _times.append(time.perf_counter() - _t0)
 ekf_time = float(jnp.median(jnp.array(_times)))
 
@@ -194,13 +196,18 @@ enkf = ensemble_kalman_filter.build_filter(
     perturbed_obs=True,
 )
 
-key, enkf_key = random.split(key)
-enkf_states = jitted_filter(enkf, model_inputs, key=enkf_key)  # warm up
+key, enkf_init_key, enkf_filter_key = random.split(key, 3)
+enkf_init_state = enkf.init_prepare(model_inputs[0], key=enkf_init_key)
+enkf_states = jitted_filter(
+    enkf, filter_model_inputs, enkf_init_state, key=enkf_filter_key
+)  # warm up
 jax.block_until_ready(enkf_states)
 _times = []
 for _ in range(n_timing):
     _t0 = time.perf_counter()
-    jax.block_until_ready(jitted_filter(enkf, model_inputs, key=enkf_key))
+    jax.block_until_ready(
+        jitted_filter(enkf, filter_model_inputs, enkf_init_state, key=enkf_filter_key)
+    )
     _times.append(time.perf_counter() - _t0)
 enkf_time = float(jnp.median(jnp.array(_times)))
 
@@ -225,13 +232,18 @@ pf = particle_filter.build_filter(
     resampling_fn=adaptive_systematic,
 )
 
-key, pf_key = random.split(key)
-pf_states = jitted_filter(pf, model_inputs, key=pf_key)  # warm up
+key, pf_init_key, pf_filter_key = random.split(key, 3)
+pf_init_state = pf.init_prepare(model_inputs[0], key=pf_init_key)
+pf_states = jitted_filter(
+    pf, filter_model_inputs, pf_init_state, key=pf_filter_key
+)  # warm up
 jax.block_until_ready(pf_states)
 _times = []
 for _ in range(n_timing):
     _t0 = time.perf_counter()
-    jax.block_until_ready(jitted_filter(pf, model_inputs, key=pf_key))
+    jax.block_until_ready(
+        jitted_filter(pf, filter_model_inputs, pf_init_state, key=pf_filter_key)
+    )
     _times.append(time.perf_counter() - _t0)
 pf_time = float(jnp.median(jnp.array(_times)))
 

@@ -142,7 +142,8 @@ function with our constructed filter object and model inputs:
 
 ```{.python #kalman-run-filter}
 # Run the filter
-filtered_states = filter(filter_obj, model_inputs, parallel=True)
+init_state = filter_obj.init_prepare(model_inputs[0])
+filtered_states = filter(filter_obj, model_inputs[1:], init_state, parallel=True)
 
 # Extract results
 means = filtered_states.mean  # Posterior state means
@@ -165,7 +166,9 @@ log_normalizing_constant = filtered_states.log_normalizing_constant  # Log margi
 
     ```{.python #kalman-jit-example}
     jitted_filter = jit(filter, static_argnames=['filter_obj', 'parallel'])
-    filtered_states = jitted_filter(filter_obj, model_inputs, parallel=True)
+    filtered_states = jitted_filter(
+        filter_obj, model_inputs[1:], init_state, parallel=True
+    )
     ```
 
 ### Visualize the results
@@ -213,7 +216,10 @@ car's position.
     )
 
     # Run filtering - cuthbert handles NaNs automatically
-    filtered_states_missing = filter(filter_obj_missing, model_inputs_missing)
+    init_state_missing = filter_obj_missing.init_prepare(model_inputs_missing[0])
+    filtered_states_missing = filter(
+        filter_obj_missing, model_inputs_missing[1:], init_state_missing
+    )
 
     print("Successfully handled missing observations!")
     print("Missing observation period: steps 20-30 during the car's turn")

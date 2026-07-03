@@ -171,7 +171,8 @@ Now we can run the `cuthbert` Kalman filter to obtain the filtering distribution
 
 ```{.python #dynamax-run-filter}
 # Run Kalman filtering
-filtered_states = cuthbert.filter(filter_obj, model_inputs)
+init_state = filter_obj.init_prepare(model_inputs[0])
+filtered_states = cuthbert.filter(filter_obj, model_inputs[1:], init_state)
 
 # Extract filtering results - remove initial time step
 filtered_means = filtered_states.mean[1:]
@@ -327,4 +328,3 @@ filters.
 <<dynamax-visualize>>
 ```
 -->
-

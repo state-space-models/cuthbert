@@ -123,7 +123,8 @@ def kalman_mll(theta, ys, *, m0, chol_P0):
 
     kf = kalman.build_filter(get_init_params, get_dynamics_params, get_observation_params)
     model_inputs = jnp.arange(ys.shape[0] + 1)
-    states = run_filter(kf, model_inputs, parallel=False)
+    init_state = kf.init_prepare(model_inputs[0])
+    states = run_filter(kf, model_inputs[1:], init_state, parallel=False)
     return states.log_normalizing_constant[-1]
 
 
@@ -196,7 +197,11 @@ def pf_mll(
     )
 
     model_inputs = jnp.arange(ys.shape[0] + 1)
-    states = run_filter(filt, model_inputs, parallel=False, key=key)
+    init_key, filter_key = jax.random.split(key)
+    init_state = filt.init_prepare(model_inputs[0], key=init_key)
+    states = run_filter(
+        filt, model_inputs[1:], init_state, parallel=False, key=filter_key
+    )
     return states.log_normalizing_constant[-1]
 
 
@@ -536,7 +541,11 @@ Finally, we should be sure that the forward pass is not actually being modified 
         )
 
         model_inputs = jnp.arange(ys.shape[0] + 1)
-        states = run_filter(filt, model_inputs, parallel=False, key=key)
+        init_key, filter_key = jax.random.split(key)
+        init_state = filt.init_prepare(model_inputs[0], key=init_key)
+        states = run_filter(
+            filt, model_inputs[1:], init_state, parallel=False, key=filter_key
+        )
         return states.particles[-1]
 
 
