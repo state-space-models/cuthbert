@@ -160,8 +160,9 @@ def test_factorial_discrete_filter(
     )
 
     # output_factorial=False
-    init_state, local_filter_states, final_state = factorial.filter(
-        filter_obj, factorializer, model_inputs, output_factorial=False
+    init_state = filter_obj.init_prepare(model_inputs[0])
+    local_filter_states, final_state = factorial.filter(
+        filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=False
     )
     chex.assert_trees_all_close(init_state.dist, model_params[0], rtol=1e-10, atol=0.0)
     chex.assert_trees_all_close(
@@ -180,7 +181,7 @@ def test_factorial_discrete_filter(
 
     # output_factorial=True
     factorial_states = factorial.filter(
-        filter_obj, factorializer, model_inputs, output_factorial=True
+        filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=True
     )
     chex.assert_trees_all_close(
         factorial_states.dist, factorial_dists_ref, rtol=1e-10, atol=0.0

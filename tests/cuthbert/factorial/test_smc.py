@@ -1,17 +1,16 @@
-from typing import NamedTuple, cast
+from typing import NamedTuple
 
 import chex
 import jax
 import jax.numpy as jnp
 import pytest
-from jax import Array, random
+from jax import Array, random, tree
 
 from cuthbert import factorial
 from cuthbert.inference import Filter
 from cuthbert.smc.particle_filter import ParticleFilterState, build_filter
 from cuthbertlib.resampling import no_resampling, systematic
 from cuthbertlib.stats.multivariate_normal import logpdf
-from cuthbertlib.types import ArrayTree
 from tests.cuthbert.factorial.gaussian_utils import generate_factorial_kalman_model
 from tests.cuthbert.factorial.test_kalman import build_pairwise_factorial_filter
 
@@ -81,7 +80,7 @@ def weighted_mean_and_var(states: ParticleFilterState) -> tuple[Array, Array]:
     return mean, var
 
 
-params = [(0, 8, 2, 8, 3000), (1, 8, 2, 8, 3000)]
+params = [(0, 8, 2, 8, 10000), (1, 8, 2, 8, 10000)]
 
 
 def test_factorial_smc_scalar_particle_leaf():
@@ -130,39 +129,52 @@ def test_factorial_smc_filter(
     kalman_filter, kalman_factorializer, kalman_model_inputs = (
         build_pairwise_factorial_filter(model_params)
     )
-    kalman_states = cast(
-        ArrayTree,
-        factorial.filter(
-            kalman_filter,
-            kalman_factorializer,
-            kalman_model_inputs,
-            output_factorial=True,
-        ),
+    init_state = kalman_filter.init_prepare(kalman_model_inputs[0])
+    init_state = kalman_factorializer.factorialize_init_state(
+        init_state, kalman_model_inputs[0]
     )
-    _, kalman_local_states, _ = factorial.filter(
-        kalman_filter, kalman_factorializer, kalman_model_inputs, output_factorial=False
+    kalman_states = factorial.filter(
+        kalman_filter,
+        kalman_factorializer,
+        kalman_model_inputs[1:],
+        init_state,
+        output_factorial=True,
+    )
+    kalman_local_states, _ = factorial.filter(
+        kalman_filter,
+        kalman_factorializer,
+        kalman_model_inputs[1:],
+        init_state,
+        output_factorial=False,
     )
     kalman_covs = kalman_states.chol_cov @ kalman_states.chol_cov.transpose(0, 1, 3, 2)
 
     smc_filter, smc_factorializer, smc_model_inputs = build_factorial_smc_filter(
         model_params, n_particles=num_particles
     )
-    smc_states = cast(
-        ParticleFilterState,
-        factorial.filter(
-            smc_filter,
-            smc_factorializer,
-            smc_model_inputs,
-            output_factorial=True,
-            key=random.key(seed + 123),
-        ),
+    smc_init_model_inputs = tree.map(lambda x: x[0], smc_model_inputs)
+    smc_filter_model_inputs = tree.map(lambda x: x[1:], smc_model_inputs)
+
+    init_key, filter_key = random.split(random.key(seed + 123))
+    init_smc_state = smc_filter.init_prepare(smc_init_model_inputs, key=init_key)
+    init_smc_state = smc_factorializer.factorialize_init_state(
+        init_smc_state, smc_init_model_inputs
     )
-    _, smc_local_states, _ = factorial.filter(
+    smc_states = factorial.filter(
         smc_filter,
         smc_factorializer,
-        smc_model_inputs,
+        smc_filter_model_inputs,
+        init_smc_state,
+        output_factorial=True,
+        key=filter_key,
+    )
+    smc_local_states, _ = factorial.filter(
+        smc_filter,
+        smc_factorializer,
+        smc_filter_model_inputs,
+        init_smc_state,
         output_factorial=False,
-        key=random.key(seed + 123),
+        key=filter_key,
     )
     kalman_local_covs = (
         kalman_local_states.chol_cov

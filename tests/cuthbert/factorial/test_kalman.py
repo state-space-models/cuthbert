@@ -210,8 +210,9 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     fac_covs_t_all = jnp.stack(fac_covs_t_all)
 
     # Check output_factorial = False
-    init_state, local_filter_states, final_state = factorial.filter(
-        filter_obj, factorializer, model_inputs, output_factorial=False
+    init_state = filter_obj.init_prepare(model_inputs[0])
+    local_filter_states, final_state = factorial.filter(
+        filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=False
     )
     local_filter_covs = (
         local_filter_states.chol_cov
@@ -241,7 +242,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
 
     # Check output_factorial = True
     factorial_filtering_states = factorial.filter(
-        filter_obj, factorializer, model_inputs, output_factorial=True
+        filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=True
     )
 
     factorial_filtering_states = cast(ArrayTree, factorial_filtering_states)
@@ -297,8 +298,13 @@ def test_smoother(
         smoother_factorial_index=smoother_factorial_index,
     )
 
-    init_state, local_filter_states, _ = factorial.filter(
-        filter_obj, factorializer, filter_model_inputs, output_factorial=False
+    init_state = filter_obj.init_prepare(filter_model_inputs[0])
+    local_filter_states, _ = factorial.filter(
+        filter_obj,
+        factorializer,
+        filter_model_inputs[1:],
+        init_state,
+        output_factorial=False,
     )
 
     factorial_inds = model_params[-1]
