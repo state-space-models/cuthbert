@@ -93,8 +93,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=False
     )
 
+    init_state = moments_filter.init_prepare(model_inputs[0])
+
     # Run sequential sqrt filter
-    seq_states = filter(moments_filter, model_inputs, parallel=False)
+    seq_states = filter(moments_filter, model_inputs[1:], init_state, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
@@ -105,8 +107,15 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=True
     )
 
+    associative_init_state = associative_moments_filter.init_prepare(model_inputs[0])
+
     # Run associative filter with parallel=False
-    seq_ass_states = filter(associative_moments_filter, model_inputs, parallel=False)
+    seq_ass_states = filter(
+        associative_moments_filter,
+        model_inputs[1:],
+        associative_init_state,
+        parallel=False,
+    )
     seq_ass_means, seq_ass_chol_covs, seq_ass_ells = (
         seq_ass_states.mean,
         seq_ass_states.chol_cov,
@@ -114,7 +123,12 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run associative filter with parallel=True
-    par_ass_states = filter(associative_moments_filter, model_inputs, parallel=True)
+    par_ass_states = filter(
+        associative_moments_filter,
+        model_inputs[1:],
+        associative_init_state,
+        parallel=True,
+    )
     par_ass_means, par_ass_chol_covs, par_ass_ells = (
         par_ass_states.mean,
         par_ass_states.chol_cov,
@@ -200,7 +214,8 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    filt_states = filter(extended_filter, model_inputs)
+    init_state = extended_filter.init_prepare(model_inputs[0])
+    filt_states = filter(extended_filter, model_inputs[1:], init_state)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)

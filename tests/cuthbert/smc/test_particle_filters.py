@@ -107,9 +107,14 @@ class Test(chex.TestCase):
         inference, model_inputs = load_inference(
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method
         )
-        key = random.key(seed + 1)
+        init_key, filter_key = random.split(random.key(seed + 1))
+        init_state = inference.init_prepare(model_inputs[0], key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
-            inference, model_inputs, parallel=False, key=key
+            inference,
+            model_inputs[1:],
+            init_state,
+            parallel=False,
+            key=filter_key,
         )
         weights = jax.nn.softmax(states.log_weights)
         means = jnp.sum(states.particles * weights[..., None], axis=1)
@@ -195,11 +200,17 @@ class Test(chex.TestCase):
         key = random.key(0)
         num_time_steps = 5
 
-        # Run the particle filter
         model_inputs = jnp.empty(num_time_steps + 1)
-        key, subkey = random.split(key)
+
+        # Run the particle filter
+        init_key, filter_key = random.split(key)
+        init_state = inference.init_prepare(model_inputs[0], key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
-            inference, model_inputs, parallel=False, key=subkey
+            inference,
+            model_inputs[1:],
+            init_state,
+            parallel=False,
+            key=filter_key,
         )
 
         # Verify that the pytree structure is preserved

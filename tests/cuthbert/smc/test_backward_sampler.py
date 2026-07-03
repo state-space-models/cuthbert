@@ -75,8 +75,15 @@ class Test(chex.TestCase):
         filter_obj, model_inputs, log_potential = load_inference(
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
-        key = random.key(seed + 1)
-        filtered_states = filter(filter_obj, model_inputs, False, key)
+        init_key, filter_key, smoother_key = random.split(random.key(seed + 1), 3)
+        init_state = filter_obj.init_prepare(model_inputs[0], key=init_key)
+        filtered_states = filter(
+            filter_obj,
+            model_inputs[1:],
+            init_state,
+            parallel=False,
+            key=filter_key,
+        )
 
         if method == "tracing":
             bs_fn = tracing
@@ -92,7 +99,6 @@ class Test(chex.TestCase):
         smoother_obj = build_smoother(
             log_potential, bs_fn, systematic.resampling, n_smoother_particles
         )
-        key, smoother_key = random.split(key)
         smoothed_states = self.variant(
             smoother, static_argnames=("smoother_obj", "parallel")
         )(smoother_obj, filtered_states, model_inputs, False, smoother_key)
@@ -155,10 +161,17 @@ class Test(chex.TestCase):
             raise ValueError(f"{method} is not a valid backward sampling method.")
 
         key = random.key(0)
-        filter_key, smoother_key = random.split(key)
+        init_key, filter_key, smoother_key = random.split(key, 3)
         num_time_steps = 5
         model_inputs = jnp.empty(num_time_steps + 1)
-        filtered_states = filter(filter_obj, model_inputs, False, filter_key)
+        init_state = filter_obj.init_prepare(model_inputs[0], key=init_key)
+        filtered_states = filter(
+            filter_obj,
+            model_inputs[1:],
+            init_state,
+            parallel=False,
+            key=filter_key,
+        )
 
         n_smoother_particles = 1000
         smoother_obj = build_smoother(

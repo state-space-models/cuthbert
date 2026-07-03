@@ -161,9 +161,13 @@ class Test(chex.TestCase):
                 n_particles=1_000,
             )
             init_key, filter_key = random.split(random.key(seed + 1))
-            init_state = inference.init_prepare(model_inputs[0], key=init_key)
+            init_state = inference_.init_prepare(model_inputs[0], key=init_key)
             states = filter(
-                inference_, model_inputs, init_state, parallel=False, key=filter_key
+                inference_,
+                model_inputs[1:],
+                init_state,
+                parallel=False,
+                key=filter_key,
             )
             return states.log_normalizing_constant[-1]
 

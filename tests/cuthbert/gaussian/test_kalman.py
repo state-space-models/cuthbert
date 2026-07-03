@@ -119,8 +119,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
     )
 
+    init_state = kalman_filter.init_prepare(model_inputs[0])
+
     # Run sequential sqrt filter
-    seq_states = filter(kalman_filter, model_inputs, parallel=False)
+    seq_states = filter(kalman_filter, model_inputs[1:], init_state, parallel=False)
     seq_means, seq_chol_covs, seq_ells = (
         seq_states.mean,
         seq_states.chol_cov,
@@ -128,7 +130,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run parallel sqrt filter
-    par_states = filter(kalman_filter, model_inputs, parallel=True)
+    par_states = filter(kalman_filter, model_inputs[1:], init_state, parallel=True)
     par_means, par_chol_covs, par_ells = (
         par_states.mean,
         par_states.chol_cov,
@@ -166,7 +168,8 @@ def test_check_gradient(seed, x_dim, y_dim, num_time_steps):
         kalman_filter, _, model_inputs = load_kalman_inference(
             m0_, chol_P0_, Fs_, cs_, chol_Qs_, Hs_, ds_, chol_Rs_, ys
         )
-        states = filter(kalman_filter, model_inputs)
+        init_state = kalman_filter.init_prepare(model_inputs[0])
+        states = filter(kalman_filter, model_inputs[1:], init_state)
         return states.log_normalizing_constant[-1]
 
     chex.assert_numerical_grads(
@@ -231,7 +234,8 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    filt_states = filter(kalman_filter, model_inputs)
+    init_state = kalman_filter.init_prepare(model_inputs[0])
+    filt_states = filter(kalman_filter, model_inputs[1:], init_state)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
     Qs = chol_Qs @ chol_Qs.transpose(0, 2, 1)
