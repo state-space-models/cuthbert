@@ -87,7 +87,7 @@ init_factorial_state = factorializer.factorialize_init_state(init_factorial_stat
 
 local_filter_states, final_factorial_state = (
     cuthbert.factorial.filter(
-        kalman_filter, factorializer, init_factorial_state, filter_model_inputs, output_factorial=False
+        kalman_filter, factorializer, filter_model_inputs, init_factorial_state, output_factorial=False
     )
 )
 ```
