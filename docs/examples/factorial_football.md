@@ -1,22 +1,22 @@
 # Modelling international football with `cuthbert.factorial`
 
-This guide will get you up and running with `cuthbert` for state-space model inference.
 We'll walk through an example of ranking international football teams over
-time using a linearized Kalman filter.
+time using a factorial Kalman filter and a (probabilistic) Elo-style model.
 
 ## Imports
 
-```{.python #quickstart-imports}
+```{.python #factorial-football-imports}
 from typing import NamedTuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from jax import Array, tree, vmap
 from jax import numpy as jnp
 from jax.nn import sigmoid
 from jax.scipy.stats import norm
 
-from cuthbert import filter, smoother
+from cuthbert import factorial
 from cuthbert.gaussian import taylor
 from cuthbertlib.types import LogConditionalDensity, LogDensity
 ```
@@ -31,20 +31,20 @@ distributions whilst handling the discrete nature of the observations.
 We're going to need historical data from international football matches including
 the dates of the matches, which teams played, and the result (draw, home win, away win).
 Luckily, there's a very handy dataset of international football match results available on GitHub:
-[github.com/martj42/international_results](https://github.com/martj42/international_results).
+[github.com/martj42/international_results](https://github.com/martj42/international_results),
+thanks Mart!.
 
 Expand the code block below to see the data loading code (or just trust me on it).
 
 ??? quote "Code to download international football data into a `pandas` DataFrame"
-    ```{.python #quickstart-load-data}
+    ```{.python #factorial-football-load-data}
     def load_international_football_data(
         start_date: str = "1872-11-30",
         end_date: str | None = None,
         origin_date: str | None = None,
         min_matches: int = 0,
     ) -> tuple[pd.DataFrame, dict[int, str], dict[str, int]]:
-        """
-        Load international football match result data.
+        """Load international football match result data.
 
         Sourced with gratitude from the very handy:
         https://github.com/martj42/international_results
@@ -105,16 +105,43 @@ Expand the code block below to see the data loading code (or just trust me on it
             lambda s: teams_name_to_id_dict[s]
         )
 
+        # Timestamp of the previous match for home and away team in each match
+        # Extract previous timestamps for home and away teams
+        num_matches = len(data_all)
+        match_positions = np.arange(num_matches)
+        timestamps = data_all["timestamp_days"].to_numpy()
+        team_ids = np.concatenate(
+            [
+                data_all["home_team_id"].to_numpy(),
+                data_all["away_team_id"].to_numpy(),
+            ]
+        )
+        match_positions_by_team = np.concatenate([match_positions, match_positions])
+        timestamps_by_team = np.concatenate([timestamps, timestamps])
+        is_home_team = np.concatenate(
+            [np.ones(num_matches, dtype=bool), np.zeros(num_matches, dtype=bool)]
+        )
+        order = np.lexsort((match_positions_by_team, timestamps_by_team, team_ids))
+        previous_timestamps = np.zeros(2 * num_matches, dtype=timestamps.dtype)
+        same_team_as_previous = team_ids[order][1:] == team_ids[order][:-1]
+        previous_timestamps[order[1:]] = np.where(
+            same_team_as_previous,
+            timestamps_by_team[order[:-1]],
+            0,
+        )
+        data_all["home_timestamp_previous"] = previous_timestamps[is_home_team]
+        data_all["away_timestamp_previous"] = previous_timestamps[~is_home_team]
+
+
         return data_all, teams_id_to_name_dict, teams_name_to_id_dict
     ```
 
 We'll now load the data and convert it into JAX arrays - the format expected by
-`cuthbert` (we'll filter out very old matches and teams who play infrequently
-to make the example run faster).
+`cuthbert` (we'll filter out very old matches).
 
-```{.python #quickstart-load-data-jax}
+```{.python #factorial-football-load-data-jax}
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
-    load_international_football_data(start_date="1990-01-01", min_matches=300)
+    load_international_football_data(start_date="1990-01-01")
 )
 
 print(football_data.tail())
@@ -126,6 +153,8 @@ match_times = jnp.array(football_data["timestamp_days"])
 match_team_indices = jnp.array(football_data[["home_team_id", "away_team_id"]])
 home_goals = jnp.array(football_data["home_score"])
 away_goals = jnp.array(football_data["away_score"])
+home_times_prev = jnp.array(football_data["home_timestamp_previous"])
+away_times_prev = jnp.array(football_data["away_timestamp_previous"])
 match_results = jnp.where(
     home_goals > away_goals, 1, jnp.where(home_goals < away_goals, 2, 0)
 )  # 0 for draw, 1 for home win, 2 for away win
@@ -133,11 +162,13 @@ match_results = jnp.where(
 
 `cuthbert` convention is to not include an observation at the initial time step.
 So we add dummy values to the start of the data
-```{.python #quickstart-no-initial-obs}
+```{.python #factorial-football-no-initial-obs}
 match_times = jnp.concatenate([jnp.array([0]), match_times])
 match_team_indices = jnp.concatenate([jnp.array([[-1, -1]]), match_team_indices])
 home_goals = jnp.concatenate([jnp.array([-1]), home_goals])
 away_goals = jnp.concatenate([jnp.array([-1]), away_goals])
+home_times_prev = jnp.concatenate([jnp.array([-1]), home_times_prev])
+away_times_prev = jnp.concatenate([jnp.array([-1]), away_times_prev])
 match_results = jnp.concatenate([jnp.array([-1]), match_results])
 ```
 
@@ -152,20 +183,19 @@ to store all the information we'll need at each filtering step. Note that this i
 the time of the current match but also the time of the previous match.
 
 
-```{.python #quickstart-model-inputs}
+```{.python #factorial-football-model-inputs}
 # Model inputs
 class MatchData(NamedTuple):
     time: Array  # float with shape (,) at each time step
-    time_prev: Array  # float with shape (,) at each time step
+    home_time_prev: Array  # float with shape (,) at each time step
+    away_time_prev: Array  # float with shape (,) at each time step
     team_indices: Array  # int with shape (2,) at each time step
-    result: Array  # {0, 1, 2} with shape (,) at each time step
-
-
-match_times_prev = jnp.concatenate([jnp.array([-1]), match_times[:-1]])
+    result: Array  # {0, 1, 2} with shape (,) at each time step for {draw, home win, away win}
 
 # Load into NamedTuple
-match_data = MatchData(match_times, match_times_prev, match_team_indices, match_results)
-
+match_data = MatchData(
+    match_times, home_times_prev, away_times_prev, match_team_indices, match_results
+)
 ```
 
 
@@ -175,11 +205,29 @@ Now that we've got the data in a format we like, we can define the state-space m
 
 We'll use the model from [Duffield et al](https://doi.org/10.1093/jrsssc/qlae035)
 which is an Elo-style probabilistic state-space model for temporal result data.
-Here we'll just fix the static hyperparameters to the values from the paper
-(although these could also be learnt from the data - see [next steps](#next-steps)).
+
+$$
+\begin{aligned}
+p(x_0^i) &= \mathcal{N}(x_0^i \mid 0, \sigma_0^2) \\
+p(x_t^i | x_{t-1}^i) &= \mathcal{N}(x_t \mid x_{t-1}, \tau^2 (t - t^i_{prev})) \\
+p(y_t | x_t^h, x_t^a) &=
+\begin{cases}
+\sigma(x_t^{h} - x_t^{a} + \epsilon) - \sigma(x_t^{h} - x_t^{a} - \epsilon) & y_t = \text{draw}, \\
+\sigma(x_t^{h} - x_t^{a} - \epsilon) & y_t = h, \\
+\sigma(x_t^{h} - x_t^{a} + \epsilon) & y_t = a,
+\end{cases}
+\end{aligned}
+$$
+
+where $\sigma(x) = (1 + \exp(-x))^{-1}$ is the sigmoid function and $h, a$ denote the
+home and away team indices (although this simple model doesn't have a notion of home
+advantage and many matches are played at neutral venues).
+
+Here we'll just fix the static hyperparameters $(\sigma_0, \tau, \epsilon)$ to the values
+from the paper (although these could also be learnt from the data - see [next steps](#next-steps)).
 
 
-```{.python #quickstart-state-space-model}
+```{.python #factorial-football-state-space-model}
 
 num_teams = len(teams_id_to_name_dict)
 
@@ -193,29 +241,31 @@ def get_init_log_density(model_inputs: MatchData) -> tuple[LogDensity, Array]:
     def init_log_density(x):
         return norm.logpdf(x, 0, init_sd).sum()
 
-    return init_log_density, jnp.zeros(num_teams)
+    return init_log_density, jnp.zeros((num_teams, 1))
 
 
 def get_dynamics_log_density(
     state: taylor.LinearizedKalmanFilterState, model_inputs: MatchData
 ) -> tuple[LogConditionalDensity, Array, Array]:
     def dynamics_log_density(x_prev, x):
+        timestamps_prev = jnp.array([model_inputs.home_time_prev,
+                                     model_inputs.away_time_prev])
         return norm.logpdf(
             x,
             x_prev,
-            jnp.sqrt((tau**2) * (model_inputs.time - model_inputs.time_prev))
+            jnp.sqrt((tau**2) * (model_inputs.time - timestamps_prev))
             + 1e-8,  # Add small nugget to avoid numerical issues when x = x_prev
         ).sum()
 
-    return dynamics_log_density, jnp.zeros(num_teams), jnp.zeros(num_teams)
+    return dynamics_log_density, jnp.zeros(2), jnp.zeros(2)
 
 
 def get_observation_func(
     state: taylor.LinearizedKalmanFilterState, model_inputs: MatchData
 ) -> tuple[taylor.LogPotential, Array]:
     def log_potential(x):
-        x_home = x[model_inputs.team_indices[0]]
-        x_away = x[model_inputs.team_indices[1]]
+        x_home = x[0]
+        x_away = x[1]
 
         prob_home_win = sigmoid(x_home - x_away - epsilon)
         prob_away_win = 1 - sigmoid(x_home - x_away + epsilon)
@@ -244,46 +294,57 @@ for more details.
 
 Now that we've defined the model, we can construct the `cuthbert` [filter object][cuthbert.inference.Filter].
 
-```{.python #quickstart-build-filter}
+```{.python #factorial-football-build-filter}
 football_filter = taylor.build_filter(
     get_init_log_density,
     get_dynamics_log_density,
     get_observation_func,
-    ignore_nan_dims=True,
 )
 ```
 
-??? "`ignore_nan_dims=True`"
-    The `ignore_nan_dims` argument tells `cuthbert` that we want to ignore any dimensions
-    with NaN on the diagonal of the precision matrices when linearizing the observation model.
-    This is because the observation model is local and only involves a small subset (two)
-    of the teams at each filtering step. So `ignore_nan_dims=True` tells `taylor` to
-    leave the other dimensions unchanged.
+Because this is a factorial model, we'll also need to build a `factorializer` to
+extract the relevant factors (teams) for matches they are involved in.
+
+```{.python #factorial-football-build-factorializer}
+factorializer = factorial.gaussian.build_factorializer(
+    get_factorial_indices=lambda model_inputs: model_inputs.team_indices
+)
+```
+
 
 
 ## Run the filter
 
-We'll use [`cuthbert.filter`][cuthbert.filtering.filter] to easily run offline filtering on our data.
+We'll use [`cuthbert.factorial.filter`][cuthbert.factorial.filtering.filter] to easily run offline filtering on our data.
 
-```{.python #quickstart-run-filter}
+```{.python #factorial-football-run-filter}
 init_match_data = tree.map(lambda x: x[0], match_data)
 filter_match_data = tree.map(lambda x: x[1:], match_data)
 init_state = football_filter.init_prepare(init_match_data)
-filter_states = filter(football_filter, filter_match_data, init_state)
+init_state = factorializer.factorialize_init_state(init_state, init_match_data)
+local_filter_states, final_factorial_state = factorial.filter(
+    football_filter, factorializer, filter_match_data, init_state
+)
 ```
 
-That was easy wasn't it?
+Filtering done! So what have we got?
+`local_filter_states` is an ArrayTree containing
+the mean and variance of the skill of the two teams involved at each time step
+(`local_filter_states.mean.shape = (num_time_steps, 2)`).
+`final_factorial_state` is an ArrayTree containing the mean and variance of the skill of
+all teams at their most recent match timestamp (`final_factorial_state.mean.shape = (num_teams,)`).
 
 ??? "Online filtering"
-    `cuthbert.filter` assumes that all data is passed at once. If you are in an
+    `cuthbert.factorial.filter` assumes that all data is passed at once. If you are in an
     online setting where you want to filter as you go, you can use
     ```python
-    # Load initial state
-    filter_state = football_filter.init_prepare(init_match_data)
-
     # Filter next time point as new data arrives
-    filter_state = football_filter.filter_combine(
-        filter_state, football_filter.filter_prepare(match_data)
+    local_state = factorializer.extract_and_join(factorial_state, match_data)
+    local_filter_state = football_filter.filter_combine(
+        local_state, football_filter.filter_prepare(match_data)
+    )
+    factorial_state = factorializer.marginalize_and_insert(
+        local_filter_state, factorial_state, match_data
     )
     ```
 
@@ -296,13 +357,13 @@ filtered distribution which we can get from `filter_states.mean` and
 
 
 ??? quote "Code to extract and plot the latest filtered distribution"
-    ```{.python #quickstart-extract-filtered-distribution}
-    mean = filter_states.mean[-1]
+    ```{.python #factorial-football-extract-filtered-distribution}
+    mean = final_factorial_state.mean[..., 0]
     top_team_inds = jnp.argsort(mean)[-20:]
     top_team_names = [teams_id_to_name_dict[int(i)] for i in top_team_inds]
     top_team_means = mean[top_team_inds]
-    cov = filter_states.chol_cov[-1] @ filter_states.chol_cov[-1].T
-    top_team_stds = jnp.sqrt(jnp.diag(cov) ** 2)[top_team_inds]
+    stds = jnp.abs(final_factorial_state.chol_cov[..., 0, 0])
+    top_team_stds = stds[top_team_inds]
 
     plt.figure()
     plt.barh(top_team_names, top_team_means, xerr=top_team_stds, color="limegreen")
@@ -323,9 +384,9 @@ backwards too.
 
 With `cuthbert` this is just as easy as filtering.
 
-```{.python #quickstart-build-smoother}
+```{.python #factorial-football-build-smoother}
 football_smoother = taylor.build_smoother(get_dynamics_log_density)
-smoother_states = smoother(football_smoother, filter_states, match_data)
+smoother_states = cuthbert.factorial.smoother(football_smoother, filter_states, match_data)
 ```
 
 
@@ -333,7 +394,7 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 
 ??? quote "Code to extract and plot the historical smoothed distribution"
 
-    ```{.python #quickstart-extract-historical-distribution}
+    ```{.python #factorial-football-extract-historical-distribution}
     time_ind_start = -10000
     top_teams_over_time_inds = jnp.argsort(mean)[-10:][::-1]
     top_team_names_over_time = [
@@ -417,17 +478,18 @@ smoother_states = smoother(football_smoother, filter_states, match_data)
 
 
 <!--- entangled-tangle-block
-```{.python file=examples_scripts/quickstart.py}
-<<quickstart-imports>>
-<<quickstart-load-data>>
-<<quickstart-load-data-jax>>
-<<quickstart-no-initial-obs>>
-<<quickstart-model-inputs>>
-<<quickstart-state-space-model>>
-<<quickstart-build-filter>>
-<<quickstart-run-filter>>
-<<quickstart-extract-filtered-distribution>>
-<<quickstart-build-smoother>>
-<<quickstart-extract-historical-distribution>>
+```{.python file=examples_scripts/factorial_football.py}
+<<factorial-football-imports>>
+<<factorial-football-load-data>>
+<<factorial-football-load-data-jax>>
+<<factorial-football-no-initial-obs>>
+<<factorial-football-model-inputs>>
+<<factorial-football-state-space-model>>
+<<factorial-football-build-filter>>
+<<factorial-football-build-factorializer>>
+<<factorial-football-run-filter>>
+<<factorial-football-extract-filtered-distribution>>
+<<factorial-football-build-smoother>>
+<<factorial-football-extract-historical-distribution>>
 ```
 -->
