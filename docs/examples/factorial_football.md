@@ -141,7 +141,7 @@ We'll now load the data and convert it into JAX arrays - the format expected by
 
 ```{.python #factorial-football-load-data-jax}
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
-    load_international_football_data(start_date="1990-01-01")
+    load_international_football_data(start_date="1990-01-01", min_matches=300)
 )
 
 print(football_data.tail())
@@ -247,15 +247,16 @@ def get_init_log_density(model_inputs: MatchData) -> tuple[LogDensity, Array]:
 def get_dynamics_log_density(
     state: taylor.LinearizedKalmanFilterState, model_inputs: MatchData
 ) -> tuple[LogConditionalDensity, Array, Array]:
+
     def dynamics_log_density(x_prev, x):
-        timestamps_prev = jnp.array([model_inputs.home_time_prev,
-                                     model_inputs.away_time_prev])
-        return norm.logpdf(
-            x,
-            x_prev,
-            jnp.sqrt((tau**2) * (model_inputs.time - timestamps_prev))
-            + 1e-8,  # Add small nugget to avoid numerical issues when x = x_prev
-        ).sum()
+        timestamps_prev = jnp.array(
+            [model_inputs.home_time_prev, model_inputs.away_time_prev]
+        )
+        time_diff = model_inputs.time - timestamps_prev
+        time_diff = jnp.where(
+            time_diff < 1e-3, 1e-3, time_diff
+        )  # Ensure non-negative time differences
+        return norm.logpdf(x, x_prev, jnp.sqrt((tau**2) * time_diff)).sum()
 
     return dynamics_log_density, jnp.zeros(2), jnp.zeros(2)
 
@@ -348,8 +349,66 @@ all teams at their most recent match timestamp (`final_factorial_state.mean.shap
     )
     ```
 
+## Synchronize the factorial state
+
+We've run offline filtering. But one of the quirks with factorial models is that the factorial state encodes the filtering distributions of all teams only
+at their most recent match. If we want to update them all to be at the current time we have to run a synchronization step. In `cuthbert` we do this by running a separate filter across factors.
+
+
+```{.python #factorial-football-sync}
+# Model inputs
+class DynamicsOnlyData(NamedTuple):
+    current_time: Array  # float with shape (,) at each time step
+    time_prev: Array  # float with shape (,) at each time step
+    team_index: Array  # int with shape (,) at each time step
+
+
+timestamps = jnp.array(football_data["timestamp_days"].to_numpy())
+most_recent_timestamp_by_team = jnp.zeros(num_teams)
+most_recent_timestamp_by_team = most_recent_timestamp_by_team.at[
+    jnp.array(football_data["home_team_id"].to_numpy())
+].max(timestamps)
+most_recent_timestamp_by_team = most_recent_timestamp_by_team.at[
+    jnp.array(football_data["away_team_id"].to_numpy())
+].max(timestamps)
+
+# Load into NamedTuple
+sync_data = DynamicsOnlyData(
+    current_time=jnp.broadcast_to(timestamps.max(), (num_teams,)),
+    time_prev=most_recent_timestamp_by_team,
+    team_index=jnp.arange(num_teams), 
+)
+
+
+def get_dynamics_log_density_sync(
+    state: taylor.LinearizedKalmanFilterState, model_inputs: DynamicsOnlyData
+) -> tuple[LogConditionalDensity, Array, Array]:
+    time_diff = model_inputs.current_time - model_inputs.time_prev
+
+    def dynamics_log_density(x_prev, x):
+        return norm.logpdf(x, x_prev, jnp.sqrt((tau**2) * time_diff)).sum()
+    
+    lin_point = jnp.where(time_diff < 0.5, jnp.array([jnp.nan]), jnp.zeros(1))
+    return dynamics_log_density, lin_point, lin_point
+
+
+single_team_filter = taylor.build_filter(
+    get_init_log_density,
+    get_dynamics_log_density_sync,
+    get_observation_func=lambda state, model_inputs: (
+        lambda x: jnp.zeros(1),  # No observations
+        jnp.zeros(1),
+    ),
+)
+```
+
+
+TODO: Finish, test, clean up the above
+
 
 ## Ok so who are the best teams right now?
+
+
 
 Now that we've filtered the data, we can extract the mean and covariance of the
 filtered distribution which we can get from `filter_states.mean` and
@@ -375,6 +434,11 @@ filtered distribution which we can get from `filter_states.mean` and
     ```
 
 ![Best teams right now](assets/international_football_latest_skill_rating.png)
+
+
+
+TODO: Add factorial smoother, bit more complex but uses the same filter as synchronize
+ 
 
 ## Build and run the smoother
 
@@ -488,8 +552,7 @@ smoother_states = cuthbert.factorial.smoother(football_smoother, filter_states, 
 <<factorial-football-build-filter>>
 <<factorial-football-build-factorializer>>
 <<factorial-football-run-filter>>
+<<factorial-football-sync>>
 <<factorial-football-extract-filtered-distribution>>
-<<factorial-football-build-smoother>>
-<<factorial-football-extract-historical-distribution>>
 ```
 -->
