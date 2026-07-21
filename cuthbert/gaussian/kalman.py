@@ -9,11 +9,7 @@ from typing import NamedTuple
 from jax import numpy as jnp
 from jax import tree
 
-from cuthbert.gaussian.types import (
-    GetDynamicsParams,
-    GetInitParams,
-    GetObservationParams,
-)
+from cuthbert.gaussian.types import GetDynamicsParams, GetObservationParams
 from cuthbert.inference import Filter, Smoother
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering, smoothing
@@ -62,15 +58,17 @@ class KalmanSmootherState(NamedTuple):
 
 
 def build_filter(
-    get_init_params: GetInitParams,
+    m0: Array,
+    chol_P0: Array,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
 ) -> Filter:
     """Builds an exact Kalman filter object for linear Gaussian SSMs.
 
     Args:
-        get_init_params: Function to get m0, chol_P0 to initialize filter state,
-            given model inputs sufficient to define p(x_0) = N(m0, chol_P0 @ chol_P0^T).
+        m0: The mean vector of the initial state.
+        chol_P0: The generalized Cholesky factor of the covariance matrix of
+            the initial state.
         get_dynamics_params: Function to get dynamics parameters, F, c, chol_Q
             given model inputs sufficient to define
             p(x_t | x_{t-1}) = N(F @ x_{t-1} + c, chol_Q @ chol_Q^T).
@@ -82,10 +80,7 @@ def build_filter(
         Filter object for exact Kalman filter. Suitable for associative scan.
     """
     return Filter(
-        init_prepare=partial(
-            init_prepare,
-            get_init_params=get_init_params,
-        ),
+        init_prepare=partial(init_prepare, m0=m0, chol_P0=chol_P0),
         filter_prepare=partial(
             filter_prepare,
             get_dynamics_params=get_dynamics_params,
@@ -132,23 +127,21 @@ def build_smoother(
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_params: GetInitParams,
+    m0: Array,
+    chol_P0: Array,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """Prepare the initial state for the Kalman filter.
 
     Args:
-        model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 from model inputs.
+        m0: The mean vector of the initial state.
+        chol_P0: The generalized Cholesky factor of the covariance matrix of
+            the initial state.
         key: JAX random key - not used.
 
     Returns:
         State for the Kalman filter.
-            Contains mean and chol_cov (generalised Cholesky factor of covariance).
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    m0, chol_P0 = get_init_params(model_inputs)
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P0),
         b=m0,
@@ -157,7 +150,7 @@ def init_prepare(
         Z=jnp.zeros_like(chol_P0),
         ell=jnp.array(0.0),
     )
-    return KalmanFilterState(elem=elem, model_inputs=model_inputs)
+    return KalmanFilterState(elem=elem, model_inputs=None)
 
 
 def filter_prepare(

@@ -7,14 +7,6 @@ from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike
 
 
 ### Kalman types
-class GetInitParams(Protocol):
-    """Protocol for defining the initial distribution of a linear Gaussian SSM."""
-
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[Array, Array]:
-        """Get initial parameters (m0, chol_P0) from model inputs."""
-        ...
-
-
 class GetDynamicsParams(Protocol):
     """Protocol for defining the dynamics model of a linear Gaussian SSM."""
 

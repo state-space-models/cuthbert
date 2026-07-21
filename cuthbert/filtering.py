@@ -54,6 +54,9 @@ def filter(
     else:
         prepare_keys = random.split(key, T)
 
+    sample_model_inputs = tree.map(lambda x: x[0], model_inputs)
+    init_state = init_state._replace(model_inputs=dummy_tree_like(sample_model_inputs))
+
     if parallel:
         other_prep_states = vmap(lambda inp, k: filter_obj.filter_prepare(inp, key=k))(
             model_inputs, prepare_keys
@@ -78,10 +81,6 @@ def filter(
             init_state,
             (model_inputs, prepare_keys),
         )
-
-        sample_model_inputs = tree.map(lambda x: x[0], model_inputs)
-        dummy_init_model_inputs = dummy_tree_like(sample_model_inputs)
-        init_state = init_state._replace(model_inputs=dummy_init_model_inputs)
         states = tree.map(
             lambda x, y: jnp.concatenate([x[None], y]), init_state, states
         )
