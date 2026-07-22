@@ -1,5 +1,5 @@
 from cuthbert.factorial import discrete, gaussian, smc
-from cuthbert.factorial.filtering import filter
+from cuthbert.factorial.filtering import filter, synchronize
 from cuthbert.factorial.types import (
     Extract,
     Factorializer,
