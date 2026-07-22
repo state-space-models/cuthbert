@@ -447,6 +447,9 @@ backwards too.
 With `cuthbert` this is just as easy as filtering.
 
 ```{.python #factorial-football-build-smoother}
+factor_states = factorial.serial_to_factorial(factorializer.extract, local_states, match_team_indices[1:], init_state)
+
+
 football_smoother = taylor.build_smoother(get_dynamics_log_density)
 smoother_states = cuthbert.factorial.smoother(football_smoother, filter_states, match_data)
 ```
