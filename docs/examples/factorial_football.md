@@ -11,7 +11,7 @@ from typing import NamedTuple
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from jax import Array, tree, vmap
+from jax import Array, tree
 from jax import numpy as jnp
 from jax.nn import sigmoid
 from jax.scipy.stats import norm
@@ -400,15 +400,13 @@ single_team_filter = taylor.build_filter(
         jnp.zeros(1),
     ),
 )
+
+sync_factorial_state = factorial.synchronize(
+    single_team_filter, factorializer, sync_data, final_factorial_state
+)
 ```
 
-
-TODO: Finish, test, clean up the above
-
-
 ## Ok so who are the best teams right now?
-
-
 
 Now that we've filtered the data, we can extract the mean and covariance of the
 filtered distribution which we can get from `filter_states.mean` and
@@ -417,11 +415,11 @@ filtered distribution which we can get from `filter_states.mean` and
 
 ??? quote "Code to extract and plot the latest filtered distribution"
     ```{.python #factorial-football-extract-filtered-distribution}
-    mean = final_factorial_state.mean[..., 0]
+    mean = sync_factorial_state.mean[..., 0]
     top_team_inds = jnp.argsort(mean)[-20:]
     top_team_names = [teams_id_to_name_dict[int(i)] for i in top_team_inds]
     top_team_means = mean[top_team_inds]
-    stds = jnp.abs(final_factorial_state.chol_cov[..., 0, 0])
+    stds = jnp.abs(sync_factorial_state.chol_cov[..., 0, 0])
     top_team_stds = stds[top_team_inds]
 
     plt.figure()

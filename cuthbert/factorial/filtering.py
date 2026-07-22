@@ -148,9 +148,11 @@ def synchronize(
     )
 
     # Make sure sync state has the same shape as original state
-    # I.e. log_normalising_constant should be shape (,) not (num_factors,)
+    # I.e. log_normalizing_constant should be shape (,) not (num_factors,)
     factorial_sync_state = tree.map(
-        _squeeze_sync_leaf, factorial_sync_state, factorial_state
+        _squeeze_sync_leaf,
+        factorial_sync_state,
+        factorial_state._replace(model_inputs=model_inputs),
     )
 
     return factorial_sync_state
