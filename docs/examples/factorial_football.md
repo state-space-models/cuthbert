@@ -380,7 +380,7 @@ sync_data = DynamicsOnlyData(
 )
 
 
-def get_dynamics_log_density_sync(
+def get_dynamics_log_density_single_team(
     state: taylor.LinearizedKalmanFilterState, model_inputs: DynamicsOnlyData
 ) -> tuple[LogConditionalDensity, Array, Array]:
     time_diff = model_inputs.current_time - model_inputs.time_prev
@@ -394,10 +394,10 @@ def get_dynamics_log_density_sync(
 
 single_team_filter = taylor.build_filter(
     get_init_log_density,
-    get_dynamics_log_density_sync,
+    get_dynamics_log_density_single_team,
     get_observation_func=lambda state, model_inputs: (
-        lambda x: jnp.zeros(1),  # No observations
-        jnp.zeros(1),
+        lambda x: jnp.zeros([]),
+        jnp.full_like(state.mean, jnp.nan)  # Nan indicates no observations
     ),
 )
 
@@ -447,11 +447,17 @@ backwards too.
 With `cuthbert` this is just as easy as filtering.
 
 ```{.python #factorial-football-build-smoother}
-factor_states = factorial.serial_to_factorial(factorializer.extract, local_states, match_team_indices[1:], init_state)
+factor_states_select = factorial.serial_to_factorial(
+    factorializer.extract,
+    local_filter_states,
+    match_team_indices[1:],
+    top_team_inds,
+    init_state,
+)
 
 
 football_smoother = taylor.build_smoother(get_dynamics_log_density)
-smoother_states = cuthbert.factorial.smoother(football_smoother, filter_states, match_data)
+smoother_states = cuthbert.smoother(football_smoother, filter_states, match_data)
 ```
 
 
@@ -555,5 +561,6 @@ smoother_states = cuthbert.factorial.smoother(football_smoother, filter_states, 
 <<factorial-football-run-filter>>
 <<factorial-football-sync>>
 <<factorial-football-extract-filtered-distribution>>
+<<factorial-football-build-smoother>>
 ```
 -->
