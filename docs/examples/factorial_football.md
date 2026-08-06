@@ -450,9 +450,9 @@ With `cuthbert` this is just as easy as filtering.
 factor_states_select = factorial.serial_to_factorial(
     factorializer.extract,
     local_filter_states,
-    match_team_indices[1:],
-    top_team_inds,
-    init_state,
+    serial_factorial_inds=match_team_indices[1:],
+    select_factorial_inds=top_team_inds,
+    init_factorial_tree=init_state,
 )
 
 
