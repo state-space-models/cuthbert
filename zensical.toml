@@ -24,7 +24,7 @@ nav = [
     "api_cuthbert/smoothing.md",
     { "Discrete HMMs" = "api_cuthbert/discrete.md" },
     { "Ensemble Kalman" = [
-      "api_cuthbert/ensemble_kalman.md",
+      "api_cuthbert/ensemble_kalman/index.md",
       "api_cuthbert/ensemble_kalman/ensemble_kalman_filter.md",
       "api_cuthbert/ensemble_kalman/ensemble_rts_smoother.md",
       "api_cuthbert/ensemble_kalman/types.md",
