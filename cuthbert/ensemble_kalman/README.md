@@ -22,6 +22,7 @@ See Algorithm 2 in Appendix A in [Calvello, Reich, and Stuart., Ensemble Kalman 
 
 ## Ensemble Rauch-Tung-Striebel smoother
 
+<!-- --8<-- [start:enks] -->
 The EnRTS is an ensemble RTS-like smoothing algorithm, similar in form to the RTS smoothing algorithm. It forms a backwards recursion using a gain $J_t$:
 
 $$
@@ -33,3 +34,5 @@ where $J_t$ is determined by ensembles to be an empirical version of the Kalman 
 The computation of $J_t$ involves the ensemble of $x_{t+1 \mid t}$; to avoid duplicate computation, the EnRTS therefore requires `store_predicted_ensemble=True` in the forward filtering run.
 
 See [Raanes (2016)](https://doi.org/10.1002/qj.2728) for more info on the EnRTS algorithm and its equivalence to the ensemble Kalman smoother (EnKS), a simliar ensemble smoothing algorithm which consists of a forward pass of increasing dimension.
+
+<!-- --8<-- [end:enks] -->
