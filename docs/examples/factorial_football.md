@@ -203,7 +203,8 @@ match_data = MatchData(
 
 ## Define the state-space model
 
-Now that we've got the data in a format we like, we can define the state-space model.
+Now that we've got the data in a format we like, we can define the (factorial)
+state-space model.
 
 We'll use the model from [Duffield et al](https://doi.org/10.1093/jrsssc/qlae035)
 which is an Elo-style probabilistic state-space model for temporal result data.
@@ -298,6 +299,8 @@ current mean). The linearization point is specified in the additional output of 
 `get_` functions - see the [`taylor` documentation](api_cuthbert/gaussian/taylor.md)
 for more details.
 
+Note that we've modularised out the `dynamics_log_density` function as we will need that
+again later.
 
 ## Build the filter
 
@@ -324,13 +327,16 @@ factorializer = factorial.gaussian.build_factorializer(
 
 ## Run the filter
 
-We'll use [`cuthbert.factorial.filter`][cuthbert.factorial.filtering.filter] to easily run offline filtering on our data.
+We'll use `cuthbert.factorial.filter` to easily
+run offline filtering on our data.
 
 ```{.python #factorial-football-run-filter}
 init_match_data = tree.map(lambda x: x[0], match_data)
 filter_match_data = tree.map(lambda x: x[1:], match_data)
+
 init_state = football_filter.init_prepare(init_match_data)
 init_state = factorializer.factorialize_init_state(init_state, init_match_data)
+
 local_filter_states, final_factorial_state = factorial.filter(
     football_filter, factorializer, filter_match_data, init_state
 )
@@ -413,8 +419,8 @@ sync_factorial_state = factorial.synchronize(
 ## Ok so who are the best teams right now?
 
 Now that we've filtered the data, we can extract the mean and covariance of the
-filtered distribution which we can get from `filter_states.mean` and
-`filter_states.chol_cov`.
+filtered distribution which we can get from `sync_factorial_state.mean` and
+`sync_factorial_state.chol_cov`.
 
 
 ??? quote "Code to extract and plot the latest filtered distribution"
@@ -435,11 +441,8 @@ filtered distribution which we can get from `filter_states.mean` and
     plt.close()
     ```
 
-![Best teams right now](assets/international_football_latest_skill_rating.png)
+![Best teams right now](../assets/international_football_latest_skill_rating.png)
 
-
-
-TODO: Add factorial smoother, bit more complex but uses the same filter as synchronize
  
 
 ## Build and run the smoother
@@ -448,7 +451,15 @@ The filtering distribution gives us live estimates with uncertainty. However,
 for historical evaluation we want to use smoothing so that information is passed
 backwards too.
 
-With `cuthbert` this is just as easy as filtering.
+With factorial models, this a little more sophisticated. Smoothing in factorial models
+has no interaction between factors (since the dynamics are independent)
+so we can run a smoother for each factor independently, using `cuthbert.smoother`.
+
+But in order to do we need to extract the relevant filter states and model inputs
+in a per factor format. We can do this using `cuthbert.factorial.serial_to_factorial`.
+
+Note that because different factors will be involved in different number of matches,
+we have to use a list as an array cannot store variable length sequences.
 
 ```{.python #factorial-football-build-smoother}
 factor_states_select = factorial.serial_to_factorial(
@@ -546,33 +557,29 @@ smoother_states_select = [
     plt.close()
     ```
 
-![Best teams historically](assets/international_football_historical_skill_rating.png)
+![Best teams historically](../assets/international_football_historical_skill_rating.png)
 
 
 ## Key Takeaways
 
+- **Factorial state-space models**: `cuthbert.factorial` allows you to define
+  state-space models where the latent state is a collection of independent factors
+  (e.g. the skill of each football team) that evolve independently over time.
+  This enables efficient inference in high-dimensional state-spaces where only a small
+  subset of factors are involved in each observation - avoiding having to manipulate
+  full states at each step.
 - **Flexible model specification**: `cuthbert.gaussian.taylor` allows you to define
   state-space models using simple log-density functions, making it easy to work
   with complex, non-linear models like the Elo-style ranking model used here.
-- **Filtering for online inference**: `cuthbert.filter` can be used to offline
-  filtering on a full dataset, `filter_prepare` and `filter_combine` can be used
-  to perform online filtering as new data arrives.
-- **Smoothing for historical analysis**: While filtering provides online estimates,
-  smoothing gives more accurate historical estimates by incorporating future
-  information.
-
 
 ## Next Steps
 
 - **Parameter learning**: We could learn the hyperparameters from the data using
     gradient descent, expectation maximization or Bayesian sampling that all use
     filtering and smoothing internally. Check out the [parameter estimation example](examples/parameter_estimation_em.md) for more details.
-- **Factorial state-space models**: The technique here is actually inefficient for this
-    model because it treats all teams as a high-dimensional correlated state. A more
-    efficient approach would be to use a factorial state-space model where each team's
-    skill is assumed to evolve independently (aside from pairwsie interactions at matches).
-    See [Duffield et al](https://doi.org/10.1093/jrsssc/qlae035) for more details, and
-    `cuthbert` support coming soon!
+- **More sophisticated models**: Check out [`cuthberto-carlos`](https://github.com/state-space-models/cuthberto-carlos)
+    for a more sophisticated bivariate Poisson model that also takes into account the
+    number of goals scored in each match.
 - **More examples!**: Check out the other [examples](examples/index.md) for more
     techniques including exact Kalman inference, sequential Monte Carlo, interfacing
     with probabilistic programming languages, and more.
