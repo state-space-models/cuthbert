@@ -7,6 +7,7 @@ time using a factorial Kalman filter and a (probabilistic) Elo-style model.
 
 ```{.python #factorial-football-imports}
 from typing import NamedTuple
+from functools import partial
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -16,7 +17,7 @@ from jax import numpy as jnp
 from jax.nn import sigmoid
 from jax.scipy.stats import norm
 
-from cuthbert import factorial
+from cuthbert import factorial, smoother
 from cuthbert.gaussian import taylor
 from cuthbertlib.types import LogConditionalDensity, LogDensity
 ```
@@ -140,8 +141,9 @@ We'll now load the data and convert it into JAX arrays - the format expected by
 `cuthbert` (we'll filter out very old matches).
 
 ```{.python #factorial-football-load-data-jax}
+start_date = "1990-01-01"
 football_data, teams_id_to_name_dict, teams_name_to_id_dict = (
-    load_international_football_data(start_date="1990-01-01", min_matches=300)
+    load_international_football_data(start_date=start_date, min_matches=300)
 )
 
 print(football_data.tail())
@@ -244,21 +246,27 @@ def get_init_log_density(model_inputs: MatchData) -> tuple[LogDensity, Array]:
     return init_log_density, jnp.zeros((num_teams, 1))
 
 
+def dynamics_log_density(x_prev, x, time_diff):
+    time_diff = jnp.where(
+        time_diff < 1e-3, 1e-3, time_diff
+    )  # Ensure non-negative time differences
+    return norm.logpdf(x, x_prev, jnp.sqrt((tau**2) * time_diff)).sum()
+
+
 def get_dynamics_log_density(
     state: taylor.LinearizedKalmanFilterState, model_inputs: MatchData
 ) -> tuple[LogConditionalDensity, Array, Array]:
 
-    def dynamics_log_density(x_prev, x):
-        timestamps_prev = jnp.array(
-            [model_inputs.home_time_prev, model_inputs.away_time_prev]
-        )
-        time_diff = model_inputs.time - timestamps_prev
-        time_diff = jnp.where(
-            time_diff < 1e-3, 1e-3, time_diff
-        )  # Ensure non-negative time differences
-        return norm.logpdf(x, x_prev, jnp.sqrt((tau**2) * time_diff)).sum()
+    timestamps_prev = jnp.array(
+        [model_inputs.home_time_prev, model_inputs.away_time_prev]
+    )
+    time_diff = model_inputs.time - timestamps_prev
 
-    return dynamics_log_density, jnp.zeros(2), jnp.zeros(2)
+    return (
+        partial(dynamics_log_density, time_diff=time_diff),
+        jnp.zeros(2),
+        jnp.zeros(2),
+    )
 
 
 def get_observation_func(
@@ -384,12 +392,8 @@ def get_dynamics_log_density_single_team(
     state: taylor.LinearizedKalmanFilterState, model_inputs: DynamicsOnlyData
 ) -> tuple[LogConditionalDensity, Array, Array]:
     time_diff = model_inputs.current_time - model_inputs.time_prev
-
-    def dynamics_log_density(x_prev, x):
-        return norm.logpdf(x, x_prev, jnp.sqrt((tau**2) * time_diff)).sum()
-    
     lin_point = jnp.where(time_diff < 0.5, jnp.array([jnp.nan]), jnp.zeros(1))
-    return dynamics_log_density, lin_point, lin_point
+    return partial(dynamics_log_density, time_diff=time_diff), lin_point, lin_point
 
 
 single_team_filter = taylor.build_filter(
@@ -456,8 +460,33 @@ factor_states_select = factorial.serial_to_factorial(
 )
 
 
-football_smoother = taylor.build_smoother(get_dynamics_log_density)
-smoother_states = cuthbert.smoother(football_smoother, filter_states, match_data)
+def extract_dynamics_only(
+    match: MatchData, local_team_index: Array
+) -> DynamicsOnlyData:
+    """Extract a single team's dynamics inputs from one match."""
+    time_prev = jnp.array([match.home_time_prev, match.away_time_prev])
+    return DynamicsOnlyData(
+        current_time=match.time,
+        time_prev=time_prev[local_team_index],
+        team_index=match.team_indices[local_team_index],
+    )
+
+
+# Each selected team has one dynamics input per match; its filter state history
+# additionally includes its initial state.
+factor_model_inputs = factorial.serial_to_factorial(
+    extract_dynamics_only,
+    filter_match_data,
+    serial_factorial_inds=match_team_indices[1:],
+    select_factorial_inds=top_team_inds,
+)
+
+football_smoother = taylor.build_smoother(get_dynamics_log_density_single_team)
+
+smoother_states_select = [
+    smoother(football_smoother, factor_state, model_inputs)
+    for factor_state, model_inputs in zip(factor_states_select, factor_model_inputs)
+]
 ```
 
 
@@ -466,34 +495,35 @@ smoother_states = cuthbert.smoother(football_smoother, filter_states, match_data
 ??? quote "Code to extract and plot the historical smoothed distribution"
 
     ```{.python #factorial-football-extract-historical-distribution}
-    time_ind_start = -10000
-    top_teams_over_time_inds = jnp.argsort(mean)[-10:][::-1]
-    top_team_names_over_time = [
-        teams_id_to_name_dict[int(i)] for i in top_teams_over_time_inds
-    ]
-    match_dates_over_time = football_data["date"][time_ind_start:]
-    top_team_means_over_time = smoother_states.mean[
-        time_ind_start:, top_teams_over_time_inds
-    ]
-    all_covs_diag = vmap(lambda x: jnp.diag(x @ x.T))(
-        smoother_states.chol_cov[time_ind_start:]
-    )
-    top_team_stds_over_time = jnp.sqrt(all_covs_diag[:, top_teams_over_time_inds])
+    # Each selected team's smoother output contains an initial state followed by
+    # one state per match. Plot only the match states, which align with the
+    # team's per-match dynamics inputs.
+    plot_start_date = pd.Timestamp("2008-01-01")
 
     interesting_dates = {
         "Spain 1\nNetherlands 0": "2010-07-11",
         "Germany 1\nArgentina 0": "2014-07-13",
         "France 4\nCroatia 2": "2018-07-15",
         "Argentina 3(pens)\nFrance 3": "2022-12-18",
+        "Spain 1 \nArgentina 0": "2026-07-19",
     }
 
     plt.figure()
-    plt.plot(
-        match_dates_over_time,
-        top_team_means_over_time[:],
-        label=top_team_names_over_time,
-        alpha=0.6,
-    )
+    team_colors = plt.get_cmap("tab20").colors
+    for team_number, (team_name, model_inputs, smoother_states) in enumerate(
+        zip(top_team_names, factor_model_inputs, smoother_states_select)
+    ):
+        match_dates = pd.Timestamp(start_date) + pd.to_timedelta(
+            np.asarray(model_inputs.current_time), unit="D"
+        )
+        after_plot_start = match_dates >= plot_start_date
+        plt.plot(
+            match_dates[after_plot_start],
+            np.asarray(smoother_states.mean[1:, 0])[after_plot_start],
+            label=team_name,
+            color=team_colors[team_number],
+            alpha=0.6,
+        )
 
     for name, date in interesting_dates.items():
         date = pd.to_datetime(date)
@@ -509,7 +539,7 @@ smoother_states = cuthbert.smoother(football_smoother, filter_states, match_data
             ha="right",
         )
 
-    plt.legend(top_team_names_over_time, loc="lower right", fontsize=9)
+    plt.legend(loc="lower right", fontsize=7, ncol=2)
     plt.ylabel("Skill Rating")
     plt.tight_layout()
     plt.savefig("docs/assets/international_football_historical_skill_rating.png", dpi=300)
@@ -562,5 +592,6 @@ smoother_states = cuthbert.smoother(football_smoother, filter_states, match_data
 <<factorial-football-sync>>
 <<factorial-football-extract-filtered-distribution>>
 <<factorial-football-build-smoother>>
+<<factorial-football-extract-historical-distribution>>
 ```
 -->
