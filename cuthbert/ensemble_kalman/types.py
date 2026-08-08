@@ -3,6 +3,7 @@
 from typing import Protocol
 
 from cuthbertlib.ensemble_kalman.filtering import DynamicsFn, ObservationFn
+from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
@@ -51,5 +52,20 @@ class GetEnKFObservations(Protocol):
         Returns:
             Tuple with observation function, Cholesky factor of the observation noise covariance, and observation vector.
             observation noise covariance and y is the observation vector.
+        """
+        ...
+
+
+class GetCovarianceTapers(Protocol):
+    """Protocol for getting covariance localization tapers."""
+
+    def __call__(self, model_inputs: ArrayTreeLike) -> CovarianceTapers:
+        """Get covariance localization tapers from model inputs.
+
+        Args:
+            model_inputs: Model inputs.
+
+        Returns:
+            Covariance tapers for the current inference step.
         """
         ...

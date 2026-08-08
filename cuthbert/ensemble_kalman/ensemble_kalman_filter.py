@@ -12,6 +12,7 @@ import jax.numpy as jnp
 from jax import random, tree
 
 from cuthbert.ensemble_kalman.types import (
+    GetCovarianceTapers,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
@@ -65,6 +66,7 @@ def build_filter(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
+    get_covariance_tapers: GetCovarianceTapers | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
 
@@ -77,6 +79,8 @@ def build_filter(
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
         store_predicted_ensemble: Whether to store the incoming forecast ensemble
             in each filter state, as required by the EnRTS smoother.
+        get_covariance_tapers: Optional function to get covariance localization
+            tapers from model inputs.
 
     Returns:
         Filter object for the EnKF.
@@ -107,6 +111,7 @@ def build_filter(
             inflation=inflation,
             perturbed_obs=perturbed_obs,
             store_predicted_ensemble=store_predicted_ensemble,
+            get_covariance_tapers=get_covariance_tapers,
         ),
         associative=False,
     )
@@ -202,6 +207,7 @@ def filter_combine(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
+    get_covariance_tapers: GetCovarianceTapers | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
 
@@ -215,6 +221,8 @@ def filter_combine(
         inflation: Multiplicative inflation factor.
         perturbed_obs: If True, use perturbed observations.
         store_predicted_ensemble: Whether to store the incoming forecast ensemble.
+        get_covariance_tapers: Optional function to get covariance localization
+            tapers from model inputs.
 
     Returns:
         Updated EnKF state.
@@ -232,6 +240,11 @@ def filter_combine(
 
     # Update
     observation_fn, chol_R, y = get_observations(state_2.model_inputs)
+    tapers = (
+        get_covariance_tapers(state_2.model_inputs)
+        if get_covariance_tapers is not None
+        else None
+    )
     updated, ll = enkf_lib.filter_update(
         key_update,
         predicted,
@@ -239,6 +252,7 @@ def filter_combine(
         chol_R,
         y,
         perturbed_obs,
+        tapers=tapers,
     )
 
     return EnKFState(

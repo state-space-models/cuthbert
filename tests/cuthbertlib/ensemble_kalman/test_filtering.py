@@ -5,6 +5,7 @@ import pytest
 from jax import random
 
 from cuthbertlib.ensemble_kalman.filtering import predict, update
+from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
 from cuthbertlib.kalman.filtering import update as kalman_update
 from cuthbertlib.kalman.generate import generate_lgssm
 
@@ -238,3 +239,131 @@ def test_update_partial_nan_observation(seed, x_dim, y_dim):
     chex.assert_trees_all_close(enkf_mean, kalman_mean, atol=2e-2)
     chex.assert_trees_all_close(enkf_cov, kalman_cov, atol=3e-2)
     chex.assert_trees_all_close(ll, kalman_ll, atol=3e-2)
+
+
+@pytest.mark.parametrize("localize_marginal", [False, True])
+def test_update_covariance_tapers(localize_marginal):
+    ensemble = jnp.array(
+        [
+            [-2.0, -1.0],
+            [-1.0, 2.0],
+            [1.0, -2.0],
+            [2.0, 1.0],
+        ]
+    )
+    H = jnp.array([[1.0, 0.5], [-0.25, 1.0]])
+    chol_R = jnp.diag(jnp.array([0.4, 0.7]))
+    y = jnp.array([0.3, -0.6])
+    tapers = CovarianceTapers(
+        cross=jnp.array([[1.0, 0.25], [0.5, 1.0]]),
+        marginal=(jnp.array([[1.0, 0.2], [0.2, 1.0]]) if localize_marginal else None),
+    )
+
+    updated, ll = update(
+        random.key(0),
+        ensemble,
+        lambda x: H @ x,
+        chol_R,
+        y,
+        perturbed_obs=False,
+        tapers=tapers,
+    )
+
+    y_pred = ensemble @ H.T
+    x_dev = ensemble - jnp.mean(ensemble, axis=0)
+    y_mean = jnp.mean(y_pred, axis=0)
+    y_dev = y_pred - y_mean
+    C_xy = tapers.cross * (x_dev.T @ y_dev / (ensemble.shape[0] - 1))
+    C_yy = y_dev.T @ y_dev / (ensemble.shape[0] - 1)
+    if tapers.marginal is not None:
+        C_yy = tapers.marginal * C_yy
+    S = C_yy + chol_R @ chol_R.T
+    gain = jnp.linalg.solve(S, C_xy.T).T
+    expected_updated = ensemble + (y - y_pred) @ gain.T
+    innovation = y - y_mean
+    _, logdet = jnp.linalg.slogdet(S)
+    expected_ll = -0.5 * (
+        innovation @ jnp.linalg.solve(S, innovation)
+        + logdet
+        + y.shape[0] * jnp.log(2 * jnp.pi)
+    )
+
+    chex.assert_trees_all_close(updated, expected_updated, rtol=1e-12, atol=1e-12)
+    chex.assert_trees_all_close(ll, expected_ll, rtol=1e-12, atol=1e-12)
+    if tapers.marginal is None:
+        _, untapered_ll = update(
+            random.key(0),
+            ensemble,
+            lambda x: H @ x,
+            chol_R,
+            y,
+            perturbed_obs=False,
+        )
+        chex.assert_trees_all_equal(ll, untapered_ll)
+
+
+@pytest.mark.parametrize("localize_marginal", [False, True])
+def test_update_covariance_tapers_with_missing_observations(localize_marginal):
+    ensemble = jnp.array(
+        [
+            [-2.0, -1.0],
+            [-1.0, 2.0],
+            [1.0, -2.0],
+            [2.0, 1.0],
+        ]
+    )
+    H = jnp.array(
+        [
+            [1.0, 0.2],
+            [-0.5, 1.0],
+            [0.3, -0.8],
+            [1.2, 0.4],
+        ]
+    )
+    chol_R = jnp.diag(jnp.array([0.3, 0.4, 0.5, 0.6]))
+    y = jnp.array([0.1, jnp.nan, -0.7, jnp.nan])
+    tapers = CovarianceTapers(
+        cross=jnp.array([[1.0, 0.1, 0.4, 0.2], [0.3, 0.5, 0.8, 0.6]]),
+        marginal=(
+            jnp.array(
+                [
+                    [1.0, 0.1, 0.2, 0.3],
+                    [0.1, 1.0, 0.4, 0.5],
+                    [0.2, 0.4, 1.0, 0.6],
+                    [0.3, 0.5, 0.6, 1.0],
+                ]
+            )
+            if localize_marginal
+            else None
+        ),
+    )
+
+    actual = update(
+        random.key(0),
+        ensemble,
+        lambda x: H @ x,
+        chol_R,
+        y,
+        perturbed_obs=False,
+        tapers=tapers,
+    )
+
+    observed = jnp.array([0, 2])
+    expected = update(
+        random.key(0),
+        ensemble,
+        lambda x: H[observed] @ x,
+        chol_R[observed[:, None], observed],
+        y[observed],
+        perturbed_obs=False,
+        tapers=CovarianceTapers(
+            tapers.cross[:, observed],
+            (
+                None
+                if tapers.marginal is None
+                else tapers.marginal[observed[:, None], observed]
+            ),
+        ),
+    )
+
+    chex.assert_trees_all_close(actual, expected, rtol=1e-12, atol=1e-12)

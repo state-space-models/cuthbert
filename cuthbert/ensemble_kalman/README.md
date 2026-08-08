@@ -36,3 +36,21 @@ The computation of $J_t$ involves the ensemble of $x_{t+1 \mid t}$; to avoid dup
 See [Raanes (2016)](https://doi.org/10.1002/qj.2728) for more info on the EnRTS algorithm and its equivalence to the ensemble Kalman smoother (EnKS), a simliar ensemble smoothing algorithm which consists of a forward pass of increasing dimension.
 
 <!-- --8<-- [end:enks] -->
+
+## Covariance localization
+
+Cuthbert implements localization via covariance tapering. These are accepted by the EnKF via a `get_covariance_tapers` callback, evaluated by the model at every step. If the callback is provided, it requires a taper for the cross-covariance $C_{xy}$, and an optional taper for the marginal covariance $C_{yy}$. Pre-defined covariance tapers are available in `cuthbertlib.ensemble_kalman/localization.py`.
+
+For example, to use a taper with the Gaspari-Cohn correlation function, the callback may be specified as follows:
+
+```python
+from cuthbertlib.ensemble_kalman.localization import CovarianceTapers, gaspari_cohn
+
+
+def get_covariance_tapers(model_inputs):
+    x = model_inputs.state_locations
+    y = model_inputs.observation_locations
+    return CovarianceTapers(
+        cross=gaspari_cohn(x[:, None] - y[None, :], model_inputs.support_radius),
+    )
+```

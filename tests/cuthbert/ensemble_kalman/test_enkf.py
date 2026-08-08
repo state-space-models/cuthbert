@@ -7,6 +7,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
+from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
 from cuthbertlib.kalman.generate import generate_lgssm
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -18,7 +19,19 @@ def config():
     jax.config.update("jax_enable_x64", False)
 
 
-def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=False):
+def load_enkf_inference(
+    m0,
+    chol_P0,
+    Fs,
+    cs,
+    chol_Qs,
+    Hs,
+    ds,
+    chol_Rs,
+    ys,
+    noop=False,
+    get_covariance_tapers=None,
+):
     n_particles = 100_000
     x_dim = m0.shape[0]
 
@@ -57,6 +70,7 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
         get_dynamics=get_dynamics,
         get_observations=get_observations,
         n_particles=n_particles,
+        get_covariance_tapers=get_covariance_tapers,
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
@@ -65,20 +79,41 @@ def load_enkf_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, noop=
 
 class Test(chex.TestCase):
     @chex.variants(with_jit=True, without_jit=True)
-    @parameterized.product(
-        seed=[0, 41, 99, 123, 456],
-        x_dim=[3],
-        y_dim=[2],
-        num_time_steps=[20],
+    @parameterized.named_parameters(
+        *((f"seed_{seed}", seed, None) for seed in [0, 41, 99, 123, 456]),
+        ("cross_taper", 0, False),
+        ("cross_and_marginal_tapers", 0, True),
     )
-    def test(self, seed, x_dim, y_dim, num_time_steps):
+    def test(self, seed, localize_marginal):
+        x_dim = 3
+        y_dim = 2
+        num_time_steps = 20
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
             seed, x_dim, y_dim, num_time_steps
         )
 
+        get_covariance_tapers = None
+        if localize_marginal is not None:
+            tapers = CovarianceTapers(
+                cross=jnp.ones((x_dim, y_dim)),
+                marginal=(jnp.ones((y_dim, y_dim)) if localize_marginal else None),
+            )
+
+            def get_covariance_tapers(_):
+                return tapers
+
         # Run the EnKF.
         inference, model_inputs = load_enkf_inference(
-            m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
+            m0,
+            chol_P0,
+            Fs,
+            cs,
+            chol_Qs,
+            Hs,
+            ds,
+            chol_Rs,
+            ys,
+            get_covariance_tapers=get_covariance_tapers,
         )
         init_key, filter_key = random.split(random.key(seed + 1))
         init_state = inference.init_prepare(model_inputs[0], key=init_key)
