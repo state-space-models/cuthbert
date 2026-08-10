@@ -22,6 +22,28 @@ class CovarianceTapers(NamedTuple):
     marginal: Array | None = None
 
 
+def gaussian(
+    distances: ArrayLike,
+    length_scale: ScalarArrayLike,
+) -> Array:
+    r"""Evaluates a Gaussian covariance taper.
+
+    The taper is the squared-exponential correlation function
+    $\rho(d; \ell) = \exp(-\frac{1}{2}(d / \ell)^2)$. This taper
+    has infinite support and is differentiable with respect
+    to the length scale.
+
+    Args:
+        distances: Distances at which to evaluate the taper.
+        length_scale: Positive characteristic distance of the taper.
+
+    Returns:
+        Taper values with the broadcast shape of the inputs.
+    """
+    scaled_distances = jnp.asarray(distances) / length_scale
+    return jnp.exp(-0.5 * jnp.square(scaled_distances))
+
+
 def gaspari_cohn(
     distances: ArrayLike,
     support_radius: ScalarArrayLike,

@@ -7,7 +7,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
+from cuthbertlib.ensemble_kalman import CovarianceTapers, gaussian
 from cuthbertlib.kalman.generate import generate_lgssm
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -31,8 +31,9 @@ def load_enkf_inference(
     ys,
     noop=False,
     get_covariance_tapers=None,
+    n_particles=100_000,
+    perturbed_obs=True,
 ):
-    n_particles = 100_000
     x_dim = m0.shape[0]
 
     def init_sample(key, model_inputs):
@@ -70,6 +71,7 @@ def load_enkf_inference(
         get_dynamics=get_dynamics,
         get_observations=get_observations,
         n_particles=n_particles,
+        perturbed_obs=perturbed_obs,
         get_covariance_tapers=get_covariance_tapers,
     )
 
@@ -209,6 +211,105 @@ class Test(chex.TestCase):
 
         grad_val = jax.grad(log_nc)(m0)
         assert jnp.all(jnp.isfinite(grad_val))
+
+
+def test_gaussian_taper_log_likelihood_gradient():
+    """A localized EnKF gradient should agree with fixed-randomness differences."""
+    x_dim = 20
+    y_dim = 10
+    num_time_steps = 4
+    n_particles = 6
+
+    state_locations = jnp.arange(x_dim, dtype=float)
+    observation_indices = jnp.arange(0, x_dim, 2)
+    observation_locations = state_locations[observation_indices]
+
+    dynamics_matrix = (
+        0.82 * jnp.eye(x_dim) + 0.08 * jnp.eye(x_dim, k=1) + 0.08 * jnp.eye(x_dim, k=-1)
+    )
+    observation_matrix = jnp.eye(x_dim)[observation_indices]
+
+    m0 = 0.15 * jnp.sin(state_locations / 3)
+    chol_P0 = 0.45 * jnp.eye(x_dim)
+    Fs = jnp.broadcast_to(dynamics_matrix, (num_time_steps, x_dim, x_dim))
+    cs = jnp.zeros((num_time_steps, x_dim))
+    chol_Qs = jnp.broadcast_to(0.08 * jnp.eye(x_dim), (num_time_steps, x_dim, x_dim))
+    Hs = jnp.broadcast_to(observation_matrix, (num_time_steps, y_dim, x_dim))
+    ds = jnp.zeros((num_time_steps, y_dim))
+    chol_Rs = jnp.broadcast_to(0.20 * jnp.eye(y_dim), (num_time_steps, y_dim, y_dim))
+
+    initial_truth = 0.9 * jnp.sin(state_locations / 3) + 0.25 * jnp.cos(
+        state_locations / 2
+    )
+
+    def simulate_step(truth, time_index):
+        truth = dynamics_matrix @ truth + 0.03 * jnp.cos(
+            state_locations / 4 + time_index
+        )
+        observation = observation_matrix @ truth + 0.02 * jnp.sin(
+            observation_locations + time_index
+        )
+        return truth, observation
+
+    _, ys = jax.lax.scan(simulate_step, initial_truth, jnp.arange(num_time_steps))
+
+    cross_distances = state_locations[:, None] - observation_locations[None, :]
+    marginal_distances = observation_locations[:, None] - observation_locations[None, :]
+    init_key, filter_key = random.split(random.key(314))
+
+    @jax.jit
+    def log_marginal_likelihood(log_length_scale):
+        length_scale = jnp.exp(log_length_scale)
+
+        def get_covariance_tapers(_):
+            return CovarianceTapers(
+                cross=gaussian(cross_distances, length_scale),
+                marginal=gaussian(marginal_distances, length_scale),
+            )
+
+        inference, model_inputs = load_enkf_inference(
+            m0,
+            chol_P0,
+            Fs,
+            cs,
+            chol_Qs,
+            Hs,
+            ds,
+            chol_Rs,
+            ys,
+            get_covariance_tapers=get_covariance_tapers,
+            n_particles=n_particles,
+            perturbed_obs=False,
+        )
+        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        states = filter(
+            inference,
+            model_inputs[1:],
+            init_state,
+            parallel=False,
+            key=filter_key,
+        )
+        return states.log_normalizing_constant[-1]
+
+    log_length_scale = jnp.log(3.0)
+    epsilon = 1e-4
+    log_likelihood, autodiff_gradient = jax.value_and_grad(log_marginal_likelihood)(
+        log_length_scale
+    )
+    finite_difference_gradient = (
+        log_marginal_likelihood(log_length_scale + epsilon)
+        - log_marginal_likelihood(log_length_scale - epsilon)
+    ) / (2 * epsilon)
+
+    assert jnp.isfinite(log_likelihood)
+    assert jnp.isfinite(autodiff_gradient)
+    assert jnp.abs(autodiff_gradient) > 1e-3
+    chex.assert_trees_all_close(
+        autodiff_gradient,
+        finite_difference_gradient,
+        rtol=1e-5,
+        atol=1e-7,
+    )
 
 
 @pytest.mark.parametrize("seed", [1, 43, 99, 123, 456])

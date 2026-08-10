@@ -54,3 +54,21 @@ def get_covariance_tapers(model_inputs):
         cross=gaspari_cohn(x[:, None] - y[None, :], model_inputs.support_radius),
     )
 ```
+
+For gradient-based optimization of the localization function, the Gaspari-Cohn taper may be suboptimal, as its gradients are dead for points outside the support radius. In this case, we may consider non-compact covariance tapers, like with a Gaussian kernel.
+
+```python
+import jax.numpy as jnp
+
+from cuthbertlib.ensemble_kalman import CovarianceTapers, gaussian
+
+
+def get_covariance_tapers(model_inputs):
+    x = model_inputs.state_locations
+    y = model_inputs.observation_locations
+    length_scale = jnp.exp(model_inputs.log_length_scale)
+    return CovarianceTapers(
+        cross=gaussian(x[:, None] - y[None, :], length_scale),
+        marginal=gaussian(y[:, None] - y[None, :], length_scale),
+    )
+```

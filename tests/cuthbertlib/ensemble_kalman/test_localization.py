@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from cuthbertlib.ensemble_kalman import gaspari_cohn
+from cuthbertlib.ensemble_kalman import gaspari_cohn, gaussian
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -19,4 +19,23 @@ def test_gaspari_cohn():
 
     actual = jax.jit(gaspari_cohn)(distances, 2.0)
 
+    chex.assert_trees_all_close(actual, expected, rtol=1e-14, atol=1e-14)
+
+
+def test_gaussian():
+    distances = jnp.array([-2.0, -1.0, 0.0, 1.0, 2.0])[:, None]
+    length_scales = jnp.array([1.0, 2.0])
+    expected = jnp.array(
+        [
+            [jnp.exp(-2.0), jnp.exp(-0.5)],
+            [jnp.exp(-0.5), jnp.exp(-0.125)],
+            [1.0, 1.0],
+            [jnp.exp(-0.5), jnp.exp(-0.125)],
+            [jnp.exp(-2.0), jnp.exp(-0.5)],
+        ]
+    )
+
+    actual = jax.jit(gaussian)(distances, length_scales)
+
+    chex.assert_shape(actual, (5, 2))
     chex.assert_trees_all_close(actual, expected, rtol=1e-14, atol=1e-14)
