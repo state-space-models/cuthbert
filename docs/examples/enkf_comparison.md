@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from jax import jit, random
 
 from cuthbert import filter as run_filter
-from cuthbert.enkf import ensemble_kalman_filter
+from cuthbert.ensemble_kalman import ensemble_kalman_filter
 from cuthbert.gaussian import taylor
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.smc import particle_filter

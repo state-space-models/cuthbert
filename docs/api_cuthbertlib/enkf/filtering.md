@@ -1,3 +1,0 @@
-# `filtering`
-
-::: cuthbertlib.enkf.filtering

@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 from jax import random
 
-from cuthbertlib.enkf.filtering import predict, update
+from cuthbertlib.ensemble_kalman.filtering import predict, update
 from cuthbertlib.kalman.filtering import update as kalman_update
 from cuthbertlib.kalman.generate import generate_lgssm
 

@@ -5,7 +5,7 @@ del version
 
 from cuthbertlib import (
     discrete,
-    enkf,
+    ensemble_kalman,
     kalman,
     linalg,
     linearize,

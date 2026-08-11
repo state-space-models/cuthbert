@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from cuthbertlib.enkf.filtering import DynamicsFn, ObservationFn
+from cuthbertlib.ensemble_kalman.filtering import DynamicsFn, ObservationFn
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
