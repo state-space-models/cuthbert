@@ -10,7 +10,7 @@ from jax.scipy.linalg import block_diag
 
 import cuthbert
 from cuthbert import factorial
-from cuthbert.factorial.utils import serial_to_single_factor
+from cuthbert.factorial.utils import serial_to_factorial
 from cuthbert.gaussian import kalman
 from cuthbert.inference import Filter, Smoother
 from cuthbertlib.linalg import block_marginal_sqrt_cov
@@ -308,11 +308,11 @@ def test_smoother(
     )
 
     factorial_inds = model_params[-1]
-    local_filter_states_single_factor = serial_to_single_factor(
+    local_filter_states_single_factor = serial_to_factorial(
         factorializer.extract,
         local_filter_states,
         factorial_inds,
-        smoother_factorial_index,
+        select_factorial_inds=smoother_factorial_index,
         init_factorial_tree=init_state,
     )
 

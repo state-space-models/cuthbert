@@ -1,7 +1,7 @@
 """cuthbert factorial filtering interface."""
 
 from jax import numpy as jnp
-from jax import random, tree
+from jax import random, tree, vmap
 from jax.lax import scan
 
 from cuthbert.factorial.types import Factorializer
@@ -13,7 +13,7 @@ def filter(
     filter_obj: Filter,
     factorializer: Factorializer,
     model_inputs: ArrayTreeLike,
-    init_state: ArrayTree,
+    init_state: ArrayTreeLike,
     *,
     output_factorial: bool = False,
     key: KeyArray | None = None,
@@ -60,13 +60,7 @@ def filter(
             (local states for each time step, final factorial state).
     """
     T = tree.leaves(model_inputs)[0].shape[0]
-
-    if key is None:
-        # This will throw error if used as a key, which is desired behavior
-        # (albeit not a useful error, we could improve this)
-        prepare_keys = jnp.empty(T)
-    else:
-        prepare_keys = random.split(key, T)
+    prepare_keys = _prepare_keys(key, T)
 
     def body_local(prev_factorial_state, prep_inp_and_k):
         prep_inp, k = prep_inp_and_k
@@ -115,3 +109,72 @@ def filter(
             (model_inputs, prepare_keys),
         )
         return local_states, final_factorial_state
+
+
+def synchronize(
+    filter_obj: Filter,
+    factorializer: Factorializer,
+    model_inputs: ArrayTreeLike,
+    factorial_state: ArrayTreeLike,
+    *,
+    key: KeyArray | None = None,
+):
+    """Apply a filter independently to each factor in a factorial state.
+
+    Useful for synchronizing a factorial state so that factors distributions all
+    apply to the same time.
+
+    Args:
+        filter_obj: The filter object used for single team dynamics-only updates.
+        factorializer: The factorializer object used to extract individual factor states.
+        model_inputs: The dynamics-only data for each team. Each attribute should have
+            a leading factorial axis of length equal to the number of teams in
+            the factorial state.
+        factorial_state: The current factorial state, which typically encodes
+            distributions for factors each at different times.
+        key: The key for the random number generator.
+    """
+    num_factors = tree.leaves(model_inputs)[0].shape[0]
+    prepare_keys = _prepare_keys(key, num_factors)
+
+    factorial_extr_state = vmap(factorializer.extract, in_axes=(None, 0))(
+        factorial_state, jnp.arange(num_factors)
+    )
+    state_prep = vmap(lambda inp, k: filter_obj.filter_prepare(inp, key=k))(
+        model_inputs, prepare_keys
+    )
+    factorial_sync_state = vmap(filter_obj.filter_combine)(
+        factorial_extr_state, state_prep
+    )
+
+    # Make sure sync state has the same shape as original state
+    # I.e. log_normalizing_constant should be shape (,) not (num_factors,)
+    factorial_sync_state = tree.map(
+        _squeeze_sync_leaf,
+        factorial_sync_state,
+        factorial_state._replace(model_inputs=model_inputs),
+    )
+
+    return factorial_sync_state
+
+
+def _prepare_keys(key: KeyArray | None, num_keys: int) -> KeyArray:
+    if key is None:
+        # This will throw error if used as a key, which is desired behavior
+        # (albeit not a useful error, we could improve this)
+        prepare_keys = jnp.empty(num_keys)
+    else:
+        prepare_keys = random.split(key, num_keys)
+    return prepare_keys
+
+
+def _squeeze_sync_leaf(sync_leaf, orig_leaf):
+    if orig_leaf is None or sync_leaf is None:
+        return sync_leaf
+    if sync_leaf.shape == orig_leaf.shape:
+        return sync_leaf
+    if orig_leaf.ndim == 0:
+        return sync_leaf[0]
+    raise ValueError(
+        f"Incompatible shapes: sync_leaf={sync_leaf.shape}, orig_leaf={orig_leaf.shape}"
+    )
