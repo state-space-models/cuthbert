@@ -76,7 +76,7 @@ Examples in `cuthbert` are written in Markdown and tangled into Python scripts u
 To add an example, you can use the following steps:
 
 1. Write the example in Markdown in the `docs` directory.
-2. Make sure to start each code block with `{.python #example_name-code_block_name}`. See the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.  
+2. Make sure to start each code block with `{.python #example_name-code_block_name}`. See the [existing examples](https://github.com/state-space-models/cuthbert/blob/main/docs/examples) for reference.
 (Note that it's important to include the example name here as code block names must be unique across all examples.)
 3. Add a hidden code block at the end of the file with the following content:
 ```
@@ -85,7 +85,7 @@ To add an example, you can use the following steps:
 <<example_name-code_block_name_2>>
 ...
 ```
-Again, see the [`docs/quickstart.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/quickstart.md) example for reference.
+Again, see the [existing examples](https://github.com/state-space-models/cuthbert/blob/main/docs/examples) for reference.
 
 4. Add a reference to your new example in the [`docs/examples/index.md`](https://github.com/state-space-models/cuthbert/blob/main/docs/examples/index.md) file and the [`zensical.toml`](https://github.com/state-space-models/cuthbert/blob/main/zensical.toml) file.
 You may need to add any new dependencies to the [`pyproject.toml`](https://github.com/state-space-models/cuthbert/blob/main/pyproject.toml) file under `examples`.

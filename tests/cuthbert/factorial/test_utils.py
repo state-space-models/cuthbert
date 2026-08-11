@@ -2,7 +2,7 @@ import chex
 import jax.numpy as jnp
 from jax import tree
 
-from cuthbert.factorial.utils import serial_to_factorial, serial_to_single_factor
+from cuthbert.factorial.utils import serial_to_factorial
 
 
 def extract(factorial_state, factorial_inds):
@@ -102,8 +102,8 @@ def test_serial_to_single_factor_matches_corresponding_factorial_tree():
     factorial_index = 1
 
     all_factors = serial_to_factorial(extract, serial_tree, factorial_inds)
-    factor_1 = serial_to_single_factor(
-        extract, serial_tree, factorial_inds, factorial_index=factorial_index
+    factor_1 = serial_to_factorial(
+        extract, serial_tree, factorial_inds, select_factorial_inds=factorial_index
     )
 
     chex.assert_trees_all_close(factor_1, all_factors[factorial_index])
@@ -124,11 +124,11 @@ def test_serial_to_single_factor_prepends_init_factorial_tree():
         factorial_inds,
         init_factorial_tree=init_factorial_tree,
     )
-    factor_1 = serial_to_single_factor(
+    factor_1 = serial_to_factorial(
         extract,
         serial_tree,
         factorial_inds,
-        factorial_index=factorial_index,
+        select_factorial_inds=factorial_index,
         init_factorial_tree=init_factorial_tree,
     )
 

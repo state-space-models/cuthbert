@@ -254,8 +254,8 @@ car's position.
   `cuthbert.smc`, check out the example on [online particle filtering and
   prediction for a stochastic volatility model](online_stoch_vol.md).
 - **Advanced Models**: Check out an extended Kalman filter for a nonlinear
-  state-space model [inferring latent football team skill
-  ratings](../quickstart.md).
+  factorial state-space model [inferring latent football team skill
+  ratings](factorial_football.md).
 
 
 

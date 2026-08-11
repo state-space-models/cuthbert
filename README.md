@@ -17,6 +17,11 @@ A JAX library for state-space model inference
 [![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/state-space-models/cuthbert)
 [![PyPI](https://img.shields.io/pypi/v/cuthbert?style=for-the-badge)](https://pypi.org/project/cuthbert/)
 [![Docs](https://img.shields.io/badge/Docs-b6d7a8?logo=readme&logoColor=black&style=for-the-badge)](https://state-space-models.github.io/cuthbert/)
+
+
+If you want to jump right in, check out our [examples](https://state-space-models.github.io/cuthbert/examples).
+Maybe a [simple Kalman filter for tracking](https://state-space-models.github.io/cuthbert/examples/kalman_tracking)
+or a [factorial state-space model for modelling international football](https://state-space-models.github.io/cuthbert/examples/factorial_football).
 <!-- --8<-- [end:intro] -->
 
 <!-- --8<-- [start:goals] -->
