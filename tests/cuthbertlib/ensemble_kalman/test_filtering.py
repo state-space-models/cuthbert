@@ -5,7 +5,6 @@ import pytest
 from jax import random
 
 from cuthbertlib.ensemble_kalman.filtering import predict, update
-from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
 from cuthbertlib.kalman.filtering import update as kalman_update
 from cuthbertlib.kalman.generate import generate_lgssm
 
@@ -242,7 +241,7 @@ def test_update_partial_nan_observation(seed, x_dim, y_dim):
 
 
 @pytest.mark.parametrize("localize_marginal", [False, True])
-def test_update_covariance_tapers(localize_marginal):
+def test_update_covariance_modifiers(localize_marginal):
     ensemble = jnp.array(
         [
             [-2.0, -1.0],
@@ -254,10 +253,14 @@ def test_update_covariance_tapers(localize_marginal):
     H = jnp.array([[1.0, 0.5], [-0.25, 1.0]])
     chol_R = jnp.diag(jnp.array([0.4, 0.7]))
     y = jnp.array([0.3, -0.6])
-    tapers = CovarianceTapers(
-        cross=jnp.array([[1.0, 0.25], [0.5, 1.0]]),
-        marginal=(jnp.array([[1.0, 0.2], [0.2, 1.0]]) if localize_marginal else None),
-    )
+    cross_taper = jnp.array([[1.0, 0.25], [0.5, 1.0]])
+    marginal_taper = jnp.array([[1.0, 0.2], [0.2, 1.0]]) if localize_marginal else None
+
+    def modify_cross_covariance(C_xy):
+        return cross_taper * C_xy
+
+    def modify_marginal_covariance(C_yy):
+        return marginal_taper * C_yy
 
     updated, ll = update(
         random.key(0),
@@ -266,17 +269,20 @@ def test_update_covariance_tapers(localize_marginal):
         chol_R,
         y,
         perturbed_obs=False,
-        tapers=tapers,
+        cross_covariance_modifier=modify_cross_covariance,
+        marginal_covariance_modifier=(
+            modify_marginal_covariance if localize_marginal else None
+        ),
     )
 
     y_pred = ensemble @ H.T
     x_dev = ensemble - jnp.mean(ensemble, axis=0)
     y_mean = jnp.mean(y_pred, axis=0)
     y_dev = y_pred - y_mean
-    C_xy = tapers.cross * (x_dev.T @ y_dev / (ensemble.shape[0] - 1))
+    C_xy = cross_taper * (x_dev.T @ y_dev / (ensemble.shape[0] - 1))
     C_yy = y_dev.T @ y_dev / (ensemble.shape[0] - 1)
-    if tapers.marginal is not None:
-        C_yy = tapers.marginal * C_yy
+    if marginal_taper is not None:
+        C_yy = marginal_taper * C_yy
     S = C_yy + chol_R @ chol_R.T
     gain = jnp.linalg.solve(S, C_xy.T).T
     expected_updated = ensemble + (y - y_pred) @ gain.T
@@ -290,7 +296,7 @@ def test_update_covariance_tapers(localize_marginal):
 
     chex.assert_trees_all_close(updated, expected_updated, rtol=1e-12, atol=1e-12)
     chex.assert_trees_all_close(ll, expected_ll, rtol=1e-12, atol=1e-12)
-    if tapers.marginal is None:
+    if marginal_taper is None:
         _, untapered_ll = update(
             random.key(0),
             ensemble,
@@ -303,7 +309,7 @@ def test_update_covariance_tapers(localize_marginal):
 
 
 @pytest.mark.parametrize("localize_marginal", [False, True])
-def test_update_covariance_tapers_with_missing_observations(localize_marginal):
+def test_update_covariance_modifiers_with_missing_observations(localize_marginal):
     ensemble = jnp.array(
         [
             [-2.0, -1.0],
@@ -322,21 +328,25 @@ def test_update_covariance_tapers_with_missing_observations(localize_marginal):
     )
     chol_R = jnp.diag(jnp.array([0.3, 0.4, 0.5, 0.6]))
     y = jnp.array([0.1, jnp.nan, -0.7, jnp.nan])
-    tapers = CovarianceTapers(
-        cross=jnp.array([[1.0, 0.1, 0.4, 0.2], [0.3, 0.5, 0.8, 0.6]]),
-        marginal=(
-            jnp.array(
-                [
-                    [1.0, 0.1, 0.2, 0.3],
-                    [0.1, 1.0, 0.4, 0.5],
-                    [0.2, 0.4, 1.0, 0.6],
-                    [0.3, 0.5, 0.6, 1.0],
-                ]
-            )
-            if localize_marginal
-            else None
-        ),
+    cross_taper = jnp.array([[1.0, 0.1, 0.4, 0.2], [0.3, 0.5, 0.8, 0.6]])
+    marginal_taper = (
+        jnp.array(
+            [
+                [1.0, 0.1, 0.2, 0.3],
+                [0.1, 1.0, 0.4, 0.5],
+                [0.2, 0.4, 1.0, 0.6],
+                [0.3, 0.5, 0.6, 1.0],
+            ]
+        )
+        if localize_marginal
+        else None
     )
+
+    def modify_cross_covariance(C_xy):
+        return cross_taper * C_xy
+
+    def modify_marginal_covariance(C_yy):
+        return marginal_taper * C_yy
 
     actual = update(
         random.key(0),
@@ -345,7 +355,10 @@ def test_update_covariance_tapers_with_missing_observations(localize_marginal):
         chol_R,
         y,
         perturbed_obs=False,
-        tapers=tapers,
+        cross_covariance_modifier=modify_cross_covariance,
+        marginal_covariance_modifier=(
+            modify_marginal_covariance if localize_marginal else None
+        ),
     )
 
     observed = jnp.array([0, 2])
@@ -356,13 +369,11 @@ def test_update_covariance_tapers_with_missing_observations(localize_marginal):
         chol_R[observed[:, None], observed],
         y[observed],
         perturbed_obs=False,
-        tapers=CovarianceTapers(
-            tapers.cross[:, observed],
-            (
-                None
-                if tapers.marginal is None
-                else tapers.marginal[observed[:, None], observed]
-            ),
+        cross_covariance_modifier=lambda C_xy: cross_taper[:, observed] * C_xy,
+        marginal_covariance_modifier=(
+            None
+            if marginal_taper is None
+            else lambda C_yy: marginal_taper[observed[:, None], observed] * C_yy
         ),
     )
 

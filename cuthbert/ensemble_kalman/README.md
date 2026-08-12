@@ -39,36 +39,47 @@ See [Raanes (2016)](https://doi.org/10.1002/qj.2728) for more info on the EnRTS 
 
 ## Covariance localization
 
-Cuthbert implements localization via covariance tapering. These are accepted by the EnKF via a `get_covariance_tapers` callback, evaluated by the model at every step. If the callback is provided, it requires a taper for the cross-covariance $C_{xy}$, and an optional taper for the marginal covariance $C_{yy}$. Pre-defined covariance tapers are available in `cuthbertlib.ensemble_kalman/localization.py`.
+Cuthbert implements localization through separate `modify_cross_covariance` and `modify_marginal_covariance` callbacks. Each callback receives an empirical covariance and the current model inputs, and returns the modified covariance.  
 
-For example, to use a taper with the Gaspari-Cohn correlation function, the callback may be specified as follows:
+Cuthbert is agnostic to the exact form of modification callbacks, only assuming that they are JAX-compatible with outputs that are a PSD matrix of the right shape. One common form of these callbacks is covariance tapering, which forms the modified covariance as an elementwise product with a tapering matrix. We provide a few common tapers in `cuthbertlib.ensemble_kalman.localization.py`.
+
+For example, cross-covariance localization with the Gaspari-Cohn correlation function can be specified as follows:
 
 ```python
-from cuthbertlib.ensemble_kalman.localization import CovarianceTapers, gaspari_cohn
+from cuthbertlib.ensemble_kalman.localization import gaspari_cohn
 
 
-def get_covariance_tapers(model_inputs):
+def modify_cross_covariance(cross_covariance, model_inputs):
     x = model_inputs.state_locations
     y = model_inputs.observation_locations
-    return CovarianceTapers(
-        cross=gaspari_cohn(x[:, None] - y[None, :], model_inputs.support_radius),
+    taper = gaspari_cohn(
+        x[:, None] - y[None, :],
+        model_inputs.support_radius,
     )
+    return taper * cross_covariance
 ```
 
-For gradient-based optimization of the localization function, the Gaspari-Cohn taper may be suboptimal, as its gradients are dead for points outside the support radius. In this case, we may consider non-compact covariance tapers, like with a Gaussian kernel.
+When only the cross covariance matrix is modified, the EnKF retains its typical update step. However, cuthbert additionally allows the marginal covariance matrix to be modified. In this case, we are unable to perform an efficient square-root update, and fallback to an explicit Cholesky factorization construction. We therefore recommend passing `modify_marginal_covariance=None`, if there is no good reason to apply localization to the marginal covariance matrix.
+
+For gradient-based optimization of the localization function, the Gaspari-Cohn taper may be suboptimal, as its gradients are dead for points outside the support radius. In this case, a non-compact covariance taper such as a Gaussian kernel may be preferable.
 
 ```python
 import jax.numpy as jnp
 
-from cuthbertlib.ensemble_kalman import CovarianceTapers, gaussian
+from cuthbertlib.ensemble_kalman import gaussian
 
 
-def get_covariance_tapers(model_inputs):
+def modify_cross_covariance(cross_covariance, model_inputs):
     x = model_inputs.state_locations
     y = model_inputs.observation_locations
     length_scale = jnp.exp(model_inputs.log_length_scale)
-    return CovarianceTapers(
-        cross=gaussian(x[:, None] - y[None, :], length_scale),
-        marginal=gaussian(y[:, None] - y[None, :], length_scale),
-    )
+    taper = gaussian(x[:, None] - y[None, :], length_scale)
+    return taper * cross_covariance
+
+
+def modify_marginal_covariance(marginal_covariance, model_inputs):
+    y = model_inputs.observation_locations
+    length_scale = jnp.exp(model_inputs.log_length_scale)
+    taper = gaussian(y[:, None] - y[None, :], length_scale)
+    return taper * marginal_covariance
 ```

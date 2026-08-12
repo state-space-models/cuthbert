@@ -7,7 +7,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import CovarianceTapers, gaussian
+from cuthbertlib.ensemble_kalman import gaussian
 from cuthbertlib.kalman.generate import generate_lgssm
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -30,7 +30,8 @@ def load_enkf_inference(
     chol_Rs,
     ys,
     noop=False,
-    get_covariance_tapers=None,
+    modify_cross_covariance=None,
+    modify_marginal_covariance=None,
     n_particles=100_000,
     perturbed_obs=True,
 ):
@@ -72,7 +73,8 @@ def load_enkf_inference(
         get_observations=get_observations,
         n_particles=n_particles,
         perturbed_obs=perturbed_obs,
-        get_covariance_tapers=get_covariance_tapers,
+        modify_cross_covariance=modify_cross_covariance,
+        modify_marginal_covariance=modify_marginal_covariance,
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
@@ -94,15 +96,17 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        get_covariance_tapers = None
+        modify_cross_covariance = None
+        modify_marginal_covariance = None
         if localize_marginal is not None:
-            tapers = CovarianceTapers(
-                cross=jnp.ones((x_dim, y_dim)),
-                marginal=(jnp.ones((y_dim, y_dim)) if localize_marginal else None),
-            )
 
-            def get_covariance_tapers(_):
-                return tapers
+            def modify_cross_covariance(C_xy, model_inputs):
+                return C_xy
+
+            if localize_marginal:
+
+                def modify_marginal_covariance(C_yy, model_inputs):
+                    return C_yy
 
         # Run the EnKF.
         inference, model_inputs = load_enkf_inference(
@@ -115,7 +119,8 @@ class Test(chex.TestCase):
             ds,
             chol_Rs,
             ys,
-            get_covariance_tapers=get_covariance_tapers,
+            modify_cross_covariance=modify_cross_covariance,
+            modify_marginal_covariance=modify_marginal_covariance,
         )
         init_key, filter_key = random.split(random.key(seed + 1))
         init_state = inference.init_prepare(model_inputs[0], key=init_key)
@@ -261,11 +266,11 @@ def test_gaussian_taper_log_likelihood_gradient():
     def log_marginal_likelihood(log_length_scale):
         length_scale = jnp.exp(log_length_scale)
 
-        def get_covariance_tapers(_):
-            return CovarianceTapers(
-                cross=gaussian(cross_distances, length_scale),
-                marginal=gaussian(marginal_distances, length_scale),
-            )
+        def modify_cross_covariance(C_xy, model_inputs):
+            return gaussian(cross_distances, length_scale) * C_xy
+
+        def modify_marginal_covariance(C_yy, model_inputs):
+            return gaussian(marginal_distances, length_scale) * C_yy
 
         inference, model_inputs = load_enkf_inference(
             m0,
@@ -277,7 +282,8 @@ def test_gaussian_taper_log_likelihood_gradient():
             ds,
             chol_Rs,
             ys,
-            get_covariance_tapers=get_covariance_tapers,
+            modify_cross_covariance=modify_cross_covariance,
+            modify_marginal_covariance=modify_marginal_covariance,
             n_particles=n_particles,
             perturbed_obs=False,
         )

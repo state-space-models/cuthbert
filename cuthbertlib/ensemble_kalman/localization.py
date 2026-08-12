@@ -1,25 +1,8 @@
 """Covariance localization utilities for ensemble Kalman methods."""
 
-from typing import NamedTuple
-
 import jax.numpy as jnp
 
 from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
-
-
-class CovarianceTapers(NamedTuple):
-    """Tapers for cross-covariance and marginal covariance matrices.
-
-    Attributes:
-        cross: Taper applied elementwise to the cross-covariance matrix ``C_xy``,
-            with shape ``(x_dim, y_dim)``.
-        marginal: Optional symmetric PSD taper applied elementwise to the marginal
-            covariance matrix ``C_yy``, with shape ``(y_dim, y_dim)``. If omitted,
-            only the cross-covariance is localized.
-    """
-
-    cross: Array
-    marginal: Array | None = None
 
 
 def gaussian(

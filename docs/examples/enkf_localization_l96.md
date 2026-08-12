@@ -38,7 +38,7 @@ from jax import lax, random
 
 from cuthbert import filter as run_filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import CovarianceTapers, gaspari_cohn
+from cuthbertlib.ensemble_kalman import gaspari_cohn
 
 plt.switch_backend("Agg")
 jax.config.update("jax_enable_x64", True)
@@ -142,6 +142,7 @@ We build a covariance taper for localization that uses this distance and the Gas
 ```{.python #enkf-localization-l96-tapers}
 support_radius = 8.0
 state_locations = jnp.arange(state_dim)
+observation_locations = state_locations[observation_indices]
 
 
 def periodic_distance(left, right):
@@ -150,28 +151,27 @@ def periodic_distance(left, right):
     return jnp.minimum(direct, state_dim - direct)
 
 
-state_distances = periodic_distance(state_locations, state_locations)
+cross_distances = periodic_distance(state_locations, observation_locations)
+marginal_distances = periodic_distance(observation_locations, observation_locations)
 
 
-def make_filter_tapers(radius):
-    state_taper = gaspari_cohn(state_distances, radius)
-    return CovarianceTapers(
-        cross=state_taper[:, observation_indices],
-        marginal=state_taper[
-            observation_indices[:, None],
-            observation_indices[None, :],
-        ],
-    )
+def make_covariance_modifiers(radius):
+    cross_taper = gaspari_cohn(cross_distances, radius)
+    marginal_taper = gaspari_cohn(marginal_distances, radius)
+
+    def modify_cross_covariance(C_xy, model_inputs):
+        return cross_taper * C_xy
+
+    def modify_marginal_covariance(C_yy, model_inputs):
+        return marginal_taper * C_yy
+
+    return modify_cross_covariance, modify_marginal_covariance
 
 
-filter_tapers = make_filter_tapers(support_radius)
-
-
-def get_covariance_tapers(_model_inputs):
-    return filter_tapers
+covariance_modifiers = make_covariance_modifiers(support_radius)
 ```
 
-Tapers in `cuthbert` will always require `cross`, which is the taper for the covariance matrix $C_{xy}$. Tapers for the marginal (observation) covariance, $C_{yy}$, are optional and can be passed with `marginal` or as `None`. 
+Each modifier receives one empirical covariance and the current model inputs. Here, the tapers are constant over time, so the modifiers ignore their model inputs. We construct only the required state-observation and observation-observation tapers, then localize both covariances elementwise. Omitting the marginal modifier would leave $C_{yy}$ unchanged and retain the square-root update; supplying it requires a direct Cholesky factorization of the modified innovation covariance.
 
 ## Comparing Localized vs. Unlocalized Filters
 
@@ -195,7 +195,11 @@ def get_observations(observation):
     )
 
 
-def build_enkf(n_members, taper_callback=None):
+def build_enkf(
+    n_members,
+    modify_cross_covariance=None,
+    modify_marginal_covariance=None,
+):
     return ensemble_kalman_filter.build_filter(
         init_sample=init_sample,
         get_dynamics=get_dynamics,
@@ -203,7 +207,8 @@ def build_enkf(n_members, taper_callback=None):
         n_particles=n_members,
         inflation=inflation,
         perturbed_obs=True,
-        get_covariance_tapers=taper_callback,
+        modify_cross_covariance=modify_cross_covariance,
+        modify_marginal_covariance=modify_marginal_covariance,
     )
 
 jitted_filter = jax.jit(run_filter, static_argnames=("filter_obj",))
@@ -225,7 +230,7 @@ unlocalized_states = {
     n_members: apply_filter(build_enkf(n_members)) for n_members in ensemble_sizes
 }
 localized_states = {
-    n_members: apply_filter(build_enkf(n_members, get_covariance_tapers))
+    n_members: apply_filter(build_enkf(n_members, *covariance_modifiers))
     for n_members in ensemble_sizes
 }
 ```
@@ -446,12 +451,6 @@ radius_ensemble_size = 20
 support_radii = (2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 16.0, 20.0)
 
 
-def make_taper_callback(radius):
-    """Return a callback for a fixed support radius."""
-    tapers = make_filter_tapers(radius)
-    return lambda _model_inputs: tapers
-
-
 radius_states = {
     radius: (
         localized_states[radius_ensemble_size]
@@ -459,7 +458,7 @@ radius_states = {
         else apply_filter(
             build_enkf(
                 radius_ensemble_size,
-                make_taper_callback(radius),
+                *make_covariance_modifiers(radius),
             )
         )
     )

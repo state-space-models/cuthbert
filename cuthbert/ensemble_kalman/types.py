@@ -2,8 +2,10 @@
 
 from typing import Protocol
 
-from cuthbertlib.ensemble_kalman.filtering import DynamicsFn, ObservationFn
-from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
+from cuthbertlib.ensemble_kalman.filtering import (
+    DynamicsFn,
+    ObservationFn,
+)
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
@@ -56,16 +58,35 @@ class GetEnKFObservations(Protocol):
         ...
 
 
-class GetCovarianceTapers(Protocol):
-    """Protocol for getting covariance localization tapers."""
+class ModifyCrossCovariance(Protocol):
+    """Protocol for modifying an EnKF cross-covariance."""
 
-    def __call__(self, model_inputs: ArrayTreeLike) -> CovarianceTapers:
-        """Get covariance localization tapers from model inputs.
+    def __call__(self, cross_covariance: Array, model_inputs: ArrayTreeLike) -> Array:
+        """Modify an empirical state-observation cross-covariance.
 
         Args:
+            cross_covariance: Empirical state-observation cross-covariance.
             model_inputs: Model inputs.
 
         Returns:
-            Covariance tapers for the current inference step.
+            Modified state-observation cross-covariance.
+        """
+        ...
+
+
+class ModifyMarginalCovariance(Protocol):
+    """Protocol for modifying an EnKF marginal covariance."""
+
+    def __call__(
+        self, marginal_covariance: Array, model_inputs: ArrayTreeLike
+    ) -> Array:
+        """Modify an empirical observation marginal covariance.
+
+        Args:
+            marginal_covariance: Empirical observation marginal covariance.
+            model_inputs: Model inputs.
+
+        Returns:
+            Modified observation marginal covariance.
         """
         ...

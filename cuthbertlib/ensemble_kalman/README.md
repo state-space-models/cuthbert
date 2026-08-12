@@ -18,4 +18,8 @@ The EnRTS algorithm provides a smoothing counterpart to the EnKF, based on the R
 
 ## Covariance localization
 
-`filter_update` optionally accepts `CovarianceTapers` to perform localization. Passing a custom covariance taper is possible, but cuthbertlib also provides `gaspari_cohn` and `gaussian` to construct tapers from predefined correlation functions. The Gaspari-Cohn correlation function is more classical, but the Gaussian has non-compact support and may therefore have better gradient properties.
+`filter_update` optionally accepts separate `cross_covariance_modifier` and `marginal_covariance_modifier` functions. Each function receives the corresponding empirical covariance matrix and the current model inputs, and returns the modified covariance matrix. These functions are applied before missingness is handled, so they can be applied in the original indexing.
+
+The modifier functions may be arbitrary JAX-compatible code returning a PSD matrix. The most common form of this is covariance tapering; cuthbertlib provides `gaspari_cohn` and `gaussian` correlation functions for use as tapering functions. The Gaspari-Cohn correlation function is more classical, while the Gaussian has non-compact support and may therefore have better gradient properties.
+
+When only `cross_covariance_modifier` is provided (i.e., when `marginal_covariance_modifier` is `None`), the normal square-root update is applied. When `marginal_covariance_modifier` is supplied, we fall back to an explicit computation of a Cholesky factor. 

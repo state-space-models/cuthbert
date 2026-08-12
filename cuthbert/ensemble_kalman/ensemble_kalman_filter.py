@@ -12,10 +12,11 @@ import jax.numpy as jnp
 from jax import random, tree
 
 from cuthbert.ensemble_kalman.types import (
-    GetCovarianceTapers,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
+    ModifyCrossCovariance,
+    ModifyMarginalCovariance,
 )
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
@@ -66,7 +67,8 @@ def build_filter(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
-    get_covariance_tapers: GetCovarianceTapers | None = None,
+    modify_cross_covariance: ModifyCrossCovariance | None = None,
+    modify_marginal_covariance: ModifyMarginalCovariance | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
 
@@ -75,12 +77,15 @@ def build_filter(
         get_dynamics: Function to get dynamics function (x_t, key) -> x_{t+1} ~ p(x_{t+1} | x_t) from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
-        inflation: Multiplicative inflation factor for ensemble deviations.
+        inflation: Multiplicative inflation factor for ensemble deviations, applied in the predict step.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
         store_predicted_ensemble: Whether to store the incoming forecast ensemble
             in each filter state, as required by the EnRTS smoother.
-        get_covariance_tapers: Optional function to get covariance localization
-            tapers from model inputs.
+        modify_cross_covariance: Optional function that modifies the empirical
+            state-observation cross-covariance in the update step.
+        modify_marginal_covariance: Optional function that modifies the empirical
+            observation marginal covariance in the update step. Using
+            this function requires a direct Cholesky factorization during each update.
 
     Returns:
         Filter object for the EnKF.
@@ -111,7 +116,8 @@ def build_filter(
             inflation=inflation,
             perturbed_obs=perturbed_obs,
             store_predicted_ensemble=store_predicted_ensemble,
-            get_covariance_tapers=get_covariance_tapers,
+            modify_cross_covariance=modify_cross_covariance,
+            modify_marginal_covariance=modify_marginal_covariance,
         ),
         associative=False,
     )
@@ -207,7 +213,8 @@ def filter_combine(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
-    get_covariance_tapers: GetCovarianceTapers | None = None,
+    modify_cross_covariance: ModifyCrossCovariance | None = None,
+    modify_marginal_covariance: ModifyMarginalCovariance | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
 
@@ -221,8 +228,10 @@ def filter_combine(
         inflation: Multiplicative inflation factor.
         perturbed_obs: If True, use perturbed observations.
         store_predicted_ensemble: Whether to store the incoming forecast ensemble.
-        get_covariance_tapers: Optional function to get covariance localization
-            tapers from model inputs.
+        modify_cross_covariance: Optional function that modifies the empirical
+            state-observation cross-covariance using the current model inputs.
+        modify_marginal_covariance: Optional function that modifies the empirical
+            observation marginal covariance using the current model inputs.
 
     Returns:
         Updated EnKF state.
@@ -240,11 +249,17 @@ def filter_combine(
 
     # Update
     observation_fn, chol_R, y = get_observations(state_2.model_inputs)
-    tapers = (
-        get_covariance_tapers(state_2.model_inputs)
-        if get_covariance_tapers is not None
-        else None
+    cross_covariance_modifier = (
+        None
+        if modify_cross_covariance is None
+        else partial(modify_cross_covariance, model_inputs=state_2.model_inputs)
     )
+    marginal_covariance_modifier = (
+        None
+        if modify_marginal_covariance is None
+        else partial(modify_marginal_covariance, model_inputs=state_2.model_inputs)
+    )
+
     updated, ll = enkf_lib.filter_update(
         key_update,
         predicted,
@@ -252,7 +267,8 @@ def filter_combine(
         chol_R,
         y,
         perturbed_obs,
-        tapers=tapers,
+        cross_covariance_modifier=cross_covariance_modifier,
+        marginal_covariance_modifier=marginal_covariance_modifier,
     )
 
     return EnKFState(

@@ -11,13 +11,14 @@ import jax.numpy as jnp
 from jax import random
 from jax.scipy.linalg import cho_solve
 
-from cuthbertlib.ensemble_kalman.localization import CovarianceTapers
 from cuthbertlib.linalg import collect_nans_chol, tria
 from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, KeyArray, ScalarArray
 
 ObservationFn = Callable[[Array], Array]
 DynamicsFn = Callable[[Array, KeyArray], Array]
+CrossCovarianceModifier = Callable[[Array], Array]
+MarginalCovarianceModifier = Callable[[Array], Array]
 
 
 def predict(
@@ -57,7 +58,8 @@ def update(
     chol_R: Array,
     y: Array,
     perturbed_obs: bool = True,
-    tapers: CovarianceTapers | None = None,
+    cross_covariance_modifier: CrossCovarianceModifier | None = None,
+    marginal_covariance_modifier: MarginalCovarianceModifier | None = None,
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
 
@@ -73,9 +75,11 @@ def update(
         y: Observation vector, shape (y_dim,). NaNs indicate missing dimensions.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
             If False, use deterministic update.
-        tapers: Optional elementwise taper for the state-observation
-            cross-covariance, with shape ``(x_dim, y_dim)``, and an optional
-            observation marginal taper with shape ``(y_dim, y_dim)``.
+        cross_covariance_modifier: Optional function that modifies the empirical
+            state-observation cross-covariance.
+        marginal_covariance_modifier: Optional function that modifies the empirical
+            observation marginal covariance. Requires a direct Cholesky factorization
+            during the update step.
 
     Returns:
         Tuple of (updated_ensemble, log_likelihood).
@@ -84,41 +88,50 @@ def update(
 
     # Map ensemble to observation space
     y_pred = jax.vmap(observation_fn, (0,))(predicted_ensemble)
+    x_mean = jnp.mean(predicted_ensemble, axis=0)
+    x_dev = predicted_ensemble - x_mean
+
+    flag = jnp.isnan(y)
+
+    # If modifiers are provided, apply them before reordering due to NaNs
+    if (
+        cross_covariance_modifier is not None
+        or marginal_covariance_modifier is not None
+    ):
+        argsort = jnp.argsort(flag, stable=True)
+        original_y_dev = y_pred - jnp.mean(y_pred, axis=0)
+
+    if cross_covariance_modifier is not None:
+        C_xy = x_dev.T @ original_y_dev / (N - 1)
+        C_xy = cross_covariance_modifier(C_xy)
+
+    if marginal_covariance_modifier is not None:
+        C_yy = original_y_dev.T @ original_y_dev / (N - 1)
+        C_yy = marginal_covariance_modifier(C_yy)
 
     # Handle partially-missing observations by reordering and zeroing missing dims.
     # Use y_pred.T because y_pred is (N, y_dim) and we want to reorder along axis 0.
-    flag = jnp.isnan(y)
-    if tapers is not None:
-        argsort = jnp.argsort(flag, stable=True)
-        cross_taper = tapers.cross[:, argsort]
-        marginal_taper = (
-            None if tapers.marginal is None else tapers.marginal[argsort][:, argsort]
-        )
-        tapers = CovarianceTapers(cross_taper, marginal_taper)
     flag, chol_R, y, y_pred = collect_nans_chol(flag, chol_R, y, y_pred.T)
     y_pred = y_pred.T
     y_dim = y.shape[0]
 
-    # Ensemble means
-    x_mean = jnp.mean(predicted_ensemble, axis=0)
     y_mean = jnp.mean(y_pred, axis=0)
-
-    # Deviations from ensemble mean
-    x_dev = predicted_ensemble - x_mean
     y_dev = y_pred - y_mean
+    if cross_covariance_modifier is None:
+        C_xy = x_dev.T @ y_dev / (N - 1)
+    else:
+        C_xy = C_xy[:, argsort]
+        C_xy = jnp.where(flag[None, :], 0.0, C_xy)
 
-    # Cross-covariance
-    C_xy = x_dev.T @ y_dev / (N - 1)
-    if tapers is not None:
-        C_xy = tapers.cross * C_xy
-
-    if tapers is None or tapers.marginal is None:
+    if marginal_covariance_modifier is None:
         chol_S = tria(jnp.concatenate([y_dev.T / jnp.sqrt(N - 1), chol_R], axis=1))
     else:
         # Not a straightforward way to compute this via tria
-        # because tapers.marginal cannot be applied to y_dev.T / sqrt(N-1)
-        # directly. So we must compute the Cholesky factor directly.
-        C_yy = tapers.marginal * (y_dev.T @ y_dev / (N - 1))
+        # because we don't necessarily have a factor of the modified
+        # covariance. So we must compute the Cholesky factorization directly.
+        C_yy = C_yy[argsort][:, argsort]
+        missing_covariance = flag[:, None] | flag[None, :]
+        C_yy = jnp.where(missing_covariance, 0.0, C_yy)
         chol_S = jnp.linalg.cholesky(C_yy + chol_R @ chol_R.T)
 
     # Kalman gain: K = C_xy @ S^{-1} = C_xy @ cho_solve(chol_S, I)
