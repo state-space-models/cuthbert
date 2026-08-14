@@ -7,7 +7,7 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import gaussian
+from cuthbertlib.ensemble_kalman import gaussian, no_covariance_modifier
 from cuthbertlib.kalman.generate import generate_lgssm
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
@@ -30,7 +30,7 @@ def load_enkf_inference(
     chol_Rs,
     ys,
     noop=False,
-    modify_cross_covariance=None,
+    modify_cross_covariance=no_covariance_modifier,
     modify_marginal_covariance=None,
     n_particles=100_000,
     perturbed_obs=True,
@@ -96,7 +96,7 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        modify_cross_covariance = None
+        modify_cross_covariance = no_covariance_modifier
         modify_marginal_covariance = None
         if localize_marginal is not None:
 

@@ -38,7 +38,7 @@ from jax import lax, random
 
 from cuthbert import filter as run_filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import gaspari_cohn
+from cuthbertlib.ensemble_kalman import gaspari_cohn, no_covariance_modifier
 
 plt.switch_backend("Agg")
 jax.config.update("jax_enable_x64", True)
@@ -197,7 +197,7 @@ def get_observations(observation):
 
 def build_enkf(
     n_members,
-    modify_cross_covariance=None,
+    modify_cross_covariance=no_covariance_modifier,
     modify_marginal_covariance=None,
 ):
     return ensemble_kalman_filter.build_filter(

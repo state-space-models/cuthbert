@@ -39,7 +39,7 @@ See [Raanes (2016)](https://doi.org/10.1002/qj.2728) for more info on the EnRTS 
 
 ## Covariance localization
 
-Cuthbert implements localization through separate `modify_cross_covariance` and `modify_marginal_covariance` callbacks. Each callback receives an empirical covariance and the current model inputs, and returns the modified covariance.  
+Cuthbert implements localization through separate `modify_cross_covariance` and `modify_marginal_covariance` callbacks. Each callback receives an empirical covariance and the current model inputs, and returns the modified covariance. By default, `modify_cross_covariance` is `no_covariance_modifier`, which passes the covariance through unchanged.  
 
 Cuthbert is agnostic to the exact form of modification callbacks, only assuming that they are JAX-compatible with outputs that are a PSD matrix of the right shape. One common form of these callbacks is covariance tapering, which forms the modified covariance as an elementwise product with a tapering matrix. We provide a few common tapers in `cuthbertlib.ensemble_kalman.localization.py`.
 

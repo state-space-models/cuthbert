@@ -4,7 +4,7 @@ See Algorithm 10.2, [Sanz-Alonso et al., Inverse Problems and Data Assimilation]
 Based in part on the [CD-Dynamax implementation](https://github.com/hd-UQ/cd_dynamax/blob/public/cd_dynamax/src/continuous_discrete_nonlinear_gaussian_ssm/inference_enkf.py).
 """
 
-from typing import Callable
+from typing import Any, Callable
 
 import jax
 import jax.numpy as jnp
@@ -19,6 +19,23 @@ ObservationFn = Callable[[Array], Array]
 DynamicsFn = Callable[[Array, KeyArray], Array]
 CrossCovarianceModifier = Callable[[Array], Array]
 MarginalCovarianceModifier = Callable[[Array], Array]
+
+
+def no_covariance_modifier(covariance: Array, *args: Any, **kwargs: Any) -> Array:
+    """Return an empirical covariance unchanged.
+
+    The identity covariance modifier, used as the default when no modification
+    (e.g. localization) is requested. Trailing arguments are accepted and ignored.
+
+    Args:
+        covariance: Empirical covariance matrix.
+        *args: Ignored.
+        **kwargs: Ignored.
+
+    Returns:
+        The covariance matrix, unchanged.
+    """
+    return covariance
 
 
 def predict(
@@ -58,7 +75,7 @@ def update(
     chol_R: Array,
     y: Array,
     perturbed_obs: bool = True,
-    cross_covariance_modifier: CrossCovarianceModifier | None = None,
+    cross_covariance_modifier: CrossCovarianceModifier = no_covariance_modifier,
     marginal_covariance_modifier: MarginalCovarianceModifier | None = None,
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
@@ -75,11 +92,12 @@ def update(
         y: Observation vector, shape (y_dim,). NaNs indicate missing dimensions.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
             If False, use deterministic update.
-        cross_covariance_modifier: Optional function that modifies the empirical
-            state-observation cross-covariance.
+        cross_covariance_modifier: Function that modifies the empirical
+            state-observation cross-covariance. Defaults to the identity.
         marginal_covariance_modifier: Optional function that modifies the empirical
-            observation marginal covariance. Requires a direct Cholesky factorization
-            during the update step.
+            observation marginal covariance. ``None`` (the default) keeps the
+            square-root update; supplying a modifier -- including the identity --
+            requires forming the marginal covariance and factorizing it directly.
 
     Returns:
         Tuple of (updated_ensemble, log_likelihood).
@@ -94,16 +112,11 @@ def update(
     flag = jnp.isnan(y)
 
     # If modifiers are provided, apply them before reordering due to NaNs
-    if (
-        cross_covariance_modifier is not None
-        or marginal_covariance_modifier is not None
-    ):
-        argsort = jnp.argsort(flag, stable=True)
-        original_y_dev = y_pred - jnp.mean(y_pred, axis=0)
+    argsort = jnp.argsort(flag, stable=True)
+    original_y_dev = y_pred - jnp.mean(y_pred, axis=0)
 
-    if cross_covariance_modifier is not None:
-        C_xy = x_dev.T @ original_y_dev / (N - 1)
-        C_xy = cross_covariance_modifier(C_xy)
+    C_xy = x_dev.T @ original_y_dev / (N - 1)
+    C_xy = cross_covariance_modifier(C_xy)
 
     if marginal_covariance_modifier is not None:
         C_yy = original_y_dev.T @ original_y_dev / (N - 1)
@@ -117,11 +130,8 @@ def update(
 
     y_mean = jnp.mean(y_pred, axis=0)
     y_dev = y_pred - y_mean
-    if cross_covariance_modifier is None:
-        C_xy = x_dev.T @ y_dev / (N - 1)
-    else:
-        C_xy = C_xy[:, argsort]
-        C_xy = jnp.where(flag[None, :], 0.0, C_xy)
+    C_xy = C_xy[:, argsort]
+    C_xy = jnp.where(flag[None, :], 0.0, C_xy)
 
     if marginal_covariance_modifier is None:
         chol_S = tria(jnp.concatenate([y_dev.T / jnp.sqrt(N - 1), chol_R], axis=1))

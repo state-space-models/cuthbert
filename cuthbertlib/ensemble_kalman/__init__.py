@@ -1,6 +1,7 @@
 from cuthbertlib.ensemble_kalman.filtering import (
     CrossCovarianceModifier,
     MarginalCovarianceModifier,
+    no_covariance_modifier,
     predict,
 )
 from cuthbertlib.ensemble_kalman.filtering import (

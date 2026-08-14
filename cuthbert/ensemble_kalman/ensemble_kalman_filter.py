@@ -21,6 +21,7 @@ from cuthbert.ensemble_kalman.types import (
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib import ensemble_kalman as enkf_lib
+from cuthbertlib.ensemble_kalman import no_covariance_modifier
 from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 
@@ -67,7 +68,7 @@ def build_filter(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
-    modify_cross_covariance: ModifyCrossCovariance | None = None,
+    modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
     modify_marginal_covariance: ModifyMarginalCovariance | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
@@ -81,11 +82,13 @@ def build_filter(
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
         store_predicted_ensemble: Whether to store the incoming forecast ensemble
             in each filter state, as required by the EnRTS smoother.
-        modify_cross_covariance: Optional function that modifies the empirical
-            state-observation cross-covariance in the update step.
+        modify_cross_covariance: Function that modifies the empirical
+            state-observation cross-covariance in the update step. Defaults to
+            the identity.
         modify_marginal_covariance: Optional function that modifies the empirical
-            observation marginal covariance in the update step. Using
-            this function requires a direct Cholesky factorization during each update.
+            observation marginal covariance in the update step. ``None`` (the default)
+            keeps the square-root update; using this function requires a direct
+            Cholesky factorization during each update.
 
     Returns:
         Filter object for the EnKF.
@@ -213,7 +216,7 @@ def filter_combine(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
-    modify_cross_covariance: ModifyCrossCovariance | None = None,
+    modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
     modify_marginal_covariance: ModifyMarginalCovariance | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
@@ -228,8 +231,9 @@ def filter_combine(
         inflation: Multiplicative inflation factor.
         perturbed_obs: If True, use perturbed observations.
         store_predicted_ensemble: Whether to store the incoming forecast ensemble.
-        modify_cross_covariance: Optional function that modifies the empirical
+        modify_cross_covariance: Function that modifies the empirical
             state-observation cross-covariance using the current model inputs.
+            Defaults to the identity.
         modify_marginal_covariance: Optional function that modifies the empirical
             observation marginal covariance using the current model inputs.
 
@@ -249,10 +253,8 @@ def filter_combine(
 
     # Update
     observation_fn, chol_R, y = get_observations(state_2.model_inputs)
-    cross_covariance_modifier = (
-        None
-        if modify_cross_covariance is None
-        else partial(modify_cross_covariance, model_inputs=state_2.model_inputs)
+    cross_covariance_modifier = partial(
+        modify_cross_covariance, model_inputs=state_2.model_inputs
     )
     marginal_covariance_modifier = (
         None
