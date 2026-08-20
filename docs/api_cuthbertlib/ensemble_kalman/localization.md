@@ -1,5 +1,5 @@
-# Localization
+# Covariance Localization
 
-In this folder are utilities for localization via covariance tapering.
+--8<-- "cuthbertlib/ensemble_kalman/README.md:localization"
 
 ::: cuthbertlib.ensemble_kalman.localization

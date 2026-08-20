@@ -56,10 +56,10 @@ nav = [
     "api_cuthbertlib/index.md",
     "api_cuthbertlib/discrete.md",
     { "Ensemble Kalman" = [
-      "api_cuthbertlib/ensemble_kalman.md",
-      "api_cuthbertlib/ensemble_kalman/localization.md",
+      "api_cuthbertlib/ensemble_kalman/index.md",
       "api_cuthbertlib/ensemble_kalman/filtering.md",
       "api_cuthbertlib/ensemble_kalman/smoothing.md",
+      "api_cuthbertlib/ensemble_kalman/localization.md",
     ] },
     "api_cuthbertlib/kalman.md",
     "api_cuthbertlib/linalg.md",

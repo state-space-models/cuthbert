@@ -1,7 +1,7 @@
 --8<-- "cuthbertlib/README.md"
 
 - [Discrete hidden Markov models](discrete.md)
-- [Ensemble Kalman](ensemble_kalman.md)
+- [Ensemble Kalman](ensemble_kalman/index.md)
 - [Kalman filtering and smoothing](kalman.md)
 - [Linear algebra](linalg.md)
 - [Linearization with autodiff](linearize.md)
