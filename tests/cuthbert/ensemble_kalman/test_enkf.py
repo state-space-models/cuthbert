@@ -7,8 +7,13 @@ from jax import random
 
 from cuthbert import filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import gaussian, no_covariance_modifier
+from cuthbertlib.ensemble_kalman import (
+    construct_tapered_chol_innovation_covariance,
+    gaussian,
+    no_covariance_modifier,
+)
 from cuthbertlib.kalman.generate import generate_lgssm
+from cuthbertlib.linalg import tria
 from tests.cuthbert.gaussian.test_kalman import std_kalman_filter
 
 
@@ -31,7 +36,7 @@ def load_enkf_inference(
     ys,
     noop=False,
     modify_cross_covariance=no_covariance_modifier,
-    modify_marginal_covariance=None,
+    construct_localized_chol_innovation_covariance=None,
     n_particles=100_000,
     perturbed_obs=True,
 ):
@@ -74,7 +79,9 @@ def load_enkf_inference(
         n_particles=n_particles,
         perturbed_obs=perturbed_obs,
         modify_cross_covariance=modify_cross_covariance,
-        modify_marginal_covariance=modify_marginal_covariance,
+        construct_localized_chol_innovation_covariance=(
+            construct_localized_chol_innovation_covariance
+        ),
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
@@ -97,7 +104,7 @@ class Test(chex.TestCase):
         )
 
         modify_cross_covariance = no_covariance_modifier
-        modify_marginal_covariance = None
+        construct_localized_chol_innovation_covariance = None
         if localize_marginal is not None:
 
             def modify_cross_covariance(C_xy, model_inputs):
@@ -105,8 +112,10 @@ class Test(chex.TestCase):
 
             if localize_marginal:
 
-                def modify_marginal_covariance(C_yy, model_inputs):
-                    return C_yy
+                def construct_localized_chol_innovation_covariance(
+                    Y, chol_R, model_inputs
+                ):
+                    return tria(jnp.concatenate([Y, chol_R], axis=1))
 
         # Run the EnKF.
         inference, model_inputs = load_enkf_inference(
@@ -120,7 +129,9 @@ class Test(chex.TestCase):
             chol_Rs,
             ys,
             modify_cross_covariance=modify_cross_covariance,
-            modify_marginal_covariance=modify_marginal_covariance,
+            construct_localized_chol_innovation_covariance=(
+                construct_localized_chol_innovation_covariance
+            ),
         )
         init_key, filter_key = random.split(random.key(seed + 1))
         init_state = inference.init_prepare(model_inputs[0], key=init_key)
@@ -269,8 +280,14 @@ def test_gaussian_taper_log_likelihood_gradient():
         def modify_cross_covariance(C_xy, model_inputs):
             return gaussian(cross_distances, length_scale) * C_xy
 
-        def modify_marginal_covariance(C_yy, model_inputs):
-            return gaussian(marginal_distances, length_scale) * C_yy
+        chol_marginal_taper = jnp.linalg.cholesky(
+            gaussian(marginal_distances, length_scale)
+        )
+
+        def construct_localized_chol_innovation_covariance(Y, chol_R, model_inputs):
+            return construct_tapered_chol_innovation_covariance(
+                Y, chol_marginal_taper, chol_R
+            )
 
         inference, model_inputs = load_enkf_inference(
             m0,
@@ -283,7 +300,9 @@ def test_gaussian_taper_log_likelihood_gradient():
             chol_Rs,
             ys,
             modify_cross_covariance=modify_cross_covariance,
-            modify_marginal_covariance=modify_marginal_covariance,
+            construct_localized_chol_innovation_covariance=(
+                construct_localized_chol_innovation_covariance
+            ),
             n_particles=n_particles,
             perturbed_obs=False,
         )

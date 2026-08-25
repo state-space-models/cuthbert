@@ -18,7 +18,7 @@ from cuthbertlib.types import Array, KeyArray, ScalarArray
 ObservationFn = Callable[[Array], Array]
 DynamicsFn = Callable[[Array, KeyArray], Array]
 CrossCovarianceModifier = Callable[[Array], Array]
-MarginalCovarianceModifier = Callable[[Array], Array]
+ConstructLocalizedCholInnovationCovariance = Callable[[Array, Array], Array]
 
 
 def no_covariance_modifier(covariance: Array, *args: Any, **kwargs: Any) -> Array:
@@ -76,7 +76,8 @@ def update(
     y: Array,
     perturbed_obs: bool = True,
     cross_covariance_modifier: CrossCovarianceModifier = no_covariance_modifier,
-    marginal_covariance_modifier: MarginalCovarianceModifier | None = None,
+    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    | None = None,
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
 
@@ -94,10 +95,11 @@ def update(
             If False, use deterministic update.
         cross_covariance_modifier: Function that modifies the empirical
             state-observation cross-covariance. Defaults to the identity.
-        marginal_covariance_modifier: Optional function that modifies the empirical
-            observation marginal covariance. ``None`` (the default) keeps the
-            square-root update; supplying a modifier -- including the identity --
-            requires forming the marginal covariance and factorizing it directly.
+        construct_localized_chol_innovation_covariance: Optional function that
+            constructs a generalized Cholesky factor of a localized, complete
+            innovation covariance from normalized observation deviations and
+            ``chol_R``. Both inputs use the original observation order. ``None``
+            (the default) uses the standard, unlocalized square-root construction.
 
     Returns:
         Tuple of (updated_ensemble, log_likelihood).
@@ -109,22 +111,24 @@ def update(
     x_mean = jnp.mean(predicted_ensemble, axis=0)
     x_dev = predicted_ensemble - x_mean
 
-    flag = jnp.isnan(y)
+    missing = jnp.isnan(y)
 
-    # If modifiers are provided, apply them before reordering due to NaNs
-    argsort = jnp.argsort(flag, stable=True)
+    # Modify or construct covariances before reordering due to NaNs.
+    argsort = jnp.argsort(missing, stable=True)
     original_y_dev = y_pred - jnp.mean(y_pred, axis=0)
+    normalized_original_y_dev = original_y_dev.T / jnp.sqrt(N - 1)
 
     C_xy = x_dev.T @ original_y_dev / (N - 1)
     C_xy = cross_covariance_modifier(C_xy)
 
-    if marginal_covariance_modifier is not None:
-        C_yy = original_y_dev.T @ original_y_dev / (N - 1)
-        C_yy = marginal_covariance_modifier(C_yy)
+    if construct_localized_chol_innovation_covariance is not None:
+        original_chol_S = construct_localized_chol_innovation_covariance(
+            normalized_original_y_dev, chol_R
+        )
 
     # Handle partially-missing observations by reordering and zeroing missing dims.
     # Use y_pred.T because y_pred is (N, y_dim) and we want to reorder along axis 0.
-    flag, chol_R, y, y_pred = collect_nans_chol(flag, chol_R, y, y_pred.T)
+    flag, chol_R, y, y_pred = collect_nans_chol(missing, chol_R, y, y_pred.T)
     y_pred = y_pred.T
     y_dim = y.shape[0]
 
@@ -133,16 +137,17 @@ def update(
     C_xy = C_xy[:, argsort]
     C_xy = jnp.where(flag[None, :], 0.0, C_xy)
 
-    if marginal_covariance_modifier is None:
+    if construct_localized_chol_innovation_covariance is None:
         chol_S = tria(jnp.concatenate([y_dev.T / jnp.sqrt(N - 1), chol_R], axis=1))
     else:
-        # Not a straightforward way to compute this via tria
-        # because we don't necessarily have a factor of the modified
-        # covariance. So we must compute the Cholesky factorization directly.
-        C_yy = C_yy[argsort][:, argsort]
-        missing_covariance = flag[:, None] | flag[None, :]
-        C_yy = jnp.where(missing_covariance, 0.0, C_yy)
-        chol_S = jnp.linalg.cholesky(C_yy + chol_R @ chol_R.T)
+        # The constructor sees the original indexing. Only collect and refactor its
+        # result when dimensions are missing; otherwise preserve its returned factor.
+        chol_S = jax.lax.cond(
+            jnp.any(missing),
+            lambda chol: collect_nans_chol(missing, chol)[1],
+            lambda chol: chol,
+            original_chol_S,
+        )
 
     # Kalman gain: K = C_xy @ S^{-1} = C_xy @ cho_solve(chol_S, I)
     K = cho_solve((chol_S, True), C_xy.T).T

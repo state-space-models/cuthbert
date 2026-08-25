@@ -74,19 +74,27 @@ class ModifyCrossCovariance(Protocol):
         ...
 
 
-class ModifyMarginalCovariance(Protocol):
-    """Protocol for modifying an EnKF marginal covariance."""
+class ConstructLocalizedCholInnovationCovariance(Protocol):
+    """Protocol for constructing a localized EnKF innovation covariance factor."""
 
     def __call__(
-        self, marginal_covariance: Array, model_inputs: ArrayTreeLike
+        self,
+        normalized_observation_deviations: Array,
+        chol_observation_covariance: Array,
+        model_inputs: ArrayTreeLike,
     ) -> Array:
-        """Modify an empirical observation marginal covariance.
+        """Construct a generalized Cholesky factor of an innovation covariance.
 
         Args:
-            marginal_covariance: Empirical observation marginal covariance.
+            normalized_observation_deviations: Observation deviations transposed
+                and divided by the square root of one less than the ensemble size,
+                shape (y_dim, n_particles).
+            chol_observation_covariance: Cholesky factor of the observation noise
+                covariance, shape (y_dim, y_dim).
             model_inputs: Model inputs.
 
         Returns:
-            Modified observation marginal covariance.
+            Generalized Cholesky factor of the complete innovation covariance,
+            shape (y_dim, y_dim).
         """
         ...

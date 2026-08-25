@@ -38,7 +38,11 @@ from jax import lax, random
 
 from cuthbert import filter as run_filter
 from cuthbert.ensemble_kalman import ensemble_kalman_filter
-from cuthbertlib.ensemble_kalman import gaspari_cohn, no_covariance_modifier
+from cuthbertlib.ensemble_kalman import (
+    construct_tapered_chol_innovation_covariance,
+    gaspari_cohn,
+    no_covariance_modifier,
+)
 
 plt.switch_backend("Agg")
 jax.config.update("jax_enable_x64", True)
@@ -155,23 +159,26 @@ cross_distances = periodic_distance(state_locations, observation_locations)
 marginal_distances = periodic_distance(observation_locations, observation_locations)
 
 
-def make_covariance_modifiers(radius):
+def make_localization_callbacks(radius):
     cross_taper = gaspari_cohn(cross_distances, radius)
     marginal_taper = gaspari_cohn(marginal_distances, radius)
+    chol_marginal_taper = jnp.linalg.cholesky(marginal_taper)
 
     def modify_cross_covariance(C_xy, model_inputs):
         return cross_taper * C_xy
 
-    def modify_marginal_covariance(C_yy, model_inputs):
-        return marginal_taper * C_yy
+    def construct_localized_chol_innovation_covariance(Y, chol_R, model_inputs):
+        return construct_tapered_chol_innovation_covariance(
+            Y, chol_marginal_taper, chol_R
+        )
 
-    return modify_cross_covariance, modify_marginal_covariance
+    return modify_cross_covariance, construct_localized_chol_innovation_covariance
 
 
-covariance_modifiers = make_covariance_modifiers(support_radius)
+localization_callbacks = make_localization_callbacks(support_radius)
 ```
 
-Each modifier receives one empirical covariance and the current model inputs. Here, the tapers are constant over time, so the modifiers ignore their model inputs. We construct only the required state-observation and observation-observation tapers, then localize both covariances elementwise. Omitting the marginal modifier would leave $C_{yy}$ unchanged and retain the square-root update; supplying it requires a direct Cholesky factorization of the modified innovation covariance.
+The cross-covariance modifier receives the empirical $C_{xy}$, while the innovation constructor receives normalized observation anomalies $Y$ and the original observation-noise factor. Both high-level callbacks also receive the current model inputs; the tapers are constant over time here, so the callbacks ignore them. We factor each positive-semidefinite marginal taper once per support radius, then use the augmented-factor identity to construct the tapered innovation factor without forming $C_{yy}$ or directly factorizing $S$. Omitting the constructor retains the smaller `tria([Y, chol_R])` path; the tapered construction instead has a $y_{\rm dim}N$-wide anomaly factor.
 
 ## Comparing Localized vs. Unlocalized Filters
 
@@ -198,7 +205,7 @@ def get_observations(observation):
 def build_enkf(
     n_members,
     modify_cross_covariance=no_covariance_modifier,
-    modify_marginal_covariance=None,
+    construct_localized_chol_innovation_covariance=None,
 ):
     return ensemble_kalman_filter.build_filter(
         init_sample=init_sample,
@@ -208,7 +215,9 @@ def build_enkf(
         inflation=inflation,
         perturbed_obs=True,
         modify_cross_covariance=modify_cross_covariance,
-        modify_marginal_covariance=modify_marginal_covariance,
+        construct_localized_chol_innovation_covariance=(
+            construct_localized_chol_innovation_covariance
+        ),
     )
 
 jitted_filter = jax.jit(run_filter, static_argnames=("filter_obj",))
@@ -230,7 +239,7 @@ unlocalized_states = {
     n_members: apply_filter(build_enkf(n_members)) for n_members in ensemble_sizes
 }
 localized_states = {
-    n_members: apply_filter(build_enkf(n_members, *covariance_modifiers))
+    n_members: apply_filter(build_enkf(n_members, *localization_callbacks))
     for n_members in ensemble_sizes
 }
 ```
@@ -458,7 +467,7 @@ radius_states = {
         else apply_filter(
             build_enkf(
                 radius_ensemble_size,
-                *make_covariance_modifiers(radius),
+                *make_localization_callbacks(radius),
             )
         )
     )

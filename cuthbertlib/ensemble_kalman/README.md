@@ -13,6 +13,7 @@ The core functions are:
 - `predict`: Propagate ensemble members through nonlinear dynamics with additive Gaussian noise.
 - `filter_update`: Update ensemble members with an observation using the EnKF update equation.
 - `smoother_update`: Apply one Ensemble Rauch-Tung-Striebel smoother update.
+- `construct_tapered_chol_innovation_covariance`: Construct a tapered innovation covariance factor without forming the covariance densely.
 - `gaspari_cohn`: Construct covariance tapers with the Gaspari-Cohn correlation function.
 - `gaussian`: Construct smooth, non-compact covariance tapers with the Gaussian correlation function.
 <!-- --8<-- [end:overview] -->
@@ -34,9 +35,8 @@ The EnRTS algorithm provides a smoothing counterpart to the EnKF, based on the R
 ## Covariance localization
 
 <!-- --8<-- [start:localization] -->
-`filter_update` optionally accepts separate `cross_covariance_modifier` and `marginal_covariance_modifier` functions. Each function receives the corresponding empirical covariance matrix and the current model inputs, and returns the modified covariance matrix. These functions are applied before missingness is handled, so they can be applied in the original indexing. `cross_covariance_modifier` defaults to `no_covariance_modifier`, the identity modifier.
+`filter_update` accepts two independent low-level hooks. `cross_covariance_modifier` receives one empirical state-observation cross-covariance and returns its modified value; it defaults to `no_covariance_modifier`. For observation-space covariance localization, one may optionally use `construct_localized_chol_innovation_covariance`, which receives normalized observation deviations `Y` and a Cholesky factor of the observation noise covariance, `chol_R`, and returns a generalized Cholesky factor of the localized innovation covariance $C_{yy} + R$. All localization happens before handling of missing data, so localization happens in the original coordinates.
 
-The modifier functions may be arbitrary JAX-compatible code returning a PSD matrix. The most common form of this is covariance tapering; cuthbertlib provides `gaspari_cohn` and `gaussian` correlation functions for use as tapering functions. The Gaspari-Cohn correlation function is more classical, while the Gaussian has non-compact support and may therefore have better gradient properties.
+The most common form of localization is covariance tapering; cuthbertlib provides `gaspari_cohn` and `gaussian` correlation functions for this purpose. The Gaspari-Cohn correlation function is more classical, but has compact support which may cause difficulties in optimizing localization hyperparameters. The `gaussian` correlation function has infinite support, and may therefore have better gradient properties. For obsservation-space tapering, `cuthbertlib` provides a convenience `construct_tapered_chol_innovation_covariance`, which uses a Cholesky factor of the taper to construct a factor of the tapered innovation covariance. This comes at slightly higher cost, due to a larger QR solve.
 
-When only `cross_covariance_modifier` is provided (i.e., when `marginal_covariance_modifier` is `None`), the normal square-root update is applied. When `marginal_covariance_modifier` is supplied, we fall back to an explicit computation of a Cholesky factor.
 <!-- --8<-- [end:localization] -->

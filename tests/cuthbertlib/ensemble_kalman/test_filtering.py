@@ -4,6 +4,9 @@ import jax.numpy as jnp
 import pytest
 from jax import random
 
+from cuthbertlib.ensemble_kalman import (
+    construct_tapered_chol_innovation_covariance,
+)
 from cuthbertlib.ensemble_kalman.filtering import predict, update
 from cuthbertlib.kalman.filtering import update as kalman_update
 from cuthbertlib.kalman.generate import generate_lgssm
@@ -259,8 +262,13 @@ def test_update_covariance_modifiers(localize_marginal):
     def modify_cross_covariance(C_xy):
         return cross_taper * C_xy
 
-    def modify_marginal_covariance(C_yy):
-        return marginal_taper * C_yy
+    if marginal_taper is not None:
+        chol_marginal_taper = jnp.linalg.cholesky(marginal_taper)
+
+        def construct_localized_chol_innovation_covariance(Y, chol_R):
+            return construct_tapered_chol_innovation_covariance(
+                Y, chol_marginal_taper, chol_R
+            )
 
     updated, ll = update(
         random.key(0),
@@ -270,8 +278,10 @@ def test_update_covariance_modifiers(localize_marginal):
         y,
         perturbed_obs=False,
         cross_covariance_modifier=modify_cross_covariance,
-        marginal_covariance_modifier=(
-            modify_marginal_covariance if localize_marginal else None
+        construct_localized_chol_innovation_covariance=(
+            construct_localized_chol_innovation_covariance
+            if localize_marginal
+            else None
         ),
     )
 
@@ -345,8 +355,13 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
     def modify_cross_covariance(C_xy):
         return cross_taper * C_xy
 
-    def modify_marginal_covariance(C_yy):
-        return marginal_taper * C_yy
+    if marginal_taper is not None:
+        chol_marginal_taper = jnp.linalg.cholesky(marginal_taper)
+
+        def construct_localized_chol_innovation_covariance(Y, chol_R):
+            return construct_tapered_chol_innovation_covariance(
+                Y, chol_marginal_taper, chol_R
+            )
 
     actual = update(
         random.key(0),
@@ -356,8 +371,10 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
         y,
         perturbed_obs=False,
         cross_covariance_modifier=modify_cross_covariance,
-        marginal_covariance_modifier=(
-            modify_marginal_covariance if localize_marginal else None
+        construct_localized_chol_innovation_covariance=(
+            construct_localized_chol_innovation_covariance
+            if localize_marginal
+            else None
         ),
     )
 
@@ -370,10 +387,14 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
         y[observed],
         perturbed_obs=False,
         cross_covariance_modifier=lambda C_xy: cross_taper[:, observed] * C_xy,
-        marginal_covariance_modifier=(
+        construct_localized_chol_innovation_covariance=(
             None
             if marginal_taper is None
-            else lambda C_yy: marginal_taper[observed[:, None], observed] * C_yy
+            else lambda Y, chol_R: construct_tapered_chol_innovation_covariance(
+                Y,
+                jnp.linalg.cholesky(marginal_taper[observed[:, None], observed]),
+                chol_R,
+            )
         ),
     )
 

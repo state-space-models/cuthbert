@@ -1,6 +1,6 @@
 from cuthbertlib.ensemble_kalman.filtering import (
+    ConstructLocalizedCholInnovationCovariance,
     CrossCovarianceModifier,
-    MarginalCovarianceModifier,
     no_covariance_modifier,
     predict,
 )
@@ -8,6 +8,7 @@ from cuthbertlib.ensemble_kalman.filtering import (
     update as filter_update,
 )
 from cuthbertlib.ensemble_kalman.localization import (
+    construct_tapered_chol_innovation_covariance,
     gaspari_cohn,
     gaussian,
 )

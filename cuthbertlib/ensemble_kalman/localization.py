@@ -2,7 +2,36 @@
 
 import jax.numpy as jnp
 
+from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayLike, ScalarArrayLike
+
+
+def construct_tapered_chol_innovation_covariance(
+    Y: Array,
+    chol_taper: Array,
+    chol_R: Array,
+) -> Array:
+    """Construct a tapered innovation covariance factor without forming it densely.
+
+    If ``taper = chol_taper @ chol_taper.T`` and ``Y`` denotes the normalized
+    observation deviations, the returned generalized Cholesky factor ``chol_S``
+    satisfies ``chol_S @ chol_S.T = taper * (Y @ Y.T) + R``.
+
+    Args:
+        Y: Observation deviations transposed and divided by the square root of one
+            less than the ensemble size, shape (y_dim, n_particles).
+        chol_taper: Factor of a positive-semidefinite observation-space taper,
+            shape (y_dim, y_dim).
+        chol_R: Cholesky factor of the observation noise covariance, shape
+            (y_dim, y_dim).
+
+    Returns:
+        Generalized Cholesky factor of the complete tapered innovation covariance,
+        shape (y_dim, y_dim).
+    """
+    y_dim = Y.shape[0]
+    Y_tilde = (chol_taper[:, :, None] * Y[:, None, :]).reshape(y_dim, -1)
+    return tria(jnp.concatenate([Y_tilde, chol_R], axis=1))
 
 
 def gaussian(

@@ -12,11 +12,11 @@ import jax.numpy as jnp
 from jax import random, tree
 
 from cuthbert.ensemble_kalman.types import (
+    ConstructLocalizedCholInnovationCovariance,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
     ModifyCrossCovariance,
-    ModifyMarginalCovariance,
 )
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
@@ -69,7 +69,8 @@ def build_filter(
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
-    modify_marginal_covariance: ModifyMarginalCovariance | None = None,
+    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
 
@@ -85,10 +86,10 @@ def build_filter(
         modify_cross_covariance: Function that modifies the empirical
             state-observation cross-covariance in the update step. Defaults to
             the identity.
-        modify_marginal_covariance: Optional function that modifies the empirical
-            observation marginal covariance in the update step. ``None`` (the default)
-            keeps the square-root update; using this function requires a direct
-            Cholesky factorization during each update.
+        construct_localized_chol_innovation_covariance: Optional function that
+            constructs a generalized Cholesky factor of the localized innovation
+            covariance matrix. ``None`` (default) uses the standard, unlocalized
+            form of the ensemble Kalman update.
 
     Returns:
         Filter object for the EnKF.
@@ -120,7 +121,9 @@ def build_filter(
             perturbed_obs=perturbed_obs,
             store_predicted_ensemble=store_predicted_ensemble,
             modify_cross_covariance=modify_cross_covariance,
-            modify_marginal_covariance=modify_marginal_covariance,
+            construct_localized_chol_innovation_covariance=(
+                construct_localized_chol_innovation_covariance
+            ),
         ),
         associative=False,
     )
@@ -217,7 +220,8 @@ def filter_combine(
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
-    modify_marginal_covariance: ModifyMarginalCovariance | None = None,
+    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
 
@@ -234,8 +238,10 @@ def filter_combine(
         modify_cross_covariance: Function that modifies the empirical
             state-observation cross-covariance using the current model inputs.
             Defaults to the identity.
-        modify_marginal_covariance: Optional function that modifies the empirical
-            observation marginal covariance using the current model inputs.
+        construct_localized_chol_innovation_covariance: Optional function that
+            constructs a generalized Cholesky factor of the localized innovation
+            covariance matrix. ``None`` (default) uses the standard, unlocalized
+            form of the ensemble Kalman update.
 
     Returns:
         Updated EnKF state.
@@ -256,10 +262,13 @@ def filter_combine(
     cross_covariance_modifier = partial(
         modify_cross_covariance, model_inputs=state_2.model_inputs
     )
-    marginal_covariance_modifier = (
+    construct_chol_S = (
         None
-        if modify_marginal_covariance is None
-        else partial(modify_marginal_covariance, model_inputs=state_2.model_inputs)
+        if construct_localized_chol_innovation_covariance is None
+        else partial(
+            construct_localized_chol_innovation_covariance,
+            model_inputs=state_2.model_inputs,
+        )
     )
 
     updated, ll = enkf_lib.filter_update(
@@ -270,7 +279,7 @@ def filter_combine(
         y,
         perturbed_obs,
         cross_covariance_modifier=cross_covariance_modifier,
-        marginal_covariance_modifier=marginal_covariance_modifier,
+        construct_localized_chol_innovation_covariance=construct_chol_S,
     )
 
     return EnKFState(
