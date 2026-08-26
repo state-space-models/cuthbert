@@ -1,6 +1,6 @@
 """Implements the Ensemble Rauch-Tung-Striebel (EnRTS) smoother update.
 
-Cf. [Raanes (2016)[https://doi.org/10.1002/qj.2728].
+Cf. [Raanes (2016)](https://doi.org/10.1002/qj.2728).
 """
 
 import jax.numpy as jnp

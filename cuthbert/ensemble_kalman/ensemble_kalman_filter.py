@@ -12,15 +12,24 @@ import jax.numpy as jnp
 from jax import random, tree
 
 from cuthbert.ensemble_kalman.types import (
+    ConstructCholInnovationCovariance,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
+    ModifyCrossCovariance,
 )
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib import ensemble_kalman as enkf_lib
 from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
+
+
+def no_covariance_modifier(
+    cross_covariance: Array, model_inputs: ArrayTreeLike
+) -> Array:
+    """Return an empirical covariance unchanged."""
+    return cross_covariance
 
 
 class EnKFState(NamedTuple):
@@ -65,6 +74,9 @@ def build_filter(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
+    modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
+    construct_chol_innovation_covariance: ConstructCholInnovationCovariance
+    | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
 
@@ -73,10 +85,17 @@ def build_filter(
         get_dynamics: Function to get dynamics function (x_t, key) -> x_{t+1} ~ p(x_{t+1} | x_t) from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
-        inflation: Multiplicative inflation factor for ensemble deviations.
+        inflation: Multiplicative inflation factor for ensemble deviations, applied in the predict step.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
         store_predicted_ensemble: Whether to store the incoming forecast ensemble
             in each filter state, as required by the EnRTS smoother.
+        modify_cross_covariance: Function that modifies the empirical
+            state-observation cross-covariance in the update step. Defaults to
+            the identity.
+        construct_chol_innovation_covariance: Optional function that
+            constructs a generalized Cholesky factor of the localized innovation
+            covariance matrix. ``None`` (default) uses the standard, unlocalized
+            form of the ensemble Kalman update.
 
     Returns:
         Filter object for the EnKF.
@@ -107,6 +126,8 @@ def build_filter(
             inflation=inflation,
             perturbed_obs=perturbed_obs,
             store_predicted_ensemble=store_predicted_ensemble,
+            modify_cross_covariance=modify_cross_covariance,
+            construct_chol_innovation_covariance=(construct_chol_innovation_covariance),
         ),
         associative=False,
     )
@@ -202,6 +223,9 @@ def filter_combine(
     inflation: float = 0.0,
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
+    modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
+    construct_chol_innovation_covariance: ConstructCholInnovationCovariance
+    | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
 
@@ -215,6 +239,13 @@ def filter_combine(
         inflation: Multiplicative inflation factor.
         perturbed_obs: If True, use perturbed observations.
         store_predicted_ensemble: Whether to store the incoming forecast ensemble.
+        modify_cross_covariance: Function that modifies the empirical
+            state-observation cross-covariance using the current model inputs.
+            Defaults to the identity.
+        construct_chol_innovation_covariance: Optional function that
+            constructs a generalized Cholesky factor of the localized innovation
+            covariance matrix. ``None`` (default) uses the standard, unlocalized
+            form of the ensemble Kalman update.
 
     Returns:
         Updated EnKF state.
@@ -232,6 +263,18 @@ def filter_combine(
 
     # Update
     observation_fn, chol_R, y = get_observations(state_2.model_inputs)
+    cross_covariance_modifier = partial(
+        modify_cross_covariance, model_inputs=state_2.model_inputs
+    )
+    construct_chol_S = (
+        None
+        if construct_chol_innovation_covariance is None
+        else partial(
+            construct_chol_innovation_covariance,
+            model_inputs=state_2.model_inputs,
+        )
+    )
+
     updated, ll = enkf_lib.filter_update(
         key_update,
         predicted,
@@ -239,6 +282,8 @@ def filter_combine(
         chol_R,
         y,
         perturbed_obs,
+        cross_covariance_modifier=cross_covariance_modifier,
+        construct_chol_innovation_covariance=construct_chol_S,
     )
 
     return EnKFState(

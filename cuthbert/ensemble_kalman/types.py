@@ -2,7 +2,10 @@
 
 from typing import Protocol
 
-from cuthbertlib.ensemble_kalman.filtering import DynamicsFn, ObservationFn
+from cuthbertlib.ensemble_kalman.filtering import (
+    DynamicsFn,
+    ObservationFn,
+)
 from cuthbertlib.types import Array, ArrayTreeLike, KeyArray
 
 
@@ -51,5 +54,47 @@ class GetEnKFObservations(Protocol):
         Returns:
             Tuple with observation function, Cholesky factor of the observation noise covariance, and observation vector.
             observation noise covariance and y is the observation vector.
+        """
+        ...
+
+
+class ModifyCrossCovariance(Protocol):
+    """Protocol for modifying an EnKF cross-covariance."""
+
+    def __call__(self, cross_covariance: Array, model_inputs: ArrayTreeLike) -> Array:
+        """Modify an empirical state-observation cross-covariance.
+
+        Args:
+            cross_covariance: Empirical state-observation cross-covariance.
+            model_inputs: Model inputs.
+
+        Returns:
+            Modified state-observation cross-covariance.
+        """
+        ...
+
+
+class ConstructCholInnovationCovariance(Protocol):
+    """Protocol for constructing an EnKF innovation covariance factor."""
+
+    def __call__(
+        self,
+        normalized_observation_deviations: Array,
+        chol_observation_covariance: Array,
+        model_inputs: ArrayTreeLike,
+    ) -> Array:
+        """Construct a generalized Cholesky factor of an innovation covariance.
+
+        Args:
+            normalized_observation_deviations: Observation deviations transposed
+                and divided by the square root of one less than the ensemble size,
+                shape (y_dim, n_particles).
+            chol_observation_covariance: Cholesky factor of the observation noise
+                covariance, shape (y_dim, y_dim).
+            model_inputs: Model inputs.
+
+        Returns:
+            Generalized Cholesky factor of the complete innovation covariance,
+            shape (y_dim, y_dim).
         """
         ...
