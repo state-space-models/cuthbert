@@ -41,7 +41,6 @@ from cuthbert.ensemble_kalman import ensemble_kalman_filter
 from cuthbertlib.ensemble_kalman import (
     construct_tapered_chol_innovation_covariance,
     gaspari_cohn,
-    no_covariance_modifier,
 )
 
 plt.switch_backend("Agg")
@@ -204,7 +203,7 @@ def get_observations(observation):
 
 def build_enkf(
     n_members,
-    modify_cross_covariance=no_covariance_modifier,
+    modify_cross_covariance=ensemble_kalman_filter.no_covariance_modifier,
     construct_chol_innovation_covariance=None,
 ):
     return ensemble_kalman_filter.build_filter(

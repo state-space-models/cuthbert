@@ -4,7 +4,7 @@ See Algorithm 10.2, [Sanz-Alonso et al., Inverse Problems and Data Assimilation]
 Based in part on the [CD-Dynamax implementation](https://github.com/hd-UQ/cd_dynamax/blob/public/cd_dynamax/src/continuous_discrete_nonlinear_gaussian_ssm/inference_enkf.py).
 """
 
-from typing import Any, Callable
+from typing import Callable
 
 import jax
 import jax.numpy as jnp
@@ -21,16 +21,14 @@ CrossCovarianceModifier = Callable[[Array], Array]
 ConstructCholInnovationCovariance = Callable[[Array, Array], Array]
 
 
-def no_covariance_modifier(covariance: Array, *args: Any, **kwargs: Any) -> Array:
+def no_covariance_modifier(covariance: Array) -> Array:
     """Return an empirical covariance unchanged.
 
     The identity covariance modifier, used as the default when no modification
-    (e.g. localization) is requested. Trailing arguments are accepted and ignored.
+    (e.g. localization) is requested.
 
     Args:
         covariance: Empirical covariance matrix.
-        *args: Ignored.
-        **kwargs: Ignored.
 
     Returns:
         The covariance matrix, unchanged.
@@ -94,12 +92,15 @@ def update(
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
             If False, use deterministic update.
         cross_covariance_modifier: Function that modifies the empirical
-            state-observation cross-covariance. Defaults to the identity.
+            state-observation cross-covariance, shape (x_dim, y_dim), and returns
+            an array with the same shape. Defaults to the identity.
         construct_chol_innovation_covariance: Optional function that
-            constructs a generalized Cholesky factor of a localized, complete
-            innovation covariance from normalized observation deviations and
-            ``chol_R``. Both inputs use the original observation order. ``None``
-            (the default) uses the standard, unlocalized square-root construction.
+            receives normalized observation deviations with shape (y_dim, N) and
+            ``chol_R`` with shape (y_dim, y_dim). It must return a generalized
+            Cholesky factor of the complete innovation covariance with shape
+            (y_dim, y_dim). The deviations have already been divided by
+            ``sqrt(N - 1)``. Both inputs use the original observation order.
+            ``None`` uses the standard, unlocalized square-root construction.
 
     Returns:
         Tuple of (updated_ensemble, log_likelihood).

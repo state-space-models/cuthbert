@@ -21,9 +21,15 @@ from cuthbert.ensemble_kalman.types import (
 from cuthbert.inference import Filter
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib import ensemble_kalman as enkf_lib
-from cuthbertlib.ensemble_kalman import no_covariance_modifier
 from cuthbertlib.linalg import tria
 from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
+
+
+def no_covariance_modifier(
+    cross_covariance: Array, model_inputs: ArrayTreeLike
+) -> Array:
+    """Return an empirical covariance unchanged."""
+    return cross_covariance
 
 
 class EnKFState(NamedTuple):

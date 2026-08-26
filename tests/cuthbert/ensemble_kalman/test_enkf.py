@@ -10,7 +10,6 @@ from cuthbert.ensemble_kalman import ensemble_kalman_filter
 from cuthbertlib.ensemble_kalman import (
     construct_tapered_chol_innovation_covariance,
     gaussian,
-    no_covariance_modifier,
 )
 from cuthbertlib.kalman.generate import generate_lgssm
 from cuthbertlib.linalg import tria
@@ -35,7 +34,7 @@ def load_enkf_inference(
     chol_Rs,
     ys,
     noop=False,
-    modify_cross_covariance=no_covariance_modifier,
+    modify_cross_covariance=ensemble_kalman_filter.no_covariance_modifier,
     construct_chol_innovation_covariance=None,
     n_particles=100_000,
     perturbed_obs=True,
@@ -101,7 +100,7 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        modify_cross_covariance = no_covariance_modifier
+        modify_cross_covariance = ensemble_kalman_filter.no_covariance_modifier
         construct_chol_innovation_covariance = None
         if localize_marginal is not None:
 
