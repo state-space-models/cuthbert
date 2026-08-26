@@ -167,12 +167,12 @@ def make_localization_callbacks(radius):
     def modify_cross_covariance(C_xy, model_inputs):
         return cross_taper * C_xy
 
-    def construct_localized_chol_innovation_covariance(Y, chol_R, model_inputs):
+    def construct_chol_innovation_covariance(Y, chol_R, model_inputs):
         return construct_tapered_chol_innovation_covariance(
             Y, chol_marginal_taper, chol_R
         )
 
-    return modify_cross_covariance, construct_localized_chol_innovation_covariance
+    return modify_cross_covariance, construct_chol_innovation_covariance
 
 
 localization_callbacks = make_localization_callbacks(support_radius)
@@ -205,7 +205,7 @@ def get_observations(observation):
 def build_enkf(
     n_members,
     modify_cross_covariance=no_covariance_modifier,
-    construct_localized_chol_innovation_covariance=None,
+    construct_chol_innovation_covariance=None,
 ):
     return ensemble_kalman_filter.build_filter(
         init_sample=init_sample,
@@ -215,8 +215,8 @@ def build_enkf(
         inflation=inflation,
         perturbed_obs=True,
         modify_cross_covariance=modify_cross_covariance,
-        construct_localized_chol_innovation_covariance=(
-            construct_localized_chol_innovation_covariance
+        construct_chol_innovation_covariance=(
+            construct_chol_innovation_covariance
         ),
     )
 

@@ -74,7 +74,7 @@ class ModifyCrossCovariance(Protocol):
         ...
 
 
-class ConstructLocalizedCholInnovationCovariance(Protocol):
+class ConstructCholInnovationCovariance(Protocol):
     """Protocol for constructing a localized EnKF innovation covariance factor."""
 
     def __call__(

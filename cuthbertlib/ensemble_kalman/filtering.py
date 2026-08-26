@@ -18,7 +18,7 @@ from cuthbertlib.types import Array, KeyArray, ScalarArray
 ObservationFn = Callable[[Array], Array]
 DynamicsFn = Callable[[Array, KeyArray], Array]
 CrossCovarianceModifier = Callable[[Array], Array]
-ConstructLocalizedCholInnovationCovariance = Callable[[Array, Array], Array]
+ConstructCholInnovationCovariance = Callable[[Array, Array], Array]
 
 
 def no_covariance_modifier(covariance: Array, *args: Any, **kwargs: Any) -> Array:
@@ -76,7 +76,7 @@ def update(
     y: Array,
     perturbed_obs: bool = True,
     cross_covariance_modifier: CrossCovarianceModifier = no_covariance_modifier,
-    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    construct_chol_innovation_covariance: ConstructCholInnovationCovariance
     | None = None,
 ) -> tuple[Array, ScalarArray]:
     """Update ensemble members with an observation using the EnKF update.
@@ -95,7 +95,7 @@ def update(
             If False, use deterministic update.
         cross_covariance_modifier: Function that modifies the empirical
             state-observation cross-covariance. Defaults to the identity.
-        construct_localized_chol_innovation_covariance: Optional function that
+        construct_chol_innovation_covariance: Optional function that
             constructs a generalized Cholesky factor of a localized, complete
             innovation covariance from normalized observation deviations and
             ``chol_R``. Both inputs use the original observation order. ``None``
@@ -121,8 +121,8 @@ def update(
     C_xy = x_dev.T @ original_y_dev / (N - 1)
     C_xy = cross_covariance_modifier(C_xy)
 
-    if construct_localized_chol_innovation_covariance is not None:
-        original_chol_S = construct_localized_chol_innovation_covariance(
+    if construct_chol_innovation_covariance is not None:
+        original_chol_S = construct_chol_innovation_covariance(
             normalized_original_y_dev, chol_R
         )
 
@@ -137,7 +137,7 @@ def update(
     C_xy = C_xy[:, argsort]
     C_xy = jnp.where(flag[None, :], 0.0, C_xy)
 
-    if construct_localized_chol_innovation_covariance is None:
+    if construct_chol_innovation_covariance is None:
         chol_S = tria(jnp.concatenate([y_dev.T / jnp.sqrt(N - 1), chol_R], axis=1))
     else:
         # The constructor sees the original indexing. Only collect and refactor its

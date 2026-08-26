@@ -1,5 +1,5 @@
 from cuthbertlib.ensemble_kalman.filtering import (
-    ConstructLocalizedCholInnovationCovariance,
+    ConstructCholInnovationCovariance,
     CrossCovarianceModifier,
     no_covariance_modifier,
     predict,

@@ -12,7 +12,7 @@ import jax.numpy as jnp
 from jax import random, tree
 
 from cuthbert.ensemble_kalman.types import (
-    ConstructLocalizedCholInnovationCovariance,
+    ConstructCholInnovationCovariance,
     GetEnKFDynamics,
     GetEnKFObservations,
     InitSample,
@@ -69,7 +69,7 @@ def build_filter(
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
-    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    construct_chol_innovation_covariance: ConstructCholInnovationCovariance
     | None = None,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
@@ -86,7 +86,7 @@ def build_filter(
         modify_cross_covariance: Function that modifies the empirical
             state-observation cross-covariance in the update step. Defaults to
             the identity.
-        construct_localized_chol_innovation_covariance: Optional function that
+        construct_chol_innovation_covariance: Optional function that
             constructs a generalized Cholesky factor of the localized innovation
             covariance matrix. ``None`` (default) uses the standard, unlocalized
             form of the ensemble Kalman update.
@@ -121,9 +121,7 @@ def build_filter(
             perturbed_obs=perturbed_obs,
             store_predicted_ensemble=store_predicted_ensemble,
             modify_cross_covariance=modify_cross_covariance,
-            construct_localized_chol_innovation_covariance=(
-                construct_localized_chol_innovation_covariance
-            ),
+            construct_chol_innovation_covariance=(construct_chol_innovation_covariance),
         ),
         associative=False,
     )
@@ -220,7 +218,7 @@ def filter_combine(
     perturbed_obs: bool = True,
     store_predicted_ensemble: bool = False,
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
-    construct_localized_chol_innovation_covariance: ConstructLocalizedCholInnovationCovariance
+    construct_chol_innovation_covariance: ConstructCholInnovationCovariance
     | None = None,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
@@ -238,7 +236,7 @@ def filter_combine(
         modify_cross_covariance: Function that modifies the empirical
             state-observation cross-covariance using the current model inputs.
             Defaults to the identity.
-        construct_localized_chol_innovation_covariance: Optional function that
+        construct_chol_innovation_covariance: Optional function that
             constructs a generalized Cholesky factor of the localized innovation
             covariance matrix. ``None`` (default) uses the standard, unlocalized
             form of the ensemble Kalman update.
@@ -264,9 +262,9 @@ def filter_combine(
     )
     construct_chol_S = (
         None
-        if construct_localized_chol_innovation_covariance is None
+        if construct_chol_innovation_covariance is None
         else partial(
-            construct_localized_chol_innovation_covariance,
+            construct_chol_innovation_covariance,
             model_inputs=state_2.model_inputs,
         )
     )
@@ -279,7 +277,7 @@ def filter_combine(
         y,
         perturbed_obs,
         cross_covariance_modifier=cross_covariance_modifier,
-        construct_localized_chol_innovation_covariance=construct_chol_S,
+        construct_chol_innovation_covariance=construct_chol_S,
     )
 
     return EnKFState(

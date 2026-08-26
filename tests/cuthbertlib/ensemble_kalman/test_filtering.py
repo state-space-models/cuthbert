@@ -265,7 +265,7 @@ def test_update_covariance_modifiers(localize_marginal):
     if marginal_taper is not None:
         chol_marginal_taper = jnp.linalg.cholesky(marginal_taper)
 
-        def construct_localized_chol_innovation_covariance(Y, chol_R):
+        def construct_chol_innovation_covariance(Y, chol_R):
             return construct_tapered_chol_innovation_covariance(
                 Y, chol_marginal_taper, chol_R
             )
@@ -278,10 +278,8 @@ def test_update_covariance_modifiers(localize_marginal):
         y,
         perturbed_obs=False,
         cross_covariance_modifier=modify_cross_covariance,
-        construct_localized_chol_innovation_covariance=(
-            construct_localized_chol_innovation_covariance
-            if localize_marginal
-            else None
+        construct_chol_innovation_covariance=(
+            construct_chol_innovation_covariance if localize_marginal else None
         ),
     )
 
@@ -358,7 +356,7 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
     if marginal_taper is not None:
         chol_marginal_taper = jnp.linalg.cholesky(marginal_taper)
 
-        def construct_localized_chol_innovation_covariance(Y, chol_R):
+        def construct_chol_innovation_covariance(Y, chol_R):
             return construct_tapered_chol_innovation_covariance(
                 Y, chol_marginal_taper, chol_R
             )
@@ -371,10 +369,8 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
         y,
         perturbed_obs=False,
         cross_covariance_modifier=modify_cross_covariance,
-        construct_localized_chol_innovation_covariance=(
-            construct_localized_chol_innovation_covariance
-            if localize_marginal
-            else None
+        construct_chol_innovation_covariance=(
+            construct_chol_innovation_covariance if localize_marginal else None
         ),
     )
 
@@ -387,7 +383,7 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
         y[observed],
         perturbed_obs=False,
         cross_covariance_modifier=lambda C_xy: cross_taper[:, observed] * C_xy,
-        construct_localized_chol_innovation_covariance=(
+        construct_chol_innovation_covariance=(
             None
             if marginal_taper is None
             else lambda Y, chol_R: construct_tapered_chol_innovation_covariance(

@@ -39,7 +39,7 @@ See [Raanes (2016)](https://doi.org/10.1002/qj.2728) for more info on the EnRTS 
 
 ## Covariance localization
 
-Cuthbert implements localization through two independent callbacks. `modify_cross_covariance` receives the empirical state-observation cross-covariance and the current model inputs, then returns the modified cross-covariance. The optional `construct_localized_chol_innovation_covariance` callback instead receives normalized observation deviations $Y$, the observation-noise factor `chol_R`, and the current model inputs, then returns a valid generalized Cholesky factor of the complete localized innovation covariance $S=C_{yy}+R$. Both callbacks receive quantities in the original observation order. By default, `modify_cross_covariance` is `no_covariance_modifier`, which passes the covariance through unchanged, and `construct_localized_chol_innovation_covariance` is `None` (which avoids a more costly QR solve).
+Cuthbert implements localization through two independent callbacks. `modify_cross_covariance` receives the empirical state-observation cross-covariance and the current model inputs, then returns the modified cross-covariance. The optional `construct_chol_innovation_covariance` callback instead receives normalized observation deviations $Y$, the observation-noise factor `chol_R`, and the current model inputs, then returns a valid generalized Cholesky factor of the complete localized innovation covariance $S=C_{yy}+R$. Both callbacks receive quantities in the original observation order. By default, `modify_cross_covariance` is `no_covariance_modifier`, which passes the covariance through unchanged, and `construct_chol_innovation_covariance` is `None` (which avoids a more costly QR solve).
 
 Cuthbert is agnostic to the exact form of the cross-covariance modification. One common form is covariance tapering, which forms the modified covariance as an elementwise product with a tapering matrix. We provide a few common tapers in `cuthbertlib.ensemble_kalman.localization.py`.
 
@@ -59,7 +59,7 @@ def modify_cross_covariance(cross_covariance, model_inputs):
     return taper * cross_covariance
 ```
 
-When `construct_localized_chol_innovation_covariance` is `None`, the EnKF uses the compact square-root construction `tria([Y, chol_R])`, whose input has $N+y_{\rm dim}$ columns. Cross-only localization retains this path. For observation-space tapering, `construct_tapered_chol_innovation_covariance` is one constructor option: it implements a square-root identity without explicitly forming $C_{yy}$ or directly factorizing $S$. The observation taper must be positive semidefinite and supplied through a valid factor `chol_taper`. This tapered construction expands the anomaly factor to $y_{\rm dim}N$ columns, so the `None` path remains preferable when marginal localization is not needed.
+When `construct_chol_innovation_covariance` is `None`, the EnKF uses the compact square-root construction `tria([Y, chol_R])`, whose input has $N+y_{\rm dim}$ columns. Cross-only localization retains this path. For observation-space tapering, `construct_tapered_chol_innovation_covariance` is one constructor option: it implements a square-root identity without explicitly forming $C_{yy}$ or directly factorizing $S$. The observation taper must be positive semidefinite and supplied through a valid factor `chol_taper`. This tapered construction expands the anomaly factor to $y_{\rm dim}N$ columns, so the `None` path remains preferable when marginal localization is not needed.
 
 For gradient-based optimization of the localization function, the Gaspari-Cohn taper may be suboptimal, as its gradients are dead for points outside the support radius. In this case, a non-compact covariance taper such as a Gaussian kernel may be preferable.
 
@@ -80,7 +80,7 @@ def modify_cross_covariance(cross_covariance, model_inputs):
     return taper * cross_covariance
 
 
-def construct_localized_chol_innovation_covariance(Y, chol_R, model_inputs):
+def construct_chol_innovation_covariance(Y, chol_R, model_inputs):
     y = model_inputs.observation_locations
     length_scale = jnp.exp(model_inputs.log_length_scale)
     taper = gaussian(y[:, None] - y[None, :], length_scale)
