@@ -1,6 +1,6 @@
 """Common types and protocols for quadrature."""
 
-from typing import NamedTuple, Protocol, Self, runtime_checkable
+from typing import NamedTuple, Protocol, runtime_checkable
 
 import jax.numpy as jnp
 
@@ -45,7 +45,7 @@ class SigmaPoints(NamedTuple):
         return jnp.dot(self.wm, self.points)
 
     # Should this be property too?
-    def covariance(self, other: Self | None = None) -> Array:
+    def covariance(self, other: "SigmaPoints | None" = None) -> Array:
         """Computes the covariance between the sigma points and the other sigma points.
 
         Args:
