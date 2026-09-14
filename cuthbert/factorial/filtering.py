@@ -6,7 +6,7 @@ from jax.lax import scan
 
 from cuthbert.factorial.types import Factorializer
 from cuthbert.inference import Filter
-from cuthbert.utils import dummy_tree_like
+from cuthbert.utils import dummy_leading_element
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -62,8 +62,7 @@ def filter(
     """
     T = tree.leaves(model_inputs)[0].shape[0]
     prepare_keys = _prepare_keys(key, T)
-    sample_model_inputs = tree.map(lambda x: x[0], model_inputs)
-    init_state = init_state._replace(model_inputs=dummy_tree_like(sample_model_inputs))
+    init_state = init_state._replace(model_inputs=dummy_leading_element(model_inputs))
 
     def body_local(prev_factorial_state, prep_inp_and_k):
         prep_inp, k = prep_inp_and_k

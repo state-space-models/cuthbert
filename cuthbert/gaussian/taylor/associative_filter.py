@@ -1,7 +1,7 @@
 """Implements the associative linearized Taylor Kalman filter."""
 
+from jax import ShapeDtypeStruct, tree
 from jax import numpy as jnp
-from jax import tree
 
 from cuthbert.gaussian.taylor import non_associative_filter
 from cuthbert.gaussian.taylor.types import (
@@ -12,12 +12,12 @@ from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density
-from cuthbertlib.types import Array, ArrayTreeLike, KeyArray, LogDensity
+from cuthbertlib.types import ArrayLike, ArrayTreeLike, KeyArray, LogDensity
 
 
 def init_prepare(
     init_log_density: LogDensity,
-    init_linearization_point: Array,
+    init_linearization_point: ArrayLike,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
@@ -67,7 +67,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    array_to_infer_shape: Array,
+    array_to_infer_shape: ArrayLike,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
     rtol: float | None = None,
@@ -105,9 +105,9 @@ def filter_prepare(
         Prepared state for linearized Taylor Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean = dummy_tree_like(array_to_infer_shape)
+    dummy_mean = dummy_tree_like(jnp.asarray(array_to_infer_shape))
     dummy_chol_cov = dummy_tree_like(
-        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+        ShapeDtypeStruct(dummy_mean.shape + dummy_mean.shape[-1:], dummy_mean.dtype)
     )
 
     dummy_state = LinearizedKalmanFilterState(

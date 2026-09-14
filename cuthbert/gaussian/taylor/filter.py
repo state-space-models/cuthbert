@@ -35,12 +35,12 @@ from cuthbert.gaussian.taylor.types import (
     GetObservationFunc,
 )
 from cuthbert.inference import Filter
-from cuthbertlib.types import Array, LogDensity
+from cuthbertlib.types import ArrayLike, LogDensity
 
 
 def build_filter(
     init_log_density: LogDensity,
-    init_linearization_point: Array,
+    init_linearization_point: ArrayLike,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
     associative: bool = False,

@@ -1,7 +1,7 @@
 """Implements the non-associative linearized moments Kalman filter."""
 
+from jax import ShapeDtypeStruct, tree
 from jax import numpy as jnp
-from jax import tree
 
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
@@ -66,9 +66,9 @@ def filter_prepare(
         Prepared state for linearized moments Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean = dummy_tree_like(m0)
+    dummy_mean = dummy_tree_like(jnp.asarray(m0))
     dummy_chol_cov = dummy_tree_like(
-        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+        ShapeDtypeStruct(dummy_mean.shape + dummy_mean.shape[-1:], dummy_mean.dtype)
     )
 
     return linearized_kalman_filter_state_dummy_elem(

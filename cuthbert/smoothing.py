@@ -7,7 +7,7 @@ from jax import random, tree, vmap
 from jax.lax import associative_scan, scan
 
 from cuthbert.inference import Smoother
-from cuthbert.utils import dummy_tree_like
+from cuthbert.utils import dummy_leading_element
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -77,7 +77,7 @@ def smoother(
 
     # Final smoother state doesn't need model inputs, so we create a dummy one
     # with the same structure as model_inputs but with all values set to dummy values.
-    dummy_single_model_inputs = dummy_tree_like(tree.map(lambda x: x[0], model_inputs))
+    dummy_single_model_inputs = dummy_leading_element(model_inputs)
 
     final_smoother_state = smoother_obj.convert_filter_to_smoother_state(
         final_filter_state, model_inputs=dummy_single_model_inputs, key=prepare_keys[0]

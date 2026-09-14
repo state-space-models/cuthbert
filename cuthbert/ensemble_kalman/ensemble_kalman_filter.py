@@ -202,8 +202,9 @@ def filter_prepare(
     # Infer state shape from init_sample
     dummy_particle = jax.eval_shape(init_sample, key)
     x_dim = dummy_particle.shape[0]
-    ensemble = jnp.empty((n_particles, x_dim), dtype=dummy_particle.dtype)
-    ensemble = dummy_tree_like(ensemble)
+    ensemble = dummy_tree_like(
+        jax.ShapeDtypeStruct((n_particles, x_dim), dummy_particle.dtype)
+    )
     predicted_ensemble = ensemble if store_predicted_ensemble else None
 
     return EnKFState(

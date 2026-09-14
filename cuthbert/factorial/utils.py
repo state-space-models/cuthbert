@@ -4,7 +4,7 @@ from jax import numpy as jnp
 from jax import tree, vmap
 
 from cuthbert.factorial.types import Extract
-from cuthbert.utils import dummy_tree_like
+from cuthbert.utils import dummy_leading_element
 from cuthbertlib.types import ArrayLike, ArrayTree, ArrayTreeLike
 
 
@@ -76,17 +76,22 @@ def serial_to_factorial(
 
         initial_state = extract(init_factorial_tree, factorial_index)
 
-        dummy_model_inputs = dummy_tree_like(
-            tree.map(lambda x: x[0], factor_states.model_inputs)
-        )
-        initial_state = initial_state._replace(model_inputs=dummy_model_inputs)
+        def prepend_initial(initial_leaf, history_subtree):
+            if initial_leaf is None:
+                # Subtrees absent from the initial tree (such as model_inputs)
+                # are padded with dummy values matching the history.
+                initial_leaf = dummy_leading_element(history_subtree)
+            return tree.map(
+                lambda initial, history: jnp.concatenate([initial[None], history]),
+                initial_leaf,
+                history_subtree,
+            )
 
         return tree.map(
-            lambda initial_leaf, history_leaf: jnp.concatenate(
-                [initial_leaf[None], history_leaf]
-            ),
+            prepend_initial,
             initial_state,
             factor_states,
+            is_leaf=lambda x: x is None,
         )
 
     factorial_trees = [

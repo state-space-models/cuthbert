@@ -140,11 +140,12 @@ def filter_prepare(
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
     dummy_particle = jax.eval_shape(init_sample, key)
-    particles = tree.map(
-        lambda x: jnp.empty((n_filter_particles,) + x.shape, dtype=x.dtype),
-        dummy_particle,
+    particles = dummy_tree_like(
+        tree.map(
+            lambda x: jax.ShapeDtypeStruct((n_filter_particles,) + x.shape, x.dtype),
+            dummy_particle,
+        )
     )
-    particles = dummy_tree_like(particles)
     return MarginalParticleFilterState(
         key=key,
         particles=particles,
