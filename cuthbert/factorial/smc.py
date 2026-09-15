@@ -14,7 +14,7 @@ from cuthbert.factorial.types import Factorializer, GetFactorialIndices
 from cuthbert.smc.marginal_particle_filter import MarginalParticleFilterState
 from cuthbert.smc.particle_filter import ParticleFilterState
 from cuthbertlib.resampling import Resampling, ess_decorator
-from cuthbertlib.types import Array, ArrayLike, ArrayTreeLike
+from cuthbertlib.types import Array, ArrayLike
 
 GeneralParticleFilterState = TypeVar(
     "GeneralParticleFilterState", ParticleFilterState, MarginalParticleFilterState
@@ -58,7 +58,7 @@ def build_factorializer(
 
 
 def factorialize_init_state(
-    init_state: GeneralParticleFilterState, model_inputs: ArrayTreeLike
+    init_state: GeneralParticleFilterState,
 ) -> GeneralParticleFilterState:
     """Convert initial SMC state particles from `(N, F, ...)` to `(F, N, ...)`.
 
@@ -69,7 +69,6 @@ def factorialize_init_state(
 
     Args:
         init_state: Output from particle filter `init_prepare`
-        model_inputs: The model inputs at the first time point - unused.
     """
     particles = tree.map(lambda x: jnp.moveaxis(x, 0, 1), init_state.particles)
     n_factors = tree.leaves(particles)[0].shape[0]

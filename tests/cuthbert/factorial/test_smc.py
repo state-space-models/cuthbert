@@ -33,7 +33,7 @@ def build_factorial_smc_filter(
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, factorial_indices = model_params
     num_factors, x_dim = m0.shape
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         # Generates a single particle for all factors
         eps = random.normal(key, (num_factors, x_dim))
         return m0 + jax.vmap(lambda chol_P, e: chol_P @ e)(chol_P0, eps)
@@ -129,10 +129,8 @@ def test_factorial_smc_filter(
     kalman_filter, kalman_factorializer, kalman_model_inputs = (
         build_pairwise_factorial_filter(model_params)
     )
-    init_state = kalman_filter.init_prepare(kalman_model_inputs[0])
-    init_state = kalman_factorializer.factorialize_init_state(
-        init_state, kalman_model_inputs[0]
-    )
+    init_state = kalman_filter.init_prepare()
+    init_state = kalman_factorializer.factorialize_init_state(init_state)
     kalman_states = factorial.filter(
         kalman_filter,
         kalman_factorializer,
@@ -152,14 +150,11 @@ def test_factorial_smc_filter(
     smc_filter, smc_factorializer, smc_model_inputs = build_factorial_smc_filter(
         model_params, n_particles=num_particles
     )
-    smc_init_model_inputs = tree.map(lambda x: x[0], smc_model_inputs)
     smc_filter_model_inputs = tree.map(lambda x: x[1:], smc_model_inputs)
 
     init_key, filter_key = random.split(random.key(seed + 123))
-    init_smc_state = smc_filter.init_prepare(smc_init_model_inputs, key=init_key)
-    init_smc_state = smc_factorializer.factorialize_init_state(
-        init_smc_state, smc_init_model_inputs
-    )
+    init_smc_state = smc_filter.init_prepare(key=init_key)
+    init_smc_state = smc_factorializer.factorialize_init_state(init_smc_state)
     smc_states = factorial.filter(
         smc_filter,
         smc_factorializer,

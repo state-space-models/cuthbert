@@ -41,7 +41,7 @@ def load_enkf_inference(
 ):
     x_dim = m0.shape[0]
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     if noop:
@@ -127,7 +127,7 @@ class Test(chex.TestCase):
             construct_chol_innovation_covariance=(construct_chol_innovation_covariance),
         )
         init_key, filter_key = random.split(random.key(seed + 1))
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference, model_inputs[1:], init_state, parallel=False, key=filter_key
         )
@@ -163,7 +163,7 @@ class Test(chex.TestCase):
             seed, x_dim, y_dim, num_time_steps
         )
 
-        def init_sample(key, model_inputs):
+        def init_sample(key):
             return m0 + chol_P0 @ random.normal(key, m0.shape)
 
         def dynamics_fn(x, key):
@@ -186,7 +186,7 @@ class Test(chex.TestCase):
         model_inputs = jnp.arange(num_time_steps + 1)
 
         init_key, filter_key = random.split(random.key(seed + 1))
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference, model_inputs[1:], init_state, parallel=False, key=filter_key
         )
@@ -198,7 +198,7 @@ class Test(chex.TestCase):
 
         # Check autodiff works (differentiate w.r.t. a parameter)
         def log_nc(m0_):
-            def init_sample_(key, model_inputs):
+            def init_sample_(key):
                 return m0_ + chol_P0 @ random.normal(key, m0_.shape)
 
             inference_ = ensemble_kalman_filter.build_filter(
@@ -208,7 +208,7 @@ class Test(chex.TestCase):
                 n_particles=1_000,
             )
             init_key, filter_key = random.split(random.key(seed + 1))
-            init_state = inference_.init_prepare(model_inputs[0], key=init_key)
+            init_state = inference_.init_prepare(key=init_key)
             states = filter(
                 inference_,
                 model_inputs[1:],
@@ -297,7 +297,7 @@ def test_gaussian_taper_log_likelihood_gradient():
             n_particles=n_particles,
             perturbed_obs=False,
         )
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states = filter(
             inference,
             model_inputs[1:],
@@ -336,7 +336,7 @@ def test_filter_noop(seed, x_dim, y_dim):
 
     inference, _ = load_enkf_inference(*lgssm, noop=True)
 
-    init_state = inference.init_prepare(jnp.array(0), key=random.key(seed + 1))
+    init_state = inference.init_prepare(key=random.key(seed + 1))
     prep_state = inference.filter_prepare(jnp.array(1), key=random.key(seed + 2))
     filtered_state = inference.filter_combine(init_state, prep_state)
 
@@ -364,7 +364,7 @@ def test_filter_noop(seed, x_dim, y_dim):
 def test_build_filter_requires_at_least_two_particles():
     """EnKF should fail fast when configured with fewer than two particles."""
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return jnp.zeros(1) + jnp.eye(1) @ random.normal(key, (1,))
 
     with pytest.raises(ValueError, match="at least 2"):

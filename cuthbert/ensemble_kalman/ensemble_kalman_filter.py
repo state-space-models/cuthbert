@@ -81,7 +81,8 @@ def build_filter(
     """Builds an Ensemble Kalman Filter object.
 
     Args:
-        init_sample: Function to sample from the initial distribution from key and model inputs.
+        init_sample: Function of a JAX random key only, generates a single sample from
+            the initial distribution.
         get_dynamics: Function to get dynamics function (x_t, key) -> x_{t+1} ~ p(x_{t+1} | x_t) from model inputs.
         get_observations: Function to get observation function, chol_R, and y from model inputs.
         n_particles: Number of particles.
@@ -134,7 +135,6 @@ def build_filter(
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
     init_sample: InitSample,
     n_particles: int,
     store_predicted_ensemble: bool = False,
@@ -143,8 +143,8 @@ def init_prepare(
     """Prepare the initial state for the EnKF.
 
     Args:
-        model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution from key and model inputs.
+        init_sample: Function of a JAX random key only, generates a single sample from
+            the initial distribution.
         n_particles: Number of particles.
         store_predicted_ensemble: Whether to store incoming forecast ensembles.
         key: JAX random key.
@@ -155,19 +155,18 @@ def init_prepare(
     Raises:
         ValueError: If key is None.
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
     # Sample ensemble from initial distribution
     keys = random.split(key, n_particles)
-    ensemble = jax.vmap(init_sample, (0, None))(keys, model_inputs)
+    ensemble = jax.vmap(init_sample)(keys)
     predicted_ensemble = dummy_tree_like(ensemble) if store_predicted_ensemble else None
 
     return EnKFState(
         key=key,
         ensemble=ensemble,
-        model_inputs=model_inputs,
+        model_inputs=None,
         log_normalizing_constant=jnp.array(0.0),
         predicted_ensemble=predicted_ensemble,
     )
@@ -184,7 +183,8 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution from key and model inputs.
+        init_sample: Function of a JAX random key only, sampling from the initial
+            distribution. Bind initial parameters when building the filter.
         n_particles: Number of particles.
         store_predicted_ensemble: Whether to store incoming forecast ensembles.
         key: JAX random key.
@@ -200,10 +200,11 @@ def filter_prepare(
         raise ValueError("A JAX PRNG key must be provided.")
 
     # Infer state shape from init_sample
-    dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
+    dummy_particle = jax.eval_shape(init_sample, key)
     x_dim = dummy_particle.shape[0]
-    ensemble = jnp.empty((n_particles, x_dim))
-    ensemble = dummy_tree_like(ensemble)
+    ensemble = dummy_tree_like(
+        jax.ShapeDtypeStruct((n_particles, x_dim), dummy_particle.dtype)
+    )
     predicted_ensemble = ensemble if store_predicted_ensemble else None
 
     return EnKFState(

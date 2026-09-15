@@ -47,9 +47,6 @@ def build_pairwise_factorial_filter(
 
     m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, factorial_indices = model_params
 
-    def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        return m0, chol_P0
-
     def get_dynamics_params(model_inputs: int) -> tuple[Array, Array, Array]:
         return Fs[model_inputs - 1], cs[model_inputs - 1], chol_Qs[model_inputs - 1]
 
@@ -62,7 +59,7 @@ def build_pairwise_factorial_filter(
         )
 
     filter = kalman.build_filter(
-        get_init_params, get_dynamics_params, get_observation_params
+        m0, chol_P0, get_dynamics_params, get_observation_params
     )
 
     factorializer = factorial.gaussian.build_factorializer(
@@ -210,7 +207,7 @@ def test_filter(seed, x_dim, y_dim, num_factors, num_factors_local, num_time_ste
     fac_covs_t_all = jnp.stack(fac_covs_t_all)
 
     # Check output_factorial = False
-    init_state = filter_obj.init_prepare(model_inputs[0])
+    init_state = filter_obj.init_prepare()
     local_filter_states, final_state = factorial.filter(
         filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=False
     )
@@ -298,7 +295,7 @@ def test_smoother(
         smoother_factorial_index=smoother_factorial_index,
     )
 
-    init_state = filter_obj.init_prepare(filter_model_inputs[0])
+    init_state = filter_obj.init_prepare()
     local_filter_states, _ = factorial.filter(
         filter_obj,
         factorializer,
@@ -322,7 +319,8 @@ def test_smoother(
             factorializer.extract(init_state, smoother_factorial_index),
         )
         chex.assert_trees_all_close(
-            local_filter_states_single_factor, expected_initial_state
+            local_filter_states_single_factor._replace(model_inputs=None),
+            expected_initial_state,
         )
         return
 

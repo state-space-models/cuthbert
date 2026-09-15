@@ -5,22 +5,6 @@ from typing import Protocol
 from cuthbertlib.types import Array, ArrayTreeLike
 
 
-class GetInitDist(Protocol):
-    """Protocol for specifying the initial distribution."""
-
-    def __call__(self, model_inputs: ArrayTreeLike) -> Array:
-        """Get the initial distribution.
-
-        Args:
-            model_inputs: Model inputs.
-
-        Returns:
-            An array $m$ of shape (N,) where N is the number of states,
-                with $m_i = p(x_0 = i)$.
-        """
-        ...
-
-
 class GetTransitionMatrix(Protocol):
     """Protocol for specifying the transition matrix."""
 

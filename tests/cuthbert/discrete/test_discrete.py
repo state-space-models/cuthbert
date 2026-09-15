@@ -100,9 +100,6 @@ def std_forward_backward(init_dist, trans_matrix, log_likelihoods):
 def build_inference_object(init_dist, trans_matrices, log_likelihoods):
     T = log_likelihoods.shape[0]
 
-    def get_init_dist(model_inputs):
-        return init_dist
-
     def get_trans_matrix(model_inputs):
         return trans_matrices[model_inputs - 1]
 
@@ -110,7 +107,7 @@ def build_inference_object(init_dist, trans_matrices, log_likelihoods):
         return log_likelihoods[model_inputs - 1]
 
     filter_obj = build_filter(
-        get_init_dist=get_init_dist,
+        init_dist=init_dist,
         get_trans_matrix=get_trans_matrix,
         get_obs_lls=get_obs_lls,
     )
@@ -133,7 +130,7 @@ class TestDiscrete(chex.TestCase):
         )
 
         # Run the filter and smoother
-        init_state = filter_obj.init_prepare(model_inputs[0])
+        init_state = filter_obj.init_prepare()
         filtered_states = self.variant(
             filter, static_argnames=("filter_obj", "parallel")
         )(filter_obj, model_inputs[1:], init_state, parallel=parallel)
@@ -178,12 +175,12 @@ def test_filter_noop(seed, num_states):
         return jnp.zeros(num_states)
 
     filter_obj = build_filter(
-        get_init_dist=lambda model_inputs: init_dist,
+        init_dist=init_dist,
         get_trans_matrix=get_noop_trans_matrix,
         get_obs_lls=get_noop_obs_lls,
     )
 
-    init_state = filter_obj.init_prepare(None)
+    init_state = filter_obj.init_prepare()
     prep_state = filter_obj.filter_prepare(None)
     filtered_state = filter_obj.filter_combine(init_state, prep_state)
     chex.assert_trees_all_close(filtered_state, init_state, rtol=1e-10, atol=1e-10)

@@ -10,7 +10,6 @@ from cuthbert import filter, smoother
 from cuthbert.gaussian import taylor
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
-    GetInitLogDensity,
     LogConditionalDensity,
     LogDensity,
     LogPotential,
@@ -38,16 +37,15 @@ def _load_taylor_init_and_dynamics(
     Fs: Array,
     cs: Array,
     chol_Qs: Array,
-) -> tuple[GetInitLogDensity, GetDynamicsLogDensity]:
+) -> tuple[tuple[LogDensity, Array], GetDynamicsLogDensity]:
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM.
     """
 
-    def get_init_log_density(model_inputs: int) -> tuple[LogDensity, Array]:
-        def init_log_density(x):
-            return multivariate_normal.logpdf(x, m0, chol_P0)
+    def init_log_density(x):
+        return multivariate_normal.logpdf(x, m0, chol_P0)
 
-        return init_log_density, jnp.zeros_like(m0)
+    init_linearization_point = jnp.zeros_like(m0)
 
     def get_dynamics_log_density(
         state: LinearizedKalmanFilterState, model_inputs: int
@@ -65,7 +63,7 @@ def _load_taylor_init_and_dynamics(
             jnp.zeros_like(m0),
         )
 
-    return get_init_log_density, get_dynamics_log_density
+    return (init_log_density, init_linearization_point), get_dynamics_log_density
 
 
 def load_taylor_inference(
@@ -84,7 +82,7 @@ def load_taylor_inference(
     """Builds linearized log density Kalman filter and smoother objects and model_inputs
     for a linear-Gaussian SSM.
     """
-    get_init_log_density, get_dynamics_log_density = _load_taylor_init_and_dynamics(
+    init_params, get_dynamics_log_density = _load_taylor_init_and_dynamics(
         m0, chol_P0, Fs, cs, chol_Qs
     )
 
@@ -105,7 +103,7 @@ def load_taylor_inference(
         )
 
     filter = taylor.build_filter(
-        get_init_log_density,
+        *init_params,
         get_dynamics_log_density,
         get_observation_log_density,
         associative=associative_filter,
@@ -153,7 +151,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         ignore_nan_dims=True,
     )
 
-    init_state = taylor_filter.init_prepare(model_inputs[0])
+    init_state = taylor_filter.init_prepare()
 
     # Run sequential sqrt filter
     seq_states = filter(taylor_filter, model_inputs[1:], init_state, parallel=False)
@@ -177,7 +175,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         ignore_nan_dims=True,
     )
 
-    associative_init_state = associative_taylor_filter.init_prepare(model_inputs[0])
+    associative_init_state = associative_taylor_filter.init_prepare()
 
     # Run associative filter with parallel=False§
     seq_ass_states = filter(
@@ -233,11 +231,10 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
 def test_filter_noop(seed, x_dim, y_dim, associative):
     m0, chol_P0 = generate_lgssm(seed, x_dim, y_dim, 0)[:2]
 
-    def get_init_log_density(model_inputs: int) -> tuple[LogDensity, Array]:
-        def init_log_density(x):
-            return multivariate_normal.logpdf(x, m0, chol_P0)
+    def init_log_density(x):
+        return multivariate_normal.logpdf(x, m0, chol_P0)
 
-        return init_log_density, jnp.zeros_like(m0)
+    init_linearization_point = jnp.zeros_like(m0)
 
     def get_noop_dynamics_log_density(
         state: LinearizedKalmanFilterState, model_inputs: int
@@ -263,13 +260,14 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
         )
 
     filter_obj = taylor.build_filter(
-        get_init_log_density=get_init_log_density,
+        init_log_density,
+        init_linearization_point,
         get_dynamics_log_density=get_noop_dynamics_log_density,
         get_observation_func=get_noop_observation_log_density,
         associative=associative,
     )
 
-    state = filter_obj.init_prepare(None)
+    state = filter_obj.init_prepare()
     prep_state = filter_obj.filter_prepare(None)
     filtered_state = filter_obj.filter_combine(state, prep_state)
 
@@ -293,7 +291,8 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
         )
 
     filter_log_potential_obj = taylor.build_filter(
-        get_init_log_density=get_init_log_density,
+        init_log_density,
+        init_linearization_point,
         get_dynamics_log_density=get_noop_dynamics_log_density,
         get_observation_func=get_noop_observation_log_potential,
         associative=associative,
@@ -328,7 +327,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    init_state = log_density_filter.init_prepare(model_inputs[0])
+    init_state = log_density_filter.init_prepare()
     filt_states = filter(log_density_filter, model_inputs[1:], init_state)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)
@@ -391,7 +390,7 @@ def load_taylor_inference_potential(
 
     Uses Gaussian log potential for observations instead of conditional log density.
     """
-    get_init_log_density, get_dynamics_log_density = _load_taylor_init_and_dynamics(
+    init_params, get_dynamics_log_density = _load_taylor_init_and_dynamics(
         m0, chol_P0, Fs, cs, chol_Qs
     )
 
@@ -409,7 +408,7 @@ def load_taylor_inference_potential(
         )
 
     filter = taylor.build_filter(
-        get_init_log_density,
+        *init_params,
         get_dynamics_log_density,
         get_observation_log_potential,
         associative=associative_filter,
@@ -436,7 +435,7 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs, associative_filter=False
     )
 
-    init_state = taylor_filter.init_prepare(model_inputs[0])
+    init_state = taylor_filter.init_prepare()
 
     # Run sequential sqrt filter
     seq_states = filter(taylor_filter, model_inputs[1:], init_state, parallel=False)
@@ -450,7 +449,7 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, ms, chol_Rs, associative_filter=True
     )
 
-    associative_init_state = associative_taylor_filter.init_prepare(model_inputs[0])
+    associative_init_state = associative_taylor_filter.init_prepare()
 
     # Run associative filter with parallel=False
     seq_ass_states = filter(
@@ -515,18 +514,19 @@ def test_factorial_init(seed, x_dim, num_factors):
     chol_P0 = jnp.linalg.cholesky(P0)
     lin_p = random.normal(lin_p_key, shape=(num_factors, x_dim))
 
-    def get_init_log_density(model_inputs):
-        def init_log_density(x):
-            factor_log_densities = jax.vmap(
-                lambda factor_x: multivariate_normal.logpdf(factor_x, m0, chol_P0)
-            )(x)
-            return jnp.sum(factor_log_densities)
+    def init_log_density(x):
+        factor_log_densities = jax.vmap(
+            lambda factor_x: multivariate_normal.logpdf(factor_x, m0, chol_P0)
+        )(x)
+        return jnp.sum(factor_log_densities)
 
-        return init_log_density, lin_p
+    init_linearization_point = lin_p
 
-    init_state = taylor.non_associative_filter.init_prepare(None, get_init_log_density)
+    init_state = taylor.non_associative_filter.init_prepare(
+        init_log_density, init_linearization_point
+    )
     init_state_assoc = taylor.associative_filter.init_prepare(
-        None, get_init_log_density
+        init_log_density, init_linearization_point
     )
 
     factorial_mean = jnp.tile(m0[None], (num_factors, 1))

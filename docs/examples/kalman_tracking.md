@@ -90,9 +90,8 @@ of time-varying parameters.
 
 #### The Parameter Extraction Pattern
 
-Instead of passing matrices directly, `kalman.build_filter()` takes three functions that extract the necessary parameters given a time index (or other model inputs):
+`kalman.build_filter()` takes the initial mean `m0` and covariance factor `chol_P0` directly, followed by two functions that extract step parameters given a time index (or other model inputs):
 
-- **`get_init_params(model_inputs)`**: Returns initial state mean `m0` and noise Cholesky factor `chol_P0`.
 - **`get_dynamics_params(model_inputs)`**: Returns dynamics matrix `F`, bias term `c`, and process noise Cholesky factor `chol_Q`.
 - **`get_observation_params(model_inputs)`**: Returns observation matrix `H`, bias term `d`, observation noise Cholesky factor `chol_R`, and the actual observation `y`.
 
@@ -115,9 +114,6 @@ This pattern separates the model specification from the filtering algorithm, mak
 ```{.python #kalman-build-filter}
 def build_car_tracking_filter(m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys):
 
-    def get_init_params(model_inputs):
-        return m0, chol_P0
-
     def get_dynamics_params(model_inputs):
         return F, c, chol_Q
 
@@ -125,7 +121,7 @@ def build_car_tracking_filter(m0, chol_P0, F, c, chol_Q, H, d, chol_R, ys):
         return H, d, chol_R, ys[model_inputs - 1]
 
     filter_obj = kalman.build_filter(
-        get_init_params, get_dynamics_params, get_observation_params
+        m0, chol_P0, get_dynamics_params, get_observation_params
     )
     model_inputs = jnp.arange(len(ys) + 1)
     return filter_obj, model_inputs
@@ -142,7 +138,7 @@ function with our constructed filter object and model inputs:
 
 ```{.python #kalman-run-filter}
 # Run the filter
-init_state = filter_obj.init_prepare(model_inputs[0])
+init_state = filter_obj.init_prepare()
 filtered_states = filter(filter_obj, model_inputs[1:], init_state, parallel=True)
 
 # Extract results
@@ -216,7 +212,7 @@ car's position.
     )
 
     # Run filtering - cuthbert handles NaNs automatically
-    init_state_missing = filter_obj_missing.init_prepare(model_inputs_missing[0])
+    init_state_missing = filter_obj_missing.init_prepare()
     filtered_states_missing = filter(
         filter_obj_missing, model_inputs_missing[1:], init_state_missing
     )

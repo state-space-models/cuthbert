@@ -13,15 +13,14 @@ from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray, ScalarArray
 class InitSample(Protocol):
     """Protocol for  sampling from the initial distribution $M_0(x_0)$."""
 
-    def __call__(self, key: KeyArray, model_inputs: ArrayTreeLike) -> ArrayTree:
+    def __call__(self, key: KeyArray) -> ArrayTree:
         """Samples from the initial distribution $M_0(x_0)$.
 
         Args:
             key: JAX PRNG key.
-            model_inputs: Model inputs.
 
         Returns:
-            A sample $x_0$.
+            A single sample $x_0$.
         """
         ...
 

@@ -13,7 +13,6 @@ import jax.numpy as jnp
 from jax import tree
 
 from cuthbert.discrete.types import (
-    GetInitDist,
     GetObsLogLikelihoods,
     GetTransitionMatrix,
 )
@@ -43,14 +42,14 @@ class DiscreteFilterState(NamedTuple):
 
 
 def build_filter(
-    get_init_dist: GetInitDist,
+    init_dist: Array,
     get_trans_matrix: GetTransitionMatrix,
     get_obs_lls: GetObsLogLikelihoods,
 ) -> Filter:
     r"""Builds a filter object for discrete hidden Markov models.
 
     Args:
-        get_init_dist: Function to get initial state probabilities $m_i = p(x_0 = i)$.
+        init_dist: Array of initial state probabilities $m_i = p(x_0 = i)$.
         get_trans_matrix: Function to get the transition matrix $A_{ij} = p(x_t = j \mid x_{t-1} = i)$.
         get_obs_lls: Function to get observation log likelihoods $b_i = \log p(y_t | x_t = i)$.
 
@@ -58,7 +57,7 @@ def build_filter(
         Filter object. Suitable for associative scan.
     """
     return Filter(
-        init_prepare=partial(init_prepare, get_init_dist=get_init_dist),
+        init_prepare=partial(init_prepare, init_dist=init_dist),
         filter_prepare=partial(
             filter_prepare, get_trans_matrix=get_trans_matrix, get_obs_lls=get_obs_lls
         ),
@@ -67,27 +66,23 @@ def build_filter(
     )
 
 
-def init_prepare(
-    model_inputs: ArrayTreeLike, get_init_dist: GetInitDist, key: KeyArray | None = None
-) -> DiscreteFilterState:
+def init_prepare(init_dist: Array, key: KeyArray | None = None) -> DiscreteFilterState:
     """Prepare the initial state for the filter.
 
     Args:
-        model_inputs: Model inputs.
-        get_init_dist: Function to get initial state probabilities m_i = p(x_0 = i).
+        init_dist: Array of initial state probabilities m_i = p(x_0 = i).
         key: JAX random key - not used.
 
     Returns:
         Prepared state for the filter.
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    init_dist = get_init_dist(model_inputs)
+    init_dist = jnp.asarray(init_dist)
     N = init_dist.shape[-1]
     f = init_dist[..., None, :] * jnp.ones((N, N))
     # repeat init_dist N times onto newly added penultimate axis
     log_g = jnp.zeros_like(init_dist)
     return DiscreteFilterState(
-        elem=filtering.FilterScanElement(f, log_g), model_inputs=model_inputs
+        elem=filtering.FilterScanElement(f, log_g), model_inputs=None
     )
 
 

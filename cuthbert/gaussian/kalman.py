@@ -13,7 +13,7 @@ from cuthbert.gaussian.types import GetDynamicsParams, GetObservationParams
 from cuthbert.inference import Filter, Smoother
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering, smoothing
-from cuthbertlib.types import Array, ArrayTree, ArrayTreeLike, KeyArray
+from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike, KeyArray
 
 
 class KalmanFilterState(NamedTuple):
@@ -58,8 +58,8 @@ class KalmanSmootherState(NamedTuple):
 
 
 def build_filter(
-    m0: Array,
-    chol_P0: Array,
+    m0: ArrayLike,
+    chol_P0: ArrayLike,
     get_dynamics_params: GetDynamicsParams,
     get_observation_params: GetObservationParams,
 ) -> Filter:
@@ -127,8 +127,8 @@ def build_smoother(
 
 
 def init_prepare(
-    m0: Array,
-    chol_P0: Array,
+    m0: ArrayLike,
+    chol_P0: ArrayLike,
     key: KeyArray | None = None,
 ) -> KalmanFilterState:
     """Prepare the initial state for the Kalman filter.
@@ -142,6 +142,7 @@ def init_prepare(
     Returns:
         State for the Kalman filter.
     """
+    m0, chol_P0 = jnp.asarray(m0), jnp.asarray(chol_P0)
     elem = filtering.FilterScanElement(
         A=jnp.zeros_like(chol_P0),
         b=m0,

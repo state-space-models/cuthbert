@@ -143,14 +143,11 @@ class Insert(Protocol):
 class FactorializeInitState(Protocol):
     """Protocol for factorial post-processing of `init_prepare`."""
 
-    def __call__(
-        self, init_state: ArrayTreeLike, model_inputs: ArrayTreeLike
-    ) -> ArrayTree:
+    def __call__(self, init_state: ArrayTreeLike) -> ArrayTree:
         """Any processing of the output of `init_prepare` for factorial inference.
 
         Args:
             init_state: Output from base inference method's `init_prepare`
-            model_inputs: The model inputs at the first time point.
         """
         ...
 
@@ -182,9 +179,7 @@ class Factorializer(NamedTuple):
     join: Join
     marginalize: Marginalize
     insert: Insert
-    factorialize_init_state: FactorializeInitState = lambda init_state, model_inputs: (
-        init_state
-    )
+    factorialize_init_state: FactorializeInitState = lambda init_state: init_state
 
     def extract_and_join(
         self, factorial_state: ArrayTreeLike, model_inputs: ArrayTreeLike

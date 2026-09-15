@@ -184,7 +184,7 @@ The cross-covariance modifier receives the empirical $C_{xy}$, while the innovat
 We now compare a localized and unlocalized (stochastic) EnKF on the generated data. We build each EnKF as follows:
 
 ```{.python #enkf-localization-l96-filter}
-def init_sample(key, _model_inputs):
+def init_sample(key):
     index = random.randint(key, (), 0, climatology_states.shape[0])
     return climatology_states[index]
 
@@ -220,10 +220,9 @@ def build_enkf(
     )
 
 jitted_filter = jax.jit(run_filter, static_argnames=("filter_obj",))
-initial_model_inputs = jnp.full(observation_dim, jnp.nan)
 
 def apply_filter(filter_obj):
-    initial_state = filter_obj.init_prepare(initial_model_inputs, key=init_key)
+    initial_state = filter_obj.init_prepare(key=init_key)
     states = jitted_filter(
         filter_obj,
         observations,

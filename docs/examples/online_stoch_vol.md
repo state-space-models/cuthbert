@@ -154,7 +154,7 @@ Then we'll convert our mathematical model into one that `cuthbert.smc.particle_f
 can understand.
 
 ```{.python #online-stoch-vol-model-func}
-def init_sample(key: Array, model_inputs: ObservationData) -> Array:
+def init_sample(key: Array) -> Array:
     return init_mean + init_std * random.normal(key, ())
 
 
@@ -212,9 +212,8 @@ data.
 
 ```{.python #online-stoch-vol-particle-filter-run-previous}
 key, init_key, previous_key = random.split(random.key(0), 3)
-init_data = tree.map(lambda x: x[0], previous_data)
 filter_data = tree.map(lambda x: x[1:], previous_data)
-init_state = pf.init_prepare(init_data, key=init_key)
+init_state = pf.init_prepare(key=init_key)
 previous_states = filter(pf, filter_data, init_state, key=previous_key)
 filter_state = tree.map(lambda x: x[-1], previous_states)
 ```

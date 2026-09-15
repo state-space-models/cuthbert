@@ -31,9 +31,6 @@ def test_synchronize_kalman():
     def get_factorial_indices(x):
         return x
 
-    def get_init_params(_):
-        return means, chol_covs
-
     def get_dynamics_params(factor_index):
         return (
             transitions[factor_index],
@@ -46,10 +43,10 @@ def test_synchronize_kalman():
         return jnp.zeros((1, 1)), jnp.zeros(1), jnp.eye(1), jnp.array([jnp.nan])
 
     filter_obj = kalman.build_filter(
-        get_init_params, get_dynamics_params, get_observation_params
+        means, chol_covs, get_dynamics_params, get_observation_params
     )
     factorializer = factorial.gaussian.build_factorializer(get_factorial_indices)
-    factorial_state = filter_obj.init_prepare(None)
+    factorial_state = filter_obj.init_prepare()
 
     synchronized = factorial.synchronize(
         filter_obj, factorializer, jnp.arange(len(means)), factorial_state
@@ -66,14 +63,13 @@ def test_synchronize_kalman():
 def test_synchronize_discrete():
     init_dist = jnp.array([[0.6, 0.4], [0.25, 0.75]])
     transitions = jnp.array([[[0.7, 0.3], [0.2, 0.8]], [[0.4, 0.6], [0.9, 0.1]]])
-    initial_model_inputs = jnp.array(0)
     model_inputs = jnp.arange(len(init_dist))
     true_dists = vmap(lambda dist, transition: dist @ transition)(
         init_dist, transitions
     )
 
     filter_obj = build_discrete_filter(
-        lambda _: init_dist,
+        init_dist,
         lambda factor_index: transitions[factor_index],
         lambda _: jnp.zeros(2),
     )
@@ -87,7 +83,7 @@ def test_synchronize_discrete():
         filter_obj,
         factorializer,
         model_inputs,
-        filter_obj.init_prepare(initial_model_inputs),
+        filter_obj.init_prepare(),
     )
 
     chex.assert_trees_all_close(
@@ -97,11 +93,11 @@ def test_synchronize_discrete():
 
 
 def test_synchronize_particle_filter():
-    initial_model_inputs = jnp.array([1.0, 10.0])
+    initial_values = jnp.array([1.0, 10.0])
     model_inputs = jnp.array([0.5, -1.0])
 
     filter_obj = build_particle_filter(
-        init_sample=lambda key, initial_value: initial_value,
+        init_sample=lambda key: initial_values,
         propagate_sample=lambda key, particle, increment: particle + increment,
         log_potential=lambda previous, particle, increment: jnp.array(0.0),
         n_filter_particles=3,
@@ -115,8 +111,7 @@ def test_synchronize_particle_filter():
         get_factorial_indices, no_resampling.resampling
     )
     initial_state = factorializer.factorialize_init_state(
-        filter_obj.init_prepare(initial_model_inputs, key=random.key(0)),
-        initial_model_inputs,
+        filter_obj.init_prepare(key=random.key(0)),
     )
     true_particles = vmap(lambda particles, increment: particles + increment)(
         initial_state.particles, model_inputs

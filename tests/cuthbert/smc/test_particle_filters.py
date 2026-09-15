@@ -37,7 +37,7 @@ def load_inference(
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     if noop:
@@ -108,7 +108,7 @@ class Test(chex.TestCase):
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, method
         )
         init_key, filter_key = random.split(random.key(seed + 1))
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference,
             model_inputs[1:],
@@ -149,7 +149,7 @@ class Test(chex.TestCase):
     def test_pytree_particles(self, method):
         """Test that the pf handles pytree states correctly."""
 
-        def init_sample(key, model_inputs):
+        def init_sample(key):
             keys = random.split(key, 2)
             position = random.normal(keys[0], (2,))
             velocity = random.normal(keys[1], (2,))
@@ -204,7 +204,7 @@ class Test(chex.TestCase):
 
         # Run the particle filter
         init_key, filter_key = random.split(key)
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states = self.variant(filter, static_argnames=("filter_obj", "parallel"))(
             inference,
             model_inputs[1:],
@@ -229,7 +229,7 @@ def test_filter_noop(seed, x_dim, y_dim, method):
 
     inference, _ = load_inference(*lgssm, method=method, noop=True)
 
-    init_state = inference.init_prepare(None, key=random.key(seed + 1))
+    init_state = inference.init_prepare(key=random.key(seed + 1))
     prep_state = inference.filter_prepare(None, key=random.key(seed + 2))
     filtered_state = inference.filter_combine(init_state, prep_state)
 

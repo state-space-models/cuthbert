@@ -15,24 +15,6 @@ from cuthbertlib.types import (
 LogPotential: TypeAlias = LogDensity
 
 
-class GetInitLogDensity(Protocol):
-    """Protocol for extracting the initial specifications."""
-
-    def __call__(self, model_inputs: ArrayTreeLike) -> tuple[LogDensity, Array]:
-        """Get the initial log density and initial linearization point.
-
-        If the state-space model is a factorial model, this should return the
-        sum of the log densities for each factor.
-
-        Args:
-            model_inputs: Model inputs.
-
-        Returns:
-            Tuple with initial log density and initial linearization point.
-        """
-        ...
-
-
 class GetDynamicsLogDensity(Protocol):
     """Protocol for extracting the dynamics specifications."""
 

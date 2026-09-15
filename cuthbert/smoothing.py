@@ -7,7 +7,7 @@ from jax import random, tree, vmap
 from jax.lax import associative_scan, scan
 
 from cuthbert.inference import Smoother
-from cuthbert.utils import dummy_tree_like
+from cuthbert.utils import dummy_leading_element
 from cuthbertlib.types import ArrayTree, ArrayTreeLike, KeyArray
 
 
@@ -23,11 +23,10 @@ def smoother(
     `filter_states` should have leading temporal dimension of length T + 1, where
     T is the number of time steps excluding the initial state.
 
-    Each element of `model_inputs` refers to the transition from t to t+1, except for the
-    first element which refers to the initial state. The initial state `model_inputs`
-    are not used for smoothing. Thus the `model_inputs` used here have length T.
-    By default, `filter_states.model_inputs[1:]` are used (i.e. the `model_inputs`
-    used for the initial state is ignored).
+    Each of the T elements of `model_inputs` describes a transition from t to t+1.
+    Inputs of length T + 1 are also accepted; the first element is ignored.
+    By default, `filter_states.model_inputs[1:]` are used, discarding the dummy
+    inputs stored alongside the initial state.
 
     Args:
         smoother_obj: The smoother inference object.
@@ -54,7 +53,7 @@ def smoother(
 
     # model_inputs for the dynamics distribution from t-1 to t is stored
     # in model_inputs[t] thus we need model_inputs[1:]
-    # model_inputs[0] is only used for init_prepare and not for smoothing.
+    # model_inputs[0] contains dummy values for the initial state.
     # Therefore, we allow model_inputs to be either of length T + 1 or T
     # where if length is T + 1 then we simply discard model_inputs[0]
     model_inputs_length = tree.leaves(model_inputs)[0].shape[0]
@@ -78,7 +77,7 @@ def smoother(
 
     # Final smoother state doesn't need model inputs, so we create a dummy one
     # with the same structure as model_inputs but with all values set to dummy values.
-    dummy_single_model_inputs = dummy_tree_like(tree.map(lambda x: x[0], model_inputs))
+    dummy_single_model_inputs = dummy_leading_element(model_inputs)
 
     final_smoother_state = smoother_obj.convert_filter_to_smoother_state(
         final_filter_state, model_inputs=dummy_single_model_inputs, key=prepare_keys[0]

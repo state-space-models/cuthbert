@@ -26,11 +26,10 @@ def test_factorial_taylor_filter_jit():
     factorial_indices = jnp.array([[0, 1], [1, 2], [0, 2]])
 
     # Users have to specify a initial log density that acts on the full factorial state.
-    def get_init_log_density(model_inputs):
-        def _init_log_density(x):
-            return jnp.sum(jax.vmap(multivariate_normal.logpdf)(x, m0s, chol_P0s))
+    def init_log_density(x):
+        return jnp.sum(jax.vmap(multivariate_normal.logpdf)(x, m0s, chol_P0s))
 
-        return _init_log_density, jnp.zeros((num_factors, x_dim))
+    init_linearization_point = jnp.zeros((num_factors, x_dim))
 
     def get_dynamics_log_density(state, model_inputs):
         F = Fs[model_inputs - 1]
@@ -53,18 +52,18 @@ def test_factorial_taylor_filter_jit():
         return observation_log_density, state.mean, ys[model_inputs - 1]
 
     filter_obj = taylor.build_filter(
-        get_init_log_density,
+        init_log_density,
+        init_linearization_point,
         get_dynamics_log_density,
         get_observation_log_density,
     )
     factorializer = factorial.gaussian.build_factorializer(
         lambda model_inputs: factorial_indices[model_inputs - 1]
     )
-    init_model_inputs = jnp.array(0)
     filter_model_inputs = jnp.arange(1, num_time_steps + 1)
 
-    init_state = filter_obj.init_prepare(init_model_inputs)
-    init_state = factorializer.factorialize_init_state(init_state, init_model_inputs)
+    init_state = filter_obj.init_prepare()
+    init_state = factorializer.factorialize_init_state(init_state)
     local_filter_states, _ = jax.jit(
         factorial.filter,
         static_argnames=("filter_obj", "factorializer", "output_factorial"),

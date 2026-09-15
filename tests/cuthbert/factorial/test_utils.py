@@ -133,3 +133,25 @@ def test_serial_to_single_factor_prepends_init_factorial_tree():
     )
 
     chex.assert_trees_all_close(factor_1, all_factors[factorial_index])
+
+
+def test_serial_to_factorial_pads_missing_initial_subtree_without_occurrences():
+    def extract_state(state, inds):
+        return {"x": state["x"][inds], "inputs": state["inputs"]}
+
+    serial_tree = {
+        "x": jnp.array([[[2.0]]]),
+        "inputs": {"y": jnp.array([[3.0]]), "mask": jnp.array([True])},
+    }
+    initial_tree = {"x": jnp.array([[1.0], [4.0]]), "inputs": None}
+    result = serial_to_factorial(
+        extract_state,
+        serial_tree,
+        jnp.array([[0]]),
+        select_factorial_inds=1,
+        init_factorial_tree=initial_tree,
+    )
+    chex.assert_trees_all_equal(result["x"], jnp.array([[4.0]]))
+    chex.assert_shape(result["inputs"]["y"], (1, 1))
+    assert result["inputs"]["mask"].dtype == jnp.bool_
+    assert initial_tree["inputs"] is None

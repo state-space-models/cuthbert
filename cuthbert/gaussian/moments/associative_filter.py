@@ -1,27 +1,26 @@
 """Implements the associative linearized moments Kalman filter."""
 
-from jax import eval_shape, tree
+from jax import ShapeDtypeStruct, tree
 from jax import numpy as jnp
 
-from cuthbert.gaussian.kalman import GetInitParams
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_moments
-from cuthbertlib.types import ArrayTreeLike, KeyArray
+from cuthbertlib.types import ArrayLike, ArrayTreeLike, KeyArray
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_params: GetInitParams,
+    m0: ArrayLike,
+    chol_P0: ArrayLike,
     key: KeyArray | None = None,
 ) -> LinearizedKalmanFilterState:
     """Prepare the initial state for the linearized moments Kalman filter.
 
     Args:
-        model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 from model inputs.
+        m0: The mean vector of the initial state.
+        chol_P0: The generalized Cholesky factor of the initial covariance.
         key: JAX random key - not used.
 
     Returns:
@@ -29,8 +28,7 @@ def init_prepare(
             Contains mean, chol_cov (generalised Cholesky factor of covariance)
             and log_normalizing_constant.
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    m0, chol_P0 = get_init_params(model_inputs)
+    m0, chol_P0 = jnp.asarray(m0), jnp.asarray(chol_P0)
 
     prior_state = LinearizedKalmanFilterState(
         elem=filtering.FilterScanElement(
@@ -41,7 +39,7 @@ def init_prepare(
             Z=jnp.zeros_like(chol_P0),
             ell=jnp.array(0.0),
         ),
-        model_inputs=model_inputs,
+        model_inputs=None,
         mean_prev=dummy_tree_like(m0),
     )
 
@@ -50,7 +48,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_params: GetInitParams,
+    m0: ArrayLike,
     get_dynamics_params: GetDynamicsMoments,
     get_observation_params: GetObservationMoments,
     key: KeyArray | None = None,
@@ -64,8 +62,8 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_params: Function to get m0, chol_P0 from model inputs.
-            Only used to infer shape of mean and chol_cov.
+        m0: The mean vector of the initial state.
+            Only used to infer the state shape.
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
             `associative_scan` only supported when `state` is ignored.
@@ -79,10 +77,9 @@ def filter_prepare(
         Prepared state for linearized moments Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean_struct = eval_shape(lambda mi: get_init_params(mi)[0], model_inputs)
-    dummy_mean = dummy_tree_like(dummy_mean_struct)
+    dummy_mean = dummy_tree_like(jnp.asarray(m0))
     dummy_chol_cov = dummy_tree_like(
-        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+        ShapeDtypeStruct(dummy_mean.shape + dummy_mean.shape[-1:], dummy_mean.dtype)
     )
 
     dummy_state = LinearizedKalmanFilterState(

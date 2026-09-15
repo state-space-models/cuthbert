@@ -110,9 +110,6 @@ def kalman_mll(theta, ys, *, m0, chol_P0):
     d = jnp.array([0.0])
     chol_R = jnp.array([[r]])
 
-    def get_init_params(_mi):
-        return m0, chol_P0
-
     def get_dynamics_params(_mi):
         return F, c, chol_Q
 
@@ -121,9 +118,9 @@ def kalman_mll(theta, ys, *, m0, chol_P0):
         y = ys[idx]
         return H, d, chol_R, y
 
-    kf = kalman.build_filter(get_init_params, get_dynamics_params, get_observation_params)
+    kf = kalman.build_filter(m0, chol_P0, get_dynamics_params, get_observation_params)
     model_inputs = jnp.arange(ys.shape[0] + 1)
-    init_state = kf.init_prepare(model_inputs[0])
+    init_state = kf.init_prepare()
     states = run_filter(kf, model_inputs[1:], init_state, parallel=False)
     return states.log_normalizing_constant[-1]
 
@@ -170,7 +167,7 @@ def pf_mll(
     d = jnp.array([0.0])
     chol_R = jnp.array([[r]])
 
-    def init_sample(k, _mi):
+    def init_sample(k):
         return m0 + (chol_P0 @ random.normal(k, (1,)))
 
     def propagate_sample(k, x_prev, _mi):
@@ -198,7 +195,7 @@ def pf_mll(
 
     model_inputs = jnp.arange(ys.shape[0] + 1)
     init_key, filter_key = jax.random.split(key)
-    init_state = filt.init_prepare(model_inputs[0], key=init_key)
+    init_state = filt.init_prepare(key=init_key)
     states = run_filter(
         filt, model_inputs[1:], init_state, parallel=False, key=filter_key
     )
@@ -515,7 +512,7 @@ Finally, we should be sure that the forward pass is not actually being modified 
         d = jnp.array([0.0])
         chol_R = jnp.array([[r]])
 
-        def init_sample(k, _mi):
+        def init_sample(k):
             return m0 + (chol_P0 @ random.normal(k, (1,)))
 
         def propagate_sample(k, x_prev, _mi):
@@ -542,7 +539,7 @@ Finally, we should be sure that the forward pass is not actually being modified 
 
         model_inputs = jnp.arange(ys.shape[0] + 1)
         init_key, filter_key = jax.random.split(key)
-        init_state = filt.init_prepare(model_inputs[0], key=init_key)
+        init_state = filt.init_prepare(key=init_key)
         states = run_filter(
             filt, model_inputs[1:], init_state, parallel=False, key=filter_key
         )

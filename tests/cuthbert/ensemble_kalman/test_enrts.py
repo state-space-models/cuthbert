@@ -24,7 +24,7 @@ def load_enrts_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
     n_particles = 100_000
     x_dim = m0.shape[0]
 
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     def get_dynamics(model_inputs):
@@ -66,7 +66,7 @@ class Test(chex.TestCase):
         )
 
         init_key, filter_key = random.split(random.key(seed + 1))
-        init_state = filter_obj.init_prepare(model_inputs[0], key=init_key)
+        init_state = filter_obj.init_prepare(key=init_key)
         filtered_states = filter(
             filter_obj,
             model_inputs[1:],

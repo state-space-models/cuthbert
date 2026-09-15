@@ -35,9 +35,6 @@ def load_moments_inference(
 ) -> tuple[Filter, Smoother, Array]:
     """Builds linearized moments Kalman filter and smoother objects and model_inputs for a linear-Gaussian SSM."""
 
-    def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        return m0, chol_P0
-
     def dynamics_moments(state, model_inputs):
         def dynamics_mean_and_chol_cov_func(x):
             return Fs[model_inputs - 1] @ x + cs[model_inputs - 1], chol_Qs[
@@ -60,7 +57,8 @@ def load_moments_inference(
         )
 
     filter = moments.build_filter(
-        get_init_params,
+        m0,
+        chol_P0,
         dynamics_moments,
         observation_moments,
         associative=associative_filter,
@@ -93,7 +91,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=False
     )
 
-    init_state = moments_filter.init_prepare(model_inputs[0])
+    init_state = moments_filter.init_prepare()
 
     # Run sequential sqrt filter
     seq_states = filter(moments_filter, model_inputs[1:], init_state, parallel=False)
@@ -107,7 +105,7 @@ def test_offline_filter(seed, x_dim, y_dim, num_time_steps):
         m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys, associative_filter=True
     )
 
-    associative_init_state = associative_moments_filter.init_prepare(model_inputs[0])
+    associative_init_state = associative_moments_filter.init_prepare()
 
     # Run associative filter with parallel=False
     seq_ass_states = filter(
@@ -181,13 +179,14 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
         )
 
     filter_obj = moments.build_filter(
-        get_init_params=lambda model_inputs: (m0, chol_P0),
+        m0=m0,
+        chol_P0=chol_P0,
         get_dynamics_params=noop_dynamics_moments,
         get_observation_params=noop_observation_moments,
         associative=associative,
     )
 
-    state = filter_obj.init_prepare(None)
+    state = filter_obj.init_prepare()
     prep_state = filter_obj.filter_prepare(None)
     filtered_state = filter_obj.filter_combine(state, prep_state)
 
@@ -214,7 +213,7 @@ def test_smoother(seed, x_dim, y_dim, num_time_steps):
     )
 
     # Run the Kalman filter and the standard Kalman smoother.
-    init_state = extended_filter.init_prepare(model_inputs[0])
+    init_state = extended_filter.init_prepare()
     filt_states = filter(extended_filter, model_inputs[1:], init_state)
     filt_means, filt_chol_covs = filt_states.mean, filt_states.chol_cov
     filt_covs = filt_chol_covs @ filt_chol_covs.transpose(0, 2, 1)

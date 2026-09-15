@@ -20,12 +20,13 @@ from functools import partial
 
 from cuthbert.gaussian.moments import associative_filter, non_associative_filter
 from cuthbert.gaussian.moments.types import GetDynamicsMoments, GetObservationMoments
-from cuthbert.gaussian.types import GetInitParams
 from cuthbert.inference import Filter
+from cuthbertlib.types import ArrayLike
 
 
 def build_filter(
-    get_init_params: GetInitParams,
+    m0: ArrayLike,
+    chol_P0: ArrayLike,
     get_dynamics_params: GetDynamicsMoments,
     get_observation_params: GetObservationMoments,
     associative: bool = False,
@@ -41,7 +42,8 @@ def build_filter(
     observation parameters.
 
     Args:
-        get_init_params: Function to get m0, chol_P0 from model inputs.
+        m0: The mean vector of the initial state.
+        chol_P0: The generalized Cholesky factor of the initial covariance.
         get_dynamics_params: Function to get dynamics conditional mean and
             (generalised) Cholesky covariance from linearization point and model inputs.
             and linearization points (for the previous and current time points)
@@ -62,11 +64,11 @@ def build_filter(
     if associative:
         return Filter(
             init_prepare=partial(
-                associative_filter.init_prepare, get_init_params=get_init_params
+                associative_filter.init_prepare, m0=m0, chol_P0=chol_P0
             ),
             filter_prepare=partial(
                 associative_filter.filter_prepare,
-                get_init_params=get_init_params,
+                m0=m0,
                 get_dynamics_params=get_dynamics_params,
                 get_observation_params=get_observation_params,
             ),
@@ -76,11 +78,9 @@ def build_filter(
     else:
         return Filter(
             init_prepare=partial(
-                non_associative_filter.init_prepare, get_init_params=get_init_params
+                non_associative_filter.init_prepare, m0=m0, chol_P0=chol_P0
             ),
-            filter_prepare=partial(
-                non_associative_filter.filter_prepare, get_init_params=get_init_params
-            ),
+            filter_prepare=partial(non_associative_filter.filter_prepare, m0=m0),
             filter_combine=partial(
                 non_associative_filter.filter_combine,
                 get_dynamics_params=get_dynamics_params,

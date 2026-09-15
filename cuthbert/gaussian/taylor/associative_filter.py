@@ -1,24 +1,23 @@
 """Implements the associative linearized Taylor Kalman filter."""
 
-from jax import eval_shape, tree
+from jax import ShapeDtypeStruct, tree
 from jax import numpy as jnp
 
 from cuthbert.gaussian.taylor import non_associative_filter
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
-    GetInitLogDensity,
     GetObservationFunc,
 )
 from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
 from cuthbertlib.linearize import linearize_log_density
-from cuthbertlib.types import ArrayTreeLike, KeyArray
+from cuthbertlib.types import ArrayLike, ArrayTreeLike, KeyArray, LogDensity
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
+    init_log_density: LogDensity,
+    init_linearization_point: ArrayLike,
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
     key: KeyArray | None = None,
@@ -26,9 +25,9 @@ def init_prepare(
     """Prepare the initial state for the linearized Taylor Kalman filter.
 
     Args:
-        model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point.
+        init_log_density: Initial log density log p(x_0). For factorial models,
+            this is the sum of the log densities for all factors.
+        init_linearization_point: Linearization point for the initial log density.
         rtol: The relative tolerance for the singular values of precision matrices
             when passed to `symmetric_inv_sqrt` during linearization.
             Cutoff for small singular values; singular values smaller than
@@ -46,7 +45,7 @@ def init_prepare(
             and log_normalizing_constant.
     """
     non_assoc_init_state = non_associative_filter.init_prepare(
-        model_inputs, get_init_log_density, rtol, ignore_nan_dims, key
+        init_log_density, init_linearization_point, rtol, ignore_nan_dims, key
     )
     m0 = non_assoc_init_state.mean
     chol_P0 = non_assoc_init_state.chol_cov
@@ -60,7 +59,7 @@ def init_prepare(
             Z=jnp.zeros_like(chol_P0),
             ell=jnp.array(0.0),
         ),
-        model_inputs=model_inputs,
+        model_inputs=None,
         mean_prev=dummy_tree_like(m0),
     )
     return prior_state
@@ -68,7 +67,7 @@ def init_prepare(
 
 def filter_prepare(
     model_inputs: ArrayTreeLike,
-    get_init_log_density: GetInitLogDensity,
+    array_to_infer_shape: ArrayLike,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
     rtol: float | None = None,
@@ -82,8 +81,8 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        get_init_log_density: Function that returns log density log p(x_0)
-            and linearization point. Only used to infer shape of mean and chol_cov.
+        array_to_infer_shape: Array with shape matching state or mean, used to infer the
+            state shape.
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
             `associative_scan` only supported when `state` is ignored.
@@ -106,10 +105,9 @@ def filter_prepare(
         Prepared state for linearized Taylor Kalman filter.
     """
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
-    dummy_mean_struct = eval_shape(lambda mi: get_init_log_density(mi)[1], model_inputs)
-    dummy_mean = dummy_tree_like(dummy_mean_struct)
+    dummy_mean = dummy_tree_like(jnp.asarray(array_to_infer_shape))
     dummy_chol_cov = dummy_tree_like(
-        jnp.empty(dummy_mean.shape + dummy_mean.shape[-1:], dtype=dummy_mean.dtype)
+        ShapeDtypeStruct(dummy_mean.shape + dummy_mean.shape[-1:], dummy_mean.dtype)
     )
 
     dummy_state = LinearizedKalmanFilterState(

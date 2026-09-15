@@ -19,7 +19,7 @@ from jax.scipy.stats import norm
 
 from cuthbert import factorial, smoother
 from cuthbert.gaussian import taylor
-from cuthbertlib.types import LogConditionalDensity, LogDensity
+from cuthbertlib.types import LogConditionalDensity
 ```
 
 Nothing too surprising there I hope. We'll be using the [`taylor`](api_cuthbert/gaussian/taylor.md)
@@ -240,11 +240,10 @@ tau = 0.05
 epsilon = 0.3
 
 
-def get_init_log_density(model_inputs: MatchData) -> tuple[LogDensity, Array]:
-    def init_log_density(x):
-        return norm.logpdf(x, 0, init_sd).sum()
+def init_log_density(x):
+    return norm.logpdf(x, 0, init_sd).sum()
 
-    return init_log_density, jnp.zeros((num_teams, 1))
+init_linearization_point = jnp.zeros((num_teams, 1))
 
 
 def dynamics_log_density(x_prev, x, time_diff):
@@ -308,7 +307,8 @@ Now that we've defined the model, we can construct the `cuthbert` [filter object
 
 ```{.python #factorial-football-build-filter}
 football_filter = taylor.build_filter(
-    get_init_log_density,
+    init_log_density,
+    init_linearization_point,
     get_dynamics_log_density,
     get_observation_func,
 )
@@ -331,11 +331,10 @@ We'll use `cuthbert.factorial.filter` to easily
 run offline filtering on our data.
 
 ```{.python #factorial-football-run-filter}
-init_match_data = tree.map(lambda x: x[0], match_data)
 filter_match_data = tree.map(lambda x: x[1:], match_data)
 
-init_state = football_filter.init_prepare(init_match_data)
-init_state = factorializer.factorialize_init_state(init_state, init_match_data)
+init_state = football_filter.init_prepare()
+init_state = factorializer.factorialize_init_state(init_state)
 
 local_filter_states, final_factorial_state = factorial.filter(
     football_filter, factorializer, filter_match_data, init_state
@@ -403,7 +402,8 @@ def get_dynamics_log_density_single_team(
 
 
 single_team_filter = taylor.build_filter(
-    get_init_log_density,
+    init_log_density,
+    init_linearization_point,
     get_dynamics_log_density_single_team,
     get_observation_func=lambda state, model_inputs: (
         lambda x: jnp.zeros([]),

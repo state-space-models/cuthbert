@@ -9,6 +9,5 @@
 ::: cuthbert.gaussian.types
     options:
       members:
-        - GetInitParams
         - GetDynamicsParams
         - GetObservationParams

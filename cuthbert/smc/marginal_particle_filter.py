@@ -38,7 +38,8 @@ def build_filter(
     r"""Builds a marginal particle filter object.
 
     Args:
-        init_sample: Function to sample from the initial distribution $M_0(x_0)$.
+        init_sample: Function of a JAX random key only, generates a single sample
+            from $M_0(x_0)$.
         propagate_sample: Function to sample from the Markov kernel $M_t(x_t \mid x_{t-1})$.
         log_potential: Function to compute the log potential $\log G_t(x_{t-1}, x_t)$.
         n_filter_particles: Number of particles for the filter.
@@ -72,7 +73,6 @@ def build_filter(
 
 
 def init_prepare(
-    model_inputs: ArrayTreeLike,
     init_sample: InitSample,
     n_filter_particles: int,
     key: KeyArray | None = None,
@@ -80,8 +80,8 @@ def init_prepare(
     """Prepare the initial state for the marginal particle filter.
 
     Args:
-        model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution M_0(x_0).
+        init_sample: Function of a JAX random key only, generates a single sample
+            from $M_0(x_0)$.
         n_filter_particles: Number of particles to sample.
         key: JAX random key.
 
@@ -91,13 +91,12 @@ def init_prepare(
     Raises:
         ValueError: If `key` is None.
     """
-    model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
 
     # Sample
     keys = random.split(key, n_filter_particles)
-    particles = jax.vmap(init_sample, (0, None))(keys, model_inputs)
+    particles = jax.vmap(init_sample)(keys)
 
     # Weight
     log_weights = jnp.zeros(n_filter_particles)
@@ -111,7 +110,7 @@ def init_prepare(
         key=key,
         particles=particles,
         log_weights=log_weights,
-        model_inputs=model_inputs,
+        model_inputs=None,
         log_normalizing_constant=log_normalizing_constant,
     )
 
@@ -126,8 +125,8 @@ def filter_prepare(
 
     Args:
         model_inputs: Model inputs.
-        init_sample: Function to sample from the initial distribution M_0(x_0).
-            Only used to infer particle shapes.
+        init_sample: Function of a JAX random key only, generates a single sample
+            from $M_0(x_0)$. Only used to infer particle shapes.
         n_filter_particles: Number of particles for the filter.
         key: JAX random key.
 
@@ -140,11 +139,13 @@ def filter_prepare(
     model_inputs = tree.map(lambda x: jnp.asarray(x), model_inputs)
     if key is None:
         raise ValueError("A JAX PRNG key must be provided.")
-    dummy_particle = jax.eval_shape(init_sample, key, model_inputs)
-    particles = tree.map(
-        lambda x: jnp.empty((n_filter_particles,) + x.shape), dummy_particle
+    dummy_particle = jax.eval_shape(init_sample, key)
+    particles = dummy_tree_like(
+        tree.map(
+            lambda x: jax.ShapeDtypeStruct((n_filter_particles,) + x.shape, x.dtype),
+            dummy_particle,
+        )
     )
-    particles = dummy_tree_like(particles)
     return MarginalParticleFilterState(
         key=key,
         particles=particles,

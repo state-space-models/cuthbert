@@ -11,7 +11,10 @@ class InitPrepare(Protocol):
     def __call__(self, *, key: KeyArray | None = None) -> ArrayTree:
         """Prepare the initial state for the inference.
 
-        The state at the first time point, prior to any observations.
+        The state at the first time point, prior to any observations. Initial
+        parameters are supplied when building the filter. The returned state has
+        `model_inputs=None`; offline filtering pads this field to match the step
+        input tree.
 
         Args:
             key: The key for the random number generator.

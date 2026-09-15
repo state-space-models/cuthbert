@@ -37,9 +37,6 @@ m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys = generate_lgssm(
 )
 
 
-def get_init_params(model_inputs):
-    return m0, chol_P0
-
 
 def get_dynamics_params(model_inputs):
     t = model_inputs - 1
@@ -52,7 +49,7 @@ def get_observation_params(model_inputs):
 
 
 filter_obj = kalman.build_filter(
-    get_init_params, get_dynamics_params, get_observation_params
+    m0, chol_P0, get_dynamics_params, get_observation_params
 )
 model_inputs = jnp.arange(num_time_steps + 1)
 ```
@@ -67,7 +64,7 @@ sequential and parallel implementations.
 
 ```{.python #parallel-kalman-compiletime}
 jitted_filter = jax.jit(filter, static_argnames=("filter_obj", "parallel"))
-init_state = filter_obj.init_prepare(model_inputs[0])
+init_state = filter_obj.init_prepare()
 filter_model_inputs = model_inputs[1:]
 
 seq_compile_time = timeit.Timer(

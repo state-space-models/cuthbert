@@ -28,7 +28,7 @@ def config():
 
 
 def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
-    def init_sample(key, model_inputs):
+    def init_sample(key):
         return m0 + chol_P0 @ random.normal(key, m0.shape)
 
     def propagate_sample(key, state, model_inputs: int):
@@ -76,7 +76,7 @@ class Test(chex.TestCase):
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
         init_key, filter_key, smoother_key = random.split(random.key(seed + 1), 3)
-        init_state = filter_obj.init_prepare(model_inputs[0], key=init_key)
+        init_state = filter_obj.init_prepare(key=init_key)
         filtered_states = filter(
             filter_obj,
             model_inputs[1:],
@@ -124,7 +124,7 @@ class Test(chex.TestCase):
     def test_pytree_particles(self, method):
         """Test that the pf handles pytree states correctly."""
 
-        def init_sample(key, model_inputs):
+        def init_sample(key):
             keys = random.split(key, 2)
             position = random.normal(keys[0], (2,))
             velocity = random.normal(keys[1], (2,))
@@ -164,7 +164,7 @@ class Test(chex.TestCase):
         init_key, filter_key, smoother_key = random.split(key, 3)
         num_time_steps = 5
         model_inputs = jnp.empty(num_time_steps + 1)
-        init_state = filter_obj.init_prepare(model_inputs[0], key=init_key)
+        init_state = filter_obj.init_prepare(key=init_key)
         filtered_states = filter(
             filter_obj,
             model_inputs[1:],

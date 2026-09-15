@@ -65,9 +65,6 @@ def generate_factorial_hmm(
 def build_factorial_discrete_filter(model_params):
     init_dist, trans_matrices, local_obs_lls, factorial_indices = model_params
 
-    def get_factorial_init_dist(model_inputs):
-        return init_dist
-
     def get_local_trans_matrix(model_inputs):
         inds = factorial_indices[model_inputs - 1]
         local_trans = trans_matrices[model_inputs - 1, inds]
@@ -76,9 +73,7 @@ def build_factorial_discrete_filter(model_params):
     def get_local_obs_lls(model_inputs):
         return local_obs_lls[model_inputs - 1]
 
-    filter_obj = build_filter(
-        get_factorial_init_dist, get_local_trans_matrix, get_local_obs_lls
-    )
+    filter_obj = build_filter(init_dist, get_local_trans_matrix, get_local_obs_lls)
     factorializer = factorial.discrete.build_factorializer(
         lambda model_inputs: factorial_indices[model_inputs - 1]
     )
@@ -160,7 +155,7 @@ def test_factorial_discrete_filter(
     )
 
     # output_factorial=False
-    init_state = filter_obj.init_prepare(model_inputs[0])
+    init_state = filter_obj.init_prepare()
     local_filter_states, final_state = factorial.filter(
         filter_obj, factorializer, model_inputs[1:], init_state, output_factorial=False
     )

@@ -139,9 +139,6 @@ Let's build the filter and smoother objects below that correspond to the SSM:
 ```{.python #em-model}
 # Build model objects - this is where the model definition is encapsulated
 def model_factory(params: Params):
-    def get_init_params(model_inputs: int) -> tuple[Array, Array]:
-        return jnp.array([0.0]), params.sigma
-
     def get_dynamics_moments(state, model_inputs: int):
         def dynamics_mean_and_chol_cov_func(x):
             mean_t = jnp.where(model_inputs == 0, x, params.rho * x)
@@ -167,7 +164,8 @@ def model_factory(params: Params):
         )
 
     filter_obj = moments.build_filter(
-        get_init_params,
+        jnp.array([0.0]),
+        params.sigma,
         get_dynamics_moments,
         get_observation_moments,
         associative=False,
@@ -298,7 +296,7 @@ n_epochs = 30
 
 for epoch in range(n_epochs):
     filter_obj, smoother_obj = model_factory(params)
-    init_state = filter_obj.init_prepare(model_inputs[0])
+    init_state = filter_obj.init_prepare()
     filtered_states = filter(filter_obj, model_inputs[1:], init_state)
     log_marginal_likelihood_track.append(filtered_states.log_normalizing_constant[-1])
     smoother_states = smoother(smoother_obj, filtered_states)

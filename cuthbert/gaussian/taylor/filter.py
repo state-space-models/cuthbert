@@ -32,14 +32,15 @@ from functools import partial
 from cuthbert.gaussian.taylor import associative_filter, non_associative_filter
 from cuthbert.gaussian.taylor.types import (
     GetDynamicsLogDensity,
-    GetInitLogDensity,
     GetObservationFunc,
 )
 from cuthbert.inference import Filter
+from cuthbertlib.types import ArrayLike, LogDensity
 
 
 def build_filter(
-    get_init_log_density: GetInitLogDensity,
+    init_log_density: LogDensity,
+    init_linearization_point: ArrayLike,
     get_dynamics_log_density: GetDynamicsLogDensity,
     get_observation_func: GetObservationFunc,
     associative: bool = False,
@@ -57,9 +58,9 @@ def build_filter(
     observation parameters.
 
     Args:
-        get_init_log_density: Function to get log density log p(x_0)
-            and linearization point.
-            Only takes `model_inputs` as input.
+        init_log_density: Initial log density log p(x_0). For factorial models,
+            this is the sum of the log densities for all factors.
+        init_linearization_point: Linearization point for the initial log density.
         get_dynamics_log_density: Function to get dynamics log density log p(x_t+1 | x_t)
             and linearization points (for the previous and current time points)
             If `associative` is True, the `state` argument should be ignored.
@@ -89,13 +90,14 @@ def build_filter(
         return Filter(
             init_prepare=partial(
                 associative_filter.init_prepare,
-                get_init_log_density=get_init_log_density,
+                init_log_density=init_log_density,
+                init_linearization_point=init_linearization_point,
                 rtol=rtol,
                 ignore_nan_dims=ignore_nan_dims,
             ),
             filter_prepare=partial(
                 associative_filter.filter_prepare,
-                get_init_log_density=get_init_log_density,
+                array_to_infer_shape=init_linearization_point,
                 get_dynamics_log_density=get_dynamics_log_density,
                 get_observation_func=get_observation_func,
                 rtol=rtol,
@@ -108,13 +110,14 @@ def build_filter(
         return Filter(
             init_prepare=partial(
                 non_associative_filter.init_prepare,
-                get_init_log_density=get_init_log_density,
+                init_log_density=init_log_density,
+                init_linearization_point=init_linearization_point,
                 rtol=rtol,
                 ignore_nan_dims=ignore_nan_dims,
             ),
             filter_prepare=partial(
                 non_associative_filter.filter_prepare,
-                get_init_log_density=get_init_log_density,
+                array_to_infer_shape=init_linearization_point,
             ),
             filter_combine=partial(
                 non_associative_filter.filter_combine,

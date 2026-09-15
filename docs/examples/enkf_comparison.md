@@ -127,11 +127,10 @@ model_inputs = jnp.arange(num_time_steps + 1)
 We'll use an EKF through the [`taylor` submodule](../api_cuthbert/gaussian/taylor.md). For this, we need to specify an initial log density, dynamics log-density, observable log-density, and linearization points for each.
 
 ```{.python #enkf-comparison-ekf}
-def get_init_log_density(model_inputs):
-    def init_log_density(x):
-        return logpdf(x, m0, chol_P0, nan_support=False)
+def init_log_density(x):
+    return logpdf(x, m0, chol_P0, nan_support=False)
 
-    return init_log_density, m0
+init_linearization_point = m0
 
 
 def get_dynamics_log_density(
@@ -157,7 +156,8 @@ def get_observation_func(
 
 
 ekf = taylor.build_filter(
-    get_init_log_density,
+    init_log_density,
+    init_linearization_point,
     get_dynamics_log_density,
     get_observation_func,
     associative=False,
@@ -167,7 +167,7 @@ jitted_filter = jit(run_filter, static_argnames=["filter_obj"])
 filter_model_inputs = model_inputs[1:]
 
 n_timing = 20
-ekf_init_state = ekf.init_prepare(model_inputs[0])
+ekf_init_state = ekf.init_prepare()
 ekf_states = jitted_filter(ekf, filter_model_inputs, ekf_init_state)  # warm up
 jax.block_until_ready(ekf_states)
 _times = []
@@ -183,11 +183,11 @@ ekf_chol_covs = ekf_states.chol_cov
 
 ## EnKF
 
-The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF. We need to specify a function that generates initial samples `(key, model_inputs) -> x_0`, a stochastic dynamics simulator `(x, key) -> x_next`, and observation parameters.
+The EnKF propagates an ensemble of particles through the nonlinear dynamics directly. It then performs a Kalman-style update using empirical covariances of these particles. It does not need to compute a Jacobian of the dynamics, unlike the EKF. We need to specify a function that generates initial samples `key -> x_0`, a stochastic dynamics simulator `(x, key) -> x_next`, and observation parameters.
 
 ```{.python #enkf-comparison-enkf}
 enkf = ensemble_kalman_filter.build_filter(
-    init_sample=lambda key, mi: m0 + chol_P0 @ random.normal(key, m0.shape),
+    init_sample=lambda key: m0 + chol_P0 @ random.normal(key, m0.shape),
     get_dynamics=lambda mi: lambda x, key: lorenz_step(x)
     + chol_Q @ random.normal(key, (x_dim,)),
     get_observations=lambda mi: (lambda x: H @ x + d_obs, chol_R, ys[mi - 1]),
@@ -197,7 +197,7 @@ enkf = ensemble_kalman_filter.build_filter(
 )
 
 key, enkf_init_key, enkf_filter_key = random.split(key, 3)
-enkf_init_state = enkf.init_prepare(model_inputs[0], key=enkf_init_key)
+enkf_init_state = enkf.init_prepare(key=enkf_init_key)
 enkf_states = jitted_filter(
     enkf, filter_model_inputs, enkf_init_state, key=enkf_filter_key
 )  # warm up
@@ -222,7 +222,7 @@ The bootstrap particle filter makes no Gaussian assumption. However, empirically
 adaptive_systematic = adaptive.ess_decorator(systematic.resampling, 0.5)
 
 pf = particle_filter.build_filter(
-    init_sample=lambda key, mi: m0 + chol_P0 @ random.normal(key, (x_dim,)),
+    init_sample=lambda key: m0 + chol_P0 @ random.normal(key, (x_dim,)),
     propagate_sample=lambda key, state, mi: lorenz_step(state)
     + chol_Q @ random.normal(key, (x_dim,)),
     log_potential=lambda s_prev, s, mi: logpdf(
@@ -233,7 +233,7 @@ pf = particle_filter.build_filter(
 )
 
 key, pf_init_key, pf_filter_key = random.split(key, 3)
-pf_init_state = pf.init_prepare(model_inputs[0], key=pf_init_key)
+pf_init_state = pf.init_prepare(key=pf_init_key)
 pf_states = jitted_filter(
     pf, filter_model_inputs, pf_init_state, key=pf_filter_key
 )  # warm up

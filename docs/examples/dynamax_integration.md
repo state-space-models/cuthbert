@@ -128,10 +128,6 @@ def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observa
     d = lgssm_params.emissions.bias
     chol_R = jnp.linalg.cholesky(lgssm_params.emissions.cov)
 
-    def get_init_params(model_inputs):
-        """Return initial state distribution parameters."""
-        return m0, chol_P0
-
     def get_dynamics_params(model_inputs):
         """Return dynamics parameters.
 
@@ -151,7 +147,7 @@ def build_cuthbert_kalman_filter_from_dynamax(lgssm_model, lgssm_params, observa
 
     # Build the Kalman filter
     filter_obj = kalman.build_filter(
-        get_init_params=get_init_params,
+        m0=m0, chol_P0=chol_P0,
         get_dynamics_params=get_dynamics_params,
         get_observation_params=get_observation_params
     )
@@ -171,7 +167,7 @@ Now we can run the `cuthbert` Kalman filter to obtain the filtering distribution
 
 ```{.python #dynamax-run-filter}
 # Run Kalman filtering
-init_state = filter_obj.init_prepare(model_inputs[0])
+init_state = filter_obj.init_prepare()
 filtered_states = cuthbert.filter(filter_obj, model_inputs[1:], init_state)
 
 # Extract filtering results - remove initial time step
