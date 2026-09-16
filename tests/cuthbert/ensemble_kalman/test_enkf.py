@@ -392,7 +392,7 @@ def test_build_filter_ensemble_subspace_matches_default(perturbed_obs):
             perturbed_obs=perturbed_obs,
             ensemble_subspace=ensemble_subspace,
         )
-        init_state = inference.init_prepare(model_inputs[0], key=init_key)
+        init_state = inference.init_prepare(key=init_key)
         states.append(
             filter(
                 inference, model_inputs[1:], init_state, parallel=False, key=filter_key
