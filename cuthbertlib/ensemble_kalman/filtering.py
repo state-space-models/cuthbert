@@ -40,7 +40,7 @@ def _whiten(chol_R: Array, V: Array) -> Array:
     """Apply the inverse observation-noise factor, ``chol_R^{-1} @ V``.
 
     Args:
-        chol_R: Lower-triangular Cholesky factor of the observation noise covariance.
+        chol_R: Generalized Cholesky factor of the observation noise covariance.
             A 2D array is applied by triangular solve, at O(y_dim ** 2) per column
             of ``V``. A scalar or a 1D array is a multiple of the identity or a
             diagonal factor respectively, and is applied by division at O(y_dim).
@@ -70,7 +70,7 @@ def _apply_chol(chol_R: Array, V: Array) -> Array:
     """Apply the observation-noise factor, ``chol_R @ V``.
 
     Args:
-        chol_R: Lower-triangular Cholesky factor, as in [_whiten][cuthbertlib.ensemble_kalman.filtering._whiten].
+        chol_R: Generalized Cholesky factor, as in [_whiten][cuthbertlib.ensemble_kalman.filtering._whiten].
         V: Array to scale, shape (y_dim,) or (y_dim, m).
 
     Returns:
@@ -217,8 +217,9 @@ def update(
         key: JAX PRNG key.
         predicted_ensemble: Predicted ensemble, shape (N, x_dim).
         observation_fn: Observation function mapping state -> obs.
-        chol_R: Lower-triangular Cholesky factor of the observation noise covariance,
-            shape (y_dim, y_dim). Other square roots of the covariance are not supported.
+        chol_R: Generalized Cholesky factor of the observation noise covariance,
+            shape (y_dim, y_dim). Square roots that are not generalized Cholesky
+            factors, such as a symmetric R ** 0.5, are not supported.
             When ``ensemble_subspace`` is True this may instead be a scalar (a multiple
             of the identity) or a 1D array of shape (y_dim,) (a diagonal factor).
             Prefer those forms when the structure allows: a 2D factor must be applied
@@ -386,7 +387,7 @@ def _update_ensemble_subspace(
         key: JAX PRNG key.
         predicted_ensemble: Predicted ensemble, shape (N, x_dim).
         observation_fn: Observation function mapping state -> obs.
-        chol_R: Lower-triangular Cholesky factor of the observation noise covariance,
+        chol_R: Generalized Cholesky factor of the observation noise covariance,
             as a scalar, a 1D array of shape (y_dim,), or a 2D array.
         y: Observation vector, shape (y_dim,). NaNs indicate missing dimensions.
         perturbed_obs: If True, use perturbed observations (stochastic EnKF).
