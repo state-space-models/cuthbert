@@ -40,18 +40,18 @@ class GetEnKFDynamics(Protocol):
 
 
 class GetEnKFObservations(Protocol):
-    """Protocol for getting observation function, observation noise Cholesky factor chol_R, and observation vector y for an EnKF. i.e., for state space x_t, y_t = h(x_t, model_inputs) + R_t, where R_t ~ N(0, chol_R), return (h, chol_R, y)."""
+    """Protocol for getting observation function, observation noise generalised Cholesky factor chol_R, and observation vector y for an EnKF. i.e., for state space x_t, y_t = h(x_t, model_inputs) + R_t, where R_t ~ N(0, chol_R), return (h, chol_R, y)."""
 
     def __call__(
         self, model_inputs: ArrayTreeLike
     ) -> tuple[ObservationFn, Array, Array]:
-        """Get observation function, observation noise Cholesky factor chol_R, and observation vector y from model inputs.
+        """Get observation function, observation noise generalised Cholesky factor chol_R, and observation vector y from model inputs.
 
         Args:
             model_inputs: Model inputs.
 
         Returns:
-            Tuple with observation function, Cholesky factor of the observation noise covariance, and observation vector.
+            Tuple with observation function, generalised Cholesky factor of the observation noise covariance, and observation vector.
             observation noise covariance and y is the observation vector.
         """
         ...

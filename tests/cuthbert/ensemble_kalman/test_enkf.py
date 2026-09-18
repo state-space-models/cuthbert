@@ -38,6 +38,7 @@ def load_enkf_inference(
     construct_chol_innovation_covariance=None,
     n_particles=100_000,
     perturbed_obs=True,
+    ensemble_subspace=False,
 ):
     x_dim = m0.shape[0]
 
@@ -79,6 +80,7 @@ def load_enkf_inference(
         perturbed_obs=perturbed_obs,
         modify_cross_covariance=modify_cross_covariance,
         construct_chol_innovation_covariance=(construct_chol_innovation_covariance),
+        ensemble_subspace=ensemble_subspace,
     )
 
     model_inputs = jnp.arange(len(ys) + 1)
@@ -373,4 +375,54 @@ def test_build_filter_requires_at_least_two_particles():
             get_dynamics=lambda _: lambda x, key: x,
             get_observations=lambda _: (lambda x: x, jnp.eye(1), jnp.zeros(1)),
             n_particles=1,
+        )
+
+
+@pytest.mark.parametrize("perturbed_obs", [True, False])
+def test_build_filter_ensemble_subspace_matches_default(perturbed_obs):
+    """A filter run with ensemble_subspace=True reproduces the default path."""
+    lgssm = generate_lgssm(0, 4, 6, 10)
+    init_key, filter_key = random.split(random.key(1))
+
+    states = []
+    for ensemble_subspace in [False, True]:
+        inference, model_inputs = load_enkf_inference(
+            *lgssm,
+            n_particles=20,
+            perturbed_obs=perturbed_obs,
+            ensemble_subspace=ensemble_subspace,
+        )
+        init_state = inference.init_prepare(key=init_key)
+        states.append(
+            filter(
+                inference, model_inputs[1:], init_state, parallel=False, key=filter_key
+            )
+        )
+    default, subspace = states
+
+    chex.assert_trees_all_close(
+        (subspace.ensemble, subspace.log_normalizing_constant),
+        (default.ensemble, default.log_normalizing_constant),
+        rtol=1e-8,
+        atol=1e-8,
+    )
+
+
+def test_build_filter_ensemble_subspace_rejects_localization():
+    """build_filter rejects either localization callback with ensemble_subspace=True."""
+    lgssm = generate_lgssm(0, 2, 2, 1)
+
+    with pytest.raises(ValueError, match="modify_cross_covariance"):
+        load_enkf_inference(
+            *lgssm,
+            n_particles=10,
+            ensemble_subspace=True,
+            modify_cross_covariance=lambda C_xy, model_inputs: C_xy,
+        )
+    with pytest.raises(ValueError, match="construct_chol_innovation_covariance"):
+        load_enkf_inference(
+            *lgssm,
+            n_particles=10,
+            ensemble_subspace=True,
+            construct_chol_innovation_covariance=lambda Y, chol_R, model_inputs: chol_R,
         )

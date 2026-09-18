@@ -24,6 +24,17 @@ The core functions are:
 Together, `predict` and `filter_update` can be used to perform an online EnKF filtering step.
 
 The EnKF uses an ensemble of particles with a Kalman-style measurement update based on empirical covariances. Unlike the EKF, it does not require Jacobians, while naturally handling nonlinear dynamics.
+
+### Large observation dimensions
+
+By default, `filter_update` forms the empirical cross-covariance $C_{xy}$ and a generalized Cholesky factor of the innovation covariance $S = C_{yy} + R$, costing $\mathcal{O}(y_{\rm dim}^3 + N y_{\rm dim} x_{\rm dim})$ and storing arrays of size $y_{\rm dim}^2$ and $x_{\rm dim}y_{\rm dim}$.
+
+Passing `ensemble_subspace=True` instead carries out the analysis in the $N$-dimensional subspace spanned by the ensemble, using the Woodbury identity. The update becomes $X C^{-1} Y^\intercal R^{-1}\delta$ with $C = I_N + Y^\intercal R^{-1} Y$, so the only factorization is $N \times N$ and neither $C_{xy}$, $S$, nor the Kalman gain is ever formed. The cost is $\mathcal{O}(N^2 x_{\rm dim} + N^2 y_{\rm dim} + N^3)$ plus the cost of applying $R^{-1}$. This is algebraically exact and is preferable whenever $N \ll y_{\rm dim}$; for $y_{\rm dim} \lesssim N$ the default path is cheaper. 
+
+When $R^{-1}$ is applied by a dense Cholesky factor, this incurs a cost of $\mathcal{O}(Nd_y^2)$. One can reduce this to $\mathcal{O}(Nd_y)$ by passing a structured `chol_R`: a scalar for $\sigma^2 I$, or a 1D array of length $y_{\rm dim}$ for a diagonal factor. Note that the default path always requires a 2D `chol_R`.
+
+Both localization hooks below are rejected with `ensemble_subspace=True`, as the Woodbury identity is inapplicable with tapering.
+
 <!-- --8<-- [end:filtering] -->
 
 ## Ensemble Rauch-Tung-Striebel smoothing

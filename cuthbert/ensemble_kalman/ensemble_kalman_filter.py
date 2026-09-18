@@ -77,6 +77,7 @@ def build_filter(
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
     construct_chol_innovation_covariance: ConstructCholInnovationCovariance
     | None = None,
+    ensemble_subspace: bool = False,
 ) -> Filter:
     """Builds an Ensemble Kalman Filter object.
 
@@ -97,15 +98,40 @@ def build_filter(
             constructs a generalized Cholesky factor of the localized innovation
             covariance matrix. ``None`` (default) uses the standard, unlocalized
             form of the ensemble Kalman update.
+        ensemble_subspace: If True, perform the analysis in the n_particles-dimensional
+            ensemble subspace. Algebraically exact, and cheaper in the state dimension
+            whenever ``n_particles`` is much smaller than the observation dimension. It
+            is incompatible with both localization arguments above, and permits a scalar
+            or 1D ``chol_R``. Defaults to False.
+
+            When using it, prefer to have ``get_observations`` return a scalar or 1D
+            ``chol_R`` wherever the observation noise allows. A dense 2D factor is
+            applied by triangular solve rather than by scaling, which restores a
+            quadratic dependence on the observation dimension and requires storing
+            the factor densely; both are avoided entirely by the structured forms.
+            A dense factor is also refactored at cubic cost in the observation
+            dimension at every step with missing observations.
 
     Returns:
         Filter object for the EnKF.
 
     Raises:
-        ValueError: If ``n_particles`` is less than 2.
+        ValueError: If ``n_particles`` is less than 2, or if ``ensemble_subspace`` is
+            combined with either localization argument.
     """
     if n_particles < 2:
         raise ValueError("n_particles must be at least 2 for EnKF.")
+
+    if ensemble_subspace:
+        if modify_cross_covariance is not no_covariance_modifier:
+            raise ValueError(
+                "ensemble_subspace=True is incompatible with modify_cross_covariance."
+            )
+        if construct_chol_innovation_covariance is not None:
+            raise ValueError(
+                "ensemble_subspace=True is incompatible with "
+                "construct_chol_innovation_covariance."
+            )
 
     return Filter(
         init_prepare=partial(
@@ -129,6 +155,7 @@ def build_filter(
             store_predicted_ensemble=store_predicted_ensemble,
             modify_cross_covariance=modify_cross_covariance,
             construct_chol_innovation_covariance=(construct_chol_innovation_covariance),
+            ensemble_subspace=ensemble_subspace,
         ),
         associative=False,
     )
@@ -227,6 +254,7 @@ def filter_combine(
     modify_cross_covariance: ModifyCrossCovariance = no_covariance_modifier,
     construct_chol_innovation_covariance: ConstructCholInnovationCovariance
     | None = None,
+    ensemble_subspace: bool = False,
 ) -> EnKFState:
     """Combine previous EnKF state with prepared state for current step.
 
@@ -247,6 +275,7 @@ def filter_combine(
             constructs a generalized Cholesky factor of the localized innovation
             covariance matrix. ``None`` (default) uses the standard, unlocalized
             form of the ensemble Kalman update.
+        ensemble_subspace: If True, perform the analysis in the ensemble subspace.
 
     Returns:
         Updated EnKF state.
@@ -264,8 +293,13 @@ def filter_combine(
 
     # Update
     observation_fn, chol_R, y = get_observations(state_2.model_inputs)
-    cross_covariance_modifier = partial(
-        modify_cross_covariance, model_inputs=state_2.model_inputs
+    # The ensemble-subspace path rejects any non-default modifier by identity, so pass
+    # the library default straight through rather than a partial that merely wraps it.
+    # `build_filter` has already checked that no real modifier was supplied.
+    cross_covariance_modifier = (
+        enkf_lib.no_covariance_modifier
+        if ensemble_subspace
+        else partial(modify_cross_covariance, model_inputs=state_2.model_inputs)
     )
     construct_chol_S = (
         None
@@ -285,6 +319,7 @@ def filter_combine(
         perturbed_obs,
         cross_covariance_modifier=cross_covariance_modifier,
         construct_chol_innovation_covariance=construct_chol_S,
+        ensemble_subspace=ensemble_subspace,
     )
 
     return EnKFState(

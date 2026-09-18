@@ -3,13 +3,19 @@ import jax
 import jax.numpy as jnp
 import pytest
 from jax import random
+from jax.scipy.linalg import solve_triangular
 
 from cuthbertlib.ensemble_kalman import (
     construct_tapered_chol_innovation_covariance,
 )
-from cuthbertlib.ensemble_kalman.filtering import predict, update
+from cuthbertlib.ensemble_kalman.filtering import (
+    _quadratic_form_residual,
+    predict,
+    update,
+)
 from cuthbertlib.kalman.filtering import update as kalman_update
 from cuthbertlib.kalman.generate import generate_lgssm
+from cuthbertlib.linalg import tria
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -395,3 +401,153 @@ def test_update_covariance_modifiers_with_missing_observations(localize_marginal
     )
 
     chex.assert_trees_all_close(actual, expected, rtol=1e-12, atol=1e-12)
+
+
+def _random_update_problem(x_dim, y_dim, n_particles):
+    """Ensemble, linear observation function, dense non-diagonal chol_R and y."""
+    keys = random.split(random.key(0), 4)
+    ensemble = random.normal(keys[0], (n_particles, x_dim))
+    H = random.normal(keys[1], (y_dim, x_dim))
+    factor = random.normal(keys[2], (y_dim, y_dim))
+    chol_R = jnp.linalg.cholesky(factor @ factor.T + jnp.eye(y_dim))
+    y = random.normal(keys[3], (y_dim,))
+    return ensemble, (lambda x: H @ x), chol_R, y
+
+
+@pytest.mark.parametrize("perturbed_obs", [True, False])
+@pytest.mark.parametrize(("x_dim", "y_dim", "n_particles"), [(6, 12, 4), (3, 4, 10)])
+def test_update_ensemble_subspace_matches_dense(
+    x_dim, y_dim, n_particles, perturbed_obs
+):
+    """The ensemble-subspace update is exact, so it must reproduce the dense update.
+
+    (6, 12, 4) has n_particles < y_dim, the regime the path targets; (3, 4, 10) has
+    y_dim < n_particles. Between them the dense path also takes both of its gain
+    associations, n_particles < x_dim and n_particles >= x_dim.
+    """
+    ensemble, observation_fn, chol_R, y = _random_update_problem(
+        x_dim, y_dim, n_particles
+    )
+    args = (random.key(1), ensemble, observation_fn, chol_R, y)
+
+    dense = update(*args, perturbed_obs=perturbed_obs)
+    subspace = update(*args, perturbed_obs=perturbed_obs, ensemble_subspace=True)
+
+    chex.assert_trees_all_close(subspace, dense, rtol=1e-10, atol=1e-10)
+
+
+def _quadratic_form_difference(A, z, chol_C):
+    r"""Reference evaluation of $z^\top z - z^\top AC^{-1}A^\top z$ as a difference.
+
+    A transparent statement of the identity, where $C = L_CL_C^\top$. It subtracts two
+    nearly equal non-negative terms and so loses relative precision, which is why the
+    library uses the least-squares residual instead.
+    """
+    g = A.T @ z
+    return z @ z - jnp.sum(jnp.square(solve_triangular(chol_C, g, lower=True)))
+
+
+@pytest.mark.parametrize(
+    ("y_dim", "n_particles", "zeroed_rows"), [(12, 4, 0), (4, 10, 0), (12, 4, 5)]
+)
+def test_quadratic_form_residual_matches_difference(y_dim, n_particles, zeroed_rows):
+    """The residual and difference forms both equal z' (I + A A')^{-1} z.
+
+    Zeroed rows make A rank-deficient, as on the missing-data path.
+    """
+    keys = random.split(random.key(0), 2)
+    A = random.normal(keys[0], (y_dim, n_particles)).at[:zeroed_rows].set(0.0)
+    z = random.normal(keys[1], (y_dim,))
+    chol_C = tria(jnp.concatenate([A.T, jnp.eye(n_particles)], axis=1))
+
+    expected = z @ jnp.linalg.solve(jnp.eye(y_dim) + A @ A.T, z)
+
+    chex.assert_trees_all_close(_quadratic_form_residual(A, z), expected, rtol=1e-10)
+    chex.assert_trees_all_close(
+        _quadratic_form_difference(A, z, chol_C), expected, rtol=1e-10
+    )
+
+
+def test_update_ensemble_subspace_missing_observations():
+    """Partially and fully missing observations match the dense path.
+
+    The 1D chol_R case uses perturbed_obs=False: collect_nans_chol refactors a 2D
+    factor by QR, which can flip diagonal signs, so the 1D and 2D representations of
+    one R give equally valid but different perturbation draws from the same key.
+    """
+    ensemble, observation_fn, chol_R, y = _random_update_problem(6, 6, 4)
+    partial = y.at[jnp.array([1, 4])].set(jnp.nan)
+    args = (random.key(1), ensemble, observation_fn)
+
+    chex.assert_trees_all_close(
+        update(*args, chol_R, partial, ensemble_subspace=True),
+        update(*args, chol_R, partial),
+        rtol=1e-10,
+        atol=1e-10,
+    )
+
+    diag_R = 0.4 + 0.1 * jnp.arange(6)
+    chex.assert_trees_all_close(
+        update(*args, diag_R, partial, perturbed_obs=False, ensemble_subspace=True),
+        update(*args, jnp.diag(diag_R), partial, perturbed_obs=False),
+        rtol=1e-10,
+        atol=1e-10,
+    )
+
+    all_missing = jnp.full_like(y, jnp.nan)
+    updated, ll = update(*args, chol_R, all_missing, ensemble_subspace=True)
+    chex.assert_trees_all_close(updated, ensemble, rtol=1e-12, atol=1e-12)
+    chex.assert_trees_all_close(ll, jnp.array(0.0), atol=1e-12)
+
+
+@pytest.mark.parametrize("perturbed_obs", [True, False])
+@pytest.mark.parametrize("form", ["scalar", "diagonal", "dense"])
+def test_update_ensemble_subspace_chol_R_forms(form, perturbed_obs):
+    """Scalar, 1D and 2D factors of the same R reproduce the dense update.
+
+    The diagonal and dense cases use unequal standard deviations, so that scaling the
+    perturbations along the wrong axis would be detected. With nothing missing, no
+    factor is refactored, so both paths draw identical perturbations from one key.
+    """
+    y_dim = 8
+    ensemble, observation_fn, _, y = _random_update_problem(6, y_dim, 5)
+    if form == "scalar":
+        std = jnp.full((y_dim,), 0.7)
+        chol_R = jnp.asarray(0.7)
+    else:
+        std = 0.4 + 0.1 * jnp.arange(y_dim)
+        chol_R = std if form == "diagonal" else jnp.diag(std)
+    args = (random.key(1), ensemble, observation_fn)
+
+    expected = update(*args, jnp.diag(std), y, perturbed_obs=perturbed_obs)
+    actual = update(
+        *args, chol_R, y, perturbed_obs=perturbed_obs, ensemble_subspace=True
+    )
+
+    chex.assert_trees_all_close(actual, expected, rtol=1e-10, atol=1e-10)
+
+
+def test_update_ensemble_subspace_rejects_invalid_arguments():
+    """Localization hooks are rejected with ensemble_subspace; non-2D chol_R without."""
+    ensemble, observation_fn, chol_R, y = _random_update_problem(6, 6, 4)
+    args = (random.key(1), ensemble, observation_fn)
+
+    with pytest.raises(ValueError, match="cross_covariance_modifier"):
+        update(
+            *args,
+            chol_R,
+            y,
+            cross_covariance_modifier=lambda C_xy: C_xy,
+            ensemble_subspace=True,
+        )
+    with pytest.raises(ValueError, match="construct_chol_innovation_covariance"):
+        update(
+            *args,
+            chol_R,
+            y,
+            construct_chol_innovation_covariance=lambda Y, chol_R: chol_R,
+            ensemble_subspace=True,
+        )
+    for structured_chol_R in [jnp.asarray(0.5), jnp.full((6,), 0.5)]:
+        with pytest.raises(ValueError, match="chol_R must be 2D"):
+            update(*args, structured_chol_R, y)

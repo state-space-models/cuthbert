@@ -17,6 +17,8 @@ The EnKF treats the filtering distribution as **Gaussian**, but represents it wi
 
 The EnKF allows for storing its predicted states, $x_{t \mid t - 1}$, through the `store_predicted_ensemble` flag. This flag is required when the filtering outputs are to be used by an EnRTS smoother.
 
+**Large observation dimensions.** Setting `ensemble_subspace=True` performs the analysis in the $N$-dimensional ensemble subspace via the Woodbury identity. It is algebraically exact and cheaper whenever $N$ is much smaller than the observation dimension. This cost can be further reduced by passing scalar or diagonal `chol_R`.  It is incompatible with both localization callbacks below. See the [`cuthbertlib` filtering documentation](../../api_cuthbertlib/ensemble_kalman/filtering.md) for the details.
+
 See Algorithm 2 in Appendix A in [Calvello, Reich, and Stuart., Ensemble Kalman Methods: A Mean Field Perspective](https://arxiv.org/abs/2209.11371) for the EnKF algorithm which accomodates non-linear observation functions $h$. Note that this algorithm corresponds to the `perturbed_obs = True (Default)` option in the EnKF implementation. This boolean flag is represented by `s` in Algorithm 10.2 of [Sanz-Alonso et al., *Inverse Problems and Data Assimilation*](https://arxiv.org/abs/1810.06191), which was only written for linear $h$.
 <!-- --8<-- [end:enkf] -->
 
