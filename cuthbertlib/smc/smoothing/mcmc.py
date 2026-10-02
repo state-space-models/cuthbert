@@ -49,7 +49,7 @@ def simulate(
     )
     n_samples = x1_ancestor_indices.shape[0]
 
-    keys = random.split(key, (n_steps * 2)).reshape((n_steps, 2))
+    keys = random.split(key, (n_steps, 2))
 
     def body(carry, keys_t):
         # IMH proposal

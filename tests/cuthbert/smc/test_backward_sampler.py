@@ -42,6 +42,12 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
             Hs[idx] @ state + ds[idx], ys[idx], chol_Rs[idx], nan_support=False
         )
 
+    def log_joint(state_prev, state, model_inputs: int):
+        idx = model_inputs - 1
+        return log_potential(state_prev, state, model_inputs) + logpdf(
+            Fs[idx] @ state_prev + cs[idx], state, chol_Qs[idx], nan_support=False
+        )
+
     n_filter_particles = 5000
     resampling_fn = systematic.resampling
     ess_threshold = 0.7
@@ -54,7 +60,7 @@ def load_inference(m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys):
         adaptive_resampler,
     )
     model_inputs = jnp.arange(len(ys) + 1)
-    return filter_obj, model_inputs, log_potential
+    return filter_obj, model_inputs, log_joint
 
 
 class Test(chex.TestCase):
@@ -72,7 +78,7 @@ class Test(chex.TestCase):
         )
 
         # Run the particle filter.
-        filter_obj, model_inputs, log_potential = load_inference(
+        filter_obj, model_inputs, log_joint = load_inference(
             m0, chol_P0, Fs, cs, chol_Qs, Hs, ds, chol_Rs, ys
         )
         init_key, filter_key, smoother_key = random.split(random.key(seed + 1), 3)
@@ -95,9 +101,9 @@ class Test(chex.TestCase):
             raise ValueError(f"{method} is not a valid backward sampling method.")
 
         # Run the particle smoother.
-        n_smoother_particles = 1000
+        n_smoother_particles = 5000
         smoother_obj = build_smoother(
-            log_potential, bs_fn, systematic.resampling, n_smoother_particles
+            log_joint, bs_fn, systematic.resampling, n_smoother_particles
         )
         smoothed_states = self.variant(
             smoother, static_argnames=("smoother_obj", "parallel")
@@ -110,14 +116,23 @@ class Test(chex.TestCase):
         filtered_means, filtered_covs, _ = std_kalman_filter(
             m0, P0, Fs, cs, Qs, Hs, ds, Rs, ys
         )
-        (smoothed_means, _), _ = std_kalman_smoother(
+        (smoothed_means, smoothed_covs), _ = std_kalman_smoother(
             filtered_means, filtered_covs, Fs, cs, Qs
         )
 
         # Compare smoothed particles with Kalman smoother results
         particle_means = jnp.mean(smoothed_states.particles, axis=1)
         mse = jnp.mean(jnp.square(particle_means - smoothed_means))
-        assert mse <= 0.1, "Mean squared error is too high"
+        assert mse <= 0.05, "Mean squared error is too high"
+        particle_covs = jax.vmap(lambda particles: jnp.cov(particles.T))(
+            smoothed_states.particles
+        )
+        chex.assert_trees_all_close(
+            particle_covs,
+            smoothed_covs,
+            atol=0.9 if method == "tracing" else 0.25,
+            rtol=0.0,
+        )
 
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(method=["tracing", "exact", "mcmc"])
