@@ -123,7 +123,16 @@ class Test(chex.TestCase):
         # Compare smoothed particles with Kalman smoother results
         particle_means = jnp.mean(smoothed_states.particles, axis=1)
         mse = jnp.mean(jnp.square(particle_means - smoothed_means))
-        assert mse <= 0.1, "Mean squared error is too high"
+        assert mse <= 0.05, "Mean squared error is too high"
+        particle_covs = jax.vmap(lambda particles: jnp.cov(particles.T))(
+            smoothed_states.particles
+        )
+        chex.assert_trees_all_close(
+            particle_covs,
+            smoothed_covs,
+            atol=0.9 if method == "tracing" else 0.25,
+            rtol=0.0,
+        )
 
     @chex.variants(with_jit=True, without_jit=True)
     @parameterized.product(method=["tracing", "exact", "mcmc"])
