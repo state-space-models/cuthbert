@@ -51,3 +51,24 @@ resampled_indices, _, resampled_particles = adaptive_and_differentiable_resampli
     resampling_key, logits, particles, 100
 )
 ```
+
+## Discounted log-weight derivatives
+
+For a reparameterizable bootstrap particle filter, the
+[DMOP-alpha recursion](https://arxiv.org/abs/2407.03085v2) can be used with the
+same interface:
+
+```python
+discounted_resampling = resampling.discounted_stop_gradient_decorator(
+    resampling.systematic.resampling, alpha=0.97
+)
+```
+
+Use this with resampling at **every observation**, without an adaptive or
+no-resampling wrapper. The correction leaves finite forward weights, particles
+and ancestor indices unchanged. It multiplies inherited log-weight derivatives
+by `alpha` and retains pathwise derivatives through particle states. Zero gives
+the uncorrected pathwise gradient; one calls the original stop-gradient
+decorator. `alpha` is a static float in [0, 1]. Guided proposals and discrete
+transition scores need separate treatment. See the
+[worked example](https://state-space-models.github.io/cuthbert/examples/discounted_resampling/).

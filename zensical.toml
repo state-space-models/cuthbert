@@ -17,6 +17,7 @@ nav = [
     { "Ensemble Kalman Filtering for Lorenz-63" = "examples/enkf_comparison.md" },
     { "EnKF With Localization for Lorenz-96" = "examples/enkf_localization_l96.md" },
     { "Differentiable Resampling in Particle Filters" = "examples/diff_pf_resampling.md" },
+    { "Discounting Particle-Filter Gradients" = "examples/discounted_resampling.md" },
     { "Dynamax Integration" = "examples/dynamax_integration.md" },
   ] },
   { "cuthbert API" = [

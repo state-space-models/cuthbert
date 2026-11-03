@@ -8,6 +8,7 @@ resampling.
 See [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314) for more details.
 """
 
+import math
 from functools import wraps
 
 import jax
@@ -16,6 +17,56 @@ import jax.numpy as jnp
 from cuthbertlib.resampling.protocols import Resampling
 from cuthbertlib.resampling.utils import apply_resampling_indices
 from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
+
+
+def discounted_stop_gradient_decorator(func: Resampling, alpha: float) -> Resampling:
+    """Discount inherited log-weight derivatives at resampling.
+
+    For finite log weights, the added correction is zero in the forward pass:
+    particles, ancestor indices and weights are unchanged. Its derivative is
+    ``alpha`` times the derivative of the selected input log weight. Pathwise
+    derivatives through the selected particle states are retained.
+
+    In a reparameterizable bootstrap particle filter that resamples at every
+    observation, this gives the DMOP-alpha weight recursion described in
+    [Tan et al.](https://arxiv.org/abs/2407.03085v2).
+    Do not combine it with adaptive or no-resampling wrappers: skipping calls
+    discounts by resampling events rather than observation times. Guided
+    proposals and discrete transition scores need separate treatment.
+
+    Args:
+        func: An unconditional resampler returning equally weighted particles,
+            such as systematic or multinomial resampling.
+        alpha: A static float in [0, 1], fixed when constructing the decorator.
+            Zero removes inherited log-weight derivatives; one uses the
+            existing stop-gradient decorator without changing its arithmetic.
+
+    Returns:
+        A resampling function with discounted log-weight derivatives.
+
+    Raises:
+        ValueError: If alpha is nonfinite or outside [0, 1].
+    """
+    if not math.isfinite(alpha) or not 0 <= alpha <= 1:
+        raise ValueError("alpha must be finite and in [0, 1]")
+    if alpha == 1:
+        return stop_gradient_decorator(func)
+
+    @wraps(func)
+    def _wrapped(
+        key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
+    ) -> tuple[Array, Array, ArrayTree]:
+        indices, base_logits, particles = func(
+            key, jax.lax.stop_gradient(logits), positions, n
+        )
+        selected = apply_resampling_indices(logits, indices)
+        correction = alpha * (selected - jax.lax.stop_gradient(selected))
+        return indices, base_logits + correction, particles
+
+    _wrapped.__doc__ = (
+        discounted_stop_gradient_decorator.__doc__ or ""
+    ) + f"\n\nWrapped resampler documentation:\n{func.__doc__ or ''}"
+    return jax.jit(_wrapped, static_argnames=("n",))
 
 
 def stop_gradient_decorator(func: Resampling) -> Resampling:
