@@ -32,10 +32,9 @@ def discounted_stop_gradient_decorator(func: Resampling, alpha: float) -> Resamp
     [Tan et al.](https://arxiv.org/abs/2407.03085v2).
     With adaptive resampling, applying the discount only when resampling occurs
     would discount by resampling events rather than observation times. This is
-    a possible empirical extension, but is not covered by the current DMOP-alpha
-    theory or this implementation's validation. The supported discounted use
-    therefore resamples at every observation. Guided proposals and discrete
-    transition scores need separate treatment.
+    a possible empirical extension that the current DMOP-alpha theory does not
+    cover and we have not tested. The tests use resampling at every observation.
+    Guided proposals and discrete transition scores need separate treatment.
 
     Args:
         func: An unconditional resampler returning equally weighted particles,

@@ -6,7 +6,7 @@ resampler. With the same random key, the forward particle filter is unchanged;
 `alpha` changes the derivative used for parameter estimation.
 
 This example uses a reparameterizable bootstrap particle filter with systematic
-resampling at **every observation**. Guided proposals and discrete transition
+resampling at every observation. Guided proposals and discrete transition
 scores are outside the scope of this example.
 
 ## Model and filter
@@ -56,12 +56,12 @@ def log_likelihood(phi, resampler):
 
 ## Compare derivatives
 
-`alpha` is a required static float chosen when constructing the decorator;
-there is no default. The value 0.97 was selected for the Dacca model and is
-included here as an illustration. Its suitability depends on the model. At zero,
-only the pathwise derivatives through the particles remain. At one, the helper
-calls the existing `stop_gradient_decorator`. An intermediate value discounts
-inherited weight derivatives, which can trade bias against variance.
+`alpha` is a required static float, fixed when the decorator is constructed.
+There is no default. We use 0.97 here because it was selected for Dacca; other
+models may need a different value. At zero, only the pathwise derivatives
+through the particles remain. At one, the helper calls the existing
+`stop_gradient_decorator`. An intermediate value discounts inherited
+weight derivatives.
 
 ```{.python #discounted_resampling-compare}
 phi = jnp.array(0.4)
@@ -87,17 +87,17 @@ variance. A single draw cannot establish which discount is best for optimization
 
 ## Adaptive resampling
 
-With adaptive resampling, a natural extension is to apply the discount only
-when resampling occurs. This discounts by resampling events rather than by
-observations. It could be studied empirically, but the current DMOP-alpha theory
-and this implementation's validation do not cover it. This example therefore
-resamples at every observation. Whether to include adaptive discounting is left
-for discussion with the Cuthbert developers.
+With adaptive resampling, the discount could be applied only when resampling
+occurs. It would then count resampling events instead of observations. This
+extension could be studied empirically, but the current DMOP-alpha theory does
+not cover it and we have not tested it here. The example resamples at every
+observation. The Cuthbert developers can decide whether to add support for
+adaptive resampling.
 
 ## Further reading
 
 See the [resampling API](../api_cuthbertlib/resampling.md) for the function
-contract and [differentiable particle filtering](diff_pf_resampling.md) for the
+details and [differentiable particle filtering](diff_pf_resampling.md) for the
 existing undiscounted approach, including adaptive resampling.
 
 <!-- entangled code
