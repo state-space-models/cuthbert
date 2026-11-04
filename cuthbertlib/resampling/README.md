@@ -64,11 +64,20 @@ discounted_resampling = resampling.discounted_stop_gradient_decorator(
 )
 ```
 
-Use this with resampling at **every observation**, without an adaptive or
-no-resampling wrapper. The correction leaves finite forward weights, particles
+The value 0.97 was selected for the Dacca example. Other models may need a
+different value. `alpha` is required; the API has no default.
+
+The supported discounted use resamples at **every observation**. The correction
+leaves finite forward weights, particles
 and ancestor indices unchanged. It multiplies inherited log-weight derivatives
 by `alpha` and retains pathwise derivatives through particle states. Zero gives
 the uncorrected pathwise gradient; one calls the original stop-gradient
 decorator. `alpha` is a static float in [0, 1]. Guided proposals and discrete
-transition scores need separate treatment. See the
+transition scores need separate treatment.
+
+With adaptive resampling, one could apply the discount only when resampling
+occurs. This would discount by resampling events rather than observation times.
+It is a possible empirical extension, not covered by the current DMOP-alpha
+theory or this implementation's validation. Whether to support this extension
+is left for discussion with the Cuthbert developers. See the
 [worked example](https://state-space-models.github.io/cuthbert/examples/discounted_resampling/).

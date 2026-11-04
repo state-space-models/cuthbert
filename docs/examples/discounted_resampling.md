@@ -6,10 +6,8 @@ resampler. With the same random key, the forward particle filter is unchanged;
 `alpha` changes the derivative used for parameter estimation.
 
 This example uses a reparameterizable bootstrap particle filter with systematic
-resampling at **every observation**. Do not add an ESS threshold here: applying
-the discount only when resampling occurs does not give a discount at every
-observation. Guided proposals and discrete transition scores are outside the
-scope of this example.
+resampling at **every observation**. Guided proposals and discrete transition
+scores are outside the scope of this example.
 
 ## Model and filter
 
@@ -58,7 +56,9 @@ def log_likelihood(phi, resampler):
 
 ## Compare derivatives
 
-`alpha` is a static float chosen when constructing the decorator. At zero,
+`alpha` is a required static float chosen when constructing the decorator;
+there is no default. The value 0.97 was selected for the Dacca model and is
+included here as an illustration. Its suitability depends on the model. At zero,
 only the pathwise derivatives through the particles remain. At one, the helper
 calls the existing `stop_gradient_decorator`. An intermediate value discounts
 inherited weight derivatives, which can trade bias against variance.
@@ -80,18 +80,21 @@ for alpha in (0.0, 0.97, 1.0):
     )
 ```
 
-The likelihood values agree while the derivatives can differ. A single draw
-cannot establish which discount is best for optimization. In particular,
-intermediate discounts are not the ordinary derivative of the displayed
-finite-particle likelihood function.
+The likelihood values agree while the gradient estimates can differ. The choice
+of discount depends on the bias-variance tradeoff: alpha=0 can have high bias,
+while alpha=1 uses the original stop-gradient estimator and can have high
+variance. A single draw cannot establish which discount is best for optimization.
 
-## Key Takeaways
+## Adaptive resampling
 
-- The decorator changes log-weight derivatives while retaining pathwise state derivatives.
-- Per-observation discounting requires resampling at every observation.
-- The existing stop-gradient API remains available with its original behavior.
+With adaptive resampling, a natural extension is to apply the discount only
+when resampling occurs. This discounts by resampling events rather than by
+observations. It could be studied empirically, but the current DMOP-alpha theory
+and this implementation's validation do not cover it. This example therefore
+resamples at every observation. Whether to include adaptive discounting is left
+for discussion with the Cuthbert developers.
 
-## Next Steps
+## Further reading
 
 See the [resampling API](../api_cuthbertlib/resampling.md) for the function
 contract and [differentiable particle filtering](diff_pf_resampling.md) for the

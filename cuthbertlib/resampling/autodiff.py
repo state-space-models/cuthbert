@@ -30,14 +30,18 @@ def discounted_stop_gradient_decorator(func: Resampling, alpha: float) -> Resamp
     In a reparameterizable bootstrap particle filter that resamples at every
     observation, this gives the DMOP-alpha weight recursion described in
     [Tan et al.](https://arxiv.org/abs/2407.03085v2).
-    Do not combine it with adaptive or no-resampling wrappers: skipping calls
-    discounts by resampling events rather than observation times. Guided
-    proposals and discrete transition scores need separate treatment.
+    With adaptive resampling, applying the discount only when resampling occurs
+    would discount by resampling events rather than observation times. This is
+    a possible empirical extension, but is not covered by the current DMOP-alpha
+    theory or this implementation's validation. The supported discounted use
+    therefore resamples at every observation. Guided proposals and discrete
+    transition scores need separate treatment.
 
     Args:
         func: An unconditional resampler returning equally weighted particles,
             such as systematic or multinomial resampling.
-        alpha: A static float in [0, 1], fixed when constructing the decorator.
+        alpha: A required static float in [0, 1], fixed when constructing the
+            decorator. There is no default; the choice is model-dependent.
             Zero removes inherited log-weight derivatives; one uses the
             existing stop-gradient decorator without changing its arithmetic.
 
