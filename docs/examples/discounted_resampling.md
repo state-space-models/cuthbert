@@ -80,10 +80,10 @@ for alpha in (0.0, 0.97, 1.0):
     )
 ```
 
-The likelihood values agree while the gradient estimates can differ. The choice
-of discount depends on the bias-variance tradeoff: alpha=0 can have high bias,
-while alpha=1 uses the original stop-gradient estimator and can have high
-variance. A single draw cannot establish which discount is best for optimization.
+The likelihood values agree while the gradient estimates can differ. An
+appropriate choice of discount will depend on the tradeoff between high bias
+(alpha=0) and unbiased but high variance (alpha=1). A single draw cannot establish
+which discount is best for optimization.
 
 ## Adaptive resampling
 

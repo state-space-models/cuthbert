@@ -80,4 +80,4 @@ occurs. This would discount by resampling events rather than observation times.
 This could be studied empirically, but the current DMOP-alpha theory does not
 cover it and we have not tested it. The Cuthbert developers can decide whether
 to add support for it. See the
-[worked example](https://state-space-models.github.io/cuthbert/examples/discounted_resampling/).
+[worked example](https://github.com/kunyanghe21/cuthbert/blob/dmop-alpha/docs/examples/discounted_resampling.md).
