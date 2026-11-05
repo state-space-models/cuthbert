@@ -1,9 +1,4 @@
-"""Iterated filtering with Gaussian perturbations on the estimation scale.
-
-Particles carry a model state and a parameter PyTree with shared ancestry.
-Each pass starts from the previous pass's terminal, equally weighted parameter
-swarm. This module uses unconditional bootstrap resampling at every observation.
-"""
+"""Iterated filtering (IF2) with Gaussian parameter perturbations."""
 
 from typing import Any, NamedTuple
 
@@ -13,15 +8,16 @@ import jax.numpy as jnp
 from cuthbert.smc import _estimation as util
 from cuthbert.smc import particle_filter as pf
 from cuthbert.smc._estimation import ModelFactory
+from cuthbertlib.resampling import Resampling, multinomial, systematic
 
 
 class IteratedFilteringResult(NamedTuple):
-    """IF2 result on the estimation scale.
+    """IF2 results on the estimation scale.
 
-    Parameters are the arithmetic mean of the terminal, equally weighted swarm.
-    ``perturbed_log_likelihoods`` belong to the perturbed models, NOT to the
-    static model at these parameters. Use independent unperturbed PF evaluation
-    to compare endpoints. On failure the last valid swarm is retained.
+    ``parameters`` is the mean of the final parameter population.
+    ``perturbed_log_likelihoods`` gives the log likelihood estimate for the
+    perturbed model at each iteration. If an iteration fails, IF2 keeps the
+    last valid parameter population.
     """
 
     parameters: Any
@@ -44,36 +40,41 @@ def fit(
     perturbation_scale: Any,
     initial_perturbation_scale: Any = None,
     cooling_rate: float = 0.9,
-    resampling: str = "systematic",
+    resampling_fn: Resampling = systematic.resampling,
 ) -> IteratedFilteringResult:
-    """Run IF2 with Gaussian parameter random walks and geometric cooling.
+    """Estimate parameters by iterated filtering (IF2).
 
-    Pass m uses ``cooling_rate**m`` for both initial and within-pass noise.
-    Initial noise is applied before rinit; process noise is applied before each
-    observation interval, including the first. To perturb an IVP only at rinit,
-    give it a nonzero initial scale and a zero process scale.
+    At iteration ``m`` (counting from zero), IF2 multiplies both perturbation
+    scales by ``cooling_rate**m``.
+    To perturb a parameter only at initialization, give it a positive initial
+    scale and a zero scale for the observation intervals.
 
     Args:
-        model_factory: Estimation-scale parameters to bootstrap callbacks.
-        initial_parameters: Floating-point parameter PyTree. Use vmap for starts.
-        model_inputs: Observation inputs sharing a leading time axis.
-        key: Root key for independent initial, process and terminal draws.
-        n_particles: Positive static size of the state/parameter swarm.
-        n_iterations: Nonnegative static number of passes through the data.
-        perturbation_scale: Nonnegative scalar or parameter-shaped PyTree of
-            standard deviations on the estimation scale.
-        initial_perturbation_scale: Initial standard deviations, defaulting to
-            perturbation_scale. Distinct scales support initial-value parameters.
-        cooling_rate: Static geometric multiplier in (0, 1].
-        resampling: Unconditional 'systematic' or 'multinomial'.
+        model_factory: Function that takes parameters and returns the initial
+            sampler, transition sampler and observation log density function.
+        initial_parameters: Starting parameters on the estimation scale, as a
+            PyTree of floating-point values.
+        model_inputs: Model inputs with time along the first axis.
+        key: JAX random key.
+        n_particles: Number of particles.
+        n_iterations: Number of IF2 iterations.
+        perturbation_scale: Standard deviations for parameter perturbations
+            before each observation interval. Use a nonnegative scalar or a
+            PyTree matching the parameters.
+        initial_perturbation_scale: Standard deviations before sampling the
+            initial state. Defaults to ``perturbation_scale``.
+        cooling_rate: Geometric cooling factor in (0, 1].
+        resampling_fn: ``systematic.resampling`` or ``multinomial.resampling``.
 
     Returns:
-        Parameter swarm, means, perturbed likelihoods and failure diagnostics.
+        An ``IteratedFilteringResult`` with the final parameter population
+        and the parameter means and log likelihood estimates for each iteration.
     """
     util.positive_int("n_particles", n_particles)
     util.positive_int("n_iterations", n_iterations, allow_zero=True)
     util.scalar_range("cooling_rate", cooling_rate, 1e-30, 1)
-    base_resampling = util.resampler(resampling)
+    if resampling_fn not in (systematic.resampling, multinomial.resampling):
+        raise ValueError("IF2 requires systematic.resampling or multinomial.resampling")
     initial = util.parameters_tree(initial_parameters)
     inputs = util.inputs_tree(model_inputs)
     scale = util.broadcast_tree(perturbation_scale, initial, name="perturbation_scale")
@@ -113,7 +114,7 @@ def fit(
             )
 
         obj = pf.build_filter(
-            shape_init, propagate, potential, n_particles, base_resampling
+            shape_init, propagate, potential, n_particles, resampling_fn
         )
         start = pf.ParticleFilterState(
             init_key,
@@ -123,7 +124,7 @@ def fit(
             None,
             jnp.array(0.0),
         )
-        final = util.scan_final(obj, inputs, start, filter_key, checkpoint=False)
+        final = util.scan_final(obj, inputs, start, filter_key)
         finite = (
             jnp.isfinite(final.log_normalizing_constant)
             & util.all_finite(final.particles)
@@ -133,7 +134,7 @@ def fit(
         def finish(_):
             # cuthbert resamples BEFORE propagation, leaving weighted particles
             # after the last observation. Explicitly resample the terminal swarm.
-            _, _, particles = base_resampling(
+            _, _, particles = resampling_fn(
                 terminal_key, final.log_weights, final.particles, n_particles
             )
             return particles["parameters"]

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from cuthbert.smc import iterated_filtering
-from cuthbertlib.resampling import multinomial, systematic
+from cuthbertlib.resampling import ess_decorator, multinomial, systematic
 
 Y = [0.3, -0.5, 0.7, 1.0, 0.2]
 
@@ -36,11 +36,8 @@ def model(theta):
     return init, propagate, potential
 
 
-def manual_if2(theta, ys, key, n, iterations, scale, init_scale, cooling, method):
+def manual_if2(theta, ys, key, n, iterations, scale, init_scale, cooling, resample):
     """Plain Python-loop IF2 reference including terminal resampling."""
-    resample = (
-        systematic.resampling if method == "systematic" else multinomial.resampling
-    )
     swarm = jnp.broadcast_to(theta, (n, theta.size))
     likelihoods, means = [], [theta]
     for m, mk in enumerate(jax.random.split(key, iterations)):
@@ -73,14 +70,16 @@ def manual_if2(theta, ys, key, n, iterations, scale, init_scale, cooling, method
 
 @pytest.mark.parametrize("scale", [jnp.zeros(3), jnp.array([0.1, 0.04, 0.0])])
 @pytest.mark.parametrize("initial_scale", [[0.0, 0.0, 0.0], [0.02, 0.0, 0.3]])
-@pytest.mark.parametrize("method", ["systematic", "multinomial"])
+@pytest.mark.parametrize(
+    "resampling_fn", [systematic.resampling, multinomial.resampling]
+)
 def test_if2_cooling_and_initial_parameters_against_reference(
-    scale, initial_scale, method
+    scale, initial_scale, resampling_fn
 ):
     theta, ys, key = jnp.array([0.4, -0.7, 0.2]), jnp.array(Y), jax.random.key(5)
     init_scale = jnp.array(initial_scale)
     expected, means, logliks = manual_if2(
-        theta, ys, key, 16, 3, scale, init_scale, 0.6, method
+        theta, ys, key, 16, 3, scale, init_scale, 0.6, resampling_fn
     )
     result = iterated_filtering.fit(
         model,
@@ -92,7 +91,7 @@ def test_if2_cooling_and_initial_parameters_against_reference(
         perturbation_scale=scale,
         initial_perturbation_scale=init_scale,
         cooling_rate=0.6,
-        resampling=method,
+        resampling_fn=resampling_fn,
     )
     assert result.success and result.completed_iterations == 3
     np.testing.assert_allclose(result.parameter_swarm, expected, rtol=2e-6, atol=1e-7)
@@ -113,6 +112,7 @@ def tree_model(parameters):
         {"perturbation_scale": -1},
         {"initial_perturbation_scale": [1.0, 2.0]},
         {"n_iterations": -1},
+        {"resampling_fn": ess_decorator(systematic.resampling, 0.7)},
     ],
 )
 def test_invalid_if2_configuration(kwargs):
@@ -127,8 +127,10 @@ def test_invalid_if2_configuration(kwargs):
 
 
 @pytest.mark.parametrize("dtype", [jnp.float32, jnp.float64])
-@pytest.mark.parametrize("method", ["systematic", "multinomial"])
-def test_parameter_tree_jit_and_vmap(dtype, method):
+@pytest.mark.parametrize(
+    "resampling_fn", [systematic.resampling, multinomial.resampling]
+)
+def test_parameter_tree_jit_and_vmap(dtype, resampling_fn):
     theta = {"dynamic": jnp.array([0.4, -0.7], dtype), "initial": jnp.array(0.2, dtype)}
 
     def fit(key):
@@ -141,7 +143,7 @@ def test_parameter_tree_jit_and_vmap(dtype, method):
             n_iterations=2,
             perturbation_scale={"dynamic": 0.01, "initial": 0.0},
             initial_perturbation_scale={"dynamic": 0.0, "initial": 0.05},
-            resampling=method,
+            resampling_fn=resampling_fn,
         )
 
     keys = jax.random.split(jax.random.key(8), 2)

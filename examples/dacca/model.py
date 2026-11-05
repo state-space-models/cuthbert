@@ -1,9 +1,4 @@
-"""600-month Dacca cholera model in Cuthbert's bootstrap callback interface.
-
-Equations, clipping, permanent violation counter, initial normalization and
-additive observation floor match PyPOMP's Gaussian-noise Dacca benchmark.
-The observation expression avoids overflow in a branch whose contribution
-already rounds to zero beside the original 1e-18 floor.
+"""600-month Dacca cholera model with Gaussian noise.
 """
 
 from pathlib import Path
@@ -28,7 +23,7 @@ LTOL = float(np.log(1e-18))
 
 
 def to_est(theta):
-    """Keep finite coordinates only; fixed zero/one parameters remain exact."""
+    """Put the free parameters on the estimation scale."""
     theta = np.asarray(theta, dtype=np.float64)
     values = theta[FIDX].copy()
     for name in POSITIVE:
@@ -40,13 +35,12 @@ def to_est(theta):
 
 
 def from_est(parameters):
-    """Original exp/identity/softmax transformations, including the IVP gauge."""
+    """Transform the free parameters and normalize the initial proportions."""
     parameters = jnp.asarray(parameters)
     values = {name: parameters[i] for i, name in enumerate(FREE)}
     for name in POSITIVE:
         values[name] = jnp.exp(values[name])
     values["beta_trend"] /= 100
-    # Match the original transformation's arithmetic. No artificial bounds.
     proportions = jnp.exp(parameters[jnp.asarray(IVP_FREE)])
     proportions = proportions / jnp.sum(proportions)
     values.update(dict(zip(IVPS, proportions)))
@@ -82,7 +76,7 @@ def initial_state(theta):
 
 
 def euler(theta, state, covariates, dt, noise):
-    """One original Euler step driven by an externally supplied N(0,1) word."""
+    """One Euler step using the supplied standard normal draw."""
     S, infected, Y, deaths, q0, q1, q2, count = state
 
     def get(name):

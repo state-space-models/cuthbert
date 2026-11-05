@@ -1,9 +1,3 @@
-## IF2 and Dacca example
-
-This branch adds an IF2 implementation and a runnable Dacca example.
-See [installation, code and the small example](examples/dacca/README.md).
-It is independent of the separate [`alpha contribution`](https://github.com/kunyanghe21/cuthbert/tree/dmop-alpha).
-
 <!-- --8<-- [start:intro] -->
 <div align="center">
 <img src="https://raw.githubusercontent.com/state-space-models/cuthbert/main/docs/assets/cuthbert.png" alt="cuthbert logo"></img>
@@ -29,6 +23,8 @@ If you want to jump right in, check out our [examples](https://state-space-model
 Maybe a [simple Kalman filter for tracking](https://state-space-models.github.io/cuthbert/examples/kalman_tracking)
 or a [factorial state-space model for modelling international football](https://state-space-models.github.io/cuthbert/examples/factorial_football).
 <!-- --8<-- [end:intro] -->
+
+[IF2 and the Dacca model](examples/dacca/README.md)
 
 <!-- --8<-- [start:goals] -->
 ### Goals

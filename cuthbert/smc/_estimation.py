@@ -1,7 +1,6 @@
 """Helpers for iterated filtering with bootstrap model callbacks."""
 
 import math
-from collections.abc import Callable
 from typing import Any, Protocol
 
 import jax
@@ -11,16 +10,13 @@ from jax import core
 
 from cuthbert.smc.types import InitSample, LogPotential, PropagateSample
 from cuthbert.utils import dummy_leading_element
-from cuthbertlib.resampling import multinomial, systematic
 
 
 class ModelFactory(Protocol):
     """Build bootstrap callbacks from an estimation-scale parameter PyTree.
 
-    Apply constraints (exp, sigmoid, etc.) inside this pure JAX function. The
-    returned functions have the same signatures as ``particle_filter.build_filter``.
-    The potential must be the observation log density, not a guided-proposal
-    correction. IF2 does not require derivatives of the model callbacks.
+    Return the three callbacks accepted by ``particle_filter.build_filter``.
+    The potential must be the observation log density.
     """
 
     def __call__(
@@ -63,7 +59,7 @@ def inputs_tree(model_inputs):
     return model_inputs
 
 
-def broadcast_tree(value, template, *, name, boolean=False):
+def broadcast_tree(value, template, *, name):
     # A scalar can control every coordinate; otherwise require the exact tree.
     if np.isscalar(value) or (hasattr(value, "ndim") and value.ndim == 0):
         value = jax.tree.map(lambda _: value, template)
@@ -71,32 +67,20 @@ def broadcast_tree(value, template, *, name, boolean=False):
         raise ValueError(f"{name} must be scalar or match the parameter PyTree")
 
     def convert(v, p):
-        if boolean and not jnp.issubdtype(jnp.asarray(v).dtype, jnp.bool_):
-            raise ValueError(f"{name} must contain boolean values")
-        v = jnp.asarray(v, dtype=bool if boolean else p.dtype)
+        v = jnp.asarray(v, dtype=p.dtype)
         try:
             v = jnp.broadcast_to(v, p.shape)
         except ValueError as exc:
             raise ValueError(f"{name} has an incompatible leaf shape") from exc
-        if not boolean:
-            valid = jnp.isfinite(v) & (v >= 0)
-            all_valid = jnp.all(valid)
-            # A captured array may be concrete while this predicate is traced.
-            if not isinstance(all_valid, core.Tracer) and not bool(all_valid):
-                raise ValueError(f"{name} must be finite and nonnegative")
-            # Invalid traced scales produce a reported failure, not silent use.
-            v = jnp.where(valid, v, jnp.nan)
-        return v
+        valid = jnp.isfinite(v) & (v >= 0)
+        all_valid = jnp.all(valid)
+        # A captured array may be concrete while this predicate is traced.
+        if not isinstance(all_valid, core.Tracer) and not bool(all_valid):
+            raise ValueError(f"{name} must be finite and nonnegative")
+        # Invalid traced scales produce a reported failure, not silent use.
+        return jnp.where(valid, v, jnp.nan)
 
     return jax.tree.map(convert, value, template)
-
-
-def resampler(method):
-    if method == "systematic":
-        return systematic.resampling
-    if method == "multinomial":
-        return multinomial.resampling
-    raise ValueError("resampling must be 'systematic' or 'multinomial'")
 
 
 def all_finite(value):
@@ -126,7 +110,7 @@ def perturb(parameters, scale, cooling, key):
     )
 
 
-def scan_final(filter_obj, model_inputs, init_state, key, *, checkpoint):
+def scan_final(filter_obj, model_inputs, init_state, key):
     """Match cuthbert.filter's key order, returning only its terminal state."""
     length = jax.tree.leaves(model_inputs)[0].shape[0]
     prepare_keys = jax.random.split(key, length)
@@ -138,5 +122,4 @@ def scan_final(filter_obj, model_inputs, init_state, key, *, checkpoint):
         state = filter_obj.filter_combine(previous, prepared)
         return state, None
 
-    body: Callable = jax.checkpoint(step) if checkpoint else step
-    return jax.lax.scan(body, init_state, (model_inputs, prepare_keys))[0]
+    return jax.lax.scan(step, init_state, (model_inputs, prepare_keys))[0]

@@ -16,11 +16,7 @@ from cuthbertlib.resampling import systematic
 
 
 def run(months=12, particles=32, iterations=2, seed=20261103):
-    """Return IF2 output and two independent ordinary-PF evaluations.
-
-    Defaults exercise the code on the first twelve observations. They are not
-    intended to produce a converged estimate or a precise likelihood estimate.
-    """
+    """Return IF2 output and two independent ordinary-PF evaluations."""
     observations = model.inputs(months)
     parameters = jnp.asarray(model.PUBLISHED)
     fit_key, evaluation_key = jax.random.split(jax.random.key(seed))
@@ -37,7 +33,7 @@ def run(months=12, particles=32, iterations=2, seed=20261103):
             perturbation_scale=jnp.asarray(model.PROCESS_SCALE),
             initial_perturbation_scale=jnp.asarray(model.INITIAL_SCALE),
             cooling_rate=0.9,
-            resampling="systematic",
+            resampling_fn=systematic.resampling,
         )
 
     started = time.perf_counter()
@@ -67,7 +63,7 @@ def run(months=12, particles=32, iterations=2, seed=20261103):
     if not np.isfinite(log_likelihoods).all():
         raise RuntimeError("An ordinary-PF evaluation returned a nonfinite value")
     summary = {
-        "purpose": "Small runnable example, not an optimization comparison",
+        "purpose": "Fit the Dacca model with IF2",
         "months": months,
         "euler_steps_per_month": 20,
         "particles": particles,
