@@ -156,3 +156,28 @@ class TestResamplings(chex.TestCase):
         )(true_sigma)
 
         chex.assert_trees_all_close(grad_stop, grad_base, rtol=0.05, atol=0.05)
+
+    @parameterized.parameters(None, 0.0, 0.5, 1.0)
+    def test_stop_gradient_discount(self, alpha):
+        base = systematic.resampling
+        if alpha is None:
+            resample = stop_gradient_decorator(base)
+            alpha = 1.0
+        else:
+            resample = stop_gradient_decorator(base, alpha=alpha)
+
+        key = random.key(42)
+        logits, xs = jnp.array([-2.0, 0.0, 1.0]), jnp.arange(3.0)
+        expected = base(key, logits, xs, 3)
+        chex.assert_trees_all_equal(resample(key, logits, xs, 3), expected)
+
+        selected = jnp.eye(3)[expected[0]]
+        dw = jax.jacrev(lambda w: resample(key, w, xs, 3)[1])(logits)
+        dx = jax.jacrev(lambda x: resample(key, logits, x, 3)[2])(xs)
+        chex.assert_trees_all_equal(dw, alpha * selected)
+        chex.assert_trees_all_equal(dx, selected)
+
+    @parameterized.parameters(-0.1, 1.1, float("nan"))
+    def test_invalid_discount(self, alpha):
+        with self.assertRaises(ValueError):
+            stop_gradient_decorator(systematic.resampling, alpha=alpha)

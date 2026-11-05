@@ -51,33 +51,3 @@ resampled_indices, _, resampled_particles = adaptive_and_differentiable_resampli
     resampling_key, logits, particles, 100
 )
 ```
-
-## Discounted log-weight derivatives
-
-For a reparameterizable bootstrap particle filter, the
-[DMOP-alpha recursion](https://arxiv.org/abs/2407.03085v2) can be used with the
-same interface:
-
-```python
-discounted_resampling = resampling.discounted_stop_gradient_decorator(
-    resampling.systematic.resampling, alpha=0.97
-)
-```
-
-The value 0.97 was selected for the Dacca example. Other models may need a
-different value. `alpha` is required; the API has no default.
-
-The current theory and tests assume resampling at every observation. The
-correction leaves finite forward weights, particles and ancestor indices
-unchanged. It multiplies inherited log-weight derivatives
-by `alpha` and retains pathwise derivatives through particle states. Zero gives
-the uncorrected pathwise gradient; one calls the original stop-gradient
-decorator. `alpha` is a static float in [0, 1]. Guided proposals and discrete
-transition scores need separate treatment.
-
-With adaptive resampling, one could apply the discount only when resampling
-occurs. This would discount by resampling events rather than observation times.
-This could be studied empirically, but the current DMOP-alpha theory does not
-cover it and we have not tested it. The Cuthbert developers can decide whether
-to add support for it. See the
-[worked example](https://github.com/kunyanghe21/cuthbert/blob/dmop-alpha/docs/examples/discounted_resampling.md).

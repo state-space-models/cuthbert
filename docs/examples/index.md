@@ -11,5 +11,4 @@ highlighting the flexibility of the library and the utility of the underlying me
 - [Ensemble Kalman filtering for Lorenz-63](enkf_comparison.md)
 - [Ensemble Kalman filtering with localization for Lorenz-96](enkf_localization_l96.md)
 - [Differentiable particle filtering](diff_pf_resampling.md)
-- [Discounting particle-filter gradients](discounted_resampling.md)
 - [Using `cuthbert` with Dynamax](dynamax_integration.md)

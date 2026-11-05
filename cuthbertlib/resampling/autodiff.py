@@ -19,69 +19,21 @@ from cuthbertlib.resampling.utils import apply_resampling_indices
 from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
 
 
-def discounted_stop_gradient_decorator(func: Resampling, alpha: float) -> Resampling:
-    """Discount inherited log-weight derivatives at resampling.
-
-    For finite log weights, the added correction is zero in the forward pass:
-    particles, ancestor indices and weights are unchanged. Its derivative is
-    ``alpha`` times the derivative of the selected input log weight. Pathwise
-    derivatives through the selected particle states are retained.
-
-    In a reparameterizable bootstrap particle filter that resamples at every
-    observation, this gives the DMOP-alpha weight recursion described in
-    [Tan et al.](https://arxiv.org/abs/2407.03085v2).
-    With adaptive resampling, applying the discount only when resampling occurs
-    would discount by resampling events rather than observation times. This is
-    a possible empirical extension that the current DMOP-alpha theory does not
-    cover and we have not tested. The tests use resampling at every observation.
-    Guided proposals and discrete transition scores need separate treatment.
-
-    Args:
-        func: An unconditional resampler returning equally weighted particles,
-            such as systematic or multinomial resampling.
-        alpha: A required static float in [0, 1], fixed when constructing the
-            decorator. There is no default; the choice is model-dependent.
-            Zero removes inherited log-weight derivatives; one uses the
-            existing stop-gradient decorator without changing its arithmetic.
-
-    Returns:
-        A resampling function with discounted log-weight derivatives.
-
-    Raises:
-        ValueError: If alpha is nonfinite or outside [0, 1].
-    """
-    if not math.isfinite(alpha) or not 0 <= alpha <= 1:
-        raise ValueError("alpha must be finite and in [0, 1]")
-    if alpha == 1:
-        return stop_gradient_decorator(func)
-
-    @wraps(func)
-    def _wrapped(
-        key: Array, logits: ArrayLike, positions: ArrayTreeLike, n: int
-    ) -> tuple[Array, Array, ArrayTree]:
-        indices, base_logits, particles = func(
-            key, jax.lax.stop_gradient(logits), positions, n
-        )
-        selected = apply_resampling_indices(logits, indices)
-        correction = alpha * (selected - jax.lax.stop_gradient(selected))
-        return indices, base_logits + correction, particles
-
-    _wrapped.__doc__ = (
-        discounted_stop_gradient_decorator.__doc__ or ""
-    ) + f"\n\nWrapped resampler documentation:\n{func.__doc__ or ''}"
-    return jax.jit(_wrapped, static_argnames=("n",))
-
-
-def stop_gradient_decorator(func: Resampling) -> Resampling:
+def stop_gradient_decorator(func: Resampling, alpha: float = 1.0) -> Resampling:
     """Wrap a Resampling function to use stop gradient resampling.
 
     Args:
         func: A resampling function with signature
               (key, logits, positions, n) -> (indices, logits_out, positions_out).
+        alpha: A static float in [0, 1] multiplying the log-weight correction.
+            The default, 1, preserves the original stop-gradient estimator;
+            0 removes the correction.
 
     Returns:
         A Resampling function implementing stop gradient resampling.
     """
+    if not math.isfinite(alpha) or not 0 <= alpha <= 1:
+        raise ValueError("alpha must be finite and in [0, 1]")
     # Build a descriptive docstring that includes the wrapped function doc
     wrapped_doc = func.__doc__ or ""
     doc = f"""
@@ -89,9 +41,10 @@ def stop_gradient_decorator(func: Resampling) -> Resampling:
 
     This wrapper will call the provided resampling function, and then apply 
     the stop gradient trick of [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314). 
-    Resulting estimates of the score function (i.e., the gradient of the 
+    With alpha=1, resulting estimates of the score function (i.e., the gradient of the
     log-likelihood with respect to model parameters) are unbiased, 
-    corresponding to the classical Fisher estimate.
+    corresponding to the classical Fisher estimate. Values below 1 discount
+    the log-weight correction at each resampling step.
 
     Wrapped resampler documentation:
     {wrapped_doc}
@@ -105,11 +58,15 @@ def stop_gradient_decorator(func: Resampling) -> Resampling:
             key, jax.lax.stop_gradient(logits), positions, n
         )
 
-        logits = jnp.asarray(
-            logits_base
-            + apply_resampling_indices(logits, idx_base)
-            - jax.lax.stop_gradient(apply_resampling_indices(logits, idx_base))
-        )
+        selected = apply_resampling_indices(logits, idx_base)
+        if alpha == 1:
+            # Preserve the original arithmetic when no discount is requested.
+            logits = jnp.asarray(
+                logits_base + selected - jax.lax.stop_gradient(selected)
+            )
+        else:
+            correction = alpha * (selected - jax.lax.stop_gradient(selected))
+            logits = jnp.asarray(logits_base + correction)
         return idx_base, logits, positions_base
 
     # Attach the composed docstring and return a jitted version

@@ -133,13 +133,18 @@ To select differentiable or non-differentiable resampling, we simply wrap the co
 from cuthbertlib.resampling import autodiff
 
 resampling_fn = (
-    autodiff.stop_gradient_decorator(systematic.resampling)
+    autodiff.stop_gradient_decorator(systematic.resampling, alpha=1.0)
     if differentiable_resampling
     else systematic.resampling
 )
 # In either case, do adaptive resampling
 resampling_fn = adaptive.ess_decorator(resampling_fn, ess_threshold)
 ```
+
+With the default `alpha=1`, Cuthbert applies the full gradient correction when it resamples. In [DMOP](https://arxiv.org/abs/2407.03085v2), `alpha` controls the bias–variance trade-off in the gradient estimates.
+
+The DMOP analysis assumes resampling at every observation, while this example resamples only when ESS falls below 70% of the particle count.
+
 Putting this together, we can define our PF MLL function.
 
 ```{.python #pf_grad_bias-pf_mll}
