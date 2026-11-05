@@ -1,3 +1,9 @@
+## IF2 and Dacca example
+
+This branch adds an IF2 implementation and a runnable Dacca example.
+See [installation, code and the small example](examples/dacca/README.md).
+It is independent of the separate [`alpha contribution`](https://github.com/kunyanghe21/cuthbert/tree/dmop-alpha).
+
 <!-- --8<-- [start:intro] -->
 <div align="center">
 <img src="https://raw.githubusercontent.com/state-space-models/cuthbert/main/docs/assets/cuthbert.png" alt="cuthbert logo"></img>
