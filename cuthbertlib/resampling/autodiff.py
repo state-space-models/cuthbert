@@ -16,23 +16,31 @@ import jax.numpy as jnp
 
 from cuthbertlib.resampling.protocols import Resampling
 from cuthbertlib.resampling.utils import apply_resampling_indices
-from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike
+from cuthbertlib.types import (
+    Array,
+    ArrayLike,
+    ArrayTree,
+    ArrayTreeLike,
+    ScalarArrayLike,
+)
 
 
-def stop_gradient_decorator(func: Resampling, alpha: float = 1.0) -> Resampling:
+def stop_gradient_decorator(
+    func: Resampling, alpha: ScalarArrayLike = 1.0
+) -> Resampling:
     """Wrap a Resampling function to use stop gradient resampling.
 
     Args:
         func: A resampling function with signature
               (key, logits, positions, n) -> (indices, logits_out, positions_out).
-        alpha: A static float in [0, 1] multiplying the log-weight correction.
+        alpha: A scalar in [0, 1] multiplying the log-weight correction.
             The default, 1, preserves the original stop-gradient estimator;
             0 removes the correction.
 
     Returns:
         A Resampling function implementing stop gradient resampling.
     """
-    if not math.isfinite(alpha) or not 0 <= alpha <= 1:
+    if isinstance(alpha, complex) or not math.isfinite(alpha) or not 0 <= alpha <= 1:
         raise ValueError("alpha must be finite and in [0, 1]")
     # Build a descriptive docstring that includes the wrapped function doc
     wrapped_doc = func.__doc__ or ""
@@ -59,14 +67,8 @@ def stop_gradient_decorator(func: Resampling, alpha: float = 1.0) -> Resampling:
         )
 
         selected = apply_resampling_indices(logits, idx_base)
-        if alpha == 1:
-            # Preserve the original arithmetic when no discount is requested.
-            logits = jnp.asarray(
-                logits_base + selected - jax.lax.stop_gradient(selected)
-            )
-        else:
-            correction = alpha * (selected - jax.lax.stop_gradient(selected))
-            logits = jnp.asarray(logits_base + correction)
+        correction = alpha * (selected - jax.lax.stop_gradient(selected))
+        logits = jnp.asarray(logits_base + correction)
         return idx_base, logits, positions_base
 
     # Attach the composed docstring and return a jitted version

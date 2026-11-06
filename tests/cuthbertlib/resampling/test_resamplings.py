@@ -157,7 +157,7 @@ class TestResamplings(chex.TestCase):
 
         chex.assert_trees_all_close(grad_stop, grad_base, rtol=0.05, atol=0.05)
 
-    @parameterized.parameters(None, 0.0, 0.5, 1.0)
+    @parameterized.parameters(None, 0.0, 0.5, 1.0, {"alpha": jnp.array(0.5)})
     def test_stop_gradient_discount(self, alpha):
         base = systematic.resampling
         if alpha is None:
