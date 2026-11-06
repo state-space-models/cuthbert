@@ -28,13 +28,13 @@ class NestedParticle(NamedTuple):
 
     Attributes:
         param: The parameter value $\theta_n$.
-        inner_state: Inner particle filter state conditional on `param`.
+        inner_state: Inner filter state conditional on `param`.
         resampled: Whether this particle was produced by a resampling operation
             immediately before the current propagation.
     """
 
     param: ArrayTree
-    inner_state: particle_filter.ParticleFilterState
+    inner_state: ArrayTree
     resampled: Array
 
 
