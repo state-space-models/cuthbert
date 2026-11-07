@@ -10,7 +10,7 @@ could use a Kalman filter for the inner filter to yield a nested hybrid filter,
 in the style of https://doi.org/10.1103/PhysRevE.98.063305.
 """
 
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 import jax.numpy as jnp
 from jax import random, tree
@@ -42,6 +42,7 @@ def build_filter(
     inner_filter: Filter,
     init_param_sample: InitSample,
     propagate_param_sample: PropagateSample,
+    add_param_to_model_inputs: Callable[[ArrayTree, ArrayTreeLike], ArrayTreeLike],
     n_filter_particles: int,
     resampling_fn: Resampling,
     ess_threshold: float | None = None,
@@ -66,7 +67,7 @@ def build_filter(
         )
 
         inner_state_prepared = inner_filter.filter_prepare(
-            (param, model_inputs), key=inner_key
+            add_param_to_model_inputs(param, model_inputs), key=inner_key
         )
         inner_state = inner_filter.filter_combine(
             state.inner_state, inner_state_prepared

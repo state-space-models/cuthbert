@@ -82,6 +82,10 @@ def jitter(key, param, model_inputs):
     return param + 0.01 * random.normal(key)
 
 
+def add_param_to_model_inputs(param, model_inputs):
+    return param, model_inputs
+
+
 def run(filter_obj, ys, seed=0):
     init_state = filter_obj.init_prepare(key=random.key(seed))
     return jax.jit(filter, static_argnames=("filter_obj", "parallel"))(
@@ -114,13 +118,16 @@ def test_particle_filter_inner_with_resampling():
     def init_sample(key):
         return SIGMA * random.normal(key)
 
+    def add_param_to_dict_model_inputs(param, y):
+        return {"a": param["a"], "sigma": jnp.exp(param["log_sigma"]), "y": y}
+
     def propagate_sample(key, state, model_inputs):
-        param, _ = model_inputs
-        return param["a"] * state + SIGMA * random.normal(key)
+        return model_inputs["a"] * state + SIGMA * random.normal(key)
 
     def log_potential(state_prev, state, model_inputs):
-        param, y = model_inputs
-        return jax.scipy.stats.norm.logpdf(y, state, jnp.exp(param["log_sigma"]))
+        return jax.scipy.stats.norm.logpdf(
+            model_inputs["y"], state, model_inputs["sigma"]
+        )
 
     inner_filter = particle_filter.build_filter(
         init_sample, propagate_sample, log_potential, n_inner, systematic.resampling
@@ -129,6 +136,7 @@ def test_particle_filter_inner_with_resampling():
         inner_filter=inner_filter,
         init_param_sample=init_param,
         propagate_param_sample=jitter_param,
+        add_param_to_model_inputs=add_param_to_dict_model_inputs,
         n_filter_particles=n_outer,
         resampling_fn=systematic.resampling,
         ess_threshold=ess_threshold,
@@ -176,6 +184,7 @@ def test_matches_exact_likelihood_without_resampling():
         inner_filter=build_inner_kalman(),
         init_param_sample=init_param_sample,
         propagate_param_sample=jitter,
+        add_param_to_model_inputs=add_param_to_model_inputs,
         n_filter_particles=n_outer,
         resampling_fn=systematic.resampling,
         ess_threshold=0.0,  # never resample
@@ -214,6 +223,7 @@ def test_particle_filter_inner_likelihood_unbiased():
         inner_filter=build_inner_pf(n_inner),
         init_param_sample=init_param_sample,
         propagate_param_sample=jitter,
+        add_param_to_model_inputs=add_param_to_model_inputs,
         n_filter_particles=n_outer,
         resampling_fn=systematic.resampling,
         ess_threshold=0.0,  # never resample
@@ -242,6 +252,7 @@ def test_posterior_close_to_exact():
         inner_filter=build_inner_kalman(),
         init_param_sample=init_param_sample,
         propagate_param_sample=jitter,
+        add_param_to_model_inputs=add_param_to_model_inputs,
         n_filter_particles=1_000,
         resampling_fn=systematic.resampling,
         ess_threshold=0.5,
