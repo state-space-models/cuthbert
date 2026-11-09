@@ -48,6 +48,7 @@ nav = [
       "api_cuthbert/smc/index.md",
       "api_cuthbert/smc/backward_sampler.md",
       "api_cuthbert/smc/marginal_particle_filter.md",
+      "api_cuthbert/smc/nested_particle_filter.md",
       "api_cuthbert/smc/particle_filter.md",
       "api_cuthbert/smc/types.md",
     ] },
