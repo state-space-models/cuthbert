@@ -1,13 +1,26 @@
-"""Implements the nested particle filter (NPF) of Crisan and Míguez (2018).
+r"""Implements the nested particle filter (NPF) of Crisan and Míguez (2018).
 
 Link to paper: https://www.jstor.org/stable/26492094
 
-This implementation is more flexible than the algorithm from the original paper.
-The inner filter does not need to be a particle filter, and can be any
-`cuthbert` filter that exposes a cumulative `log_normalizing_constant`. For
-example, if conditionally on a parameter the model is linear-Gaussian, then we
-could use a Kalman filter for the inner filter to yield a nested hybrid filter,
-in the style of https://doi.org/10.1103/PhysRevE.98.063305.
+The NPF targets the joint filtering distribution of a parameter $\theta$ and
+the state $x_t$. It is implemented as a bootstrap particle filter on an
+augmented state, where each outer particle is a parameter value $\theta^{(i)}$
+paired with the state of an inner filter for $x_t$ conditional on
+$\theta^{(i)}$. The weight of each outer particle at time $t$ is the inner
+filter's estimate of the incremental likelihood
+$p(y_t \mid y_{1:t-1}, \theta^{(i)})$.
+
+This implementation is more flexible than the algorithm from the original paper:
+
+- The inner filter does not need to be a particle filter, and can be any
+  `cuthbert` filter whose state is a `NamedTuple` with a `model_inputs` field
+  and a cumulative `log_normalizing_constant`. For example, if conditionally on
+  a parameter the model is linear-Gaussian, then we could use a Kalman filter
+  for the inner filter to yield a nested hybrid filter, in the style of
+  https://doi.org/10.1103/PhysRevE.98.063305.
+- The paper jitters the parameters at every step. Here we only jitter if the
+  parameter particles have been resampled, and we allow this to be done adaptively
+  (when the ESS goes below a threshold).
 """
 
 from typing import Callable, NamedTuple
@@ -24,10 +37,14 @@ from cuthbertlib.types import Array, ArrayLike, ArrayTree, ArrayTreeLike, KeyArr
 
 
 class NestedParticle(NamedTuple):
-    r"""The state of the nested particle filter.
+    r"""An outer particle of the nested particle filter.
+
+    The fields below describe a single outer particle, as built inside the
+    filter, but they may have leading batch dimensions (e.g. a particle axis).
 
     Attributes:
-        param: The parameter value $\theta_n$.
+        param: The parameter value $\theta_t$, an arbitrary pytree (e.g. a
+            scalar, a vector or a dict of parameters).
         inner_state: Inner filter state conditional on `param`.
         resampled: Whether this particle was produced by a resampling operation
             immediately before the current propagation.
@@ -47,7 +64,35 @@ def build_filter(
     resampling_fn: Resampling,
     ess_threshold: float | None = None,
 ) -> Filter:
-    """Builds a nested particle filter object."""
+    r"""Builds a nested particle filter object.
+
+    Args:
+        inner_filter: Filter for the state $x_t$ conditional on a parameter,
+            e.g., a particle filter or a Kalman filter. Its model functions read the
+            parameter from their model inputs, as constructed by
+            `add_param_to_model_inputs`. Its state must have a
+            `log_normalizing_constant` attribute.
+        init_param_sample: Function of a JAX random key only, generates a single
+            sample from the prior on the parameter $\theta$.
+        propagate_param_sample: Function to jitter the parameter, i.e., sample
+            from a kernel $\kappa_t(\theta_t \mid \theta_{t-1})$.
+        add_param_to_model_inputs: Function of a parameter and the model inputs
+            at time $t$, returns the model inputs passed to `inner_filter` at
+            time $t$. For example, `lambda param, y: (param, y)`.
+        n_filter_particles: Number of outer (parameter) particles.
+        resampling_fn: Resampling algorithm to use (e.g., systematic, multinomial).
+            Unlike the other particle filters, if you want adaptive resampling, do
+            *not* wrap this with the `ess_decorator`. Provide an
+            `ess_threshold` instead.
+        ess_threshold: Fraction of `n_filter_particles` below which the effective
+            sample size triggers resampling (and jittering) of the outer
+            particles. If `None`, resampling happens at every step.
+
+    Returns:
+        Filter object for the nested particle filter. Its state is a particle
+            filter state whose particles are `NestedParticle`s, with a leading
+            outer particle axis on every leaf.
+    """
 
     def init_sample(key: KeyArray) -> NestedParticle:
         outer_key, inner_key = random.split(key)
@@ -105,7 +150,7 @@ def _mark_resampled(resampling_fn: Resampling) -> Resampling:
     noise to) the parameters adaptively, when the ESS has fallen below a
     threshold (just like for adaptive resampling). This means we need to keep
     track of whether we have resampled or not, which the resampling functions in
-    `cuthbert` curently do not tell us. What we do here is attach a flag of
+    `cuthbert` currently do not tell us. What we do here is attach a flag of
     whether or not resampling happened to every particle by wrapping the
     resampling function.
     """
