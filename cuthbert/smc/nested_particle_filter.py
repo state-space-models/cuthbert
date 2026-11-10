@@ -105,17 +105,24 @@ def build_filter(
     def propagate_sample(
         key: KeyArray, state: NestedParticle, model_inputs: ArrayTreeLike
     ) -> NestedParticle:
-        outer_key, inner_key = random.split(key)
+        outer_key, prepare_key, combine_key = random.split(key, 3)
         param = propagate_param_sample(outer_key, state.param, model_inputs)
         param = tree.map(
             lambda new, old: jnp.where(state.resampled, new, old), param, state.param
         )
 
+        # Stochastic inner filters draw the randomness for a step from the key
+        # in the previous state. Copies of a resampled outer particle share
+        # that key, so give each one a fresh key to keep them independent.
+        prev_inner_state = state.inner_state
+        if "key" in prev_inner_state._fields:
+            prev_inner_state = prev_inner_state._replace(key=combine_key)
+
         inner_state_prepared = inner_filter.filter_prepare(
-            add_param_to_model_inputs(param, model_inputs), key=inner_key
+            add_param_to_model_inputs(param, model_inputs), key=prepare_key
         )
         inner_state = inner_filter.filter_combine(
-            state.inner_state, inner_state_prepared
+            prev_inner_state, inner_state_prepared
         )
         return NestedParticle(
             param=param,
