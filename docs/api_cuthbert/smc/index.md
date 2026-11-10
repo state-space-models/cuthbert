@@ -2,6 +2,7 @@
 
 - [Particle filter](particle_filter.md) - flexible particle filter for general Feynman-Kac models.
 - [Marginal particle filter](marginal_particle_filter.md) - $O(N^2)$ variant of the particle filter.
+- [Nested particle filter](nested_particle_filter.md) - joint estimation of static parameters and states, with any `cuthbert` filter for the states.
 - [Backward sampler](backward_sampler.md) - flexible backward smoothing using approaches in [`cuthbertlib.smc.smoothing`](../../api_cuthbertlib/smc.md).
 
 The core atomic functions can be found in [`cuthbertlib.smc`](../../api_cuthbertlib/smc.md).
