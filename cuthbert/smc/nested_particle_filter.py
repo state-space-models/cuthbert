@@ -46,8 +46,9 @@ class NestedParticle(NamedTuple):
         param: The parameter value $\theta_t$, an arbitrary pytree (e.g. a
             scalar, a vector or a dict of parameters).
         inner_state: Inner filter state conditional on `param`.
-        resampled: Whether this particle was produced by a resampling operation
-            immediately before the current propagation.
+        resampled: Whether the outer particles were resampled, and the
+            parameters jittered, in the filter step that produced this
+            particle. Always `False` for the initial particles.
     """
 
     param: ArrayTree
@@ -127,7 +128,7 @@ def build_filter(
         return NestedParticle(
             param=param,
             inner_state=inner_state._replace(model_inputs=None),
-            resampled=jnp.array(False),
+            resampled=state.resampled,
         )
 
     def log_potential(
@@ -139,18 +140,19 @@ def build_filter(
             - state_prev.inner_state.log_normalizing_constant
         )
 
-    # Wrap the resampling function
-    resampling_fn = _mark_resampled(resampling_fn)
-    if ess_threshold is not None:
-        resampling_fn = ess_decorator(resampling_fn, ess_threshold)
-
     return particle_filter.build_filter(
-        init_sample, propagate_sample, log_potential, n_filter_particles, resampling_fn
+        init_sample,
+        propagate_sample,
+        log_potential,
+        n_filter_particles,
+        _track_resampling(resampling_fn, ess_threshold),
     )
 
 
-def _mark_resampled(resampling_fn: Resampling) -> Resampling:
-    """Wraps a resampling function to flag when a resampling has occurred.
+def _track_resampling(
+    resampling_fn: Resampling, ess_threshold: float | None
+) -> Resampling:
+    """Sets the `resampled` flag to whether the particles were resampled.
 
     This is the key to making the nested particle filter work without modifying
     code elsewhere in `cuthbert`. Essentially, we only want to jitter (i.e., add
@@ -162,15 +164,27 @@ def _mark_resampled(resampling_fn: Resampling) -> Resampling:
     resampling function.
     """
 
-    def wrapped(
+    def resample_and_mark(
         key: KeyArray, logits: ArrayLike, positions: ArrayTreeLike, n: int
     ) -> tuple[Array, Array, ArrayTree]:
         ancestor_indices, log_weights, ancestors = resampling_fn(
             key, logits, positions, n
         )
-        ancestors = ancestors._replace(
-            resampled=jnp.full_like(ancestors.resampled, True)
-        )
-        return ancestor_indices, log_weights, ancestors
+        return ancestor_indices, log_weights, _set_resampled(ancestors, True)
+
+    maybe_resample = resample_and_mark
+    if ess_threshold is not None:
+        maybe_resample = ess_decorator(resample_and_mark, ess_threshold)
+
+    def wrapped(
+        key: KeyArray, logits: ArrayLike, positions: ArrayTreeLike, n: int
+    ) -> tuple[Array, Array, ArrayTree]:
+        positions = _set_resampled(positions, False)  # Clear the flag
+        return maybe_resample(key, logits, positions, n)
 
     return wrapped
+
+
+def _set_resampled(particles: NestedParticle, value: bool) -> NestedParticle:
+    """Sets the `resampled` flag of every `NestedParticle` to `value`."""
+    return particles._replace(resampled=jnp.full_like(particles.resampled, value))
