@@ -463,7 +463,7 @@ We use the same 100 seeds to see how the bias and variance of each score estimat
         ax.set(xlabel=r"Discount $\alpha$", title=f"Score for {parameter}")
     axes[0].set_ylabel("Squared score error")
     axes[0].legend()
-    fig.savefig("docs/assets/pf_grad_bias_discount.png", dpi=200)
+    fig.savefig("docs/assets/pf_grad_bias_discount.png", dpi=200, transparent=True)
     ```
 
 ![Mean squared error, squared bias and variance of the two score estimates relative to the Kalman score](../assets/pf_grad_bias_discount.png)
