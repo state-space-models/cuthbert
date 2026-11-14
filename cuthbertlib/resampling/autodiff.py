@@ -6,9 +6,9 @@ This can be wrapped around a resampling scheme such as multinomial or systematic
 resampling.
 
 See [Scibior and Wood (2021)](https://arxiv.org/abs/2106.10314) for more details.
+For the discount, see [Tan et al.](https://arxiv.org/abs/2407.03085v2).
 """
 
-import math
 from functools import wraps
 
 import jax
@@ -33,15 +33,14 @@ def stop_gradient_decorator(
     Args:
         func: A resampling function with signature
               (key, logits, positions, n) -> (indices, logits_out, positions_out).
-        alpha: A scalar in [0, 1] multiplying the log-weight correction.
+        alpha: A scalar multiplier for the log-weight correction, clipped to [0, 1].
             The default, 1, preserves the original stop-gradient estimator;
             0 removes the correction.
 
     Returns:
         A Resampling function implementing stop gradient resampling.
     """
-    if isinstance(alpha, complex) or not math.isfinite(alpha) or not 0 <= alpha <= 1:
-        raise ValueError("alpha must be finite and in [0, 1]")
+    alpha = jnp.clip(jnp.broadcast_to(alpha, ()), 0, 1)
     # Build a descriptive docstring that includes the wrapped function doc
     wrapped_doc = func.__doc__ or ""
     doc = f"""
@@ -52,7 +51,8 @@ def stop_gradient_decorator(
     With alpha=1, resulting estimates of the score function (i.e., the gradient of the
     log-likelihood with respect to model parameters) are unbiased, 
     corresponding to the classical Fisher estimate. Values below 1 discount
-    the log-weight correction at each resampling step.
+    the log-weight correction at resampling as in [Tan et al.](https://arxiv.org/abs/2407.03085v2).
+    With alpha=0, the correction is zero and gradients still pass through the selected particles.
 
     Wrapped resampler documentation:
     {wrapped_doc}

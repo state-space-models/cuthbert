@@ -177,7 +177,18 @@ class TestResamplings(chex.TestCase):
         chex.assert_trees_all_equal(dw, alpha * selected)
         chex.assert_trees_all_equal(dx, selected)
 
-    @parameterized.parameters(-0.1, 1.1, float("nan"))
-    def test_invalid_discount(self, alpha):
+    def test_compiled_discount(self):
+        key = random.key(42)
+        logits, xs = jnp.array([-2.0, 0.0, 1.0]), jnp.arange(3.0)
+        indices, _, _ = systematic.resampling(key, logits, xs, 3)
+        selected = jnp.eye(3)[indices]
+
+        @jax.jit
+        def jacobian(alpha):
+            resample = stop_gradient_decorator(systematic.resampling, alpha=alpha)
+            return jax.jacrev(lambda w: resample(key, w, xs, 3)[1])(logits)
+
+        for alpha, expected in [(-0.1, 0.0), (0.5, 0.5), (1.1, 1.0)]:
+            chex.assert_trees_all_equal(jacobian(alpha), expected * selected)
         with self.assertRaises(ValueError):
-            stop_gradient_decorator(systematic.resampling, alpha=alpha)
+            jacobian(jnp.ones(3))
