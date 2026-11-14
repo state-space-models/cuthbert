@@ -140,6 +140,9 @@ resampling_fn = (
 # In either case, do adaptive resampling
 resampling_fn = adaptive.ess_decorator(resampling_fn, ess_threshold)
 ```
+
+With the default `alpha=1`, Cuthbert applies the full gradient correction when it resamples. In [DMOP](https://arxiv.org/abs/2407.03085v2), `alpha` controls the bias–variance trade-off in the gradient estimates.
+
 Putting this together, we can define our PF MLL function.
 
 ```{.python #pf_grad_bias-pf_mll}
@@ -157,6 +160,7 @@ def pf_mll(
     m0,
     chol_P0,
     differentiable_resampling: bool,
+    alpha=1.0,
 ):
     """Bootstrap PF estimate of log p(y_{1:T} | theta)."""
     log_q, log_r = theta
@@ -178,7 +182,7 @@ def pf_mll(
         return logpdf(H @ x + d, ys[idx], chol_R, nan_support=False)
 
     resampling_fn = (
-        autodiff.stop_gradient_decorator(systematic.resampling)
+        autodiff.stop_gradient_decorator(systematic.resampling, alpha=alpha)
         if differentiable_resampling
         else systematic.resampling
     )
@@ -348,7 +352,7 @@ key, *mc_keys = random.split(key, n_sims + 1)
 
 score_exact = kalman_grad(theta_true, ys, m0=m0, chol_P0=chol_P0)
 
-def mc_scores_pf(diff: bool):
+def mc_scores_pf(diff: bool, alpha=1.0):
     out = []
     for k in mc_keys:
         out.append(
@@ -361,6 +365,7 @@ def mc_scores_pf(diff: bool):
                 m0=m0,
                 chol_P0=chol_P0,
                 differentiable_resampling=diff,
+                alpha=alpha,
             )
         )
     return jnp.stack(out, axis=0)
@@ -436,6 +441,32 @@ Standard PF gives biased score estimates; the differentiable-resampling PF is mu
     ```
 
 ![Score estimates across seeds](../assets/pf_grad_bias_score_boxplots.png)
+
+We use the same 100 seeds to see how the bias and variance of each score estimate change with `alpha`.
+
+??? "Code to plot score error against alpha."
+    ```{.python #pf_grad_bias-discount}
+    alphas = [0.0, 0.25, 0.5, 0.75, 0.9, 0.97, 1.0]
+    scores_by_alpha = jnp.stack(
+        [score_pf_dpf if alpha == 1.0 else mc_scores_pf(True, alpha) for alpha in alphas]
+    )
+    errors = scores_by_alpha - score_exact
+    mse = jnp.mean(errors**2, axis=1)
+    squared_bias = jnp.mean(errors, axis=1)**2
+    variance = jnp.var(scores_by_alpha, axis=1)
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.6), layout="constrained")
+    for j, (ax, parameter) in enumerate(zip(axes, [r"$\log q$", r"$\log r$"])):
+        ax.semilogy(alphas, mse[:, j], "o-", label="Mean squared error")
+        ax.semilogy(alphas, squared_bias[:, j], "s--", label="Squared bias")
+        ax.semilogy(alphas, variance[:, j], "^:", label="Variance")
+        ax.set(xlabel=r"Discount $\alpha$", title=f"Score for {parameter}")
+    axes[0].set_ylabel("Squared score error")
+    axes[0].legend()
+    fig.savefig("docs/assets/pf_grad_bias_discount.png", dpi=200)
+    ```
+
+![Mean squared error, squared bias and variance of the two score estimates relative to the Kalman score](../assets/pf_grad_bias_discount.png)
 
 One important aspect in practice is efficiency. We now compare the time it takes to run a backwards pass over the differentiable and non-differentiable variants of the filter.
 
@@ -601,6 +632,7 @@ Finally, we should be sure that the forward pass is not actually being modified 
 <<pf_grad_bias-plot_slices>>
 <<pf_grad_bias-mc_bias>>
 <<pf_grad_bias-boxplots>>
+<<pf_grad_bias-discount>>
 <<pf_grad_bias-timing>>
 <<pf_grad_bias-final_particles>>
 ```
