@@ -24,6 +24,8 @@ Maybe a [simple Kalman filter for tracking](https://state-space-models.github.io
 or a [factorial state-space model for modelling international football](https://state-space-models.github.io/cuthbert/examples/factorial_football).
 <!-- --8<-- [end:intro] -->
 
+[IF2 and the Dacca model](examples/dacca/README.md)
+
 <!-- --8<-- [start:goals] -->
 ### Goals
 - Simple, flexible and performant interface for state-space model inference.
