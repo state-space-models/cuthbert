@@ -8,6 +8,7 @@ highlighting the flexibility of the library and the utility of the underlying me
 - [Parallel-in-time Kalman filter](temporal_parallelization_kalman.md)
 - [Online filtering and prediction for a stochastic volatility model](online_stoch_vol.md)
 - [Parameter estimation with expectation maximization](parameter_estimation_em.md)
+- [Online parameter estimation with a nested particle filter](nested_particle_filter.md)
 - [Ensemble Kalman filtering for Lorenz-63](enkf_comparison.md)
 - [Ensemble Kalman filtering with localization for Lorenz-96](enkf_localization_l96.md)
 - [Differentiable particle filtering](diff_pf_resampling.md)

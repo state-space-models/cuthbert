@@ -14,6 +14,10 @@ def _dummy_array(leaf: ArrayLike | jax.ShapeDtypeStruct) -> Array:
     dtype = leaf.dtype
     shape = leaf.shape
 
+    if jax.dtypes.issubdtype(dtype, jax.dtypes.prng_key):
+        # Typed PRNG keys have no min value, use all-zero key data instead
+        return jnp.zeros(shape, dtype=dtype)
+
     if jnp.issubdtype(dtype, jnp.integer):
         min_val = jnp.iinfo(dtype).min
     elif jnp.issubdtype(dtype, jnp.floating):

@@ -42,3 +42,14 @@ def test_dummy_tree_like():
     # Check ShapeDtypeStruct handling
     assert dummy_pytree["shape_struct"].shape == (2, 3)
     assert jnp.all(dummy_pytree["shape_struct"] == jnp.finfo(jnp.float32).min)
+
+
+def test_dummy_tree_like_prng_keys():
+    keys = jax.random.split(jax.random.key(0), 3)
+    pytree = {"key": keys, "key_struct": jax.eval_shape(lambda: keys)}
+    dummy_pytree = dummy_tree_like(pytree)
+
+    for x in dummy_pytree.values():
+        assert jax.dtypes.issubdtype(x.dtype, jax.dtypes.prng_key)
+        assert x.shape == (3,)
+        assert jnp.all(jax.random.key_data(x) == 0)
