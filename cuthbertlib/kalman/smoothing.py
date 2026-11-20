@@ -54,7 +54,7 @@ def update(
 
     nx = F.shape[0]
     Phi = jnp.block([[F @ filter_chol_P, chol_Q], [filter_chol_P, jnp.zeros_like(F)]])
-    tria_Phi = tria(Phi)
+    tria_Phi = tria(Phi, nx)
     Phi11 = tria_Phi[:nx, :nx]
     Phi21 = tria_Phi[nx:, :nx]
     Phi22 = tria_Phi[nx:, nx:]
@@ -89,7 +89,7 @@ def associative_params_single(
     nx = chol_Q.shape[0]
 
     Phi = jnp.block([[F @ chol_P, chol_Q], [chol_P, jnp.zeros_like(chol_Q)]])
-    Tria_Phi = tria(Phi)
+    Tria_Phi = tria(Phi, nx)
     Phi11 = Tria_Phi[:nx, :nx]
     Phi21 = Tria_Phi[nx:, :nx]
     D = Tria_Phi[nx:, nx:]

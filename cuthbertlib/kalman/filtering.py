@@ -101,7 +101,7 @@ def update(
             [chol_P, jnp.zeros((n_x, n_y), dtype=chol_P.dtype)],
         ]
     )
-    chol_S = tria(M)
+    chol_S = tria(M, n_y)
     chol_Py = chol_S[n_y:, n_y:]
 
     Gmat = chol_S[n_y:, :n_y]
@@ -139,7 +139,7 @@ def associative_params_single(
     # joint over the predictive and the observation
     Psi_ = jnp.block([[H @ chol_Q, chol_R], [chol_Q, jnp.zeros((nx, ny))]])
 
-    Tria_Psi_ = tria(Psi_)
+    Tria_Psi_ = tria(Psi_, ny)
 
     Psi11 = Tria_Psi_[:ny, :ny]
     Psi21 = Tria_Psi_[ny : ny + nx, :ny]
@@ -191,7 +191,7 @@ def filtering_operator(
     nx = Z2.shape[0]
 
     Xi = jnp.block([[U1.T @ Z2, jnp.eye(nx)], [Z2, jnp.zeros_like(A1)]])
-    tria_xi = tria(Xi)
+    tria_xi = tria(Xi, nx)
     Xi11 = tria_xi[:nx, :nx]
     Xi21 = tria_xi[nx : nx + nx, :nx]
     Xi22 = tria_xi[nx : nx + nx, nx:]
