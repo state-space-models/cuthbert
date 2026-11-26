@@ -15,10 +15,11 @@ $$
 and potentials as
 
 $$
-G(x) \approx N(x \mid m, L L^T),
+G(x) \approx \exp(c) N(x \mid m, L L^T),
 $$
 
-where $L$ is the Cholesky factor of the covariance matrix.
+where $c$ matches the log potential at the expansion point and contributes to the
+log evidence when $L L^T$ is nonsingular on the active coordinates.
 
 See `cuthbertlib.linearize` for more details.
 
