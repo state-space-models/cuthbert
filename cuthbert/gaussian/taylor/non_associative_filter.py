@@ -13,7 +13,7 @@ from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
-from cuthbertlib.linalg import block_marginal_sqrt_cov, collect_nans_chol
+from cuthbertlib.linalg import block_marginal_sqrt_cov
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
 from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, ArrayLike, ArrayTreeLike, KeyArray, LogDensity
@@ -59,16 +59,22 @@ def process_observation(
     missing = skip | (ignore_nan_dims & jnp.isnan(jnp.diag(chol_R)))
     observation = jnp.where(missing, jnp.nan, 0.0)
 
-    # The correction requires a normalized density on the active dimensions.
-    active_factor = jnp.where(missing[:, None], 0.0, chol_R)
-    finite_factor = jnp.isfinite(active_factor).all()
-    rank = jnp.linalg.matrix_rank(jnp.where(finite_factor, active_factor, 0.0))
-    apply_correction = ~skip & finite_factor & (rank == jnp.count_nonzero(~missing))
-    _, factor, point, center = collect_nans_chol(
-        missing | ~apply_correction, chol_R, anchor, d
+    # The active block of the Taylor factor is already lower triangular.
+    active_factor = jnp.where(missing[:, None] | missing[None, :], 0.0, chol_R)
+    apply_correction = (
+        ~skip
+        & jnp.isfinite(active_factor).all()
+        & jnp.all(missing | (jnp.diag(active_factor) != 0))
     )
+    # A padded coordinate has log density zero at residual zero.
+    ignored = missing | ~apply_correction
+    padding_scale = jnp.asarray((2 * jnp.pi) ** -0.5, dtype=chol_R.dtype)
+    factor = jnp.where(apply_correction, active_factor, 0.0) + jnp.diag(
+        jnp.where(ignored, padding_scale, 0.0)
+    )
+    residual = jnp.where(ignored, 0.0, anchor - d)
     gaussian_value = multivariate_normal.logpdf(
-        point, center, factor, nan_support=False
+        residual, jnp.zeros_like(residual), factor, nan_support=False
     )
     correction = jnp.where(apply_correction, value - gaussian_value, 0.0)
     return H, d, chol_R, observation, correction
