@@ -299,7 +299,8 @@ def test_filter_noop(seed, x_dim, y_dim, associative):
     )
 
     filtered_log_potential_state = filter_log_potential_obj.filter_combine(
-        state, prep_state
+        filter_log_potential_obj.init_prepare(),
+        filter_log_potential_obj.filter_prepare(None),
     )
 
     chex.assert_trees_all_close(
@@ -496,6 +497,61 @@ def test_offline_filter_potential(seed, x_dim, num_time_steps):
         (des_means, des_covs, des_ells),
         rtol=1e-5,
         atol=1e-8,
+    )
+
+
+@pytest.mark.parametrize(
+    "associative,parallel", [(False, False), (True, False), (True, True)]
+)
+@pytest.mark.parametrize("loading", [0.0, 1.0])
+def test_poisson_potential_evidence(associative, parallel, loading):
+    counts = jnp.array([2.0, 3.0, 7.0])
+    anchor = jnp.zeros(1)
+    variance = 0.25
+
+    def prior(x):
+        return jax.scipy.stats.norm.logpdf(x, scale=variance**0.5).sum()
+
+    def dynamics(state, count):
+        return lambda prev, x: prior(x), anchor, anchor
+
+    def evidence(log_rate):
+        def observation(state, count):
+            def log_potential(x):
+                eta = log_rate + loading * x[0]
+                return count * eta - jnp.exp(eta) - jax.scipy.special.gammaln(count + 1)
+
+            return log_potential, anchor
+
+        alg = taylor.build_filter(
+            prior,
+            anchor,
+            dynamics,
+            observation,
+            associative=associative,
+            ignore_nan_dims=True,
+        )
+        states = filter(alg, counts, alg.init_prepare(), parallel=parallel)
+        ell = states.log_normalizing_constant
+        return ell[-1], jnp.diff(ell)
+
+    def expected_increments(log_rate):
+        rate = jnp.exp(log_rate)
+        value = counts * log_rate - rate - jax.scipy.special.gammaln(counts + 1)
+        grad = (counts - rate) * loading
+        curvature = rate * loading**2
+        return (
+            value
+            + 0.5 * variance * grad**2 / (1.0 + variance * curvature)
+            - 0.5 * jnp.log1p(variance * curvature)
+        )
+
+    log_rate = jnp.log(2.0)
+    (total, increments), score = jax.value_and_grad(evidence, has_aux=True)(log_rate)
+    expected = expected_increments(log_rate)
+    expected_score = jax.grad(lambda b: expected_increments(b).sum())(log_rate)
+    chex.assert_trees_all_close(
+        (total, increments, score), (expected.sum(), expected, expected_score)
     )
 
 

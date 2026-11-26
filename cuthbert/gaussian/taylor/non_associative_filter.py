@@ -13,8 +13,9 @@ from cuthbert.gaussian.types import LinearizedKalmanFilterState
 from cuthbert.gaussian.utils import linearized_kalman_filter_state_dummy_elem
 from cuthbert.utils import dummy_tree_like
 from cuthbertlib.kalman import filtering
-from cuthbertlib.linalg import block_marginal_sqrt_cov
+from cuthbertlib.linalg import block_marginal_sqrt_cov, collect_nans_chol
 from cuthbertlib.linearize import linearize_log_density, linearize_taylor
+from cuthbertlib.stats import multivariate_normal
 from cuthbertlib.types import Array, ArrayLike, ArrayTreeLike, KeyArray, LogDensity
 
 
@@ -23,8 +24,8 @@ def process_observation(
     | tuple[LogPotential, Array],
     rtol: float | None = None,
     ignore_nan_dims: bool = False,
-) -> tuple[Array, Array, Array, Array]:
-    """Process observation for linearized Taylor Kalman filter."""
+) -> tuple[Array, Array, Array, Array, Array]:
+    """Prepare the Gaussian observation and its log evidence correction."""
     if len(observation_output) == 3:
         observation_cond_log_density, linearization_point, observation = (
             observation_output
@@ -36,25 +37,41 @@ def process_observation(
             rtol=rtol,
             ignore_nan_dims=ignore_nan_dims,
         )
-    else:
-        observation_log_potential, linearization_point = observation_output
-        d, chol_R = linearize_taylor(
-            observation_log_potential,
-            linearization_point,
-            rtol=rtol,
-            ignore_nan_dims=ignore_nan_dims,
-        )
-        # dummy mat and observation as potential is unconditional
-        # Note the minus sign as linear potential is -0.5 (x - d)^T (R R^T)^{-1} (x - d)
-        # and kalman expects -0.5 (y - H @ x - d)^T (R R^T)^{-1} (y - H @ x - d)
-        H = -jnp.eye(d.shape[0])
-        observation = jnp.where(
-            jnp.isnan(jnp.diag(chol_R)) * ignore_nan_dims, jnp.nan, 0.0
-        )  # Tell the cuthbertlib.kalman to skip these dimensions
-        observation = jnp.where(
-            jnp.isnan(linearization_point).all(), jnp.nan, observation
-        )  # If both linearization points are all NaN, skip the observation
-    return H, d, chol_R, observation
+        return H, d, chol_R, observation, jnp.zeros((), dtype=d.dtype)
+
+    observation_log_potential, linearization_point = observation_output
+    skip = jnp.isnan(linearization_point).all()
+    anchor = jnp.where(skip, 0.0, linearization_point)
+
+    def log_potential_with_value(x: ArrayLike) -> tuple[Array, Array]:
+        value = observation_log_potential(x)
+        return value, value
+
+    d, chol_R, value = linearize_taylor(
+        log_potential_with_value,
+        anchor,
+        has_aux=True,
+        rtol=rtol,
+        ignore_nan_dims=ignore_nan_dims,
+    )
+    # With H = -I and y = 0, the pseudo-observation residual is x - d.
+    H = -jnp.eye(d.shape[0])
+    missing = skip | (ignore_nan_dims & jnp.isnan(jnp.diag(chol_R)))
+    observation = jnp.where(missing, jnp.nan, 0.0)
+
+    # The correction requires a normalized density on the active dimensions.
+    active_factor = jnp.where(missing[:, None], 0.0, chol_R)
+    finite_factor = jnp.isfinite(active_factor).all()
+    rank = jnp.linalg.matrix_rank(jnp.where(finite_factor, active_factor, 0.0))
+    apply_correction = ~skip & finite_factor & (rank == jnp.count_nonzero(~missing))
+    _, factor, point, center = collect_nans_chol(
+        missing | ~apply_correction, chol_R, anchor, d
+    )
+    gaussian_value = multivariate_normal.logpdf(
+        point, center, factor, nan_support=False
+    )
+    correction = jnp.where(apply_correction, value - gaussian_value, 0.0)
+    return H, d, chol_R, observation, correction
 
 
 def init_prepare(
@@ -222,14 +239,20 @@ def filter_combine(
 
     observation_output = get_observation_func(predict_state, state_2.model_inputs)
 
-    H, d, chol_R, observation = process_observation(
+    H, d, chol_R, observation, correction = process_observation(
         observation_output,
         rtol=rtol,
         ignore_nan_dims=ignore_nan_dims,
     )
 
     (update_mean, update_chol_cov), log_normalizing_constant = filtering.update(
-        predict_mean, predict_chol_cov, H, d, chol_R, observation
+        predict_mean,
+        predict_chol_cov,
+        H,
+        d,
+        chol_R,
+        observation,
+        log_normalizing_constant=correction,
     )
 
     return linearized_kalman_filter_state_dummy_elem(

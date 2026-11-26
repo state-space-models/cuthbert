@@ -6,19 +6,26 @@ densities of the dynamics and observation distributions.
 This differs from `gaussian/moments`, which requires `mean` and `chol_cov`
 functions as input rather than log densities.
 
-I.e., we approximate conditional densities as
+An observation callback returning `(log_p_y_given_x, x, y)` uses a Gaussian
+approximation to the conditional density in observation space,
 
 $$
 p(y \mid x) \approx N(y \mid H x + d, L L^T),
 $$
 
-and potentials as
+where $L$ is the Cholesky factor of the covariance matrix. A callback returning
+`(log_g, a)` supplies a unary log potential and a state-space expansion point.
+The filter uses a Gaussian approximation in state space,
 
 $$
-G(x) \approx N(x \mid m, L L^T),
+G(x) \approx \exp(c) N(x \mid m, L L^T),
 $$
 
-where $L$ is the Cholesky factor of the covariance matrix.
+The scalar correction $c$ makes the approximate log potential equal to `log_g(a)`
+at the expansion point. It contributes to `log_normalizing_constant` when the
+active Gaussian has a nonsingular covariance. With `ignore_nan_dims=True`, a
+state-independent potential contributes its scalar value. An all-NaN unary
+expansion point skips the observation and contributes zero log evidence.
 
 See `cuthbertlib.linearize` for more details.
 

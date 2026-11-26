@@ -29,6 +29,10 @@ of the smoothing covariance.
 The distributions are exact for linear Gaussian state-space models, otherwise
 an approximation is induced depending on the `cuthbert` method used.
 
+For a Taylor filter with a unary observation potential, `log_normalizing_constant`
+includes a correction that matches the potential's value at the expansion point
+when the active Gaussian covariance is nonsingular.
+
 ## Two-step smoothing distributions
 
 Additionally, Gaussian smoothers have optional boolean arguments `store_gain` and `store_chol_cov_given_next` which can be used to store in the smoother state the
